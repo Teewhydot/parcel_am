@@ -182,7 +182,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                                 Row(
                                   children: [
                                     AppText(pkg.title),
-                                    AppSpacing.horizontalSM,
+                                    AppSpacing.horizontalSpacing(SpacingSize.sm),
                                     Container(
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: 8, vertical: 4,
@@ -198,7 +198,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                                     ),
                                   ],
                                 ),
-                                AppSpacing.verticalXS,
+                                AppSpacing.verticalSpacing(SpacingSize.xs),
                                 AppText.bodySmall(
                                   '${pkg.origin.name} → ${pkg.destination.name}',
                                   color: AppColors.onSurfaceVariant,
@@ -219,7 +219,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                         ],
                       ),
                       if (pkg.status != 'delivered') ...[
-                        AppSpacing.verticalSM,
+                        AppSpacing.verticalSpacing(SpacingSize.sm),
                         Column(
                           children: [
                             Row(
@@ -229,7 +229,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                                 AppText.labelSmall('${pkg.progress}%'),
                               ],
                             ),
-                            AppSpacing.verticalXS,
+                            AppSpacing.verticalSpacing(SpacingSize.xs),
                             LinearProgressIndicator(
                               value: pkg.progress / 100,
                               backgroundColor: Colors.grey.withValues(alpha: 0.3),
@@ -294,7 +294,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                         size: 64,
                         color: AppColors.primary.withValues(alpha: 0.5),
                       ),
-                      AppSpacing.verticalSM,
+                      AppSpacing.verticalSpacing(SpacingSize.sm),
                       AppText.bodyMedium(
                         'Interactive Map View',
                         color: AppColors.onSurfaceVariant,
@@ -328,7 +328,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                               shape: BoxShape.circle,
                             ),
                           ),
-                          AppSpacing.horizontalXS,
+                          AppSpacing.horizontalSpacing(SpacingSize.xs),
                           AppText.labelSmall('Live', color: Colors.white),
                         ],
                       ),
@@ -349,7 +349,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                           _liveTracking ? Icons.pause : Icons.play_arrow,
                           size: 16,
                         ),
-                        AppSpacing.horizontalXS,
+                        AppSpacing.horizontalSpacing(SpacingSize.xs),
                         AppText.labelSmall(
                           _liveTracking ? 'Pause' : 'Resume',
                         ),
@@ -361,7 +361,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
             ),
           ),
 
-          AppSpacing.verticalLG,
+          AppSpacing.verticalSpacing(SpacingSize.lg),
 
           // Current Status Card
           AppCard.elevated(
@@ -378,7 +378,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                     color: AppColors.primary,
                   ),
                 ),
-                AppSpacing.horizontalMD,
+                AppSpacing.horizontalSpacing(SpacingSize.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -393,7 +393,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                           ),
                         ],
                       ),
-                      AppSpacing.verticalXS,
+                      AppSpacing.verticalSpacing(SpacingSize.xs),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -414,7 +414,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
             ),
           ),
 
-          AppSpacing.verticalLG,
+          AppSpacing.verticalSpacing(SpacingSize.lg),
 
           // Carrier Info
           AppCard.elevated(
@@ -428,7 +428,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                     color: Colors.white,
                   ),
                 ),
-                AppSpacing.horizontalMD,
+                AppSpacing.horizontalSpacing(SpacingSize.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -444,7 +444,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                                 size: ButtonSize.small,
                                 child: const Icon(Icons.phone, size: 16),
                               ),
-                              AppSpacing.horizontalSM,
+                              AppSpacing.horizontalSpacing(SpacingSize.sm),
                               AppButton.outline(
                                 onPressed: () {},
                                 size: ButtonSize.small,
@@ -454,15 +454,15 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                           ),
                         ],
                       ),
-                      AppSpacing.verticalXS,
+                      AppSpacing.verticalSpacing(SpacingSize.xs),
                       Row(
                         children: [
                           const Icon(Icons.star, size: 16, color: AppColors.accent),
-                          AppSpacing.horizontalXS,
+                          AppSpacing.horizontalSpacing(SpacingSize.xs),
                           AppText.bodySmall('${_selectedPackage?.carrier.rating ?? 0}'),
-                          AppSpacing.horizontalSM,
+                          AppSpacing.horizontalSpacing(SpacingSize.sm),
                           AppText.bodySmall('•'),
-                          AppSpacing.horizontalSM,
+                          AppSpacing.horizontalSpacing(SpacingSize.sm),
                           AppText.bodySmall(_selectedPackage?.carrier.vehicleNumber ?? 'N/A'),
                         ],
                       ),
@@ -485,7 +485,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             AppText.titleMedium('Tracking Timeline'),
-            AppSpacing.verticalLG,
+            AppSpacing.verticalSpacing(SpacingSize.lg),
             ...(_selectedPackage?.trackingEvents ?? []).asMap().entries.map((entry) {
               final index = entry.key;
               final event = entry.value;
@@ -518,7 +518,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                         ),
                     ],
                   ),
-                  AppSpacing.horizontalMD,
+                  AppSpacing.horizontalSpacing(SpacingSize.md),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -539,23 +539,23 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                             ),
                           ],
                         ),
-                        AppSpacing.verticalXS,
+                        AppSpacing.verticalSpacing(SpacingSize.xs),
                         AppText.bodySmall(
                           event.description,
                           color: AppColors.onSurfaceVariant,
                         ),
-                        AppSpacing.verticalXS,
+                        AppSpacing.verticalSpacing(SpacingSize.xs),
                         Row(
                           children: [
                             const Icon(Icons.location_on, size: 12, color: AppColors.onSurfaceVariant),
-                            AppSpacing.horizontalXS,
+                            AppSpacing.horizontalSpacing(SpacingSize.xs),
                             AppText.labelSmall(
                               event.location,
                               color: AppColors.onSurfaceVariant,
                             ),
                           ],
                         ),
-                        if (!isLast) AppSpacing.verticalMD,
+                        if (!isLast) AppSpacing.verticalSpacing(SpacingSize.md),
                       ],
                     ),
                   ),
@@ -579,7 +579,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 AppText.titleMedium('Package Information'),
-                AppSpacing.verticalLG,
+                AppSpacing.verticalSpacing(SpacingSize.lg),
                 _buildDetailRow('Package ID', _selectedPackage?.id ?? 'N/A'),
                 _buildDetailRow('Cost', '₦${_selectedPackage?.price.toInt() ?? 0}'),
                 _buildDetailRow('Status', _getStatusText(_selectedPackage?.status ?? '')),
@@ -588,7 +588,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
             ),
           ),
 
-          AppSpacing.verticalLG,
+          AppSpacing.verticalSpacing(SpacingSize.lg),
 
           // Route Information
           AppCard.elevated(
@@ -596,7 +596,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 AppText.titleMedium('Route Information'),
-                AppSpacing.verticalLG,
+                AppSpacing.verticalSpacing(SpacingSize.lg),
                 Row(
                   children: [
                     Container(
@@ -608,7 +608,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                       ),
                       child: const Icon(Icons.circle, size: 8, color: Colors.white),
                     ),
-                    AppSpacing.horizontalMD,
+                    AppSpacing.horizontalSpacing(SpacingSize.md),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -623,14 +623,14 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                     ),
                   ],
                 ),
-                AppSpacing.verticalMD,
+                AppSpacing.verticalSpacing(SpacingSize.md),
                 Row(
                   children: [
-                    AppSpacing.horizontalSM,
+                    AppSpacing.horizontalSpacing(SpacingSize.sm),
                     Container(width: 2, height: 32, color: AppColors.outline),
                   ],
                 ),
-                AppSpacing.verticalMD,
+                AppSpacing.verticalSpacing(SpacingSize.md),
                 Row(
                   children: [
                     Container(
@@ -642,7 +642,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                       ),
                       child: const Icon(Icons.location_on, size: 12, color: Colors.white),
                     ),
-                    AppSpacing.horizontalMD,
+                    AppSpacing.horizontalSpacing(SpacingSize.md),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -657,9 +657,9 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                     ),
                   ],
                 ),
-                AppSpacing.verticalLG,
+                AppSpacing.verticalSpacing(SpacingSize.lg),
                 const Divider(),
-                AppSpacing.verticalMD,
+                AppSpacing.verticalSpacing(SpacingSize.md),
                 Row(
                   children: [
                     Expanded(child: _buildDetailRow('Distance', '346 km')),
@@ -670,7 +670,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
             ),
           ),
 
-          AppSpacing.verticalLG,
+          AppSpacing.verticalSpacing(SpacingSize.lg),
 
           // Carrier Information
           AppCard.elevated(
@@ -678,7 +678,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 AppText.titleMedium('Carrier Information'),
-                AppSpacing.verticalLG,
+                AppSpacing.verticalSpacing(SpacingSize.lg),
                 Row(
                   children: [
                     CircleAvatar(
@@ -689,7 +689,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                         color: Colors.white,
                       ),
                     ),
-                    AppSpacing.horizontalMD,
+                    AppSpacing.horizontalSpacing(SpacingSize.md),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -698,7 +698,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                           Row(
                             children: [
                               const Icon(Icons.star, size: 16, color: AppColors.accent),
-                              AppSpacing.horizontalXS,
+                              AppSpacing.horizontalSpacing(SpacingSize.xs),
                               AppText.bodySmall('${_selectedPackage?.carrier.rating ?? 0} rating'),
                             ],
                           ),
@@ -707,14 +707,14 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                     ),
                   ],
                 ),
-                AppSpacing.verticalLG,
+                AppSpacing.verticalSpacing(SpacingSize.lg),
                 Row(
                   children: [
                     Expanded(child: _buildDetailRow('Phone', _selectedPackage?.carrier.phone ?? 'N/A')),
                     Expanded(child: _buildDetailRow('Vehicle', _selectedPackage?.carrier.vehicleNumber ?? 'N/A')),
                   ],
                 ),
-                AppSpacing.verticalLG,
+                AppSpacing.verticalSpacing(SpacingSize.lg),
                 Row(
                   children: [
                     Expanded(
@@ -724,13 +724,13 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             const Icon(Icons.phone, size: 16, color: Colors.white),
-                            AppSpacing.horizontalXS,
+                            AppSpacing.horizontalSpacing(SpacingSize.xs),
                             AppText.labelMedium('Call Carrier', color: Colors.white),
                           ],
                         ),
                       ),
                     ),
-                    AppSpacing.horizontalMD,
+                    AppSpacing.horizontalSpacing(SpacingSize.md),
                     Expanded(
                       child: AppButton.outline(
                         onPressed: () {},
@@ -738,7 +738,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             const Icon(Icons.message, size: 16),
-                            AppSpacing.horizontalXS,
+                            AppSpacing.horizontalSpacing(SpacingSize.xs),
                             AppText.labelMedium('Message'),
                           ],
                         ),

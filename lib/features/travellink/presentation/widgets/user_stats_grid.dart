@@ -26,7 +26,7 @@ class UserStatsGrid extends StatelessWidget {
                     color: AppColors.primary,
                   ),
                 ),
-                AppSpacing.horizontalMD,
+                AppSpacing.horizontalSpacing(SpacingSize.md),
                 Expanded(
                   child: UserStatCard(
                     title: 'Packages Carried',
@@ -37,7 +37,7 @@ class UserStatsGrid extends StatelessWidget {
                 ),
               ],
             ),
-            AppSpacing.verticalMD,
+            AppSpacing.verticalSpacing(SpacingSize.md),
             Row(
               children: [
                 Expanded(
@@ -48,7 +48,7 @@ class UserStatsGrid extends StatelessWidget {
                     color: AppColors.accent,
                   ),
                 ),
-                AppSpacing.horizontalMD,
+                AppSpacing.horizontalSpacing(SpacingSize.md),
                 Expanded(
                   child: UserStatCard(
                     title: 'Rating',
@@ -102,7 +102,7 @@ class UserStatCard extends StatelessWidget {
               ),
             ],
           ),
-          AppSpacing.verticalSM,
+          AppSpacing.verticalSpacing(SpacingSize.sm),
           AppText.bodySmall(
             title,
             color: AppColors.onSurfaceVariant,

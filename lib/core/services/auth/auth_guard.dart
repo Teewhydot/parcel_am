@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart' hide Transition;
 import 'package:get/get.dart';
 import '../../../features/travellink/presentation/bloc/auth/auth_bloc.dart';
-import '../../../features/travellink/presentation/bloc/auth/auth_state.dart';
+import '../../../features/travellink/presentation/bloc/auth/auth_data.dart';
+import '../../../core/bloc/base/base_state.dart';
 import '../../routes/routes.dart';
 
 class AuthGuard {
@@ -15,7 +16,11 @@ class AuthGuard {
   bool checkAuthentication(BuildContext context) {
     final authState = context.read<AuthBloc>().state;
     
-    if (!authState.isAuthenticated) {
+    final isAuthenticated = authState is DataState<AuthData> && 
+                            authState.data != null && 
+                            authState.data!.user != null;
+    
+    if (!isAuthenticated) {
       // Redirect to login screen
       Get.offAllNamed(Routes.login);
       return false;
@@ -31,27 +36,24 @@ class AuthGuard {
     Widget? loadingWidget,
     Widget? unauthenticatedWidget,
   }) {
-    return BlocBuilder<AuthBloc, AuthState>(
+    return BlocBuilder<AuthBloc, BaseState<AuthData>>(
       builder: (context, state) {
-        switch (state.status) {
-          case AuthStatus.loading:
-          case AuthStatus.initial:
-            return loadingWidget ?? const _DefaultLoadingWidget();
-            
-          case AuthStatus.authenticated:
-            return child;
-            
-          case AuthStatus.unauthenticated:
-          case AuthStatus.error:
-            // Auto-redirect to login
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              Get.offAllNamed(Routes.login);
-            });
-            return unauthenticatedWidget ?? const _DefaultUnauthenticatedWidget();
-            
-          default:
-            return unauthenticatedWidget ?? const _DefaultUnauthenticatedWidget();
+        final authData = state is DataState<AuthData> ? state.data : null;
+        final isAuthenticated = authData != null && authData.user != null;
+        
+        if (state.isLoading) {
+          return loadingWidget ?? const _DefaultLoadingWidget();
         }
+        
+        if (isAuthenticated) {
+          return child;
+        }
+        
+        // Auto-redirect to login
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Get.offAllNamed(Routes.login);
+        });
+        return unauthenticatedWidget ?? const _DefaultUnauthenticatedWidget();
       },
     );
   }
@@ -104,8 +106,11 @@ class AuthMiddleware extends GetMiddleware {
       if (Get.context != null) {
         try {
           final authState = Get.context!.read<AuthBloc>().state;
+          final isAuthenticated = authState is DataState<AuthData> && 
+                                  authState.data != null && 
+                                  authState.data!.user != null;
           
-          if (!authState.isAuthenticated) {
+          if (!isAuthenticated) {
             return const RouteSettings(name: Routes.login);
           }
         } catch (e) {

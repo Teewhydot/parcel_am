@@ -143,7 +143,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ),
                     ),
                     
-                    AppSpacing.verticalXXL,
+                    AppSpacing.verticalSpacing(SpacingSize.xxl),
                     
                     AnimatedSwitcher(
                       duration: const Duration(milliseconds: 300),
@@ -156,7 +156,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ),
                     ),
                     
-                    AppSpacing.verticalLG,
+                    AppSpacing.verticalSpacing(SpacingSize.lg),
                     
                     AnimatedSwitcher(
                       duration: const Duration(milliseconds: 300),
@@ -169,8 +169,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ),
                     ),
                     
-                    AppSpacing.verticalXXL,
-                    AppSpacing.verticalXL,
+                    AppSpacing.verticalSpacing(SpacingSize.xxl),
+                    AppSpacing.verticalSpacing(SpacingSize.xl),
                   ],
                 ),
               ),
@@ -192,7 +192,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    AppSpacing.verticalMD,
+                    AppSpacing.verticalSpacing(SpacingSize.md),
                     AppButton.outline(
                       onPressed: () {
                         sl<NavigationService>().navigateAndReplace(Routes.login, arguments: {'showSignIn': true});
@@ -216,7 +216,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                   color: Colors.white,
                                   fontWeight: FontWeight.w600,
                                 ),
-                                AppSpacing.horizontalSM,
+                                AppSpacing.horizontalSpacing(SpacingSize.sm),
                                 const Icon(
                                   Icons.chevron_right,
                                   size: 20,

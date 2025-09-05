@@ -54,23 +54,23 @@ class DashboardScreen extends StatelessWidget {
                           // Verification Status
                           if (authProvider.user?.verificationStatus != 'verified')
                             const VerificationBanner(),
-                          AppSpacing.verticalMD,
+                          AppSpacing.verticalSpacing(SpacingSize.md),
                           // Quick Actions
                           AppText.titleLarge(
                             'Quick Actions',
                             fontWeight: FontWeight.bold,
                           ),
-                          AppSpacing.verticalLG,
+                          AppSpacing.verticalSpacing(SpacingSize.lg),
                           _QuickActionsRow(),
-                          AppSpacing.verticalXXL,
+                          AppSpacing.verticalSpacing(SpacingSize.xxl),
                           // User Stats
                           AppText.titleLarge(
                             'Your Stats',
                             fontWeight: FontWeight.bold,
                           ),
-                          AppSpacing.verticalLG,
+                          AppSpacing.verticalSpacing(SpacingSize.lg),
                           const UserStatsGrid(),
-                          AppSpacing.verticalXXL,
+                          AppSpacing.verticalSpacing(SpacingSize.xxl),
                           _RecentActivitySection(),
                         ],
                       ),
@@ -112,7 +112,7 @@ class _HeaderSection extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
-                        AppSpacing.verticalXS,
+                        AppSpacing.verticalSpacing(SpacingSize.xs),
                         AppText.bodyLarge(
                           'Ready to send or deliver today?',
                           color: Colors.white70,
@@ -140,7 +140,7 @@ class _HeaderSection extends StatelessWidget {
                   ),
                 ],
               ),
-              AppSpacing.verticalXL,
+              AppSpacing.verticalSpacing(SpacingSize.xl),
               Row(
                 children: [
                   Expanded(
@@ -151,7 +151,7 @@ class _HeaderSection extends StatelessWidget {
                       color: AppColors.primary,
                     ),
                   ),
-                  AppSpacing.horizontalMD,
+                  AppSpacing.horizontalSpacing(SpacingSize.md),
                   Expanded(
                     child: _StatCard(
                       icon: Icons.check_circle_outline,
@@ -160,7 +160,7 @@ class _HeaderSection extends StatelessWidget {
                       color: AppColors.secondary,
                     ),
                   ),
-                  AppSpacing.horizontalMD,
+                  AppSpacing.horizontalSpacing(SpacingSize.md),
                   Expanded(
                     child: _StatCard(
                       icon: Icons.monetization_on_outlined,
@@ -232,13 +232,13 @@ class _StatCard extends StatelessWidget {
             backgroundColor: color.withValues(alpha: 0.2),
             color: Colors.white,
           ),
-          AppSpacing.verticalSM,
+          AppSpacing.verticalSpacing(SpacingSize.sm),
           AppText.labelSmall(
             title,
             color: Colors.white.withValues(alpha: 0.8),
             textAlign: TextAlign.center,
           ),
-          AppSpacing.verticalXS,
+          AppSpacing.verticalSpacing(SpacingSize.xs),
           AppText.titleMedium(
             value,
             color: Colors.white,
@@ -267,7 +267,7 @@ class _QuickActionsRow extends StatelessWidget {
             },
           ),
         ),
-        AppSpacing.horizontalLG,
+        AppSpacing.horizontalSpacing(SpacingSize.lg),
         Expanded(
           child: _ActionCard(
             icon: Icons.search,
@@ -316,13 +316,13 @@ class _ActionCard extends StatelessWidget {
             backgroundColor: Colors.white.withValues(alpha: 0.2),
             color: Colors.white,
           ),
-          AppSpacing.verticalMD,
+          AppSpacing.verticalSpacing(SpacingSize.md),
           AppText.titleMedium(
             title,
             color: Colors.white,
             fontWeight: FontWeight.bold,
           ),
-          AppSpacing.verticalXS,
+          AppSpacing.verticalSpacing(SpacingSize.xs),
           AppText.bodySmall(
             subtitle,
             color: Colors.white.withValues(alpha: 0.8),
@@ -351,7 +351,7 @@ class _RecentActivitySection extends StatelessWidget {
             ),
           ],
         ),
-        AppSpacing.verticalLG,
+        AppSpacing.verticalSpacing(SpacingSize.lg),
         ListView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -455,7 +455,7 @@ class _ActivityItem extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-          AppSpacing.horizontalLG,
+          AppSpacing.horizontalSpacing(SpacingSize.lg),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

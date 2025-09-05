@@ -11,7 +11,8 @@ import '../../../../core/widgets/app_text.dart';
 import '../../../../injection_container.dart';
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_event.dart';
-import '../bloc/auth/auth_state.dart';
+import '../bloc/auth/auth_data.dart';
+import '../../../../core/bloc/base/base_state.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -57,8 +58,11 @@ class _SplashScreenState extends State<SplashScreen>
     
     // Listen to auth state and navigate accordingly
     final authState = context.read<AuthBloc>().state;
+    final isAuthenticated = authState is DataState<AuthData> && 
+                            authState.data != null && 
+                            authState.data!.user != null;
     
-    if (authState.isAuthenticated) {
+    if (isAuthenticated) {
       // User is already logged in, go to dashboard
       sl<NavigationService>().navigateAndReplace(Routes.dashboard);
     } else {
@@ -69,16 +73,20 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<AuthBloc, AuthState>(
+    return BlocListener<AuthBloc, BaseState<AuthData>>(
       listener: (context, state) {
         // Handle auth state changes during splash
-        if (state.status == AuthStatus.authenticated) {
+        final isAuthenticated = state is DataState<AuthData> && 
+                                state.data != null && 
+                                state.data!.user != null;
+                                
+        if (isAuthenticated) {
           Future.delayed(const Duration(milliseconds: 500), () {
             if (mounted) {
               sl<NavigationService>().navigateAndReplace(Routes.dashboard);
             }
           });
-        } else if (state.status == AuthStatus.unauthenticated) {
+        } else if (state is InitialState || state is ErrorState) {
           Future.delayed(const Duration(milliseconds: 500), () {
             if (mounted) {
               sl<NavigationService>().navigateAndReplace(Routes.onboarding);
@@ -164,7 +172,7 @@ class _SplashScreenState extends State<SplashScreen>
                             ],
                           ),
 
-                          AppSpacing.verticalXXL,
+                          AppSpacing.verticalSpacing(SpacingSize.xxl),
 
                           // App Name
                           AppText.headlineLarge(
@@ -173,15 +181,15 @@ class _SplashScreenState extends State<SplashScreen>
                             fontWeight: FontWeight.bold,
                             textAlign: TextAlign.center,
                           ),
-                          AppSpacing.verticalSM,
+                          AppSpacing.verticalSpacing(SpacingSize.sm),
                           AppText.bodyLarge(
                             'Secure package delivery across Nigeria',
                             color: Colors.white.withValues(alpha: 0.8),
                             textAlign: TextAlign.center,
                           ),
 
-                          AppSpacing.verticalXXL,
-                          AppSpacing.verticalLG,
+                          AppSpacing.verticalSpacing(SpacingSize.xxl),
+                          AppSpacing.verticalSpacing(SpacingSize.lg),
 
                           // Feature Icons
                           Row(
@@ -202,8 +210,8 @@ class _SplashScreenState extends State<SplashScreen>
                             ],
                           ),
 
-                          AppSpacing.verticalXXL,
-                          AppSpacing.verticalLG,
+                          AppSpacing.verticalSpacing(SpacingSize.xxl),
+                          AppSpacing.verticalSpacing(SpacingSize.lg),
 
                           // Loading Indicator
                           _LoadingDots(),
@@ -250,7 +258,7 @@ class _FeatureIcon extends StatelessWidget {
           borderRadius: BorderRadius.circular(24),
           child: Icon(icon, color: Colors.white, size: 24),
         ),
-        AppSpacing.verticalSM,
+        AppSpacing.verticalSpacing(SpacingSize.sm),
         AppText.labelSmall(
           title,
           color: Colors.white.withValues(alpha: 0.8),

@@ -1,80 +1,62 @@
 import 'package:equatable/equatable.dart';
 import '../../../domain/entities/user_entity.dart';
 
-enum AuthStatus {
-  initial,
-  loading,
-  phoneNumberEntered,
-  otpSent,
-  otpVerifying,
-  authenticated,
-  unauthenticated,
-  error,
-}
-
-class AuthState extends Equatable {
-  final AuthStatus status;
+/// Data class to hold authentication-specific properties
+class AuthData extends Equatable {
   final UserEntity? user;
   final String phoneNumber;
   final String otp;
   final String? verificationId;
   final int? resendToken;
-  final String? errorMessage;
   final bool canResendOtp;
   final int resendCooldown;
+  final bool isOtpSent;
 
-  const AuthState({
-    this.status = AuthStatus.initial,
+  const AuthData({
     this.user,
     this.phoneNumber = '',
     this.otp = '',
     this.verificationId,
     this.resendToken,
-    this.errorMessage,
     this.canResendOtp = false,
     this.resendCooldown = 0,
+    this.isOtpSent = false,
   });
 
-  AuthState copyWith({
-    AuthStatus? status,
+  AuthData copyWith({
     UserEntity? user,
     String? phoneNumber,
     String? otp,
     String? verificationId,
     int? resendToken,
-    String? errorMessage,
     bool? canResendOtp,
     int? resendCooldown,
+    bool? isOtpSent,
   }) {
-    return AuthState(
-      status: status ?? this.status,
+    return AuthData(
       user: user ?? this.user,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       otp: otp ?? this.otp,
       verificationId: verificationId ?? this.verificationId,
       resendToken: resendToken ?? this.resendToken,
-      errorMessage: errorMessage ?? this.errorMessage,
       canResendOtp: canResendOtp ?? this.canResendOtp,
       resendCooldown: resendCooldown ?? this.resendCooldown,
+      isOtpSent: isOtpSent ?? this.isOtpSent,
     );
   }
 
-  bool get isAuthenticated => status == AuthStatus.authenticated && user != null;
-  bool get isLoading => status == AuthStatus.loading || status == AuthStatus.otpVerifying;
-  bool get hasError => status == AuthStatus.error && errorMessage != null;
-  bool get isOtpSent => status == AuthStatus.otpSent;
+  bool get isAuthenticated => user != null;
   bool get isPhoneNumberValid => phoneNumber.isNotEmpty && phoneNumber.length >= 14; // +234 XXX XXX XXXX
 
   @override
   List<Object?> get props => [
-        status,
         user,
         phoneNumber,
         otp,
         verificationId,
         resendToken,
-        errorMessage,
         canResendOtp,
         resendCooldown,
+        isOtpSent,
       ];
 }

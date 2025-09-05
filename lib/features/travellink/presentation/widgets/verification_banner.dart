@@ -32,7 +32,7 @@ class VerificationBanner extends StatelessWidget {
                   size: 24,
                 ),
               ),
-              AppSpacing.horizontalMD,
+              AppSpacing.horizontalSpacing(SpacingSize.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

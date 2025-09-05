@@ -245,7 +245,7 @@ class _AppInputState extends State<AppInput> {
             widget.label!,
             fontWeight: FontWeight.w600,
           ),
-          AppSpacing.verticalSM,
+          AppSpacing.verticalSpacing(SpacingSize.sm),
         ],
         TextFormField(
           controller: widget.controller,
@@ -295,7 +295,7 @@ class _AppInputState extends State<AppInput> {
           ),
         ),
         if (widget.helperText != null || widget.errorText != null) ...[
-          AppSpacing.verticalXS,
+          AppSpacing.verticalSpacing(SpacingSize.xs),
           AppText.bodySmall(
             widget.errorText ?? widget.helperText!,
             color: widget.errorText != null ? AppColors.error : AppColors.onSurfaceVariant,

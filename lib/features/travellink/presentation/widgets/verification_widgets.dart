@@ -62,7 +62,7 @@ class ProgressIndicatorWidget extends StatelessWidget {
               );
             }),
           ),
-          AppSpacing.verticalMD,
+          AppSpacing.verticalSpacing(SpacingSize.md),
           AppText.titleMedium(
             steps[currentStep].title,
             fontWeight: FontWeight.w600,
@@ -161,7 +161,7 @@ class _DocumentUploadCardState extends State<DocumentUploadCard> {
                       widget.title,
                       fontWeight: FontWeight.w600,
                     ),
-                    AppSpacing.verticalXS,
+                    AppSpacing.verticalSpacing(SpacingSize.xs),
                     AppText.bodySmall(
                       widget.description,
                       color: AppColors.onSurfaceVariant,
@@ -177,7 +177,7 @@ class _DocumentUploadCardState extends State<DocumentUploadCard> {
                 ),
             ],
           ),
-          AppSpacing.verticalMD,
+          AppSpacing.verticalSpacing(SpacingSize.md),
           if (!isUploaded)
             AppButton.outline(
               onPressed: _isUploading ? null : _pickDocument,
@@ -197,7 +197,7 @@ class _DocumentUploadCardState extends State<DocumentUploadCard> {
                           widget.isCamera ? Icons.camera_alt : Icons.upload_file,
                           size: 16,
                         ),
-                        AppSpacing.horizontalXS,
+                        AppSpacing.horizontalSpacing(SpacingSize.xs),
                         AppText.labelMedium(
                           widget.isCamera ? 'Take Photo' : 'Upload File',
                         ),
@@ -217,7 +217,7 @@ class _DocumentUploadCardState extends State<DocumentUploadCard> {
                     color: AppColors.success,
                     size: 16,
                   ),
-                  AppSpacing.horizontalXS,
+                  AppSpacing.horizontalSpacing(SpacingSize.xs),
                   Expanded(
                     child: AppText.bodySmall(
                       'Document uploaded successfully',
@@ -269,7 +269,7 @@ class InfoCard extends StatelessWidget {
             color: color,
             size: 20,
           ),
-          AppSpacing.horizontalSM,
+          AppSpacing.horizontalSpacing(SpacingSize.sm),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -280,7 +280,7 @@ class InfoCard extends StatelessWidget {
                   color: color,
                   fontWeight: FontWeight.w600,
                 ),
-                AppSpacing.verticalXS,
+                AppSpacing.verticalSpacing(SpacingSize.xs),
                 AppText.bodySmall(
                   content,
                   color: AppColors.onSurfaceVariant,
@@ -325,7 +325,7 @@ class TipsCard extends StatelessWidget {
                 color: color,
                 size: 20,
               ),
-              AppSpacing.horizontalSM,
+              AppSpacing.horizontalSpacing(SpacingSize.sm),
               AppText(
                 title,
                 variant: TextVariant.titleSmall,
@@ -334,7 +334,7 @@ class TipsCard extends StatelessWidget {
               ),
             ],
           ),
-          AppSpacing.verticalSM,
+          AppSpacing.verticalSpacing(SpacingSize.sm),
           ...tips.map((tip) => Padding(
             padding: const EdgeInsets.only(bottom: 4),
             child: Row(
@@ -417,7 +417,7 @@ class DocumentReviewRow extends StatelessWidget {
             color: isUploaded ? AppColors.success : AppColors.error,
             size: 20,
           ),
-          AppSpacing.horizontalSM,
+          AppSpacing.horizontalSpacing(SpacingSize.sm),
           Expanded(
             child: AppText.bodyMedium(
               title,

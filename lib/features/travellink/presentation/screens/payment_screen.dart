@@ -121,7 +121,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       ]
                   ],
                 ),
-                AppSpacing.verticalSM,
+                AppSpacing.verticalSpacing(SpacingSize.sm),
                 Text(
                   steps[currentStep]['title'],
                   style: const TextStyle(
@@ -208,7 +208,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                AppSpacing.verticalLG,
+                AppSpacing.verticalSpacing(SpacingSize.lg),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -225,7 +225,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         size: 24,
                       ),
                     ),
-                    AppSpacing.horizontalMD,
+                    AppSpacing.horizontalSpacing(SpacingSize.md),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -269,7 +269,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
           ),
         ),
 
-        AppSpacing.verticalLG,
+        AppSpacing.verticalSpacing(SpacingSize.lg),
 
         // Price Breakdown Card
         Card(
@@ -285,7 +285,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                AppSpacing.verticalLG,
+                AppSpacing.verticalSpacing(SpacingSize.lg),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -296,7 +296,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     Text(packageDetails['deliveryFee']!),
                   ],
                 ),
-                AppSpacing.verticalSM,
+                AppSpacing.verticalSpacing(SpacingSize.sm),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -333,7 +333,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
           ),
         ),
 
-        AppSpacing.verticalLG,
+        AppSpacing.verticalSpacing(SpacingSize.lg),
 
         // Escrow Protection Notice
         Container(
@@ -353,7 +353,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 color: AppColors.primary,
                 size: 20,
               ),
-              AppSpacing.horizontalMD,
+              AppSpacing.horizontalSpacing(SpacingSize.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -399,7 +399,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                AppSpacing.verticalLG,
+                AppSpacing.verticalSpacing(SpacingSize.lg),
                 for (var method in paymentMethods) ...
                   [
                     GestureDetector(
@@ -432,7 +432,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                               color: AppColors.onSurfaceVariant,
                               size: 24,
                             ),
-                            AppSpacing.horizontalMD,
+                            AppSpacing.horizontalSpacing(SpacingSize.md),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -482,7 +482,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
         if (paymentMethod == 'bank') ...
           [
-            AppSpacing.verticalLG,
+            AppSpacing.verticalSpacing(SpacingSize.lg),
             Card(
               child: Padding(
                 padding: AppSpacing.paddingLG,
@@ -496,7 +496,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    AppSpacing.verticalLG,
+                    AppSpacing.verticalSpacing(SpacingSize.lg),
                     TextFormField(
                       controller: _accountNumberController,
                       decoration: const InputDecoration(
@@ -506,7 +506,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       ),
                       keyboardType: TextInputType.number,
                     ),
-                    AppSpacing.verticalLG,
+                    AppSpacing.verticalSpacing(SpacingSize.lg),
                     TextFormField(
                       controller: _bankNameController,
                       decoration: const InputDecoration(
@@ -546,7 +546,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     size: 32,
                   ),
                 ),
-                AppSpacing.verticalLG,
+                AppSpacing.verticalSpacing(SpacingSize.lg),
                 const Text(
                   'Securing Your Payment',
                   style: TextStyle(
@@ -554,7 +554,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                AppSpacing.verticalSM,
+                AppSpacing.verticalSpacing(SpacingSize.sm),
                 Text(
                   'Your ${packageDetails['total']} is being deposited into our secure escrow system',
                   textAlign: TextAlign.center,
@@ -563,13 +563,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     fontSize: 14,
                   ),
                 ),
-                AppSpacing.verticalXXL,
+                AppSpacing.verticalSpacing(SpacingSize.xxl),
                 LinearProgressIndicator(
                   value: 0.75,
                   backgroundColor: AppColors.surfaceVariant,
                   valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
                 ),
-                AppSpacing.verticalLG,
+                AppSpacing.verticalSpacing(SpacingSize.lg),
                 const Text(
                   'Processing payment...',
                   style: TextStyle(
@@ -582,7 +582,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
           ),
         ),
 
-        AppSpacing.verticalLG,
+        AppSpacing.verticalSpacing(SpacingSize.lg),
 
         // How Escrow Works Card
         Card(
@@ -598,21 +598,21 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                AppSpacing.verticalLG,
+                AppSpacing.verticalSpacing(SpacingSize.lg),
                 _buildEscrowStep(
                   1,
                   'Payment Secured',
                   'Your money is held safely in escrow',
                   AppColors.primary,
                 ),
-                AppSpacing.verticalLG,
+                AppSpacing.verticalSpacing(SpacingSize.lg),
                 _buildEscrowStep(
                   2,
                   'Package Delivered',
                   'Traveler delivers your package',
                   AppColors.secondary,
                 ),
-                AppSpacing.verticalLG,
+                AppSpacing.verticalSpacing(SpacingSize.lg),
                 _buildEscrowStep(
                   3,
                   'Payment Released',
@@ -649,7 +649,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             ),
           ),
         ),
-        AppSpacing.horizontalMD,
+        AppSpacing.horizontalSpacing(SpacingSize.md),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -699,7 +699,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        AppSpacing.verticalSM,
+        AppSpacing.verticalSpacing(SpacingSize.sm),
         Text(
           'Your ${packageDetails['total']} has been successfully deposited into escrow',
           textAlign: TextAlign.center,
@@ -707,7 +707,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             color: AppColors.onSurfaceVariant,
           ),
         ),
-        AppSpacing.verticalXXL,
+        AppSpacing.verticalSpacing(SpacingSize.xxl),
 
         Card(
           child: Padding(
@@ -722,7 +722,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                AppSpacing.verticalLG,
+                AppSpacing.verticalSpacing(SpacingSize.lg),
                 Container(
                   padding: AppSpacing.paddingMD,
                   decoration: BoxDecoration(
@@ -736,7 +736,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         color: AppColors.primary,
                         size: 20,
                       ),
-                      AppSpacing.horizontalMD,
+                      AppSpacing.horizontalSpacing(SpacingSize.md),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -761,7 +761,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     ],
                   ),
                 ),
-                AppSpacing.verticalMD,
+                AppSpacing.verticalSpacing(SpacingSize.md),
                 Container(
                   padding: AppSpacing.paddingMD,
                   decoration: BoxDecoration(
@@ -775,7 +775,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         color: AppColors.onSurfaceVariant,
                         size: 20,
                       ),
-                      AppSpacing.horizontalMD,
+                      AppSpacing.horizontalSpacing(SpacingSize.md),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -805,7 +805,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
           ),
         ),
 
-        AppSpacing.verticalXXL,
+        AppSpacing.verticalSpacing(SpacingSize.xxl),
 
         Column(
           children: [
@@ -829,7 +829,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 ),
               ),
             ),
-            AppSpacing.verticalMD,
+            AppSpacing.verticalSpacing(SpacingSize.md),
             SizedBox(
               width: double.infinity,
               height: SpacingSize.massive.value,

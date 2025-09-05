@@ -21,29 +21,9 @@ class AppSpacing {
   static Widget verticalSpacing(SpacingSize size) =>
       SizedBox(height: size.value.h);
 
-  static const Widget verticalXS = SizedBox(height: 4.0);
-  static const Widget verticalSM = SizedBox(height: 8.0);
-  static const Widget verticalMD = SizedBox(height: 12.0);
-  static const Widget verticalLG = SizedBox(height: 16.0);
-  static const Widget verticalXL = SizedBox(height: 20.0);
-  static const Widget verticalXXL = SizedBox(height: 24.0);
-  static const Widget verticalXXXL = SizedBox(height: 32.0);
-  static const Widget verticalHuge = SizedBox(height: 40.0);
-  static const Widget verticalMassive = SizedBox(height: 48.0);
-
   // Horizontal Spacing
   static Widget horizontalSpacing(SpacingSize size) =>
       SizedBox(width: size.value.w);
-
-  static const Widget horizontalXS = SizedBox(width: 4.0);
-  static const Widget horizontalSM = SizedBox(width: 8.0);
-  static const Widget horizontalMD = SizedBox(width: 12.0);
-  static const Widget horizontalLG = SizedBox(width: 16.0);
-  static const Widget horizontalXL = SizedBox(width: 20.0);
-  static const Widget horizontalXXL = SizedBox(width: 24.0);
-  static const Widget horizontalXXXL = SizedBox(width: 32.0);
-  static const Widget horizontalHuge = SizedBox(width: 40.0);
-  static const Widget horizontalMassive = SizedBox(width: 48.0);
 
   // Padding Values
   static const EdgeInsets paddingXS = EdgeInsets.all(4.0);

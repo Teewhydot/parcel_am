@@ -86,7 +86,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AppText.titleMedium('Tell us about yourself'),
-          AppSpacing.verticalLG,
+          AppSpacing.verticalSpacing(SpacingSize.lg),
           
           Row(
             children: [
@@ -97,7 +97,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                   hintText: 'John',
                 ),
               ),
-              AppSpacing.horizontalMD,
+              AppSpacing.horizontalSpacing(SpacingSize.md),
               Expanded(
                 child: AppInput(
                   controller: _lastNameController,
@@ -108,7 +108,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
             ],
           ),
           
-          AppSpacing.verticalMD,
+          AppSpacing.verticalSpacing(SpacingSize.md),
           AppInput(
             controller: _dobController,
             label: 'Date of Birth *',
@@ -118,7 +118,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
             onTap: _selectDateOfBirth,
           ),
           
-          AppSpacing.verticalMD,
+          AppSpacing.verticalSpacing(SpacingSize.md),
           DropdownButtonFormField<String>(
             value: _selectedGender,
             decoration: const InputDecoration(
@@ -131,9 +131,9 @@ class _VerificationScreenState extends State<VerificationScreen> {
             onChanged: (value) => setState(() => _selectedGender = value!),
           ),
           
-          AppSpacing.verticalLG,
+          AppSpacing.verticalSpacing(SpacingSize.lg),
           AppText.titleMedium('Government IDs'),
-          AppSpacing.verticalMD,
+          AppSpacing.verticalSpacing(SpacingSize.md),
           
           AppInput(
             controller: _ninController,
@@ -143,7 +143,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
             maxLength: 11,
           ),
           
-          AppSpacing.verticalMD,
+          AppSpacing.verticalSpacing(SpacingSize.md),
           AppInput(
             controller: _bvnController,
             label: 'BVN (Bank Verification Number)',
@@ -152,7 +152,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
             maxLength: 11,
           ),
           
-          AppSpacing.verticalLG,
+          AppSpacing.verticalSpacing(SpacingSize.lg),
           const InfoCard(
             title: 'Privacy Notice',
             content: VerificationConstants.privacyNotice,
@@ -171,12 +171,12 @@ class _VerificationScreenState extends State<VerificationScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AppText.titleMedium('Upload Identity Documents'),
-          AppSpacing.verticalMD,
+          AppSpacing.verticalSpacing(SpacingSize.md),
           AppText.bodyMedium(
             'Please upload clear, readable photos of your documents',
             color: AppColors.onSurfaceVariant,
           ),
-          AppSpacing.verticalLG,
+          AppSpacing.verticalSpacing(SpacingSize.lg),
           
           DocumentUploadCard(
             title: 'Government ID',
@@ -186,7 +186,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
             onUpload: (document) => setState(() => _uploadedDocuments['government_id'] = document),
           ),
           
-          AppSpacing.verticalMD,
+          AppSpacing.verticalSpacing(SpacingSize.md),
           DocumentUploadCard(
             title: 'Selfie with ID',
             description: 'Take a selfie holding your government ID next to your face',
@@ -196,7 +196,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
             isCamera: true,
           ),
           
-          AppSpacing.verticalLG,
+          AppSpacing.verticalSpacing(SpacingSize.lg),
           const TipsCard(
             title: 'Tips for better photos',
             tips: VerificationConstants.photoTips,
@@ -215,7 +215,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AppText.titleMedium('Address Information'),
-          AppSpacing.verticalLG,
+          AppSpacing.verticalSpacing(SpacingSize.lg),
           
           AppInput(
             controller: _addressController,
@@ -224,7 +224,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
             maxLines: 2,
           ),
           
-          AppSpacing.verticalMD,
+          AppSpacing.verticalSpacing(SpacingSize.md),
           Row(
             children: [
               Expanded(
@@ -234,7 +234,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                   hintText: 'Lagos',
                 ),
               ),
-              AppSpacing.horizontalMD,
+              AppSpacing.horizontalSpacing(SpacingSize.md),
               Expanded(
                 child: DropdownButtonFormField<String>(
                   value: _stateController.text.isNotEmpty ? _stateController.text : null,
@@ -251,9 +251,9 @@ class _VerificationScreenState extends State<VerificationScreen> {
             ],
           ),
           
-          AppSpacing.verticalLG,
+          AppSpacing.verticalSpacing(SpacingSize.lg),
           AppText.titleMedium('Address Verification Document'),
-          AppSpacing.verticalMD,
+          AppSpacing.verticalSpacing(SpacingSize.md),
           
           DocumentUploadCard(
             title: 'Proof of Address',
@@ -263,7 +263,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
             onUpload: (document) => setState(() => _uploadedDocuments['proof_of_address'] = document),
           ),
           
-          AppSpacing.verticalLG,
+          AppSpacing.verticalSpacing(SpacingSize.lg),
           const TipsCard(
             title: 'Accepted Documents',
             tips: VerificationConstants.acceptedAddressDocuments,
@@ -282,19 +282,19 @@ class _VerificationScreenState extends State<VerificationScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AppText.titleMedium('Review Your Information'),
-          AppSpacing.verticalMD,
+          AppSpacing.verticalSpacing(SpacingSize.md),
           AppText.bodyMedium(
             'Please review all information before submitting',
             color: AppColors.onSurfaceVariant,
           ),
-          AppSpacing.verticalLG,
+          AppSpacing.verticalSpacing(SpacingSize.lg),
           
           _buildPersonalInfoSummary(),
-          AppSpacing.verticalMD,
+          AppSpacing.verticalSpacing(SpacingSize.md),
           _buildAddressSummary(),
-          AppSpacing.verticalMD,
+          AppSpacing.verticalSpacing(SpacingSize.md),
           _buildDocumentsSummary(),
-          AppSpacing.verticalLG,
+          AppSpacing.verticalSpacing(SpacingSize.lg),
           
           const InfoCard(
             title: 'Verification Process',
@@ -315,7 +315,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AppText.titleMedium('Personal Information'),
-          AppSpacing.verticalMD,
+          AppSpacing.verticalSpacing(SpacingSize.md),
           ReviewRow(label: 'Full Name', value: '${_firstNameController.text} ${_lastNameController.text}'),
           ReviewRow(label: 'Date of Birth', value: _dobController.text),
           ReviewRow(label: 'Gender', value: _selectedGender),
@@ -334,7 +334,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AppText.titleMedium('Address Information'),
-          AppSpacing.verticalMD,
+          AppSpacing.verticalSpacing(SpacingSize.md),
           ReviewRow(label: 'Address', value: _addressController.text),
           ReviewRow(label: 'City', value: _cityController.text),
           ReviewRow(label: 'State', value: _stateController.text),
@@ -351,7 +351,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AppText.titleMedium('Uploaded Documents'),
-          AppSpacing.verticalMD,
+          AppSpacing.verticalSpacing(SpacingSize.md),
           DocumentReviewRow(title: 'Government ID', isUploaded: _uploadedDocuments['government_id'] != null),
           DocumentReviewRow(title: 'Selfie with ID', isUploaded: _uploadedDocuments['selfie_with_id'] != null),
           DocumentReviewRow(title: 'Proof of Address', isUploaded: _uploadedDocuments['proof_of_address'] != null),
@@ -373,7 +373,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                 child: AppText.labelMedium('Back'),
               ),
             ),
-          if (_currentStep > 0) AppSpacing.horizontalMD,
+          if (_currentStep > 0) AppSpacing.horizontalSpacing(SpacingSize.md),
           Expanded(
             flex: _currentStep > 0 ? 2 : 1,
             child: AppButton.primary(
@@ -463,9 +463,9 @@ class _VerificationScreenState extends State<VerificationScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(Icons.check_circle, size: 64, color: AppColors.success),
-              AppSpacing.verticalMD,
+              AppSpacing.verticalSpacing(SpacingSize.md),
               AppText.titleMedium('Verification Submitted!', textAlign: TextAlign.center),
-              AppSpacing.verticalXS,
+              AppSpacing.verticalSpacing(SpacingSize.xs),
               AppText.bodyMedium(VerificationConstants.successMessage, textAlign: TextAlign.center),
             ],
           ),

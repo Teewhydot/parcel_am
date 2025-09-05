@@ -11,7 +11,7 @@ import '../base/base_state.dart';
 
 /// A simplified version of EnhancedBlocManager that maintains core functionality
 /// without excessive configuration options
-class SimplifiedEnhancedBlocManager<T extends BlocBase<S>, S extends BaseState>
+class BlocManager<T extends BlocBase<S>, S extends BaseState>
     extends StatelessWidget {
   /// The BLoC instance to manage
   final T bloc;
@@ -47,7 +47,7 @@ class SimplifiedEnhancedBlocManager<T extends BlocBase<S>, S extends BaseState>
   /// Pull-to-refresh callback
   final Future<void> Function()? onRefresh;
 
-  const SimplifiedEnhancedBlocManager({
+  const BlocManager({
     super.key,
     required this.bloc,
     required this.child,

@@ -174,10 +174,10 @@ class AppButton extends StatelessWidget {
           valueColor: AlwaysStoppedAnimation<Color>(_getContentColor()),
         ),
       ));
-      children.add(AppSpacing.horizontalSM);
+      children.add(AppSpacing.horizontalSpacing(SpacingSize.sm));
     } else if (leadingIcon != null) {
       children.add(leadingIcon!);
-      children.add(AppSpacing.horizontalSM);
+      children.add(AppSpacing.horizontalSpacing(SpacingSize.sm));
     }
     
     children.add(DefaultTextStyle(
@@ -190,7 +190,7 @@ class AppButton extends StatelessWidget {
     ));
     
     if (!loading && trailingIcon != null) {
-      children.add(AppSpacing.horizontalSM);
+      children.add(AppSpacing.horizontalSpacing(SpacingSize.sm));
       children.add(trailingIcon!);
     }
     
