@@ -1,0 +1,124 @@
+import '../../domain/entities/user_entity.dart';
+
+class UserModel extends UserEntity {
+  const UserModel({
+    required super.uid,
+    required super.displayName,
+    required super.email,
+    required super.phoneNumber,
+    required super.isVerified,
+    required super.verificationStatus,
+    required super.createdAt,
+    required super.additionalData,
+    super.profilePhotoUrl,
+    super.rating,
+    super.completedDeliveries,
+    super.packagesSent,
+    super.totalEarnings,
+  });
+
+  factory UserModel.fromJson(Map<String, dynamic> json) {
+    return UserModel(
+      uid: json['uid'],
+      displayName: json['displayName'],
+      email: json['email'],
+      phoneNumber: json['phoneNumber'],
+      isVerified: json['isVerified'],
+      verificationStatus: json['verificationStatus'],
+      createdAt: DateTime.parse(json['createdAt']),
+      additionalData: json['additionalData'] ?? {},
+      profilePhotoUrl: json['profilePhotoUrl'],
+      rating: json['rating']?.toDouble(),
+      completedDeliveries: json['completedDeliveries'],
+      packagesSent: json['packagesSent'],
+      totalEarnings: json['totalEarnings']?.toDouble(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'uid': uid,
+      'displayName': displayName,
+      'email': email,
+      'phoneNumber': phoneNumber,
+      'isVerified': isVerified,
+      'verificationStatus': verificationStatus,
+      'createdAt': createdAt.toIso8601String(),
+      'additionalData': additionalData,
+      'profilePhotoUrl': profilePhotoUrl,
+      'rating': rating,
+      'completedDeliveries': completedDeliveries,
+      'packagesSent': packagesSent,
+      'totalEarnings': totalEarnings,
+    };
+  }
+
+  factory UserModel.fromEntity(UserEntity entity) {
+    return UserModel(
+      uid: entity.uid,
+      displayName: entity.displayName,
+      email: entity.email,
+      phoneNumber: entity.phoneNumber,
+      isVerified: entity.isVerified,
+      verificationStatus: entity.verificationStatus,
+      createdAt: entity.createdAt,
+      additionalData: entity.additionalData,
+      profilePhotoUrl: entity.profilePhotoUrl,
+      rating: entity.rating,
+      completedDeliveries: entity.completedDeliveries,
+      packagesSent: entity.packagesSent,
+      totalEarnings: entity.totalEarnings,
+    );
+  }
+
+  UserEntity toEntity() {
+    return UserEntity(
+      uid: uid,
+      displayName: displayName,
+      email: email,
+      phoneNumber: phoneNumber,
+      isVerified: isVerified,
+      verificationStatus: verificationStatus,
+      createdAt: createdAt,
+      additionalData: additionalData,
+      profilePhotoUrl: profilePhotoUrl,
+      rating: rating,
+      completedDeliveries: completedDeliveries,
+      packagesSent: packagesSent,
+      totalEarnings: totalEarnings,
+    );
+  }
+
+  @override
+  UserModel copyWith({
+    String? uid,
+    String? displayName,
+    String? email,
+    String? phoneNumber,
+    bool? isVerified,
+    String? verificationStatus,
+    DateTime? createdAt,
+    Map<String, dynamic>? additionalData,
+    String? profilePhotoUrl,
+    double? rating,
+    int? completedDeliveries,
+    int? packagesSent,
+    double? totalEarnings,
+  }) {
+    return UserModel(
+      uid: uid ?? this.uid,
+      displayName: displayName ?? this.displayName,
+      email: email ?? this.email,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      isVerified: isVerified ?? this.isVerified,
+      verificationStatus: verificationStatus ?? this.verificationStatus,
+      createdAt: createdAt ?? this.createdAt,
+      additionalData: additionalData ?? this.additionalData,
+      profilePhotoUrl: profilePhotoUrl ?? this.profilePhotoUrl,
+      rating: rating ?? this.rating,
+      completedDeliveries: completedDeliveries ?? this.completedDeliveries,
+      packagesSent: packagesSent ?? this.packagesSent,
+      totalEarnings: totalEarnings ?? this.totalEarnings,
+    );
+  }
+}

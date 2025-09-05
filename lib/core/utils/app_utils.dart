@@ -31,7 +31,7 @@ class DFoodUtils {
       builder: (context) {
         return PopScope(
           canPop: pop,
-          onPopInvoked: (didPop) {},
+          onPopInvokedWithResult: (didPop, result) {},
           child: Dialog(
             clipBehavior: Clip.none,
             insetPadding: insetPadding,

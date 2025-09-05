@@ -1,26 +1,54 @@
 import 'package:equatable/equatable.dart';
 
 abstract class Failure extends Equatable {
-  const Failure([List properties = const <dynamic>[]]);
+  final String failureMessage;
+  
+  const Failure({required this.failureMessage});
+
+  @override
+  List<Object> get props => [failureMessage];
 }
 
 class ServerFailure extends Failure {
-  const ServerFailure();
-
-  @override
-  List<Object> get props => [];
+  const ServerFailure({required super.failureMessage});
 }
 
 class CacheFailure extends Failure {
-  const CacheFailure();
-
-  @override
-  List<Object> get props => [];
+  const CacheFailure({required super.failureMessage});
 }
 
 class NetworkFailure extends Failure {
-  const NetworkFailure();
+  const NetworkFailure({required super.failureMessage});
+}
 
-  @override
-  List<Object> get props => [];
+class NoInternetFailure extends Failure {
+  const NoInternetFailure({required super.failureMessage});
+}
+
+class TimeoutFailure extends Failure {
+  const TimeoutFailure({required super.failureMessage});
+}
+
+class AuthFailure extends Failure {
+  const AuthFailure({required super.failureMessage});
+}
+
+class ValidationFailure extends Failure {
+  const ValidationFailure({required super.failureMessage});
+}
+
+class UnknownFailure extends Failure {
+  const UnknownFailure({required super.failureMessage});
+}
+
+class FirebaseAuthFailure extends AuthFailure {
+  const FirebaseAuthFailure({required super.failureMessage});
+}
+
+class PhoneAuthFailure extends AuthFailure {
+  const PhoneAuthFailure({required super.failureMessage});
+}
+
+class TokenExpiredFailure extends AuthFailure {
+  const TokenExpiredFailure({required super.failureMessage});
 }

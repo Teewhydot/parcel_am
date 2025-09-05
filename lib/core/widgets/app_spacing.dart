@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 enum SpacingSize {
   xs(4.0),
@@ -17,8 +18,9 @@ enum SpacingSize {
 
 class AppSpacing {
   // Vertical Spacing
-  static Widget verticalSpacing(SpacingSize size) => SizedBox(height: size.value);
-  
+  static Widget verticalSpacing(SpacingSize size) =>
+      SizedBox(height: size.value.h);
+
   static const Widget verticalXS = SizedBox(height: 4.0);
   static const Widget verticalSM = SizedBox(height: 8.0);
   static const Widget verticalMD = SizedBox(height: 12.0);
@@ -30,8 +32,9 @@ class AppSpacing {
   static const Widget verticalMassive = SizedBox(height: 48.0);
 
   // Horizontal Spacing
-  static Widget horizontalSpacing(SpacingSize size) => SizedBox(width: size.value);
-  
+  static Widget horizontalSpacing(SpacingSize size) =>
+      SizedBox(width: size.value.w);
+
   static const Widget horizontalXS = SizedBox(width: 4.0);
   static const Widget horizontalSM = SizedBox(width: 8.0);
   static const Widget horizontalMD = SizedBox(width: 12.0);
@@ -50,25 +53,57 @@ class AppSpacing {
   static const EdgeInsets paddingXL = EdgeInsets.all(20.0);
   static const EdgeInsets paddingXXL = EdgeInsets.all(24.0);
   static const EdgeInsets paddingXXXL = EdgeInsets.all(32.0);
-  
-  static const EdgeInsets horizontalPaddingXS = EdgeInsets.symmetric(horizontal: 4.0);
-  static const EdgeInsets horizontalPaddingSM = EdgeInsets.symmetric(horizontal: 8.0);
-  static const EdgeInsets horizontalPaddingMD = EdgeInsets.symmetric(horizontal: 12.0);
-  static const EdgeInsets horizontalPaddingLG = EdgeInsets.symmetric(horizontal: 16.0);
-  static const EdgeInsets horizontalPaddingXL = EdgeInsets.symmetric(horizontal: 20.0);
-  static const EdgeInsets horizontalPaddingXXL = EdgeInsets.symmetric(horizontal: 24.0);
-  static const EdgeInsets horizontalPaddingXXXL = EdgeInsets.symmetric(horizontal: 32.0);
-  static const EdgeInsets horizontalPaddingHuge = EdgeInsets.symmetric(horizontal: 40.0);
-  
-  static const EdgeInsets verticalPaddingXS = EdgeInsets.symmetric(vertical: 4.0);
-  static const EdgeInsets verticalPaddingSM = EdgeInsets.symmetric(vertical: 8.0);
-  static const EdgeInsets verticalPaddingMD = EdgeInsets.symmetric(vertical: 12.0);
-  static const EdgeInsets verticalPaddingLG = EdgeInsets.symmetric(vertical: 16.0);
-  static const EdgeInsets verticalPaddingXL = EdgeInsets.symmetric(vertical: 20.0);
-  static const EdgeInsets verticalPaddingXXL = EdgeInsets.symmetric(vertical: 24.0);
+
+  static const EdgeInsets horizontalPaddingXS = EdgeInsets.symmetric(
+    horizontal: 4.0,
+  );
+  static const EdgeInsets horizontalPaddingSM = EdgeInsets.symmetric(
+    horizontal: 8.0,
+  );
+  static const EdgeInsets horizontalPaddingMD = EdgeInsets.symmetric(
+    horizontal: 12.0,
+  );
+  static const EdgeInsets horizontalPaddingLG = EdgeInsets.symmetric(
+    horizontal: 16.0,
+  );
+  static const EdgeInsets horizontalPaddingXL = EdgeInsets.symmetric(
+    horizontal: 20.0,
+  );
+  static const EdgeInsets horizontalPaddingXXL = EdgeInsets.symmetric(
+    horizontal: 24.0,
+  );
+  static const EdgeInsets horizontalPaddingXXXL = EdgeInsets.symmetric(
+    horizontal: 32.0,
+  );
+  static const EdgeInsets horizontalPaddingHuge = EdgeInsets.symmetric(
+    horizontal: 40.0,
+  );
+
+  static const EdgeInsets verticalPaddingXS = EdgeInsets.symmetric(
+    vertical: 4.0,
+  );
+  static const EdgeInsets verticalPaddingSM = EdgeInsets.symmetric(
+    vertical: 8.0,
+  );
+  static const EdgeInsets verticalPaddingMD = EdgeInsets.symmetric(
+    vertical: 12.0,
+  );
+  static const EdgeInsets verticalPaddingLG = EdgeInsets.symmetric(
+    vertical: 16.0,
+  );
+  static const EdgeInsets verticalPaddingXL = EdgeInsets.symmetric(
+    vertical: 20.0,
+  );
+  static const EdgeInsets verticalPaddingXXL = EdgeInsets.symmetric(
+    vertical: 24.0,
+  );
 
   // Screen Padding (for consistent screen margins)
   static const EdgeInsets screenPadding = EdgeInsets.all(20.0);
-  static const EdgeInsets screenHorizontalPadding = EdgeInsets.symmetric(horizontal: 20.0);
-  static const EdgeInsets screenVerticalPadding = EdgeInsets.symmetric(vertical: 20.0);
+  static const EdgeInsets screenHorizontalPadding = EdgeInsets.symmetric(
+    horizontal: 20.0,
+  );
+  static const EdgeInsets screenVerticalPadding = EdgeInsets.symmetric(
+    vertical: 20.0,
+  );
 }

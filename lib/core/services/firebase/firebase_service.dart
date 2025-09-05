@@ -1,6 +1,8 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:parcel_am/core/services/firebase/app_check_service.dart';
+import 'package:parcel_am/core/config/firebase_config.dart';
 
 enum FirebaseEnvironment { development, production }
 
@@ -13,17 +15,8 @@ class FirebaseService {
       ? FirebaseEnvironment.development 
       : FirebaseEnvironment.production;
 
-  // Test phone numbers for development
-  static const List<String> _testPhoneNumbers = [
-    '+2341234567890',
-    '+2341234567891', 
-    '+2341234567892',
-    '+2341234567893',
-    '+2341234567894',
-  ];
-
-  // Test OTP code for all test numbers
-  static const String testOtpCode = '123456';
+  // Use centralized Firebase configuration
+  static String get testOtpCode => FirebaseConfig.testOtpCode;
 
   FirebaseService();
 
@@ -41,6 +34,9 @@ class FirebaseService {
       
       // Configure auth settings
       await _configureAuthSettings();
+      
+      // Initialize App Check for security
+      await AppCheckService.instance.initialize();
       
       debugPrint('Firebase initialized successfully');
     } catch (e) {
@@ -96,17 +92,11 @@ class FirebaseService {
   }
 
   bool isValidNigerianNumber(String phoneNumber) {
-    // Nigerian phone number regex pattern
-    // Matches: +234 followed by 7, 8, or 9, then 9 more digits
-    final nigerianPhoneRegex = RegExp(r'^\+234[789]\d{9}$');
-    return nigerianPhoneRegex.hasMatch(phoneNumber);
+    return FirebaseConfig.isValidNigerianNumber(phoneNumber);
   }
 
   bool isTestPhoneNumber(String phoneNumber) {
-    if (_environment == FirebaseEnvironment.production) {
-      return false;
-    }
-    return _testPhoneNumbers.contains(phoneNumber);
+    return FirebaseConfig.isTestPhoneNumber(phoneNumber);
   }
 
   Stream<User?> authStateChanges() {

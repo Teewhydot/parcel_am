@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:parcel_am/core/widgets/app_scaffold.dart';
 
 import '../../../../core/routes/routes.dart';
@@ -8,6 +9,9 @@ import '../../../../core/widgets/app_container.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../injection_container.dart';
+import '../bloc/auth/auth_bloc.dart';
+import '../bloc/auth/auth_event.dart';
+import '../bloc/auth/auth_state.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -33,7 +37,10 @@ class _SplashScreenState extends State<SplashScreen>
     );
 
     _animationController.forward();
-    _navigateToOnboarding();
+    
+    // Initialize authentication and check session
+    context.read<AuthBloc>().add(const AuthStarted());
+    _handleAuthenticationFlow();
   }
 
   @override
@@ -42,16 +49,44 @@ class _SplashScreenState extends State<SplashScreen>
     super.dispose();
   }
 
-  _navigateToOnboarding() async {
-    await Future.delayed(const Duration(seconds: 6));
-    if (mounted) {
-      await sl<NavigationService>().navigateAndReplace(Routes.onboarding);
+  void _handleAuthenticationFlow() async {
+    // Wait for animation and minimum splash time
+    await Future.delayed(const Duration(seconds: 3));
+    
+    if (!mounted) return;
+    
+    // Listen to auth state and navigate accordingly
+    final authState = context.read<AuthBloc>().state;
+    
+    if (authState.isAuthenticated) {
+      // User is already logged in, go to dashboard
+      sl<NavigationService>().navigateAndReplace(Routes.dashboard);
+    } else {
+      // User is not logged in, go to onboarding
+      sl<NavigationService>().navigateAndReplace(Routes.onboarding);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return AppScaffold(
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, state) {
+        // Handle auth state changes during splash
+        if (state.status == AuthStatus.authenticated) {
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (mounted) {
+              sl<NavigationService>().navigateAndReplace(Routes.dashboard);
+            }
+          });
+        } else if (state.status == AuthStatus.unauthenticated) {
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (mounted) {
+              sl<NavigationService>().navigateAndReplace(Routes.onboarding);
+            }
+          });
+        }
+      },
+      child: AppScaffold(
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -192,6 +227,7 @@ class _SplashScreenState extends State<SplashScreen>
           ),
         ),
       ),
+    ),
     );
   }
 }

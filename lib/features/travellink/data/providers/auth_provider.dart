@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart';
-import '../../domain/models/user_model.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../domain/entities/user_entity.dart';
+import '../models/user_model.dart';
+import '../../../../core/services/firebase/firebase_service.dart';
 
 class AuthProvider extends ChangeNotifier {
-  UserModel? _user;
+  UserEntity? _user;
   bool _isLoading = false;
   String? _errorMessage;
   bool _isAuthenticated = false;
 
-  UserModel? get user => _user;
+  UserEntity? get user => _user;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _isAuthenticated;
 
-  void setUser(UserModel user) {
+  void setUser(UserEntity user) {
     _user = user;
     _isAuthenticated = true;
     notifyListeners();
@@ -42,23 +45,23 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> signInWithPhoneNumber(String phoneNumber) async {
+  Future<void> signInWithFirebaseUser(User firebaseUser, {String? displayName}) async {
     _setLoading(true);
     _clearError();
     
     try {
-      await Future.delayed(const Duration(seconds: 2));
-      
-      _user = UserModel(
-        uid: 'user_${DateTime.now().millisecondsSinceEpoch}',
-        displayName: 'John Doe',
-        email: 'john.doe@example.com',
-        phoneNumber: phoneNumber,
-        isVerified: false,
-        verificationStatus: 'pending',
+      // Get or create user profile
+      final userModel = UserModel(
+        uid: firebaseUser.uid,
+        displayName: displayName ?? firebaseUser.displayName ?? 'User',
+        email: firebaseUser.email ?? '',
+        phoneNumber: firebaseUser.phoneNumber ?? '',
+        isVerified: firebaseUser.phoneNumber != null,
+        verificationStatus: firebaseUser.phoneNumber != null ? 'verified' : 'pending',
         createdAt: DateTime.now(),
         additionalData: {},
       );
+      _user = userModel.toEntity();
       _isAuthenticated = true;
       notifyListeners();
     } catch (e) {
@@ -68,30 +71,41 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> verifyOTP(String otp) async {
-    _setLoading(true);
-    _clearError();
-    
-    try {
-      await Future.delayed(const Duration(seconds: 1));
-      
-      if (otp == '123456') {
-        _isAuthenticated = true;
-      } else {
-        throw Exception('Invalid OTP');
-      }
-    } catch (e) {
-      _setError(e.toString());
-    } finally {
-      _setLoading(false);
+  // Check if current user is authenticated
+  void checkAuthState() {
+    final firebaseUser = FirebaseService.instance.auth.currentUser;
+    if (firebaseUser != null) {
+      signInWithFirebaseUser(firebaseUser);
+    } else {
+      _user = null;
+      _isAuthenticated = false;
+      notifyListeners();
     }
   }
+  
+  // Listen to Firebase auth state changes
+  void listenToAuthChanges() {
+    FirebaseService.instance.auth.authStateChanges().listen((User? user) {
+      if (user != null) {
+        signInWithFirebaseUser(user);
+      } else {
+        _user = null;
+        _isAuthenticated = false;
+        notifyListeners();
+      }
+    });
+  }
 
-  void signOut() {
-    _user = null;
-    _isAuthenticated = false;
-    _clearError();
-    notifyListeners();
+  Future<void> signOut() async {
+    try {
+      await FirebaseService.instance.auth.signOut();
+      _user = null;
+      _isAuthenticated = false;
+      _clearError();
+      notifyListeners();
+    } catch (e) {
+      _setError(e.toString());
+    }
   }
 
   void _setLoading(bool value) {

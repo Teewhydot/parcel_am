@@ -1,4 +1,6 @@
-class UserModel {
+import 'package:equatable/equatable.dart';
+
+class UserEntity extends Equatable {
   final String uid;
   final String displayName;
   final String email;
@@ -13,7 +15,7 @@ class UserModel {
   final int? packagesSent;
   final double? totalEarnings;
 
-  UserModel({
+  const UserEntity({
     required this.uid,
     required this.displayName,
     required this.email,
@@ -29,7 +31,7 @@ class UserModel {
     this.totalEarnings,
   });
 
-  UserModel copyWith({
+  UserEntity copyWith({
     String? uid,
     String? displayName,
     String? email,
@@ -44,7 +46,7 @@ class UserModel {
     int? packagesSent,
     double? totalEarnings,
   }) {
-    return UserModel(
+    return UserEntity(
       uid: uid ?? this.uid,
       displayName: displayName ?? this.displayName,
       email: email ?? this.email,
@@ -61,39 +63,20 @@ class UserModel {
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'uid': uid,
-      'displayName': displayName,
-      'email': email,
-      'phoneNumber': phoneNumber,
-      'isVerified': isVerified,
-      'verificationStatus': verificationStatus,
-      'createdAt': createdAt.toIso8601String(),
-      'additionalData': additionalData,
-      'profilePhotoUrl': profilePhotoUrl,
-      'rating': rating,
-      'completedDeliveries': completedDeliveries,
-      'packagesSent': packagesSent,
-      'totalEarnings': totalEarnings,
-    };
-  }
-
-  factory UserModel.fromJson(Map<String, dynamic> json) {
-    return UserModel(
-      uid: json['uid'],
-      displayName: json['displayName'],
-      email: json['email'],
-      phoneNumber: json['phoneNumber'],
-      isVerified: json['isVerified'],
-      verificationStatus: json['verificationStatus'],
-      createdAt: DateTime.parse(json['createdAt']),
-      additionalData: json['additionalData'] ?? {},
-      profilePhotoUrl: json['profilePhotoUrl'],
-      rating: json['rating']?.toDouble(),
-      completedDeliveries: json['completedDeliveries'],
-      packagesSent: json['packagesSent'],
-      totalEarnings: json['totalEarnings']?.toDouble(),
-    );
-  }
+  @override
+  List<Object?> get props => [
+        uid,
+        displayName,
+        email,
+        phoneNumber,
+        isVerified,
+        verificationStatus,
+        createdAt,
+        additionalData,
+        profilePhotoUrl,
+        rating,
+        completedDeliveries,
+        packagesSent,
+        totalEarnings,
+      ];
 }

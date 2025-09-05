@@ -10,6 +10,7 @@ import 'package:parcel_am/features/travellink/presentation/screens/verification_
 import 'package:parcel_am/features/travellink/presentation/screens/browse_requests_screen.dart';
 
 import '../../features/travellink/presentation/screens/splash_screen.dart';
+import '../services/auth/auth_guard.dart';
 
 class GetXRouteModule {
   static const Transition _transition = Transition.rightToLeft;
@@ -27,7 +28,7 @@ class GetXRouteModule {
       transition: _transition,
       transitionDuration: _transitionDuration,
     ),
-    GetPage(
+    AuthGuard.createProtectedRoute(
       name: Routes.dashboard,
       page: () => const DashboardScreen(),
       transition: _transition,
@@ -39,31 +40,31 @@ class GetXRouteModule {
       transition: _transition,
       transitionDuration: _transitionDuration,
     ),
-    GetPage(
+    AuthGuard.createProtectedRoute(
       name: Routes.payment,
       page: () => const PaymentScreen(),
       transition: _transition,
       transitionDuration: _transitionDuration,
     ),
-    GetPage(
+    AuthGuard.createProtectedRoute(
       name: Routes.requestDetails,
       page: () => const RequestDetailsScreen(requestId: ""),
       transition: _transition,
       transitionDuration: _transitionDuration,
     ),
-    GetPage(
+    AuthGuard.createProtectedRoute(
       name: Routes.tracking,
       page: () => const TrackingScreen(packageId: "packageId"),
       transition: _transition,
       transitionDuration: _transitionDuration,
     ),
-    GetPage(
+    AuthGuard.createProtectedRoute(
       name: Routes.verification,
       page: () => const VerificationScreen(),
       transition: _transition,
       transitionDuration: _transitionDuration,
     ),
-    GetPage(
+    AuthGuard.createProtectedRoute(
       name: Routes.browseRequests,
       page: () => const BrowseRequestsScreen(),
       transition: _transition,
