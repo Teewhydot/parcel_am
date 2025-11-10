@@ -72,48 +72,6 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, UserEntity>> signInWithPhoneNumber(
-    String phoneNumber,
-    String verificationCode,
-  ) async {
-    try {
-      if (await networkInfo.isConnected) {
-        final userModel = await remoteDataSource.signInWithPhoneNumber(phoneNumber, verificationCode);
-        await localDataSource.cacheUser(userModel);
-        return Right(userModel.toEntity());
-      } else {
-        return const Left(NoInternetFailure(failureMessage: 'No internet connection'));
-      }
-    } on AuthException catch (e) {
-      return Left(AuthFailure(failureMessage: e.message));
-    } on ServerException catch (e) {
-      return Left(ServerFailure(failureMessage: e.message));
-    } on CacheException catch (e) {
-      return Left(CacheFailure(failureMessage: e.message));
-    } catch (e) {
-      return Left(UnknownFailure(failureMessage: e.toString()));
-    }
-  }
-
-  @override
-  Future<Either<Failure, void>> sendPhoneVerificationCode(String phoneNumber) async {
-    try {
-      if (await networkInfo.isConnected) {
-        await remoteDataSource.sendPhoneVerificationCode(phoneNumber);
-        return const Right(null);
-      } else {
-        return const Left(NoInternetFailure(failureMessage: 'No internet connection'));
-      }
-    } on AuthException catch (e) {
-      return Left(AuthFailure(failureMessage: e.message));
-    } on ServerException catch (e) {
-      return Left(ServerFailure(failureMessage: e.message));
-    } catch (e) {
-      return Left(UnknownFailure(failureMessage: e.toString()));
-    }
-  }
-
-  @override
   Future<Either<Failure, void>> signOut() async {
     try {
       await Future.wait([

@@ -15,13 +15,6 @@ abstract class AuthRepository {
     String displayName,
   );
 
-  Future<Either<Failure, UserEntity>> signInWithPhoneNumber(
-    String phoneNumber,
-    String verificationCode,
-  );
-
-  Future<Either<Failure, void>> sendPhoneVerificationCode(String phoneNumber);
-
   Future<Either<Failure, void>> signOut();
 
   Future<Either<Failure, UserEntity?>> getCurrentUser();

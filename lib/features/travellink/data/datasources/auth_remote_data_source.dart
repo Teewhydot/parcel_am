@@ -6,8 +6,6 @@ import '../../domain/exceptions/auth_exceptions.dart';
 abstract class AuthRemoteDataSource {
   Future<UserModel> signInWithEmailAndPassword(String email, String password);
   Future<UserModel> signUpWithEmailAndPassword(String email, String password, String displayName);
-  Future<UserModel> signInWithPhoneNumber(String phoneNumber, String verificationCode);
-  Future<void> sendPhoneVerificationCode(String phoneNumber);
   Future<void> signOut();
   Future<UserModel?> getCurrentUser();
   Stream<UserModel?> get authStateChanges;
@@ -17,7 +15,6 @@ abstract class AuthRemoteDataSource {
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   final FirebaseAuth firebaseAuth;
-  String? _verificationId;
 
   AuthRemoteDataSourceImpl({required this.firebaseAuth});
 
@@ -62,66 +59,6 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       return _mapFirebaseUserToModel(updatedUser!);
     } on FirebaseAuthException catch (e) {
       throw _mapFirebaseAuthException(e);
-    } catch (e) {
-      throw ServerException(e.toString());
-    }
-  }
-
-  @override
-  Future<UserModel> signInWithPhoneNumber(String phoneNumber, String verificationCode) async {
-    try {
-      if (_verificationId == null) {
-        throw const PhoneAuthException('Verification ID not found. Please request verification code first.');
-      }
-
-      final credential = PhoneAuthProvider.credential(
-        verificationId: _verificationId!,
-        smsCode: verificationCode,
-      );
-
-      final userCredential = await firebaseAuth.signInWithCredential(credential);
-      final user = userCredential.user;
-      
-      if (user == null) {
-        throw const UserNotFoundException();
-      }
-
-      return _mapFirebaseUserToModel(user);
-    } on FirebaseAuthException catch (e) {
-      throw _mapFirebaseAuthException(e);
-    } catch (e) {
-      throw ServerException(e.toString());
-    }
-  }
-
-  @override
-  Future<void> sendPhoneVerificationCode(String phoneNumber) async {
-    try {
-      final completer = Completer<void>();
-      
-      await firebaseAuth.verifyPhoneNumber(
-        phoneNumber: phoneNumber,
-        verificationCompleted: (PhoneAuthCredential credential) async {
-          try {
-            await firebaseAuth.signInWithCredential(credential);
-            completer.complete();
-          } catch (e) {
-            completer.completeError(e);
-          }
-        },
-        verificationFailed: (FirebaseAuthException e) {
-          completer.completeError(_mapFirebaseAuthException(e));
-        },
-        codeSent: (String verificationId, int? resendToken) {
-          _verificationId = verificationId;
-          completer.complete();
-        },
-        codeAutoRetrievalTimeout: (String verificationId) {
-          _verificationId = verificationId;
-        },
-      );
-
-      return completer.future;
     } catch (e) {
       throw ServerException(e.toString());
     }

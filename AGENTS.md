@@ -1,34 +1,34 @@
-# Agent Commands
+# Agent Development Guide
 
-## Setup
+## Commands
+
+**Setup:**
 ```bash
 flutter pub get
 ```
 
-## Build
-```bash
-flutter build apk           # Android
-flutter build ios           # iOS
-flutter build web           # Web
-```
+**Build:** `flutter build apk` (or `ios`, `web`, etc.)
 
-## Lint/Test/Dev
-```bash
-flutter analyze             # Lint
-flutter test                # Run tests
-flutter run                 # Run on connected device/emulator
-```
+**Lint:** `flutter analyze`
 
-## Tech Stack
-Flutter 3.8.1+ with Clean Architecture + BLoC pattern. DI via GetIt. Navigation via GetX. Firebase backend (Auth, Core). Storage: SharedPreferences + flutter_secure_storage.
+**Test:** `flutter test`
 
-## Structure
-- `lib/features/`: Feature modules with data/domain/presentation layers
-- `lib/core/`: Shared code (network, services, widgets, theme, routes, utils)
-- `lib/injection_container.dart`: DI setup
+**Dev Server:** `flutter run` (requires emulator/device)
 
-## Conventions
-- Clean Architecture: features → data/domain/presentation
-- BLoC for state management with Equatable for value equality
-- Register all dependencies in `injection_container.dart`
-- Follow `flutter_lints` rules per `analysis_options.yaml`
+## Tech Stack & Architecture
+
+- **Framework:** Flutter 3.8.1+ with Dart
+- **Architecture:** Clean Architecture with BLoC pattern
+- **State Management:** flutter_bloc, provider, get_it (DI)
+- **Backend:** Firebase (Auth, Core), HTTP client
+- **Storage:** shared_preferences, flutter_secure_storage
+- **Key Libraries:** geolocator, image_picker, permission_handler, intl_phone_field
+
+**Structure:** `lib/features/{feature}/` with `data/`, `domain/`, `presentation/` layers. Core utilities in `lib/core/`.
+
+## Code Style
+
+- Follow `flutter_lints` rules (enforced via `analysis_options.yaml`)
+- Use Clean Architecture: separate domain, data, and presentation layers
+- BLoC for state management, GetIt for dependency injection
+- Register dependencies in `injection_container.dart`
