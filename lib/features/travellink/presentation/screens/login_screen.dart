@@ -3,9 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:parcel_am/core/bloc/base/base_state.dart';
 import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
-import 'package:parcel_am/core/utils/phone_formatter.dart';
 import 'package:parcel_am/core/widgets/app_scaffold.dart';
-import 'package:sms_autofill/sms_autofill.dart';
 
 import '../../../../core/routes/routes.dart';
 import '../../../../core/services/error/error_handler.dart';
@@ -30,12 +28,18 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen>
-    with SingleTickerProviderStateMixin, CodeAutoFill {
-  final _phoneController = TextEditingController(text: '+234 ');
-  final _otpController = TextEditingController();
+    with SingleTickerProviderStateMixin {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   late TabController _tabController;
+  
+  bool _isPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
+  String? _emailError;
+  PasswordStrength _passwordStrength = PasswordStrength.none;
 
   @override
   void initState() {
@@ -45,65 +49,119 @@ class _LoginScreenState extends State<LoginScreen>
     if (args?['showSignIn'] == true) {
       _tabController.animateTo(0);
     }
-
-    // Initialize SMS code listening
-    SmsAutoFill().listenForCode();
+    
+    _passwordController.addListener(_validatePasswordStrength);
   }
 
   @override
   void dispose() {
-    _phoneController.dispose();
-    _otpController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
     _firstNameController.dispose();
     _lastNameController.dispose();
     _tabController.dispose();
-    SmsAutoFill().unregisterListener();
     super.dispose();
   }
 
-  @override
-  void codeUpdated() {
-    // Handle auto-detected SMS code
-    if (code != null && code!.length == 6) {
-      _otpController.text = code!;
-      context.read<AuthBloc>().add(AuthOtpChanged(code!));
+  bool _validateEmail(String email) {
+    final emailRegex = RegExp(
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+    );
+    return emailRegex.hasMatch(email);
+  }
 
-      // Auto-verify if conditions are met
-      final state = context.read<AuthBloc>().state;
-      if (state is DataState<AuthData> &&
-          state.data != null &&
-          state.data!.isOtpSent &&
-          !state.isLoading) {
-        _verifyOTP();
+  void _validatePasswordStrength() {
+    final password = _passwordController.text;
+    
+    if (password.isEmpty) {
+      setState(() => _passwordStrength = PasswordStrength.none);
+      return;
+    }
+    
+    int score = 0;
+    
+    if (password.length >= 8) score++;
+    if (password.length >= 12) score++;
+    if (RegExp(r'[A-Z]').hasMatch(password)) score++;
+    if (RegExp(r'[a-z]').hasMatch(password)) score++;
+    if (RegExp(r'[0-9]').hasMatch(password)) score++;
+    if (RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password)) score++;
+    
+    setState(() {
+      if (score <= 2) {
+        _passwordStrength = PasswordStrength.weak;
+      } else if (score <= 4) {
+        _passwordStrength = PasswordStrength.medium;
+      } else {
+        _passwordStrength = PasswordStrength.strong;
       }
-    }
+    });
   }
 
-  void _sendOTP() {
-    final phoneNumber = _phoneController.text.trim();
-    context.read<AuthBloc>().add(AuthSendOtpRequested(phoneNumber));
-  }
+  void _signIn() {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
 
-  void _verifyOTP() {
-    final state = context.read<AuthBloc>().state;
-    final otp = _otpController.text.trim();
-
-    if (otp.length != 6) {
-      _showError('Please enter the complete 6-digit code');
+    if (email.isEmpty || password.isEmpty) {
+      _showError('Please enter both email and password');
       return;
     }
 
-    if (!(state is DataState<AuthData> &&
-        state.data != null &&
-        state.data!.isOtpSent)) {
-      _showError('Please request a new verification code');
+    if (!_validateEmail(email)) {
+      setState(() => _emailError = 'Please enter a valid email address');
       return;
     }
 
+    setState(() => _emailError = null);
+    
     context.read<AuthBloc>().add(
-      AuthVerifyOtpRequested(
-        phoneNumber: _phoneController.text.trim(),
-        otp: otp,
+      AuthLoginRequested(
+        email: email,
+        password: password,
+      ),
+    );
+  }
+
+  void _signUp() {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    final confirmPassword = _confirmPasswordController.text;
+    final firstName = _firstNameController.text.trim();
+    final lastName = _lastNameController.text.trim();
+
+    if (firstName.isEmpty || lastName.isEmpty) {
+      _showError('Please enter your full name');
+      return;
+    }
+
+    if (email.isEmpty || password.isEmpty) {
+      _showError('Please enter both email and password');
+      return;
+    }
+
+    if (!_validateEmail(email)) {
+      setState(() => _emailError = 'Please enter a valid email address');
+      return;
+    }
+
+    if (password.length < 8) {
+      _showError('Password must be at least 8 characters long');
+      return;
+    }
+
+    if (password != confirmPassword) {
+      _showError('Passwords do not match');
+      return;
+    }
+
+    setState(() => _emailError = null);
+    
+    context.read<AuthBloc>().add(
+      AuthRegisterRequested(
+        email: email,
+        password: password,
+        displayName: '$firstName $lastName',
       ),
     );
   }
@@ -112,24 +170,8 @@ class _LoginScreenState extends State<LoginScreen>
     sl<NavigationService>().navigateAndReplace(Routes.dashboard);
   }
 
-  void _resetOTPState() {
-    _otpController.clear();
-  }
-
   void _showError(String message) {
     context.showErrorMessage(message);
-  }
-
-  void _signUpWithPhone() {
-    // Validate name fields for sign up
-    if (_firstNameController.text.trim().isEmpty ||
-        _lastNameController.text.trim().isEmpty) {
-      _showError('Please enter your full name');
-      return;
-    }
-
-    // Use the same OTP sending logic
-    _sendOTP();
   }
 
   @override
@@ -142,17 +184,12 @@ class _LoginScreenState extends State<LoginScreen>
             state.data != null &&
             state.data!.user != null) {
           _navigateToDashboard();
-        } else if (state is DataState<AuthData> &&
-            state.data != null &&
-            state.data!.isOtpSent) {
-          SmsAutoFill().listenForCode();
         }
       },
       child: AppScaffold(
         body: SafeArea(
           child: Column(
             children: [
-              // Header
               Padding(
                 padding: AppSpacing.paddingLG,
                 child: Row(
@@ -166,12 +203,11 @@ class _LoginScreenState extends State<LoginScreen>
                       'Welcome Back',
                       fontWeight: FontWeight.w600,
                     ),
-                    const SizedBox(width: 40), // Spacer
+                    const SizedBox(width: 40),
                   ],
                 ),
               ),
 
-              // Hero Image
               Padding(
                 padding: AppSpacing.paddingLG,
                 child: AppContainer(
@@ -189,7 +225,6 @@ class _LoginScreenState extends State<LoginScreen>
                     ),
                     child: Stack(
                       children: [
-                        // Background pattern/image placeholder
                         Positioned.fill(
                           child: AppContainer(
                             decoration: BoxDecoration(
@@ -198,13 +233,12 @@ class _LoginScreenState extends State<LoginScreen>
                             ),
                           ),
                         ),
-                        // Content
                         Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               const Icon(
-                                Icons.phone,
+                                Icons.email_outlined,
                                 size: 48,
                                 color: Colors.white,
                               ),
@@ -212,7 +246,7 @@ class _LoginScreenState extends State<LoginScreen>
                               Padding(
                                 padding: AppSpacing.paddingMD,
                                 child: AppText.bodyMedium(
-                                  'Secure access with your Nigerian phone number',
+                                  'Secure access with your email and password',
                                   color: Colors.white,
                                   textAlign: TextAlign.center,
                                 ),
@@ -226,13 +260,11 @@ class _LoginScreenState extends State<LoginScreen>
                 ),
               ),
 
-              // Form Section
               Expanded(
                 child: Padding(
                   padding: AppSpacing.paddingLG,
                   child: Column(
                     children: [
-                      // Tabs
                       AppContainer(
                         decoration: BoxDecoration(
                           color: Colors.grey.withValues(alpha: 0.1),
@@ -256,7 +288,6 @@ class _LoginScreenState extends State<LoginScreen>
 
                       AppSpacing.verticalSpacing(SpacingSize.xl),
 
-                      // Tab Content
                       Expanded(
                         child: TabBarView(
                           controller: _tabController,
@@ -264,7 +295,6 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                       ),
 
-                      // Terms
                       Padding(
                         padding: AppSpacing.paddingMD,
                         child: RichText(
@@ -303,129 +333,78 @@ class _LoginScreenState extends State<LoginScreen>
   Widget _buildSignInForm() {
     return BlocBuilder<AuthBloc, BaseState<AuthData>>(
       builder: (context, state) {
-        final authData = state is DataState<AuthData> ? state.data : null;
         return SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (authData == null || !authData.isOtpSent) ...[
-                // Phone Number Input
-                AppText.bodyMedium('Phone Number', fontWeight: FontWeight.w500),
-                AppSpacing.verticalSpacing(SpacingSize.sm),
-                TextFormField(
-                  controller: _phoneController,
-                  keyboardType: TextInputType.phone,
-                  enabled: !state.isLoading,
-                  inputFormatters: [NigerianPhoneFormatter()],
-                  decoration: InputDecoration(
-                    hintText: '+234 801 234 5678',
-                    prefixIcon: Container(
-                      width: 40,
-                      height: 40,
-                      margin: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Center(
-                        child: Text('🇳🇬', style: TextStyle(fontSize: 16)),
-                      ),
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
+              AppText.bodyMedium('Email Address', fontWeight: FontWeight.w500),
+              AppSpacing.verticalSpacing(SpacingSize.sm),
+              TextFormField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                enabled: !state.isLoading,
+                onChanged: (value) {
+                  if (_emailError != null) {
+                    setState(() => _emailError = null);
+                  }
+                },
+                decoration: InputDecoration(
+                  hintText: 'example@email.com',
+                  prefixIcon: const Icon(Icons.email_outlined),
+                  errorText: _emailError,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
                   ),
                 ),
+              ),
 
-                AppSpacing.verticalSpacing(SpacingSize.md),
+              AppSpacing.verticalSpacing(SpacingSize.lg),
 
-                AppText.bodySmall(
-                  'We\'ll send a verification code to this number',
-                  color: Colors.grey,
-                ),
-              ] else ...[
-                // OTP Input
-                AppText.bodyMedium(
-                  'Verification Code',
-                  fontWeight: FontWeight.w500,
-                ),
-                AppSpacing.verticalSpacing(SpacingSize.sm),
-
-                AppText.bodySmall(
-                  'Enter the 6-digit code sent to ${_phoneController.text}',
-                  color: Colors.grey,
-                ),
-                AppSpacing.verticalSpacing(SpacingSize.sm),
-
-                TextFormField(
-                  controller: _otpController,
-                  keyboardType: TextInputType.number,
-                  textAlign: TextAlign.center,
-                  enabled: !state.isLoading,
-                  maxLength: 6,
-                  inputFormatters: [OTPFormatter()],
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 8,
+              AppText.bodyMedium('Password', fontWeight: FontWeight.w500),
+              AppSpacing.verticalSpacing(SpacingSize.sm),
+              TextFormField(
+                controller: _passwordController,
+                obscureText: !_isPasswordVisible,
+                enabled: !state.isLoading,
+                decoration: InputDecoration(
+                  hintText: 'Enter your password',
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _isPasswordVisible
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() => _isPasswordVisible = !_isPasswordVisible);
+                    },
                   ),
-                  decoration: InputDecoration(
-                    hintText: '123456',
-                    counterText: '',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
                   ),
                 ),
+              ),
 
-                AppSpacing.verticalSpacing(SpacingSize.md),
+              AppSpacing.verticalSpacing(SpacingSize.md),
 
-                // Resend Code Button
-                Center(
-                  child: TextButton(
-                    onPressed:
-                        (authData?.resendCooldown ?? 0) > 0 || state.isLoading
-                        ? null
-                        : _sendOTP,
-                    child: AppText.bodySmall(
-                      (authData?.resendCooldown ?? 0) > 0
-                          ? 'Resend code in ${authData?.resendCooldown ?? 0}s'
-                          : 'Resend verification code',
-                      color: (authData?.resendCooldown ?? 0) > 0
-                          ? Colors.grey
-                          : AppColors.primary,
-                    ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: state.isLoading ? null : () {},
+                  child: AppText.bodySmall(
+                    'Forgot Password?',
+                    color: AppColors.primary,
                   ),
                 ),
-
-                AppSpacing.verticalSpacing(SpacingSize.md),
-
-                // Change Phone Number
-                Center(
-                  child: TextButton(
-                    onPressed: state.isLoading
-                        ? null
-                        : () {
-                            _resetOTPState();
-                            context.read<AuthBloc>().add(
-                              AuthPhoneNumberChanged(_phoneController.text),
-                            );
-                          },
-                    child: AppText.bodySmall(
-                      'Change phone number',
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ),
-              ],
+              ),
 
               AppSpacing.verticalSpacing(SpacingSize.xl),
 
@@ -433,11 +412,7 @@ class _LoginScreenState extends State<LoginScreen>
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: state.isLoading
-                      ? null
-                      : (authData != null && authData.isOtpSent
-                            ? _verifyOTP
-                            : _sendOTP),
+                  onPressed: state.isLoading ? null : _signIn,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     shape: RoundedRectangleBorder(
@@ -454,9 +429,7 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                         )
                       : AppText.bodyLarge(
-                          authData != null && authData.isOtpSent
-                              ? 'Verify Code'
-                              : 'Send Verification Code',
+                          'Sign In',
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
                         ),
@@ -472,219 +445,161 @@ class _LoginScreenState extends State<LoginScreen>
   Widget _buildSignUpForm() {
     return BlocBuilder<AuthBloc, BaseState<AuthData>>(
       builder: (context, state) {
-        final authData = state is DataState<AuthData> ? state.data : null;
         return SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (authData == null || !authData.isOtpSent) ...[
-                // Name fields for new users
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          AppText.bodyMedium(
-                            'First Name',
-                            fontWeight: FontWeight.w500,
-                          ),
-                          AppSpacing.verticalSpacing(SpacingSize.sm),
-                          TextFormField(
-                            controller: _firstNameController,
-                            enabled: !state.isLoading,
-                            decoration: InputDecoration(
-                              hintText: 'John',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 16,
-                              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AppText.bodyMedium(
+                          'First Name',
+                          fontWeight: FontWeight.w500,
+                        ),
+                        AppSpacing.verticalSpacing(SpacingSize.sm),
+                        TextFormField(
+                          controller: _firstNameController,
+                          enabled: !state.isLoading,
+                          decoration: InputDecoration(
+                            hintText: 'John',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 16,
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                    AppSpacing.horizontalSpacing(SpacingSize.md),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          AppText.bodyMedium(
-                            'Last Name',
-                            fontWeight: FontWeight.w500,
-                          ),
-                          AppSpacing.verticalSpacing(SpacingSize.sm),
-                          TextFormField(
-                            controller: _lastNameController,
-                            enabled: !state.isLoading,
-                            decoration: InputDecoration(
-                              hintText: 'Doe',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 16,
-                              ),
+                  ),
+                  AppSpacing.horizontalSpacing(SpacingSize.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AppText.bodyMedium(
+                          'Last Name',
+                          fontWeight: FontWeight.w500,
+                        ),
+                        AppSpacing.verticalSpacing(SpacingSize.sm),
+                        TextFormField(
+                          controller: _lastNameController,
+                          enabled: !state.isLoading,
+                          decoration: InputDecoration(
+                            hintText: 'Doe',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 16,
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
+                ],
+              ),
+
+              AppSpacing.verticalSpacing(SpacingSize.lg),
+
+              AppText.bodyMedium('Email Address', fontWeight: FontWeight.w500),
+              AppSpacing.verticalSpacing(SpacingSize.sm),
+              TextFormField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                enabled: !state.isLoading,
+                onChanged: (value) {
+                  if (_emailError != null) {
+                    setState(() => _emailError = null);
+                  }
+                },
+                decoration: InputDecoration(
+                  hintText: 'example@email.com',
+                  prefixIcon: const Icon(Icons.email_outlined),
+                  errorText: _emailError,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
                 ),
+              ),
 
-                AppSpacing.verticalSpacing(SpacingSize.lg),
+              AppSpacing.verticalSpacing(SpacingSize.lg),
 
-                // Phone Number Input
-                AppText.bodyMedium('Phone Number', fontWeight: FontWeight.w500),
+              AppText.bodyMedium('Password', fontWeight: FontWeight.w500),
+              AppSpacing.verticalSpacing(SpacingSize.sm),
+              TextFormField(
+                controller: _passwordController,
+                obscureText: !_isPasswordVisible,
+                enabled: !state.isLoading,
+                decoration: InputDecoration(
+                  hintText: 'Create a strong password',
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _isPasswordVisible
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() => _isPasswordVisible = !_isPasswordVisible);
+                    },
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
+                ),
+              ),
+
+              if (_passwordStrength != PasswordStrength.none) ...[
                 AppSpacing.verticalSpacing(SpacingSize.sm),
-                TextFormField(
-                  controller: _phoneController,
-                  keyboardType: TextInputType.phone,
-                  enabled: !state.isLoading,
-                  inputFormatters: [NigerianPhoneFormatter()],
-                  decoration: InputDecoration(
-                    hintText: '+234 801 234 5678',
-                    prefixIcon: Container(
-                      width: 40,
-                      height: 40,
-                      margin: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Center(
-                        child: Text('🇳🇬', style: TextStyle(fontSize: 16)),
-                      ),
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
-                  ),
-                ),
-
-                AppSpacing.verticalSpacing(SpacingSize.md),
-
-                AppText.bodySmall(
-                  'We\'ll send a verification code to create your account',
-                  color: Colors.grey,
-                ),
-              ] else ...[
-                // Show user info summary during OTP verification
-                AppContainer(
-                  padding: AppSpacing.paddingMD,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      AppText.bodySmall(
-                        'Creating account for:',
-                        color: Colors.grey,
-                      ),
-                      AppSpacing.verticalSpacing(SpacingSize.xs),
-                      AppText.bodyMedium(
-                        '${_firstNameController.text} ${_lastNameController.text}',
-                        fontWeight: FontWeight.w500,
-                      ),
-                      AppText.bodySmall(
-                        _phoneController.text,
-                        color: Colors.grey,
-                      ),
-                    ],
-                  ),
-                ),
-
-                AppSpacing.verticalSpacing(SpacingSize.lg),
-
-                // OTP Input (reuse the same OTP form as sign in)
-                AppText.bodyMedium(
-                  'Verification Code',
-                  fontWeight: FontWeight.w500,
-                ),
-                AppSpacing.verticalSpacing(SpacingSize.sm),
-
-                AppText.bodySmall(
-                  'Enter the 6-digit code sent to ${_phoneController.text}',
-                  color: Colors.grey,
-                ),
-                AppSpacing.verticalSpacing(SpacingSize.sm),
-
-                TextFormField(
-                  controller: _otpController,
-                  keyboardType: TextInputType.number,
-                  textAlign: TextAlign.center,
-                  enabled: !state.isLoading,
-                  maxLength: 6,
-                  inputFormatters: [OTPFormatter()],
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 8,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: '123456',
-                    counterText: '',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
-                  ),
-                ),
-
-                AppSpacing.verticalSpacing(SpacingSize.md),
-
-                // Resend Code Button
-                Center(
-                  child: TextButton(
-                    onPressed:
-                        (authData?.resendCooldown ?? 0) > 0 || state.isLoading
-                        ? null
-                        : _sendOTP,
-                    child: AppText.bodySmall(
-                      (authData?.resendCooldown ?? 0) > 0
-                          ? 'Resend code in ${authData?.resendCooldown ?? 0}s'
-                          : 'Resend verification code',
-                      color: (authData?.resendCooldown ?? 0) > 0
-                          ? Colors.grey
-                          : AppColors.primary,
-                    ),
-                  ),
-                ),
-
-                AppSpacing.verticalSpacing(SpacingSize.md),
-
-                // Change Phone Number
-                Center(
-                  child: TextButton(
-                    onPressed: state.isLoading
-                        ? null
-                        : () {
-                            _resetOTPState();
-                            context.read<AuthBloc>().add(
-                              AuthPhoneNumberChanged(_phoneController.text),
-                            );
-                          },
-                    child: AppText.bodySmall(
-                      'Change details',
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ),
+                _buildPasswordStrengthIndicator(),
               ],
+
+              AppSpacing.verticalSpacing(SpacingSize.lg),
+
+              AppText.bodyMedium('Confirm Password', fontWeight: FontWeight.w500),
+              AppSpacing.verticalSpacing(SpacingSize.sm),
+              TextFormField(
+                controller: _confirmPasswordController,
+                obscureText: !_isConfirmPasswordVisible,
+                enabled: !state.isLoading,
+                decoration: InputDecoration(
+                  hintText: 'Re-enter your password',
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _isConfirmPasswordVisible
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() => _isConfirmPasswordVisible = !_isConfirmPasswordVisible);
+                    },
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
+                ),
+              ),
 
               AppSpacing.verticalSpacing(SpacingSize.xl),
 
@@ -692,11 +607,7 @@ class _LoginScreenState extends State<LoginScreen>
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: state.isLoading
-                      ? null
-                      : (authData != null && authData.isOtpSent
-                            ? _verifyOTP
-                            : () => _signUpWithPhone()),
+                  onPressed: state.isLoading ? null : _signUp,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     shape: RoundedRectangleBorder(
@@ -713,9 +624,7 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                         )
                       : AppText.bodyLarge(
-                          authData != null && authData.isOtpSent
-                              ? 'Create Account'
-                              : 'Send Verification Code',
+                          'Create Account',
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
                         ),
@@ -727,4 +636,69 @@ class _LoginScreenState extends State<LoginScreen>
       },
     );
   }
+
+  Widget _buildPasswordStrengthIndicator() {
+    Color strengthColor;
+    String strengthText;
+    double strengthValue;
+
+    switch (_passwordStrength) {
+      case PasswordStrength.weak:
+        strengthColor = Colors.red;
+        strengthText = 'Weak';
+        strengthValue = 0.33;
+        break;
+      case PasswordStrength.medium:
+        strengthColor = Colors.orange;
+        strengthText = 'Medium';
+        strengthValue = 0.66;
+        break;
+      case PasswordStrength.strong:
+        strengthColor = Colors.green;
+        strengthText = 'Strong';
+        strengthValue = 1.0;
+        break;
+      case PasswordStrength.none:
+        return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: strengthValue,
+                  backgroundColor: Colors.grey.withValues(alpha: 0.2),
+                  valueColor: AlwaysStoppedAnimation<Color>(strengthColor),
+                  minHeight: 6,
+                ),
+              ),
+            ),
+            AppSpacing.horizontalSpacing(SpacingSize.sm),
+            AppText.bodySmall(
+              strengthText,
+              color: strengthColor,
+              fontWeight: FontWeight.w600,
+            ),
+          ],
+        ),
+        AppSpacing.verticalSpacing(SpacingSize.xs),
+        AppText.bodySmall(
+          'Use 8+ characters with uppercase, lowercase, numbers & symbols',
+          color: Colors.grey,
+        ),
+      ],
+    );
+  }
+}
+
+enum PasswordStrength {
+  none,
+  weak,
+  medium,
+  strong,
 }
