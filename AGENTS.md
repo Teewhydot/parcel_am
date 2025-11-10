@@ -1,30 +1,49 @@
-# Agent Guide
+# Agent Instructions
 
 ## Commands
 
-**Setup:** `flutter pub get`  
-**Build:** `flutter build apk` (Android) or `flutter build ios` (iOS)  
-**Lint:** `flutter analyze`  
-**Test:** `flutter test`  
-**Dev:** `flutter run` (requires connected device/emulator)
+**Initial Setup:**
+```bash
+flutter pub get
+```
 
-## Tech Stack
+**Build:**
+```bash
+flutter build apk  # Android
+flutter build ios  # iOS
+```
 
-- **Framework:** Flutter (Dart)
+**Lint:**
+```bash
+flutter analyze
+```
+
+**Tests:**
+```bash
+flutter test
+```
+
+**Dev Server:**
+```bash
+flutter run
+```
+
+## Tech Stack & Architecture
+
+- **Framework:** Flutter 3.8.1+ with Dart
 - **Architecture:** Clean Architecture with BLoC pattern
-- **State Management:** flutter_bloc, provider, GetX
+- **State Management:** flutter_bloc, provider
+- **Dependency Injection:** get_it
 - **Backend:** Firebase (Auth, Core, App Check)
+- **Network:** http, internet_connection_checker
 - **Storage:** shared_preferences, flutter_secure_storage
-- **DI:** get_it
 
-## Structure
-
-- `lib/features/` - Feature modules with data/domain/presentation layers
-- `lib/core/` - Shared utilities (bloc, network, errors, widgets, routes, config)
-- `test/` - Unit and widget tests
+**Structure:** `lib/features/{feature}/` with `data/`, `domain/`, `presentation/` layers. Core utilities in `lib/core/`.
 
 ## Code Style
 
-- Follow `analysis_options.yaml` (uses `package:flutter_lints/flutter.yaml`)
-- Clean Architecture: separate data, domain, and presentation layers
-- Use BLoC for state management with Equatable for value equality
+- Follow `flutter_lints` rules (see `analysis_options.yaml`)
+- Use Clean Architecture: Entities, Use Cases, Repositories pattern
+- BLoC for state management with events/states
+- Dependency injection via `injection_container.dart`
+- No print statements in production (use proper logging)

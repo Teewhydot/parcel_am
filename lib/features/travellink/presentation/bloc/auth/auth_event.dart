@@ -1,5 +1,4 @@
 import 'package:equatable/equatable.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 abstract class AuthEvent extends Equatable {
   const AuthEvent();
@@ -58,72 +57,22 @@ class AuthRegisterRequested extends AuthEvent {
   List<Object> get props => [email, password, displayName];
 }
 
-class AuthPhoneNumberChanged extends AuthEvent {
-  final String phoneNumber;
+class AuthEmailChanged extends AuthEvent {
+  final String email;
 
-  const AuthPhoneNumberChanged(this.phoneNumber);
+  const AuthEmailChanged(this.email);
 
   @override
-  List<Object> get props => [phoneNumber];
+  List<Object> get props => [email];
 }
 
-class AuthOtpChanged extends AuthEvent {
-  final String otp;
+class AuthPasswordChanged extends AuthEvent {
+  final String password;
 
-  const AuthOtpChanged(this.otp);
-
-  @override
-  List<Object> get props => [otp];
-}
-
-class AuthSendOtpRequested extends AuthEvent {
-  final String phoneNumber;
-
-  const AuthSendOtpRequested(this.phoneNumber);
+  const AuthPasswordChanged(this.password);
 
   @override
-  List<Object> get props => [phoneNumber];
-}
-
-class AuthVerifyOtpRequested extends AuthEvent {
-  final String phoneNumber;
-  final String otp;
-
-  const AuthVerifyOtpRequested({
-    required this.phoneNumber,
-    required this.otp,
-  });
-
-  @override
-  List<Object> get props => [phoneNumber, otp];
-}
-
-class AuthResendOtpRequested extends AuthEvent {
-  final String phoneNumber;
-
-  const AuthResendOtpRequested(this.phoneNumber);
-
-  @override
-  List<Object> get props => [phoneNumber];
-}
-
-class AuthAutoVerificationCompleted extends AuthEvent {
-  final PhoneAuthCredential credential;
-
-  const AuthAutoVerificationCompleted(this.credential);
-
-  @override
-  List<Object> get props => [credential];
-}
-
-class AuthCodeSent extends AuthEvent {
-  final String verificationId;
-  final int? resendToken;
-
-  const AuthCodeSent(this.verificationId, this.resendToken);
-
-  @override
-  List<Object?> get props => [verificationId, resendToken];
+  List<Object> get props => [password];
 }
 
 class AuthLogoutRequested extends AuthEvent {
@@ -158,17 +107,4 @@ class AuthPasswordResetRequested extends AuthEvent {
 
   @override
   List<Object> get props => [email];
-}
-
-class AuthUpdateResendCooldown extends AuthEvent {
-  final int cooldown;
-
-  const AuthUpdateResendCooldown(this.cooldown);
-
-  @override
-  List<Object> get props => [cooldown];
-}
-
-class AuthEnableResendOtp extends AuthEvent {
-  const AuthEnableResendOtp();
 }
