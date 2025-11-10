@@ -141,16 +141,14 @@ class AuthRestoreStateRequested extends AuthEvent {
 class AuthUserProfileUpdateRequested extends AuthEvent {
   final String displayName;
   final String email;
-  final String phoneNumber;
 
   const AuthUserProfileUpdateRequested({
     required this.displayName,
     required this.email,
-    required this.phoneNumber,
   });
 
   @override
-  List<Object> get props => [displayName, email, phoneNumber];
+  List<Object> get props => [displayName, email];
 }
 
 class AuthPasswordResetRequested extends AuthEvent {

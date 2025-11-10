@@ -31,15 +31,11 @@ class _LoginScreenState extends State<LoginScreen>
     with SingleTickerProviderStateMixin {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
-  final _firstNameController = TextEditingController();
-  final _lastNameController = TextEditingController();
+  final _displayNameController = TextEditingController();
+  final _resetEmailController = TextEditingController();
   late TabController _tabController;
-  
-  bool _isPasswordVisible = false;
-  bool _isConfirmPasswordVisible = false;
-  String? _emailError;
-  PasswordStrength _passwordStrength = PasswordStrength.none;
+  bool _obscurePassword = true;
+  bool _showPasswordReset = false;
 
   @override
   void initState() {
@@ -49,121 +45,84 @@ class _LoginScreenState extends State<LoginScreen>
     if (args?['showSignIn'] == true) {
       _tabController.animateTo(0);
     }
-    
-    _passwordController.addListener(_validatePasswordStrength);
   }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _confirmPasswordController.dispose();
-    _firstNameController.dispose();
-    _lastNameController.dispose();
+    _displayNameController.dispose();
+    _resetEmailController.dispose();
     _tabController.dispose();
     super.dispose();
   }
 
-  bool _validateEmail(String email) {
-    final emailRegex = RegExp(
-      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
-    );
-    return emailRegex.hasMatch(email);
-  }
-
-  void _validatePasswordStrength() {
-    final password = _passwordController.text;
-    
-    if (password.isEmpty) {
-      setState(() => _passwordStrength = PasswordStrength.none);
-      return;
-    }
-    
-    int score = 0;
-    
-    if (password.length >= 8) score++;
-    if (password.length >= 12) score++;
-    if (RegExp(r'[A-Z]').hasMatch(password)) score++;
-    if (RegExp(r'[a-z]').hasMatch(password)) score++;
-    if (RegExp(r'[0-9]').hasMatch(password)) score++;
-    if (RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password)) score++;
-    
-    setState(() {
-      if (score <= 2) {
-        _passwordStrength = PasswordStrength.weak;
-      } else if (score <= 4) {
-        _passwordStrength = PasswordStrength.medium;
-      } else {
-        _passwordStrength = PasswordStrength.strong;
-      }
-    });
-  }
-
-  void _signIn() {
+  void _login() {
     final email = _emailController.text.trim();
-    final password = _passwordController.text;
+    final password = _passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
-      _showError('Please enter both email and password');
+      _showError('Please enter your email and password');
       return;
     }
 
-    if (!_validateEmail(email)) {
-      setState(() => _emailError = 'Please enter a valid email address');
+    if (!_isValidEmail(email)) {
+      _showError('Please enter a valid email address');
       return;
     }
 
-    setState(() => _emailError = null);
-    
     context.read<AuthBloc>().add(
-      AuthLoginRequested(
-        email: email,
-        password: password,
-      ),
-    );
+          AuthLoginRequested(email: email, password: password),
+        );
   }
 
-  void _signUp() {
+  void _register() {
     final email = _emailController.text.trim();
-    final password = _passwordController.text;
-    final confirmPassword = _confirmPasswordController.text;
-    final firstName = _firstNameController.text.trim();
-    final lastName = _lastNameController.text.trim();
+    final password = _passwordController.text.trim();
+    final displayName = _displayNameController.text.trim();
 
-    if (firstName.isEmpty || lastName.isEmpty) {
-      _showError('Please enter your full name');
+    if (email.isEmpty || password.isEmpty || displayName.isEmpty) {
+      _showError('Please fill in all fields');
       return;
     }
 
-    if (email.isEmpty || password.isEmpty) {
-      _showError('Please enter both email and password');
+    if (!_isValidEmail(email)) {
+      _showError('Please enter a valid email address');
       return;
     }
 
-    if (!_validateEmail(email)) {
-      setState(() => _emailError = 'Please enter a valid email address');
+    if (password.length < 6) {
+      _showError('Password must be at least 6 characters');
       return;
     }
 
-    if (password.length < 8) {
-      _showError('Password must be at least 8 characters long');
-      return;
-    }
-
-    if (password != confirmPassword) {
-      _showError('Passwords do not match');
-      return;
-    }
-
-    setState(() => _emailError = null);
-    
     context.read<AuthBloc>().add(
-      AuthRegisterRequested(
-        email: email,
-        password: password,
-        displayName: '$firstName $lastName',
-      ),
-    );
+          AuthRegisterRequested(
+            email: email,
+            password: password,
+            displayName: displayName,
+          ),
+        );
+  }
+
+  void _resetPassword() {
+    final email = _resetEmailController.text.trim();
+
+    if (email.isEmpty) {
+      _showError('Please enter your email address');
+      return;
+    }
+
+    if (!_isValidEmail(email)) {
+      _showError('Please enter a valid email address');
+      return;
+    }
+
+    context.read<AuthBloc>().add(AuthPasswordResetRequested(email));
+  }
+
+  bool _isValidEmail(String email) {
+    return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
   }
 
   void _navigateToDashboard() {
@@ -172,6 +131,21 @@ class _LoginScreenState extends State<LoginScreen>
 
   void _showError(String message) {
     context.showErrorMessage(message);
+  }
+
+  void _showSuccess(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
+  void _togglePasswordResetView() {
+    setState(() {
+      _showPasswordReset = !_showPasswordReset;
+    });
   }
 
   @override
@@ -196,18 +170,23 @@ class _LoginScreenState extends State<LoginScreen>
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     AppButton.text(
-                      onPressed: () => sl<NavigationService>().goBack(),
+                      onPressed: () {
+                        if (_showPasswordReset) {
+                          _togglePasswordResetView();
+                        } else {
+                          sl<NavigationService>().goBack();
+                        }
+                      },
                       child: const Icon(Icons.arrow_back, size: 20),
                     ),
                     AppText.titleMedium(
-                      'Welcome Back',
+                      _showPasswordReset ? 'Reset Password' : 'Welcome Back',
                       fontWeight: FontWeight.w600,
                     ),
                     const SizedBox(width: 40),
                   ],
                 ),
               ),
-
               Padding(
                 padding: AppSpacing.paddingLG,
                 child: AppContainer(
@@ -237,8 +216,10 @@ class _LoginScreenState extends State<LoginScreen>
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(
-                                Icons.email_outlined,
+                              Icon(
+                                _showPasswordReset
+                                    ? Icons.lock_reset
+                                    : Icons.email,
                                 size: 48,
                                 color: Colors.white,
                               ),
@@ -246,7 +227,9 @@ class _LoginScreenState extends State<LoginScreen>
                               Padding(
                                 padding: AppSpacing.paddingMD,
                                 child: AppText.bodyMedium(
-                                  'Secure access with your email and password',
+                                  _showPasswordReset
+                                      ? 'Enter your email to receive a password reset link'
+                                      : 'Secure access with your email and password',
                                   color: Colors.white,
                                   textAlign: TextAlign.center,
                                 ),
@@ -259,68 +242,69 @@ class _LoginScreenState extends State<LoginScreen>
                   ),
                 ),
               ),
-
               Expanded(
                 child: Padding(
                   padding: AppSpacing.paddingLG,
-                  child: Column(
-                    children: [
-                      AppContainer(
-                        decoration: BoxDecoration(
-                          color: Colors.grey.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: TabBar(
-                          controller: _tabController,
-                          indicator: BoxDecoration(
-                            color: AppColors.primary,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          labelColor: Colors.white,
-                          unselectedLabelColor: Colors.black,
-                          dividerColor: Colors.transparent,
-                          tabs: const [
-                            Tab(text: 'Sign In'),
-                            Tab(text: 'Sign Up'),
-                          ],
-                        ),
-                      ),
-
-                      AppSpacing.verticalSpacing(SpacingSize.xl),
-
-                      Expanded(
-                        child: TabBarView(
-                          controller: _tabController,
-                          children: [_buildSignInForm(), _buildSignUpForm()],
-                        ),
-                      ),
-
-                      Padding(
-                        padding: AppSpacing.paddingMD,
-                        child: RichText(
-                          textAlign: TextAlign.center,
-                          text: TextSpan(
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey,
-                            ),
-                            children: [
-                              const TextSpan(
-                                text: 'By continuing, you agree to our ',
+                  child: _showPasswordReset
+                      ? _buildPasswordResetForm()
+                      : Column(
+                          children: [
+                            AppContainer(
+                              decoration: BoxDecoration(
+                                color: Colors.grey.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                              TextSpan(
-                                text: 'Terms & Privacy Policy',
-                                style: const TextStyle(
+                              child: TabBar(
+                                controller: _tabController,
+                                indicator: BoxDecoration(
                                   color: AppColors.primary,
-                                  decoration: TextDecoration.underline,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                labelColor: Colors.white,
+                                unselectedLabelColor: Colors.black,
+                                dividerColor: Colors.transparent,
+                                tabs: const [
+                                  Tab(text: 'Sign In'),
+                                  Tab(text: 'Sign Up'),
+                                ],
+                              ),
+                            ),
+                            AppSpacing.verticalSpacing(SpacingSize.xl),
+                            Expanded(
+                              child: TabBarView(
+                                controller: _tabController,
+                                children: [
+                                  _buildSignInForm(),
+                                  _buildSignUpForm()
+                                ],
+                              ),
+                            ),
+                            Padding(
+                              padding: AppSpacing.paddingMD,
+                              child: RichText(
+                                textAlign: TextAlign.center,
+                                text: TextSpan(
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey,
+                                  ),
+                                  children: [
+                                    const TextSpan(
+                                      text: 'By continuing, you agree to our ',
+                                    ),
+                                    TextSpan(
+                                      text: 'Terms & Privacy Policy',
+                                      style: const TextStyle(
+                                        color: AppColors.primary,
+                                        decoration: TextDecoration.underline,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
-                  ),
                 ),
               ),
             ],
@@ -337,21 +321,15 @@ class _LoginScreenState extends State<LoginScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AppText.bodyMedium('Email Address', fontWeight: FontWeight.w500),
+              AppText.bodyMedium('Email', fontWeight: FontWeight.w500),
               AppSpacing.verticalSpacing(SpacingSize.sm),
               TextFormField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 enabled: !state.isLoading,
-                onChanged: (value) {
-                  if (_emailError != null) {
-                    setState(() => _emailError = null);
-                  }
-                },
                 decoration: InputDecoration(
-                  hintText: 'example@email.com',
+                  hintText: 'your.email@example.com',
                   prefixIcon: const Icon(Icons.email_outlined),
-                  errorText: _emailError,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -361,26 +339,26 @@ class _LoginScreenState extends State<LoginScreen>
                   ),
                 ),
               ),
-
-              AppSpacing.verticalSpacing(SpacingSize.lg),
-
+              AppSpacing.verticalSpacing(SpacingSize.md),
               AppText.bodyMedium('Password', fontWeight: FontWeight.w500),
               AppSpacing.verticalSpacing(SpacingSize.sm),
               TextFormField(
                 controller: _passwordController,
-                obscureText: !_isPasswordVisible,
+                obscureText: _obscurePassword,
                 enabled: !state.isLoading,
                 decoration: InputDecoration(
-                  hintText: 'Enter your password',
+                  hintText: '••••••••',
                   prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _isPasswordVisible
-                          ? Icons.visibility_off
-                          : Icons.visibility,
+                      _obscurePassword
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
                     ),
                     onPressed: () {
-                      setState(() => _isPasswordVisible = !_isPasswordVisible);
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
                     },
                   ),
                   border: OutlineInputBorder(
@@ -392,27 +370,23 @@ class _LoginScreenState extends State<LoginScreen>
                   ),
                 ),
               ),
-
-              AppSpacing.verticalSpacing(SpacingSize.md),
-
+              AppSpacing.verticalSpacing(SpacingSize.sm),
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
-                  onPressed: state.isLoading ? null : () {},
+                  onPressed: state.isLoading ? null : _togglePasswordResetView,
                   child: AppText.bodySmall(
                     'Forgot Password?',
                     color: AppColors.primary,
                   ),
                 ),
               ),
-
-              AppSpacing.verticalSpacing(SpacingSize.xl),
-
+              AppSpacing.verticalSpacing(SpacingSize.lg),
               SizedBox(
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: state.isLoading ? null : _signIn,
+                  onPressed: state.isLoading ? null : _login,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     shape: RoundedRectangleBorder(
@@ -449,81 +423,33 @@ class _LoginScreenState extends State<LoginScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        AppText.bodyMedium(
-                          'First Name',
-                          fontWeight: FontWeight.w500,
-                        ),
-                        AppSpacing.verticalSpacing(SpacingSize.sm),
-                        TextFormField(
-                          controller: _firstNameController,
-                          enabled: !state.isLoading,
-                          decoration: InputDecoration(
-                            hintText: 'John',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 16,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+              AppText.bodyMedium('Display Name', fontWeight: FontWeight.w500),
+              AppSpacing.verticalSpacing(SpacingSize.sm),
+              TextFormField(
+                controller: _displayNameController,
+                enabled: !state.isLoading,
+                decoration: InputDecoration(
+                  hintText: 'John Doe',
+                  prefixIcon: const Icon(Icons.person_outline),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  AppSpacing.horizontalSpacing(SpacingSize.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        AppText.bodyMedium(
-                          'Last Name',
-                          fontWeight: FontWeight.w500,
-                        ),
-                        AppSpacing.verticalSpacing(SpacingSize.sm),
-                        TextFormField(
-                          controller: _lastNameController,
-                          enabled: !state.isLoading,
-                          decoration: InputDecoration(
-                            hintText: 'Doe',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 16,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
                   ),
-                ],
+                ),
               ),
-
-              AppSpacing.verticalSpacing(SpacingSize.lg),
-
-              AppText.bodyMedium('Email Address', fontWeight: FontWeight.w500),
+              AppSpacing.verticalSpacing(SpacingSize.md),
+              AppText.bodyMedium('Email', fontWeight: FontWeight.w500),
               AppSpacing.verticalSpacing(SpacingSize.sm),
               TextFormField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 enabled: !state.isLoading,
-                onChanged: (value) {
-                  if (_emailError != null) {
-                    setState(() => _emailError = null);
-                  }
-                },
                 decoration: InputDecoration(
-                  hintText: 'example@email.com',
+                  hintText: 'your.email@example.com',
                   prefixIcon: const Icon(Icons.email_outlined),
-                  errorText: _emailError,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -533,26 +459,26 @@ class _LoginScreenState extends State<LoginScreen>
                   ),
                 ),
               ),
-
-              AppSpacing.verticalSpacing(SpacingSize.lg),
-
+              AppSpacing.verticalSpacing(SpacingSize.md),
               AppText.bodyMedium('Password', fontWeight: FontWeight.w500),
               AppSpacing.verticalSpacing(SpacingSize.sm),
               TextFormField(
                 controller: _passwordController,
-                obscureText: !_isPasswordVisible,
+                obscureText: _obscurePassword,
                 enabled: !state.isLoading,
                 decoration: InputDecoration(
-                  hintText: 'Create a strong password',
+                  hintText: '••••••••',
                   prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _isPasswordVisible
-                          ? Icons.visibility_off
-                          : Icons.visibility,
+                      _obscurePassword
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
                     ),
                     onPressed: () {
-                      setState(() => _isPasswordVisible = !_isPasswordVisible);
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
                     },
                   ),
                   border: OutlineInputBorder(
@@ -564,50 +490,17 @@ class _LoginScreenState extends State<LoginScreen>
                   ),
                 ),
               ),
-
-              if (_passwordStrength != PasswordStrength.none) ...[
-                AppSpacing.verticalSpacing(SpacingSize.sm),
-                _buildPasswordStrengthIndicator(),
-              ],
-
-              AppSpacing.verticalSpacing(SpacingSize.lg),
-
-              AppText.bodyMedium('Confirm Password', fontWeight: FontWeight.w500),
               AppSpacing.verticalSpacing(SpacingSize.sm),
-              TextFormField(
-                controller: _confirmPasswordController,
-                obscureText: !_isConfirmPasswordVisible,
-                enabled: !state.isLoading,
-                decoration: InputDecoration(
-                  hintText: 'Re-enter your password',
-                  prefixIcon: const Icon(Icons.lock_outline),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _isConfirmPasswordVisible
-                          ? Icons.visibility_off
-                          : Icons.visibility,
-                    ),
-                    onPressed: () {
-                      setState(() => _isConfirmPasswordVisible = !_isConfirmPasswordVisible);
-                    },
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
-                  ),
-                ),
+              AppText.bodySmall(
+                'Password must be at least 6 characters',
+                color: Colors.grey,
               ),
-
               AppSpacing.verticalSpacing(SpacingSize.xl),
-
               SizedBox(
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: state.isLoading ? null : _signUp,
+                  onPressed: state.isLoading ? null : _register,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     shape: RoundedRectangleBorder(
@@ -637,68 +530,91 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  Widget _buildPasswordStrengthIndicator() {
-    Color strengthColor;
-    String strengthText;
-    double strengthValue;
-
-    switch (_passwordStrength) {
-      case PasswordStrength.weak:
-        strengthColor = Colors.red;
-        strengthText = 'Weak';
-        strengthValue = 0.33;
-        break;
-      case PasswordStrength.medium:
-        strengthColor = Colors.orange;
-        strengthText = 'Medium';
-        strengthValue = 0.66;
-        break;
-      case PasswordStrength.strong:
-        strengthColor = Colors.green;
-        strengthText = 'Strong';
-        strengthValue = 1.0;
-        break;
-      case PasswordStrength.none:
-        return const SizedBox.shrink();
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: strengthValue,
-                  backgroundColor: Colors.grey.withValues(alpha: 0.2),
-                  valueColor: AlwaysStoppedAnimation<Color>(strengthColor),
-                  minHeight: 6,
+  Widget _buildPasswordResetForm() {
+    return BlocConsumer<AuthBloc, BaseState<AuthData>>(
+      listener: (context, state) {
+        if (state is SuccessState) {
+          _showSuccess(
+            'Password reset email sent! Check your inbox.',
+          );
+          Future.delayed(const Duration(seconds: 2), () {
+            if (mounted) {
+              _togglePasswordResetView();
+              _resetEmailController.clear();
+            }
+          });
+        }
+      },
+      builder: (context, state) {
+        return SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AppText.bodyMedium('Email', fontWeight: FontWeight.w500),
+              AppSpacing.verticalSpacing(SpacingSize.sm),
+              TextFormField(
+                controller: _resetEmailController,
+                keyboardType: TextInputType.emailAddress,
+                enabled: !state.isLoading,
+                decoration: InputDecoration(
+                  hintText: 'your.email@example.com',
+                  prefixIcon: const Icon(Icons.email_outlined),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
                 ),
               ),
-            ),
-            AppSpacing.horizontalSpacing(SpacingSize.sm),
-            AppText.bodySmall(
-              strengthText,
-              color: strengthColor,
-              fontWeight: FontWeight.w600,
-            ),
-          ],
-        ),
-        AppSpacing.verticalSpacing(SpacingSize.xs),
-        AppText.bodySmall(
-          'Use 8+ characters with uppercase, lowercase, numbers & symbols',
-          color: Colors.grey,
-        ),
-      ],
+              AppSpacing.verticalSpacing(SpacingSize.md),
+              AppText.bodySmall(
+                'We\'ll send you a link to reset your password',
+                color: Colors.grey,
+              ),
+              AppSpacing.verticalSpacing(SpacingSize.xl),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: state.isLoading ? null : _resetPassword,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: state.isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : AppText.bodyLarge(
+                          'Send Reset Link',
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                ),
+              ),
+              AppSpacing.verticalSpacing(SpacingSize.md),
+              Center(
+                child: TextButton(
+                  onPressed: state.isLoading ? null : _togglePasswordResetView,
+                  child: AppText.bodySmall(
+                    'Back to Sign In',
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
-}
-
-enum PasswordStrength {
-  none,
-  weak,
-  medium,
-  strong,
 }

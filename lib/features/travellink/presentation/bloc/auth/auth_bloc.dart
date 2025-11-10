@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:parcel_am/core/bloc/base/base_bloc.dart';
 import 'package:parcel_am/core/bloc/base/base_state.dart';
@@ -13,12 +14,20 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
   final RegisterUseCase registerUseCase;
   final LogoutUseCase logoutUseCase;
   final GetCurrentUserUseCase getCurrentUserUseCase;
+  final PhoneAuthUseCase phoneAuthUseCase;
+  final SendPhoneVerificationUseCase sendPhoneVerificationUseCase;
+  final ResetPasswordUseCase resetPasswordUseCase;
+  
+  Timer? _resendTimer;
 
   AuthBloc({
     required this.loginUseCase,
     required this.registerUseCase,
     required this.logoutUseCase,
     required this.getCurrentUserUseCase,
+    required this.phoneAuthUseCase,
+    required this.sendPhoneVerificationUseCase,
+    required this.resetPasswordUseCase,
   }) : super(const InitialState<AuthData>()) {
     
     on<AuthStarted>(_onAuthStarted);
@@ -175,11 +184,8 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
     final updatedUser = currentData.user!.copyWith(
       displayName: event.displayName,
       email: event.email,
-      phoneNumber: event.phoneNumber,
     );
 
-    // Note: You would need to create an UpdateUserProfileUseCase for this
-    // For now, just update the state
     emit(LoadedState<AuthData>(
       data: currentData.copyWith(user: updatedUser),
       lastUpdated: DateTime.now(),
@@ -187,13 +193,23 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
   }
 
   Future<void> _onPasswordResetRequested(AuthPasswordResetRequested event, Emitter<BaseState<AuthData>> emit) async {
-    emit(const LoadingState<AuthData>(message: 'Resetting password...'));
+    emit(const LoadingState<AuthData>(message: 'Sending reset email...'));
 
-    // Note: You would need to create a ResetPasswordUseCase for this
-    // For now, just show success
-    emit(const SuccessState<AuthData>(
-      successMessage: 'Password reset instructions sent to your email',
-    ));
+    final result = await resetPasswordUseCase(event.email);
+
+    result.fold(
+      (failure) {
+        emit(ErrorState<AuthData>(
+          errorMessage: failure.failureMessage,
+          errorCode: 'password_reset_failed',
+        ));
+      },
+      (_) {
+        emit(const SuccessState<AuthData>(
+          successMessage: 'Password reset email sent! Check your inbox.',
+        ));
+      },
+    );
   }
 
   AuthData _getCurrentAuthData() {

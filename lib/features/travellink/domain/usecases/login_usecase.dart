@@ -29,3 +29,13 @@ class LoginParams extends Equatable {
   @override
   List<Object> get props => [email, password];
 }
+
+class ResetPasswordUseCase {
+  final AuthRepository repository;
+
+  ResetPasswordUseCase(this.repository);
+
+  Future<Either<Failure, void>> call(String email) async {
+    return await repository.resetPassword(email);
+  }
+}

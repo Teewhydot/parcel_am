@@ -4,7 +4,6 @@ class UserEntity extends Equatable {
   final String uid;
   final String displayName;
   final String email;
-  final String phoneNumber;
   final bool isVerified;
   final String verificationStatus;
   final DateTime createdAt;
@@ -19,7 +18,6 @@ class UserEntity extends Equatable {
     required this.uid,
     required this.displayName,
     required this.email,
-    required this.phoneNumber,
     required this.isVerified,
     required this.verificationStatus,
     required this.createdAt,
@@ -35,7 +33,6 @@ class UserEntity extends Equatable {
     String? uid,
     String? displayName,
     String? email,
-    String? phoneNumber,
     bool? isVerified,
     String? verificationStatus,
     DateTime? createdAt,
@@ -50,7 +47,6 @@ class UserEntity extends Equatable {
       uid: uid ?? this.uid,
       displayName: displayName ?? this.displayName,
       email: email ?? this.email,
-      phoneNumber: phoneNumber ?? this.phoneNumber,
       isVerified: isVerified ?? this.isVerified,
       verificationStatus: verificationStatus ?? this.verificationStatus,
       createdAt: createdAt ?? this.createdAt,
@@ -68,7 +64,6 @@ class UserEntity extends Equatable {
         uid,
         displayName,
         email,
-        phoneNumber,
         isVerified,
         verificationStatus,
         createdAt,

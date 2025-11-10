@@ -31,14 +31,12 @@ class AuthProvider extends ChangeNotifier {
   void updateUserProfile({
     String? displayName,
     String? email,
-    String? phoneNumber,
     Map<String, dynamic>? additionalData,
   }) {
     if (_user != null) {
       _user = _user!.copyWith(
         displayName: displayName ?? _user!.displayName,
         email: email ?? _user!.email,
-        phoneNumber: phoneNumber ?? _user!.phoneNumber,
         additionalData: {..._user!.additionalData, ...?additionalData},
       );
       notifyListeners();
@@ -55,9 +53,8 @@ class AuthProvider extends ChangeNotifier {
         uid: firebaseUser.uid,
         displayName: displayName ?? firebaseUser.displayName ?? 'User',
         email: firebaseUser.email ?? '',
-        phoneNumber: firebaseUser.phoneNumber ?? '',
-        isVerified: firebaseUser.phoneNumber != null,
-        verificationStatus: firebaseUser.phoneNumber != null ? 'verified' : 'pending',
+        isVerified: firebaseUser.emailVerified,
+        verificationStatus: firebaseUser.emailVerified ? 'verified' : 'pending',
         createdAt: DateTime.now(),
         additionalData: {},
       );

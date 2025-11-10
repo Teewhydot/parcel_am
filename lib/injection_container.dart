@@ -15,6 +15,7 @@ import 'features/travellink/domain/usecases/login_usecase.dart';
 import 'features/travellink/domain/usecases/register_usecase.dart';
 import 'features/travellink/domain/usecases/logout_usecase.dart';
 import 'features/travellink/domain/usecases/get_current_user_usecase.dart';
+import 'features/travellink/domain/usecases/phone_auth_usecase.dart';
 import 'features/travellink/presentation/bloc/auth/auth_bloc.dart';
 
 final sl = GetIt.instance;
@@ -36,6 +37,9 @@ Future<void> init() async {
     registerUseCase: sl(),
     logoutUseCase: sl(),
     getCurrentUserUseCase: sl(),
+    phoneAuthUseCase: sl(),
+    sendPhoneVerificationUseCase: sl(),
+    resetPasswordUseCase: sl(),
   ));
 
   // Use cases
@@ -43,6 +47,9 @@ Future<void> init() async {
   sl.registerLazySingleton(() => RegisterUseCase(sl()));
   sl.registerLazySingleton(() => LogoutUseCase(sl()));
   sl.registerLazySingleton(() => GetCurrentUserUseCase(sl()));
+  sl.registerLazySingleton(() => PhoneAuthUseCase(sl()));
+  sl.registerLazySingleton(() => SendPhoneVerificationUseCase(sl()));
+  sl.registerLazySingleton(() => ResetPasswordUseCase(sl()));
 
   // Repository
   sl.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl(

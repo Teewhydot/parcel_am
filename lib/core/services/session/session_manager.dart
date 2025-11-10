@@ -9,7 +9,7 @@ class SessionManager {
   // Keys for secure storage
   static const String _isLoggedInKey = 'is_logged_in';
   static const String _userIdKey = 'user_id';
-  static const String _userPhoneKey = 'user_phone';
+  static const String _userEmailKey = 'user_email';
   static const String _userDisplayNameKey = 'user_display_name';
   
   static SessionManager? _instance;
@@ -22,7 +22,7 @@ class SessionManager {
     try {
       await _storage.write(key: _isLoggedInKey, value: 'true');
       await _storage.write(key: _userIdKey, value: user.uid);
-      await _storage.write(key: _userPhoneKey, value: user.phoneNumber ?? '');
+      await _storage.write(key: _userEmailKey, value: user.email ?? '');
       await _storage.write(key: _userDisplayNameKey, value: user.displayName ?? '');
     } catch (e) {
       // Handle storage error
@@ -59,12 +59,12 @@ class SessionManager {
   Future<Map<String, String?>> getStoredUserData() async {
     try {
       final userId = await _storage.read(key: _userIdKey);
-      final userPhone = await _storage.read(key: _userPhoneKey);
+      final userEmail = await _storage.read(key: _userEmailKey);
       final userDisplayName = await _storage.read(key: _userDisplayNameKey);
       
       return {
         'uid': userId,
-        'phoneNumber': userPhone,
+        'email': userEmail,
         'displayName': userDisplayName,
       };
     } catch (e) {

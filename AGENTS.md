@@ -1,34 +1,30 @@
-# Agent Development Guide
+# Agent Guide
 
 ## Commands
 
-**Setup**: `flutter pub get`  
-**Build**: `flutter build apk` (Android) or `flutter build ios` (iOS)  
-**Lint**: `flutter analyze`  
-**Test**: `flutter test`  
-**Dev**: `flutter run`
+**Setup:** `flutter pub get`  
+**Build:** `flutter build apk` (Android) or `flutter build ios` (iOS)  
+**Lint:** `flutter analyze`  
+**Test:** `flutter test`  
+**Dev:** `flutter run` (requires connected device/emulator)
 
 ## Tech Stack
 
-- **Framework**: Flutter (Dart 3.8.1+)
-- **Architecture**: Clean Architecture with BLoC pattern
-- **State Management**: flutter_bloc, GetX (navigation)
-- **DI**: get_it
-- **Backend**: Firebase (Auth, Core)
-- **Networking**: http, internet_connection_checker
-- **Storage**: shared_preferences, flutter_secure_storage
+- **Framework:** Flutter (Dart)
+- **Architecture:** Clean Architecture with BLoC pattern
+- **State Management:** flutter_bloc, provider, GetX
+- **Backend:** Firebase (Auth, Core, App Check)
+- **Storage:** shared_preferences, flutter_secure_storage
+- **DI:** get_it
 
-## Project Structure
+## Structure
 
-- `lib/features/`: Feature modules (data/domain/presentation layers)
-- `lib/core/`: Shared utilities (bloc_manager, network, routes, theme, widgets)
-- `lib/injection_container.dart`: Dependency injection setup
-- `test/`: Unit and widget tests
+- `lib/features/` - Feature modules with data/domain/presentation layers
+- `lib/core/` - Shared utilities (bloc, network, errors, widgets, routes, config)
+- `test/` - Unit and widget tests
 
 ## Code Style
 
-- Follow `flutter_lints` rules (see `analysis_options.yaml`)
-- Clean Architecture layers: presentation → domain → data
-- Use BLoC for state management, Equatable for value equality
-- Repository pattern with local/remote data sources
-- Use cases encapsulate business logic
+- Follow `analysis_options.yaml` (uses `package:flutter_lints/flutter.yaml`)
+- Clean Architecture: separate data, domain, and presentation layers
+- Use BLoC for state management with Equatable for value equality
