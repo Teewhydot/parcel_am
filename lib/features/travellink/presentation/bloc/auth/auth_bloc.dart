@@ -14,8 +14,6 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
   final RegisterUseCase registerUseCase;
   final LogoutUseCase logoutUseCase;
   final GetCurrentUserUseCase getCurrentUserUseCase;
-  final PhoneAuthUseCase phoneAuthUseCase;
-  final SendPhoneVerificationUseCase sendPhoneVerificationUseCase;
   final ResetPasswordUseCase resetPasswordUseCase;
   
   Timer? _resendTimer;
@@ -25,8 +23,6 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
     required this.registerUseCase,
     required this.logoutUseCase,
     required this.getCurrentUserUseCase,
-    required this.phoneAuthUseCase,
-    required this.sendPhoneVerificationUseCase,
     required this.resetPasswordUseCase,
   }) : super(const InitialState<AuthData>()) {
     

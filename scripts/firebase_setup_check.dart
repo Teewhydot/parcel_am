@@ -240,7 +240,6 @@ Future<bool> _checkPubspecDependencies() async {
     'firebase_auth',
     'flutter_bloc',
     'flutter_secure_storage',
-    'sms_autofill',
     'get',
   ];
   
