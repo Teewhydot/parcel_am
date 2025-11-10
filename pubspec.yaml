@@ -63,7 +63,6 @@ dependencies:
   # Firebase dependencies
   firebase_core: ^2.24.2
   firebase_auth: ^4.16.0
-  firebase_app_check: ^0.2.2
 
   # Secure storage for tokens
   flutter_secure_storage: ^9.2.2

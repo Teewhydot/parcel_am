@@ -1,7 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
-import 'package:parcel_am/core/services/firebase/app_check_service.dart';
 import 'package:parcel_am/core/config/firebase_config.dart';
 
 enum FirebaseEnvironment { development, production }
@@ -31,13 +30,10 @@ class FirebaseService {
     try {
       await Firebase.initializeApp();
       _auth = FirebaseAuth.instance;
-      
+
       // Configure auth settings
       await _configureAuthSettings();
-      
-      // Initialize App Check for security
-      await AppCheckService.instance.initialize();
-      
+
       debugPrint('Firebase initialized successfully');
     } catch (e) {
       debugPrint('Firebase initialization error: $e');
