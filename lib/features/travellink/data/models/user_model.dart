@@ -14,6 +14,8 @@ class UserModel extends UserEntity {
     super.completedDeliveries,
     super.packagesSent,
     super.totalEarnings,
+    super.availableBalance,
+    super.pendingBalance,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -30,6 +32,8 @@ class UserModel extends UserEntity {
       completedDeliveries: json['completedDeliveries'],
       packagesSent: json['packagesSent'],
       totalEarnings: json['totalEarnings']?.toDouble(),
+      availableBalance: json['availableBalance']?.toDouble(),
+      pendingBalance: json['pendingBalance']?.toDouble(),
     );
   }
 
@@ -47,6 +51,8 @@ class UserModel extends UserEntity {
       'completedDeliveries': completedDeliveries,
       'packagesSent': packagesSent,
       'totalEarnings': totalEarnings,
+      'availableBalance': availableBalance,
+      'pendingBalance': pendingBalance,
     };
   }
 
@@ -64,6 +70,8 @@ class UserModel extends UserEntity {
       completedDeliveries: entity.completedDeliveries,
       packagesSent: entity.packagesSent,
       totalEarnings: entity.totalEarnings,
+      availableBalance: entity.availableBalance,
+      pendingBalance: entity.pendingBalance,
     );
   }
 
@@ -81,6 +89,8 @@ class UserModel extends UserEntity {
       completedDeliveries: completedDeliveries,
       packagesSent: packagesSent,
       totalEarnings: totalEarnings,
+      availableBalance: availableBalance,
+      pendingBalance: pendingBalance,
     );
   }
 
@@ -98,6 +108,8 @@ class UserModel extends UserEntity {
     int? completedDeliveries,
     int? packagesSent,
     double? totalEarnings,
+    double? availableBalance,
+    double? pendingBalance,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -112,6 +124,8 @@ class UserModel extends UserEntity {
       completedDeliveries: completedDeliveries ?? this.completedDeliveries,
       packagesSent: packagesSent ?? this.packagesSent,
       totalEarnings: totalEarnings ?? this.totalEarnings,
+      availableBalance: availableBalance ?? this.availableBalance,
+      pendingBalance: pendingBalance ?? this.pendingBalance,
     );
   }
 }

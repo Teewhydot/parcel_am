@@ -13,6 +13,8 @@ class UserEntity extends Equatable {
   final int? completedDeliveries;
   final int? packagesSent;
   final double? totalEarnings;
+  final double? availableBalance;
+  final double? pendingBalance;
 
   const UserEntity({
     required this.uid,
@@ -27,6 +29,8 @@ class UserEntity extends Equatable {
     this.completedDeliveries,
     this.packagesSent,
     this.totalEarnings,
+    this.availableBalance,
+    this.pendingBalance,
   });
 
   UserEntity copyWith({
@@ -42,6 +46,8 @@ class UserEntity extends Equatable {
     int? completedDeliveries,
     int? packagesSent,
     double? totalEarnings,
+    double? availableBalance,
+    double? pendingBalance,
   }) {
     return UserEntity(
       uid: uid ?? this.uid,
@@ -56,6 +62,8 @@ class UserEntity extends Equatable {
       completedDeliveries: completedDeliveries ?? this.completedDeliveries,
       packagesSent: packagesSent ?? this.packagesSent,
       totalEarnings: totalEarnings ?? this.totalEarnings,
+      availableBalance: availableBalance ?? this.availableBalance,
+      pendingBalance: pendingBalance ?? this.pendingBalance,
     );
   }
 
@@ -73,5 +81,7 @@ class UserEntity extends Equatable {
         completedDeliveries,
         packagesSent,
         totalEarnings,
+        availableBalance,
+        pendingBalance,
       ];
 }
