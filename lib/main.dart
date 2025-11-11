@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:parcel_am/app/init.dart';
 
@@ -13,7 +14,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-   AppConfig.init();
+    await AppConfig.init();
     runApp(const MyApp());
   } catch (e) {
     // Handle Firebase initialization errors
@@ -26,19 +27,26 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider<AuthBloc>(
-          create: (context) => sl<AuthBloc>(),
-        ),
-      ],
-      child: GetMaterialApp(
-        title: 'ParcelAm',
-        theme: AppTheme.lightTheme,
-        initialRoute: Routes.initial,
-        getPages: GetXRouteModule.routes,
-        debugShowCheckedModeBanner: false,
-      ),
+    return ScreenUtilInit(
+      designSize: const Size(375, 812), // iPhone 11 Pro design size
+      minTextAdapt: true,
+      splitScreenMode: true,
+      builder: (context, child) {
+        return MultiBlocProvider(
+          providers: [
+            BlocProvider<AuthBloc>(
+              create: (context) => sl<AuthBloc>(),
+            ),
+          ],
+          child: GetMaterialApp(
+            title: 'ParcelAm',
+            theme: AppTheme.lightTheme,
+            initialRoute: Routes.initial,
+            getPages: GetXRouteModule.routes,
+            debugShowCheckedModeBanner: false,
+          ),
+        );
+      },
     );
   }
 }
