@@ -25,6 +25,7 @@ class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  bool _hasNavigated = false;
 
   @override
   void initState() {
@@ -39,9 +40,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     _animationController.forward();
     
-    // Initialize authentication and check session
     context.read<AuthBloc>().add(const AuthStarted());
-    _handleAuthenticationFlow();
   }
 
   @override
@@ -50,23 +49,20 @@ class _SplashScreenState extends State<SplashScreen>
     super.dispose();
   }
 
-  void _handleAuthenticationFlow() async {
-    // Wait for animation and minimum splash time
+  void _navigateBasedOnState(BaseState<AuthData> state) async {
+    if (_hasNavigated || !mounted) return;
+    
     await Future.delayed(const Duration(seconds: 3));
     
-    if (!mounted) return;
+    if (!mounted || _hasNavigated) return;
     
-    // Listen to auth state and navigate accordingly
-    final authState = context.read<AuthBloc>().state;
-    final isAuthenticated = authState is DataState<AuthData> && 
-                            authState.data != null && 
-                            authState.data!.user != null;
+    _hasNavigated = true;
     
-    if (isAuthenticated) {
-      // User is already logged in, go to dashboard
+    if (state is DataState<AuthData> && 
+        state.data != null && 
+        state.data!.user != null) {
       sl<NavigationService>().navigateAndReplace(Routes.dashboard);
-    } else {
-      // User is not logged in, go to onboarding
+    } else if (state is InitialState || state is ErrorState) {
       sl<NavigationService>().navigateAndReplace(Routes.onboarding);
     }
   }
@@ -75,24 +71,7 @@ class _SplashScreenState extends State<SplashScreen>
   Widget build(BuildContext context) {
     return BlocListener<AuthBloc, BaseState<AuthData>>(
       listener: (context, state) {
-        // Handle auth state changes during splash
-        final isAuthenticated = state is DataState<AuthData> && 
-                                state.data != null && 
-                                state.data!.user != null;
-                                
-        if (isAuthenticated) {
-          Future.delayed(const Duration(milliseconds: 500), () {
-            if (mounted) {
-              sl<NavigationService>().navigateAndReplace(Routes.dashboard);
-            }
-          });
-        } else if (state is InitialState || state is ErrorState) {
-          Future.delayed(const Duration(milliseconds: 500), () {
-            if (mounted) {
-              sl<NavigationService>().navigateAndReplace(Routes.onboarding);
-            }
-          });
-        }
+        _navigateBasedOnState(state);
       },
       child: AppScaffold(
       body: Container(
