@@ -16,6 +16,7 @@ import 'features/travellink/domain/usecases/register_usecase.dart';
 import 'features/travellink/domain/usecases/logout_usecase.dart';
 import 'features/travellink/domain/usecases/get_current_user_usecase.dart';
 import 'features/travellink/presentation/bloc/auth/auth_bloc.dart';
+import 'features/travellink/presentation/bloc/wallet/wallet_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -38,6 +39,10 @@ Future<void> init() async {
     getCurrentUserUseCase: sl(),
     resetPasswordUseCase: sl(),
   ));
+
+  //! Features - Wallet
+  // BLoC
+  sl.registerFactory(() => WalletBloc());
 
   // Use cases
   sl.registerLazySingleton(() => LoginUseCase(sl()));

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_scaffold.dart';
 import '../../../../core/widgets/app_container.dart';
@@ -14,6 +15,10 @@ import '../../../../injection_container.dart';
 import '../widgets/bottom_navigation.dart';
 import '../widgets/verification_banner.dart';
 import '../widgets/user_stats_grid.dart';
+import '../widgets/wallet_balance_card.dart';
+import '../bloc/wallet/wallet_bloc.dart';
+import '../bloc/wallet/wallet_event.dart';
+import '../bloc/wallet/wallet_state.dart';
 import '../../data/providers/auth_provider.dart';
 import '../../data/providers/theme_provider.dart';
 import '../../data/constants/verification_constants.dart';
@@ -23,64 +28,71 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
+    return MultiBlocProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        BlocProvider(
+          create: (_) => WalletBloc()..add(const WalletLoadRequested()),
+        ),
       ],
-      child: Consumer<AuthProvider>(
-        builder: (context, authProvider, child) {
-          return AppScaffold(
-            hasGradientBackground: true,
-            bottomNavigationBar: const BottomNavigation(currentIndex: 3),
-            body: Column(
-              children: [
-                // Header Section
-                _HeaderSection(),
-                // Main Content Area
-                Expanded(
-                  child: AppContainer(
-                    variant: ContainerVariant.surface,
-                    color: AppColors.background,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(24),
-                      topRight: Radius.circular(24),
-                    ),
-                    padding: AppSpacing.paddingXL,
-                    child: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Verification Status
-                          if (authProvider.user?.verificationStatus != 'verified')
-                            const VerificationBanner(),
-                          AppSpacing.verticalSpacing(SpacingSize.md),
-                          // Quick Actions
-                          AppText.titleLarge(
-                            'Quick Actions',
-                            fontWeight: FontWeight.bold,
-                          ),
-                          AppSpacing.verticalSpacing(SpacingSize.lg),
-                          _QuickActionsRow(),
-                          AppSpacing.verticalSpacing(SpacingSize.xxl),
-                          // User Stats
-                          AppText.titleLarge(
-                            'Your Stats',
-                            fontWeight: FontWeight.bold,
-                          ),
-                          AppSpacing.verticalSpacing(SpacingSize.lg),
-                          const UserStatsGrid(),
-                          AppSpacing.verticalSpacing(SpacingSize.xxl),
-                          _RecentActivitySection(),
-                        ],
+      child: MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => AuthProvider()),
+          ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ],
+        child: Consumer<AuthProvider>(
+          builder: (context, authProvider, child) {
+              return AppScaffold(
+              hasGradientBackground: true,
+              bottomNavigationBar: const BottomNavigation(currentIndex: 3),
+              body: Column(
+                children: [
+                  // Header Section
+                  _HeaderSection(),
+                  // Main Content Area
+                  Expanded(
+                    child: AppContainer(
+                      variant: ContainerVariant.surface,
+                      color: AppColors.background,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(24),
+                        topRight: Radius.circular(24),
+                      ),
+                      padding: AppSpacing.paddingXL,
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Verification Status
+                            if (authProvider.user?.verificationStatus != 'verified')
+                              const VerificationBanner(),
+                            AppSpacing.verticalSpacing(SpacingSize.md),
+                            // Quick Actions
+                            AppText.titleLarge(
+                              'Quick Actions',
+                              fontWeight: FontWeight.bold,
+                            ),
+                            AppSpacing.verticalSpacing(SpacingSize.lg),
+                            _QuickActionsRow(),
+                            AppSpacing.verticalSpacing(SpacingSize.xxl),
+                            // User Stats
+                            AppText.titleLarge(
+                              'Your Stats',
+                              fontWeight: FontWeight.bold,
+                            ),
+                            AppSpacing.verticalSpacing(SpacingSize.lg),
+                            const UserStatsGrid(),
+                            AppSpacing.verticalSpacing(SpacingSize.xxl),
+                            _RecentActivitySection(),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          );
-        },
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -141,6 +153,8 @@ class _HeaderSection extends StatelessWidget {
                 ],
               ),
               AppSpacing.verticalSpacing(SpacingSize.xl),
+              const WalletBalanceCard(),
+              AppSpacing.verticalSpacing(SpacingSize.md),
               Row(
                 children: [
                   Expanded(
@@ -158,15 +172,6 @@ class _HeaderSection extends StatelessWidget {
                       title: 'Completed',
                       value: '${authProvider.user?.completedDeliveries ?? 12}',
                       color: AppColors.secondary,
-                    ),
-                  ),
-                  AppSpacing.horizontalSpacing(SpacingSize.md),
-                  Expanded(
-                    child: _StatCard(
-                      icon: Icons.monetization_on_outlined,
-                      title: 'This Month',
-                      value: '₦${authProvider.user?.totalEarnings?.toInt() ?? 45600}',
-                      color: AppColors.accent,
                     ),
                   ),
                 ],
