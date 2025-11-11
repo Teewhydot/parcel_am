@@ -177,9 +177,15 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
 
     emit(const LoadingState<AuthData>(message: 'Updating profile...'));
 
+    final updatedAdditionalData = event.additionalData != null
+        ? {...currentData.user!.additionalData, ...event.additionalData!}
+        : currentData.user!.additionalData;
+
     final updatedUser = currentData.user!.copyWith(
       displayName: event.displayName,
-      email: event.email,
+      email: event.email ?? currentData.user!.email,
+      kycStatus: event.kycStatus ?? currentData.user!.kycStatus,
+      additionalData: updatedAdditionalData,
     );
 
     emit(LoadedState<AuthData>(

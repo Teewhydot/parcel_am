@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../../domain/entities/user_entity.dart';
 
 abstract class AuthEvent extends Equatable {
   const AuthEvent();
@@ -89,15 +90,19 @@ class AuthRestoreStateRequested extends AuthEvent {
 
 class AuthUserProfileUpdateRequested extends AuthEvent {
   final String displayName;
-  final String email;
+  final String? email;
+  final KycStatus? kycStatus;
+  final Map<String, dynamic>? additionalData;
 
   const AuthUserProfileUpdateRequested({
     required this.displayName,
-    required this.email,
+    this.email,
+    this.kycStatus,
+    this.additionalData,
   });
 
   @override
-  List<Object> get props => [displayName, email];
+  List<Object?> get props => [displayName, email, kycStatus, additionalData];
 }
 
 class AuthPasswordResetRequested extends AuthEvent {

@@ -1,11 +1,41 @@
 import 'package:equatable/equatable.dart';
 
+enum KycStatus {
+  notStarted,
+  incomplete,
+  pending,
+  underReview,
+  approved,
+  rejected;
+
+  String get displayName {
+    switch (this) {
+      case KycStatus.notStarted:
+        return 'Not Started';
+      case KycStatus.incomplete:
+        return 'Incomplete';
+      case KycStatus.pending:
+        return 'Pending';
+      case KycStatus.underReview:
+        return 'Under Review';
+      case KycStatus.approved:
+        return 'Approved';
+      case KycStatus.rejected:
+        return 'Rejected';
+    }
+  }
+
+  bool get isVerified => this == KycStatus.approved;
+  bool get requiresAction => this == KycStatus.notStarted || this == KycStatus.incomplete || this == KycStatus.rejected;
+}
+
 class UserEntity extends Equatable {
   final String uid;
   final String displayName;
   final String email;
   final bool isVerified;
   final String verificationStatus;
+  final KycStatus kycStatus;
   final DateTime createdAt;
   final Map<String, dynamic> additionalData;
   final String? profilePhotoUrl;
@@ -22,6 +52,7 @@ class UserEntity extends Equatable {
     required this.email,
     required this.isVerified,
     required this.verificationStatus,
+    this.kycStatus = KycStatus.notStarted,
     required this.createdAt,
     required this.additionalData,
     this.profilePhotoUrl,
@@ -39,6 +70,7 @@ class UserEntity extends Equatable {
     String? email,
     bool? isVerified,
     String? verificationStatus,
+    KycStatus? kycStatus,
     DateTime? createdAt,
     Map<String, dynamic>? additionalData,
     String? profilePhotoUrl,
@@ -55,6 +87,7 @@ class UserEntity extends Equatable {
       email: email ?? this.email,
       isVerified: isVerified ?? this.isVerified,
       verificationStatus: verificationStatus ?? this.verificationStatus,
+      kycStatus: kycStatus ?? this.kycStatus,
       createdAt: createdAt ?? this.createdAt,
       additionalData: additionalData ?? this.additionalData,
       profilePhotoUrl: profilePhotoUrl ?? this.profilePhotoUrl,
@@ -74,6 +107,7 @@ class UserEntity extends Equatable {
         email,
         isVerified,
         verificationStatus,
+        kycStatus,
         createdAt,
         additionalData,
         profilePhotoUrl,

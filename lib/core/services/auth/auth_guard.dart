@@ -4,8 +4,104 @@ import 'package:get/get.dart';
 import '../../../features/travellink/presentation/bloc/auth/auth_bloc.dart';
 import '../../../features/travellink/presentation/bloc/auth/auth_data.dart';
 import '../../../core/bloc/base/base_state.dart';
+import '../../../features/travellink/domain/entities/user_entity.dart';
 import '../../routes/routes.dart';
 import 'kyc_guard.dart';
+
+class KycGuard {
+  static KycGuard? _instance;
+  static KycGuard get instance => _instance ??= KycGuard._();
+  
+  KycGuard._();
+
+  bool checkKycStatus(BuildContext context, {bool showDialog = true}) {
+    final authState = context.read<AuthBloc>().state;
+    
+    if (authState is DataState<AuthData> && authState.data?.user != null) {
+      final user = authState.data!.user!;
+      
+      if (!user.kycStatus.isVerified) {
+        if (showDialog) {
+          _showKycRequiredDialog(context, user.kycStatus);
+        }
+        return false;
+      }
+      return true;
+    }
+    
+    return false;
+  }
+
+  void _showKycRequiredDialog(BuildContext context, KycStatus status) {
+    String title;
+    String message;
+    
+    switch (status) {
+      case KycStatus.notStarted:
+        title = 'KYC Verification Required';
+        message = 'Please complete your identity verification to access this feature.';
+        break;
+      case KycStatus.incomplete:
+        title = 'Complete KYC Verification';
+        message = 'Your KYC verification is incomplete. Please complete all steps to access this feature.';
+        break;
+      case KycStatus.pending:
+      case KycStatus.underReview:
+        title = 'Verification In Progress';
+        message = 'Your KYC verification is currently under review. You\'ll be notified once it\'s approved.';
+        break;
+      case KycStatus.rejected:
+        title = 'Verification Required';
+        message = 'Your KYC verification was not approved. Please submit your information again.';
+        break;
+      default:
+        title = 'Verification Required';
+        message = 'Please verify your identity to access this feature.';
+    }
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.shield_outlined, color: Colors.orange),
+            const SizedBox(width: 8),
+            Expanded(child: Text(title)),
+          ],
+        ),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          if (status == KycStatus.notStarted || 
+              status == KycStatus.incomplete || 
+              status == KycStatus.rejected)
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Get.toNamed(Routes.verification);
+              },
+              child: const Text('Start Verification'),
+            ),
+        ],
+      ),
+    );
+  }
+
+  bool requiresKyc(String routeName) {
+    const kycProtectedRoutes = [
+      Routes.dashboard,
+      Routes.wallet,
+      Routes.payment,
+      Routes.tracking,
+      Routes.browseRequests,
+    ];
+    
+    return kycProtectedRoutes.contains(routeName);
+  }
+}
 
 class AuthGuard {
   static AuthGuard? _instance;
@@ -102,10 +198,11 @@ class AuthGuard {
     List<GetMiddleware>? middlewares,
     Transition? transition,
     Duration? transitionDuration,
+    bool requiresKyc = false,
   }) {
-    final List<GetMiddleware> allMiddlewares = [
+    final allMiddlewares = <GetMiddleware>[
       AuthMiddleware(),
-      if (requireKyc) KycMiddleware(allowPending: allowPendingKyc),
+      if (requiresKyc) KycMiddleware(),
       ...?middlewares,
     ];
     
@@ -119,7 +216,7 @@ class AuthGuard {
   }
 }
 
-/// GetX Middleware for route protection
+/// GetX Middleware for route protection with authentication
 class AuthMiddleware extends GetMiddleware {
   @override
   RouteSettings? redirect(String? route) {
@@ -128,7 +225,6 @@ class AuthMiddleware extends GetMiddleware {
     final authGuard = AuthGuard.instance;
     
     if (authGuard.requiresAuthentication(route)) {
-      // Check if we have access to auth state
       if (Get.context != null) {
         try {
           final authState = Get.context!.read<AuthBloc>().state;
@@ -140,15 +236,49 @@ class AuthMiddleware extends GetMiddleware {
             return const RouteSettings(name: Routes.login);
           }
         } catch (e) {
-          // If BLoC is not available, redirect to login for safety
           return const RouteSettings(name: Routes.login);
         }
       }
     }
     
-    return null; // Continue with the original route
+    return null;
   }
+}
 
+/// GetX Middleware for KYC-protected routes
+class KycMiddleware extends GetMiddleware {
+  @override
+  RouteSettings? redirect(String? route) {
+    if (route == null) return null;
+    
+    final kycGuard = KycGuard.instance;
+    
+    if (kycGuard.requiresKyc(route)) {
+      if (Get.context != null) {
+        try {
+          final authState = Get.context!.read<AuthBloc>().state;
+          
+          if (authState is DataState<AuthData> && authState.data?.user != null) {
+            final user = authState.data!.user!;
+            
+            if (!user.kycStatus.isVerified) {
+              if (user.kycStatus == KycStatus.notStarted || 
+                  user.kycStatus == KycStatus.incomplete ||
+                  user.kycStatus == KycStatus.rejected) {
+                return const RouteSettings(name: Routes.verification);
+              } else {
+                return const RouteSettings(name: Routes.dashboard);
+              }
+            }
+          }
+        } catch (e) {
+          return const RouteSettings(name: Routes.dashboard);
+        }
+      }
+    }
+    
+    return null;
+  }
 }
 
 /// Default loading widget for protected routes

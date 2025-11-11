@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_scaffold.dart';
 import '../../../../core/widgets/app_container.dart';
@@ -10,9 +10,13 @@ import '../../../../core/widgets/app_input.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../injection_container.dart';
 import '../widgets/verification_widgets.dart';
-import '../../data/providers/auth_provider.dart';
+import '../bloc/auth/auth_bloc.dart';
+import '../bloc/auth/auth_event.dart';
+import '../bloc/auth/auth_data.dart';
 import '../../data/constants/verification_constants.dart';
 import '../../domain/models/verification_model.dart';
+import '../../domain/entities/user_entity.dart';
+import '../../../../core/bloc/base/base_state.dart';
 
 class VerificationScreen extends StatefulWidget {
   const VerificationScreen({super.key});
@@ -25,7 +29,6 @@ class _VerificationScreenState extends State<VerificationScreen> {
   int _currentStep = 0;
   bool _isSubmitting = false;
   
-  // Form controllers
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _dobController = TextEditingController();
@@ -37,6 +40,37 @@ class _VerificationScreenState extends State<VerificationScreen> {
   
   String _selectedGender = 'Male';
   final Map<String, DocumentUpload> _uploadedDocuments = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadExistingData();
+  }
+
+  void _loadExistingData() {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is DataState<AuthData> && authState.data?.user != null) {
+      final user = authState.data!.user!;
+      final additionalData = user.additionalData;
+      
+      _firstNameController.text = additionalData['firstName'] ?? '';
+      _lastNameController.text = additionalData['lastName'] ?? '';
+      _dobController.text = additionalData['dateOfBirth'] ?? '';
+      _selectedGender = additionalData['gender'] ?? 'Male';
+      _addressController.text = additionalData['address'] ?? '';
+      _cityController.text = additionalData['city'] ?? '';
+      _stateController.text = additionalData['state'] ?? '';
+      _ninController.text = additionalData['nin'] ?? '';
+      _bvnController.text = additionalData['bvn'] ?? '';
+      
+      if (user.kycStatus == KycStatus.incomplete) {
+        final savedStep = additionalData['kycCurrentStep'] as int?;
+        if (savedStep != null && savedStep < VerificationStep.steps.length) {
+          _currentStep = savedStep;
+        }
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -53,18 +87,31 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return AppScaffold(
-      title: 'Identity Verification',
-      appBarBackgroundColor: AppColors.background,
-      body: Column(
-        children: [
-          ProgressIndicatorWidget(
-            currentStep: _currentStep,
-            steps: VerificationStep.steps,
-          ),
-          Expanded(child: _buildStepContent()),
-          _buildBottomActions(),
-        ],
+    return BlocListener<AuthBloc, BaseState<AuthData>>(
+      listener: (context, state) {
+        if (state is ErrorState) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.errorMessage),
+              backgroundColor: AppColors.error,
+            ),
+          );
+          setState(() => _isSubmitting = false);
+        }
+      },
+      child: AppScaffold(
+        title: 'KYC Verification',
+        appBarBackgroundColor: AppColors.background,
+        body: Column(
+          children: [
+            ProgressIndicatorWidget(
+              currentStep: _currentStep,
+              steps: VerificationStep.steps,
+            ),
+            Expanded(child: _buildStepContent()),
+            _buildBottomActions(),
+          ],
+        ),
       ),
     );
   }
@@ -395,7 +442,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
       context: context,
       initialDate: DateTime(1990),
       firstDate: DateTime(1950),
-      lastDate: DateTime.now().subtract(const Duration(days: 6570)), // 18 years
+      lastDate: DateTime.now().subtract(const Duration(days: 6570)),
     );
     if (date != null) {
       _dobController.text = '${date.day}/${date.month}/${date.year}';
@@ -403,8 +450,11 @@ class _VerificationScreenState extends State<VerificationScreen> {
   }
 
   void _goToNextStep() async {
+    if (!_validateCurrentStep()) return;
+    
     if (_currentStep < VerificationStep.steps.length - 1) {
       setState(() => _currentStep++);
+      _saveProgress();
     } else {
       await _submitVerification();
     }
@@ -416,41 +466,111 @@ class _VerificationScreenState extends State<VerificationScreen> {
     }
   }
 
+  bool _validateCurrentStep() {
+    switch (_currentStep) {
+      case 0:
+        if (_firstNameController.text.isEmpty || 
+            _lastNameController.text.isEmpty ||
+            _dobController.text.isEmpty) {
+          _showError('Please fill in all required fields');
+          return false;
+        }
+        break;
+      case 1:
+        if (_uploadedDocuments['government_id'] == null ||
+            _uploadedDocuments['selfie_with_id'] == null) {
+          _showError('Please upload all required documents');
+          return false;
+        }
+        break;
+      case 2:
+        if (_addressController.text.isEmpty ||
+            _cityController.text.isEmpty ||
+            _stateController.text.isEmpty) {
+          _showError('Please fill in all address fields');
+          return false;
+        }
+        break;
+    }
+    return true;
+  }
+
+  void _saveProgress() {
+    final authBloc = context.read<AuthBloc>();
+    final currentState = authBloc.state;
+    
+    Map<String, dynamic> additionalData = {};
+    if (currentState is DataState<AuthData> && currentState.data?.user != null) {
+      additionalData = Map.from(currentState.data!.user!.additionalData);
+    }
+    
+    authBloc.add(AuthUserProfileUpdateRequested(
+      displayName: '${_firstNameController.text} ${_lastNameController.text}',
+      kycStatus: KycStatus.incomplete,
+      additionalData: {
+        ...additionalData,
+        'kycCurrentStep': _currentStep,
+        'firstName': _firstNameController.text,
+        'lastName': _lastNameController.text,
+        'dateOfBirth': _dobController.text,
+        'gender': _selectedGender,
+        'address': _addressController.text,
+        'city': _cityController.text,
+        'state': _stateController.text,
+        'nin': _ninController.text,
+        'bvn': _bvnController.text,
+        'uploadedDocuments': _uploadedDocuments.keys.toList(),
+      },
+    ));
+  }
+
   Future<void> _submitVerification() async {
     setState(() => _isSubmitting = true);
     
     try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      authProvider.updateUserProfile(
-        displayName: '${_firstNameController.text} ${_lastNameController.text}',
-        additionalData: {
-          'verificationStatus': 'pending',
-          'firstName': _firstNameController.text,
-          'lastName': _lastNameController.text,
-          'dateOfBirth': _dobController.text,
-          'gender': _selectedGender,
-          'address': _addressController.text,
-          'city': _cityController.text,
-          'state': _stateController.text,
-          'nin': _ninController.text,
-          'bvn': _bvnController.text,
-          'uploadedDocuments': _uploadedDocuments.keys.toList(),
-        },
-      );
+      final authBloc = context.read<AuthBloc>();
+      final currentState = authBloc.state;
       
-      if (mounted) _showSuccessDialog();
+      if (currentState is DataState<AuthData> && currentState.data?.user != null) {
+        final user = currentState.data!.user!;
+        
+        authBloc.add(AuthUserProfileUpdateRequested(
+          displayName: '${_firstNameController.text} ${_lastNameController.text}',
+          kycStatus: KycStatus.pending,
+          additionalData: {
+            ...user.additionalData,
+            'kycSubmittedAt': DateTime.now().toIso8601String(),
+            'firstName': _firstNameController.text,
+            'lastName': _lastNameController.text,
+            'dateOfBirth': _dobController.text,
+            'gender': _selectedGender,
+            'address': _addressController.text,
+            'city': _cityController.text,
+            'state': _stateController.text,
+            'nin': _ninController.text,
+            'bvn': _bvnController.text,
+            'uploadedDocuments': _uploadedDocuments.keys.toList(),
+          },
+        ));
+        
+        if (mounted) _showSuccessDialog();
+      }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Verification submission failed: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        _showError('Verification submission failed: $e');
       }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppColors.error,
+      ),
+    );
   }
 
   void _showSuccessDialog() {

@@ -13,7 +13,7 @@ import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../injection_container.dart';
 import '../widgets/bottom_navigation.dart';
-import '../widgets/verification_banner.dart';
+import '../widgets/kyc_status_widgets.dart';
 import '../widgets/user_stats_grid.dart';
 import '../widgets/wallet_balance_card.dart';
 import '../bloc/wallet/wallet_bloc.dart';
@@ -62,9 +62,8 @@ class DashboardScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Verification Status
-                            if (authProvider.user?.verificationStatus != 'verified')
-                              const VerificationBanner(),
+                            // KYC Status Banner
+                            const KycStatusBanner(),
                             AppSpacing.verticalSpacing(SpacingSize.md),
                             // Quick Actions
                             AppText.titleLarge(

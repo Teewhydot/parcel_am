@@ -6,6 +6,7 @@ import 'package:parcel_am/app/init.dart';
 import 'core/routes/getx_route_module.dart';
 import 'core/routes/routes.dart';
 import 'core/theme/app_theme.dart';
+import 'core/services/auth/kyc_notification_listener.dart';
 import 'features/travellink/presentation/bloc/auth/auth_bloc.dart';
 import 'injection_container.dart';
 
@@ -32,12 +33,14 @@ class MyApp extends StatelessWidget {
           create: (context) => sl<AuthBloc>(),
         ),
       ],
-      child: GetMaterialApp(
-        title: 'TravelLink',
-        theme: AppTheme.lightTheme,
-        initialRoute: Routes.initial,
-        getPages: GetXRouteModule.routes,
-        debugShowCheckedModeBanner: false,
+      child: KycNotificationListener(
+        child: GetMaterialApp(
+          title: 'TravelLink',
+          theme: AppTheme.lightTheme,
+          initialRoute: Routes.initial,
+          getPages: GetXRouteModule.routes,
+          debugShowCheckedModeBanner: false,
+        ),
       ),
     );
   }
