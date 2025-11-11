@@ -154,11 +154,7 @@ class _LoginScreenState extends State<LoginScreen>
       bloc: context.read<AuthBloc>(),
       showLoadingIndicator: true,
       onSuccess: (context, state) {
-        if (state is DataState<AuthData> &&
-            state.data != null &&
-            state.data!.user != null) {
-          _navigateToDashboard();
-        }
+        _navigateToDashboard();
       },
       child: AppScaffold(
         body: SafeArea(

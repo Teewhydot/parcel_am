@@ -35,7 +35,7 @@ class GetXRouteModule {
       page: () => const DashboardScreen(),
       transition: _transition,
       transitionDuration: _transitionDuration,
-      requiresKyc: true,
+      requiresKyc: false,
     ),
     GetPage(
       name: Routes.onboarding,

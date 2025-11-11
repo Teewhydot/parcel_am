@@ -101,6 +101,9 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
         ));
       },
       (user) {
+        emit(SuccessState<AuthData>(
+          successMessage: 'Login successful!',
+        ));
         emit(LoadedState<AuthData>(
           data: const AuthData().copyWith(
             user: user,
