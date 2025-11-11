@@ -183,6 +183,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 children: [
                   if (_currentScreen == _onboardingScreens.length - 1) ...[
                     AppButton.primary(
+                       fullWidth: true,
                       onPressed: () {
                         sl<NavigationService>().navigateAndReplace(Routes.login);
                       },
@@ -194,11 +195,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     ),
                     AppSpacing.verticalSpacing(SpacingSize.md),
                     AppButton.outline(
+                                             fullWidth: true,
+
                       onPressed: () {
                         sl<NavigationService>().navigateAndReplace(Routes.login, arguments: {'showSignIn': true});
                       },
                       child: AppText.bodyLarge(
+                                              
+
                         'Sign In Instead',
+
                         fontWeight: FontWeight.w600,
                       ),
                     ),
