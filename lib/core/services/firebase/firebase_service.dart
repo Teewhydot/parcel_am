@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:parcel_am/core/config/firebase_config.dart';
 
@@ -10,6 +11,7 @@ class FirebaseService {
   static FirebaseService get instance => _instance ??= FirebaseService();
   
   FirebaseAuth? _auth;
+  FirebaseFirestore? _firestore;
   FirebaseEnvironment _environment = kDebugMode 
       ? FirebaseEnvironment.development 
       : FirebaseEnvironment.production;
@@ -26,10 +28,18 @@ class FirebaseService {
     return _auth!;
   }
 
+  FirebaseFirestore get firestore {
+    if (_firestore == null) {
+      throw StateError('Firebase not initialized. Call initialize() first.');
+    }
+    return _firestore!;
+  }
+
   Future<void> initialize() async {
     try {
       await Firebase.initializeApp();
       _auth = FirebaseAuth.instance;
+      _firestore = FirebaseFirestore.instance;
 
       // Configure auth settings
       await _configureAuthSettings();

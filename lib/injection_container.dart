@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'core/network/network_info.dart';
 import 'core/services/navigation_service/nav_config.dart';
@@ -17,6 +18,10 @@ import 'features/travellink/domain/usecases/logout_usecase.dart';
 import 'features/travellink/domain/usecases/get_current_user_usecase.dart';
 import 'features/travellink/presentation/bloc/auth/auth_bloc.dart';
 import 'features/travellink/presentation/bloc/wallet/wallet_bloc.dart';
+
+import 'features/wallet/data/datasources/wallet_remote_datasource.dart';
+import 'features/wallet/data/repositories/wallet_repository_impl.dart';
+import 'features/wallet/domain/repositories/wallet_repository.dart';
 
 final sl = GetIt.instance;
 
@@ -70,10 +75,22 @@ Future<void> init() async {
   sl.registerLazySingleton<NetworkInfo>(() => NetworkInfoImpl(sl()));
   sl.registerLazySingleton<NavigationService>(() => GetxNavigationService());
 
+  //! Features - Wallet
+  // Repository
+  sl.registerLazySingleton<WalletRepository>(() => WalletRepositoryImpl(
+    remoteDataSource: sl(),
+  ));
+
+  // Data sources
+  sl.registerLazySingleton<WalletRemoteDataSource>(() => WalletRemoteDataSourceImpl(
+    firestore: sl(),
+  ));
+
   //! External
   final sharedPreferences = await SharedPreferences.getInstance();
   sl.registerLazySingleton(() => sharedPreferences);
   sl.registerLazySingleton(() => http.Client());
   sl.registerLazySingleton(() => FirebaseAuth.instance);
+  sl.registerLazySingleton(() => FirebaseFirestore.instance);
   sl.registerLazySingleton(() => InternetConnectionChecker.instance);
 }
