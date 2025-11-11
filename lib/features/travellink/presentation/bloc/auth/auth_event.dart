@@ -113,3 +113,12 @@ class AuthPasswordResetRequested extends AuthEvent {
   @override
   List<Object> get props => [email];
 }
+
+class AuthKycStatusUpdated extends AuthEvent {
+  final String kycStatus;
+
+  const AuthKycStatusUpdated(this.kycStatus);
+
+  @override
+  List<Object> get props => [kycStatus];
+}

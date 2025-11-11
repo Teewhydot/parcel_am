@@ -6,6 +6,7 @@ import '../../../domain/usecases/login_usecase.dart';
 import '../../../domain/usecases/register_usecase.dart';
 import '../../../domain/usecases/logout_usecase.dart';
 import '../../../domain/usecases/get_current_user_usecase.dart';
+import '../../../domain/usecases/watch_kyc_status_usecase.dart';
 import 'auth_event.dart';
 import 'auth_data.dart';
 
@@ -15,8 +16,10 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
   final LogoutUseCase logoutUseCase;
   final GetCurrentUserUseCase getCurrentUserUseCase;
   final ResetPasswordUseCase resetPasswordUseCase;
+  final WatchKycStatusUseCase watchKycStatusUseCase;
   
   Timer? _resendTimer;
+  StreamSubscription<String>? _kycStatusSubscription;
 
   AuthBloc({
     required this.loginUseCase,
@@ -24,6 +27,7 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
     required this.logoutUseCase,
     required this.getCurrentUserUseCase,
     required this.resetPasswordUseCase,
+    required this.watchKycStatusUseCase,
   }) : super(const InitialState<AuthData>()) {
     
     on<AuthStarted>(_onAuthStarted);
@@ -35,6 +39,7 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
     on<AuthCheckAuthState>(_onCheckAuthState);
     on<AuthUserProfileUpdateRequested>(_onUserProfileUpdateRequested);
     on<AuthPasswordResetRequested>(_onPasswordResetRequested);
+    on<AuthKycStatusUpdated>(_onKycStatusUpdated);
   }
 
   Future<void> _onAuthStarted(AuthStarted event, Emitter<BaseState<AuthData>> emit) async {
@@ -55,6 +60,7 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
             data: const AuthData().copyWith(user: user),
             lastUpdated: DateTime.now(),
           ));
+          _subscribeToKycStatus(user.uid);
         } else {
           emit(const InitialState<AuthData>());
         }
@@ -101,6 +107,7 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
           ),
           lastUpdated: DateTime.now(),
         ));
+        _subscribeToKycStatus(user.uid);
       },
     );
   }
@@ -129,12 +136,15 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
           ),
           lastUpdated: DateTime.now(),
         ));
+        _subscribeToKycStatus(user.uid);
       },
     );
   }
 
   Future<void> _onLogoutRequested(AuthLogoutRequested event, Emitter<BaseState<AuthData>> emit) async {
     emit(const LoadingState<AuthData>(message: 'Logging out...'));
+    
+    _kycStatusSubscription?.cancel();
     
     final result = await logoutUseCase();
     
@@ -214,10 +224,37 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
     );
   }
 
+  Future<void> _onKycStatusUpdated(AuthKycStatusUpdated event, Emitter<BaseState<AuthData>> emit) async {
+    final currentData = _getCurrentAuthData();
+    if (currentData.user == null) return;
+
+    final updatedUser = currentData.user!.copyWith(kycStatus: event.kycStatus);
+    
+    emit(LoadedState<AuthData>(
+      data: currentData.copyWith(user: updatedUser),
+      lastUpdated: DateTime.now(),
+    ));
+  }
+
+  void _subscribeToKycStatus(String userId) {
+    _kycStatusSubscription?.cancel();
+    _kycStatusSubscription = watchKycStatusUseCase(userId).listen(
+      (status) {
+        add(AuthKycStatusUpdated(status));
+      },
+    );
+  }
+
   AuthData _getCurrentAuthData() {
     if (state is DataState<AuthData> && (state as DataState<AuthData>).data != null) {
       return (state as DataState<AuthData>).data!;
     }
     return const AuthData();
+  }
+
+  @override
+  Future<void> close() {
+    _kycStatusSubscription?.cancel();
+    return super.close();
   }
 }

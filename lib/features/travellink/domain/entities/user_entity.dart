@@ -45,6 +45,7 @@ class UserEntity extends Equatable {
   final double? totalEarnings;
   final double? availableBalance;
   final double? pendingBalance;
+  final String kycStatus;
 
   const UserEntity({
     required this.uid,
@@ -62,6 +63,7 @@ class UserEntity extends Equatable {
     this.totalEarnings,
     this.availableBalance,
     this.pendingBalance,
+    this.kycStatus = 'not_submitted',
   });
 
   UserEntity copyWith({
@@ -80,6 +82,7 @@ class UserEntity extends Equatable {
     double? totalEarnings,
     double? availableBalance,
     double? pendingBalance,
+    String? kycStatus,
   }) {
     return UserEntity(
       uid: uid ?? this.uid,
@@ -97,6 +100,7 @@ class UserEntity extends Equatable {
       totalEarnings: totalEarnings ?? this.totalEarnings,
       availableBalance: availableBalance ?? this.availableBalance,
       pendingBalance: pendingBalance ?? this.pendingBalance,
+      kycStatus: kycStatus ?? this.kycStatus,
     );
   }
 
@@ -117,5 +121,6 @@ class UserEntity extends Equatable {
         totalEarnings,
         availableBalance,
         pendingBalance,
+        kycStatus,
       ];
 }

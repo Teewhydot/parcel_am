@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
 import '../../domain/exceptions/auth_exceptions.dart';
 
@@ -11,12 +12,17 @@ abstract class AuthRemoteDataSource {
   Stream<UserModel?> get authStateChanges;
   Future<UserModel> updateUserProfile(UserModel user);
   Future<void> resetPassword(String email);
+  Future<void> syncKycStatus(String userId, String kycStatus);
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   final FirebaseAuth firebaseAuth;
+  final FirebaseFirestore? firestore;
 
-  AuthRemoteDataSourceImpl({required this.firebaseAuth});
+  AuthRemoteDataSourceImpl({
+    required this.firebaseAuth,
+    this.firestore,
+  });
 
   @override
   Future<UserModel> signInWithEmailAndPassword(String email, String password) async {
@@ -31,7 +37,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         throw const UserNotFoundException();
       }
 
-      return _mapFirebaseUserToModel(user);
+      return await _mapFirebaseUserToModelWithKyc(user);
     } on FirebaseAuthException catch (e) {
       throw _mapFirebaseAuthException(e);
     } catch (e) {
@@ -56,7 +62,17 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       await user.reload();
       final updatedUser = firebaseAuth.currentUser;
 
-      return _mapFirebaseUserToModel(updatedUser!);
+      if (firestore != null && updatedUser != null) {
+        await firestore!.collection('users').doc(updatedUser.uid).set({
+          'uid': updatedUser.uid,
+          'displayName': displayName,
+          'email': email,
+          'kycStatus': 'not_submitted',
+          'createdAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+      }
+
+      return await _mapFirebaseUserToModelWithKyc(updatedUser!);
     } on FirebaseAuthException catch (e) {
       throw _mapFirebaseAuthException(e);
     } catch (e) {
@@ -79,7 +95,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       final user = firebaseAuth.currentUser;
       if (user == null) return null;
       
-      return _mapFirebaseUserToModel(user);
+      return await _mapFirebaseUserToModelWithKyc(user);
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -105,7 +121,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       await firebaseUser.reload();
       
       final updatedUser = firebaseAuth.currentUser;
-      return _mapFirebaseUserToModel(updatedUser!);
+      return await _mapFirebaseUserToModelWithKyc(updatedUser!);
     } on FirebaseAuthException catch (e) {
       throw _mapFirebaseAuthException(e);
     } catch (e) {
@@ -135,6 +151,46 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       additionalData: {},
       profilePhotoUrl: user.photoURL,
     );
+  }
+
+  Future<UserModel> _mapFirebaseUserToModelWithKyc(User user) async {
+    String kycStatus = 'not_submitted';
+    
+    if (firestore != null) {
+      try {
+        final userDoc = await firestore!.collection('users').doc(user.uid).get();
+        if (userDoc.exists) {
+          kycStatus = userDoc.data()?['kycStatus'] ?? 'not_submitted';
+        }
+      } catch (e) {
+        // Ignore errors and use default kycStatus
+      }
+    }
+
+    return UserModel(
+      uid: user.uid,
+      displayName: user.displayName ?? 'User',
+      email: user.email ?? '',
+      isVerified: user.emailVerified,
+      verificationStatus: user.emailVerified ? 'verified' : 'pending',
+      createdAt: user.metadata.creationTime ?? DateTime.now(),
+      additionalData: {},
+      profilePhotoUrl: user.photoURL,
+      kycStatus: kycStatus,
+    );
+  }
+
+  @override
+  Future<void> syncKycStatus(String userId, String kycStatus) async {
+    try {
+      if (firestore == null) return;
+      
+      await firestore!.collection('users').doc(userId).update({
+        'kycStatus': kycStatus,
+      });
+    } catch (e) {
+      throw ServerException('Failed to sync KYC status: $e');
+    }
   }
 
   AuthException _mapFirebaseAuthException(FirebaseAuthException e) {

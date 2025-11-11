@@ -4,19 +4,27 @@ import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 import 'core/network/network_info.dart';
 import 'core/services/navigation_service/nav_config.dart';
 
 import 'features/travellink/data/datasources/auth_remote_data_source.dart';
 import 'features/travellink/data/datasources/auth_local_data_source.dart';
+import 'features/travellink/data/datasources/kyc_remote_data_source.dart';
 import 'features/travellink/data/repositories/auth_repository_impl.dart';
+import 'features/travellink/data/repositories/kyc_repository_impl.dart';
 import 'features/travellink/domain/repositories/auth_repository.dart';
+import 'features/travellink/domain/repositories/kyc_repository.dart';
 import 'features/travellink/domain/usecases/login_usecase.dart';
 import 'features/travellink/domain/usecases/register_usecase.dart';
 import 'features/travellink/domain/usecases/logout_usecase.dart';
 import 'features/travellink/domain/usecases/get_current_user_usecase.dart';
+import 'features/travellink/domain/usecases/submit_kyc_usecase.dart';
+import 'features/travellink/domain/usecases/get_kyc_status_usecase.dart';
+import 'features/travellink/domain/usecases/watch_kyc_status_usecase.dart';
 import 'features/travellink/presentation/bloc/auth/auth_bloc.dart';
+import 'features/travellink/presentation/bloc/kyc/kyc_bloc.dart';
 
 import 'features/wallet/data/datasources/wallet_remote_datasource.dart';
 import 'features/wallet/data/repositories/wallet_repository_impl.dart' as wallet_impl;
@@ -49,6 +57,7 @@ Future<void> init() async {
     logoutUseCase: sl(),
     getCurrentUserUseCase: sl(),
     resetPasswordUseCase: sl(),
+    watchKycStatusUseCase: sl(),
   ));
 
   // Use cases
@@ -68,9 +77,34 @@ Future<void> init() async {
   // Data sources
   sl.registerLazySingleton<AuthRemoteDataSource>(() => AuthRemoteDataSourceImpl(
     firebaseAuth: sl(),
+    firestore: sl(),
   ));
   sl.registerLazySingleton<AuthLocalDataSource>(() => AuthLocalDataSourceImpl(
     sharedPreferences: sl(),
+  ));
+
+  //! Features - KYC
+  // BLoC
+  sl.registerFactory(() => KycBloc(
+    submitKycUseCase: sl(),
+    getKycStatusUseCase: sl(),
+    watchKycStatusUseCase: sl(),
+  ));
+
+  // Use cases
+  sl.registerLazySingleton(() => SubmitKycUseCase(sl()));
+  sl.registerLazySingleton(() => GetKycStatusUseCase(sl()));
+  sl.registerLazySingleton(() => WatchKycStatusUseCase(sl()));
+
+  // Repository
+  sl.registerLazySingleton<KycRepository>(() => KycRepositoryImpl(
+    remoteDataSource: sl(),
+  ));
+
+  // Data sources
+  sl.registerLazySingleton<KycRemoteDataSource>(() => KycRemoteDataSourceImpl(
+    firestore: sl(),
+    storage: sl(),
   ));
 
   //! Features - Wallet (TravelLink)
@@ -108,5 +142,6 @@ Future<void> init() async {
   sl.registerLazySingleton(() => http.Client());
   sl.registerLazySingleton(() => FirebaseAuth.instance);
   sl.registerLazySingleton(() => FirebaseFirestore.instance);
+  sl.registerLazySingleton(() => FirebaseStorage.instance);
   sl.registerLazySingleton(() => InternetConnectionChecker.instance);
 }
