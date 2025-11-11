@@ -17,11 +17,17 @@ import 'features/travellink/domain/usecases/register_usecase.dart';
 import 'features/travellink/domain/usecases/logout_usecase.dart';
 import 'features/travellink/domain/usecases/get_current_user_usecase.dart';
 import 'features/travellink/presentation/bloc/auth/auth_bloc.dart';
-import 'features/travellink/presentation/bloc/wallet/wallet_bloc.dart';
 
 import 'features/wallet/data/datasources/wallet_remote_datasource.dart';
-import 'features/wallet/data/repositories/wallet_repository_impl.dart';
-import 'features/wallet/domain/repositories/wallet_repository.dart';
+import 'features/wallet/data/repositories/wallet_repository_impl.dart' as wallet_impl;
+import 'features/wallet/domain/repositories/wallet_repository.dart' as wallet_repo;
+
+import 'features/travellink/domain/repositories/wallet_repository.dart';
+import 'features/travellink/domain/usecases/get_wallet_usecase.dart';
+import 'features/travellink/domain/usecases/watch_balance_usecase.dart';
+import 'features/travellink/domain/usecases/hold_balance_for_escrow_usecase.dart';
+import 'features/travellink/domain/usecases/release_escrow_balance_usecase.dart';
+import 'features/travellink/presentation/bloc/wallet/wallet_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -45,10 +51,6 @@ Future<void> init() async {
     resetPasswordUseCase: sl(),
   ));
 
-  //! Features - Wallet
-  // BLoC
-  sl.registerFactory(() => WalletBloc());
-
   // Use cases
   sl.registerLazySingleton(() => LoginUseCase(sl()));
   sl.registerLazySingleton(() => RegisterUseCase(sl()));
@@ -71,13 +73,23 @@ Future<void> init() async {
     sharedPreferences: sl(),
   ));
 
-  //! Core
-  sl.registerLazySingleton<NetworkInfo>(() => NetworkInfoImpl(sl()));
-  sl.registerLazySingleton<NavigationService>(() => GetxNavigationService());
+  //! Features - Wallet (TravelLink)
+  // BLoC
+  sl.registerFactory(() => WalletBloc(
+    getWalletUseCase: sl(),
+    watchBalanceUseCase: sl(),
+    holdBalanceForEscrowUseCase: sl(),
+    releaseEscrowBalanceUseCase: sl(),
+  ));
 
-  //! Features - Wallet
+  // Use cases
+  sl.registerLazySingleton(() => GetWalletUseCase(sl()));
+  sl.registerLazySingleton(() => WatchBalanceUseCase(sl()));
+  sl.registerLazySingleton(() => HoldBalanceForEscrowUseCase(sl()));
+  sl.registerLazySingleton(() => ReleaseEscrowBalanceUseCase(sl()));
+
   // Repository
-  sl.registerLazySingleton<WalletRepository>(() => WalletRepositoryImpl(
+  sl.registerLazySingleton<WalletRepository>(() => wallet_impl.WalletRepositoryImpl(
     remoteDataSource: sl(),
   ));
 
@@ -85,6 +97,10 @@ Future<void> init() async {
   sl.registerLazySingleton<WalletRemoteDataSource>(() => WalletRemoteDataSourceImpl(
     firestore: sl(),
   ));
+
+  //! Core
+  sl.registerLazySingleton<NetworkInfo>(() => NetworkInfoImpl(sl()));
+  sl.registerLazySingleton<NavigationService>(() => GetxNavigationService());
 
   //! External
   final sharedPreferences = await SharedPreferences.getInstance();
