@@ -11,4 +11,5 @@ class Routes {
   static const String requestDetails = '/requestDetails';
   static const String payment = '/payment';
   static const String browseRequests = '/browseRequests';
+  static const String kycBlocked = '/kycBlocked';
 }

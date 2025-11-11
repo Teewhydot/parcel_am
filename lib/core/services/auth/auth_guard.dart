@@ -5,15 +5,18 @@ import '../../../features/travellink/presentation/bloc/auth/auth_bloc.dart';
 import '../../../features/travellink/presentation/bloc/auth/auth_data.dart';
 import '../../../core/bloc/base/base_state.dart';
 import '../../routes/routes.dart';
+import 'kyc_guard.dart';
 
 class AuthGuard {
   static AuthGuard? _instance;
   static AuthGuard get instance => _instance ??= AuthGuard._();
   
+  final KycGuard _kycGuard = KycGuard.instance;
+  
   AuthGuard._();
 
   /// Check if user is authenticated and redirect if not
-  bool checkAuthentication(BuildContext context) {
+  bool checkAuthentication(BuildContext context, {bool requireKyc = false, bool allowPendingKyc = false}) {
     final authState = context.read<AuthBloc>().state;
     
     final isAuthenticated = authState is DataState<AuthData> && 
@@ -26,6 +29,11 @@ class AuthGuard {
       return false;
     }
     
+    // Check KYC if required
+    if (requireKyc) {
+      return _kycGuard.checkKycAccess(context, allowPending: allowPendingKyc);
+    }
+    
     return true;
   }
 
@@ -33,6 +41,8 @@ class AuthGuard {
   Widget protectedRoute({
     required BuildContext context,
     required Widget child,
+    bool requireKyc = false,
+    bool allowPendingKyc = false,
     Widget? loadingWidget,
     Widget? unauthenticatedWidget,
   }) {
@@ -45,15 +55,26 @@ class AuthGuard {
           return loadingWidget ?? const _DefaultLoadingWidget();
         }
         
-        if (isAuthenticated) {
-          return child;
+        if (!isAuthenticated) {
+          // Auto-redirect to login
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Get.offAllNamed(Routes.login);
+          });
+          return unauthenticatedWidget ?? const _DefaultUnauthenticatedWidget();
         }
         
-        // Auto-redirect to login
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          Get.offAllNamed(Routes.login);
-        });
-        return unauthenticatedWidget ?? const _DefaultUnauthenticatedWidget();
+        // Check KYC if required
+        if (requireKyc) {
+          return _kycGuard.protectedRoute(
+            context: context,
+            child: child,
+            allowPending: allowPendingKyc,
+            loadingWidget: loadingWidget,
+            blockedWidget: unauthenticatedWidget,
+          );
+        }
+        
+        return child;
       },
     );
   }
@@ -76,17 +97,22 @@ class AuthGuard {
   static GetPage createProtectedRoute({
     required String name,
     required Widget Function() page,
+    bool requireKyc = false,
+    bool allowPendingKyc = false,
     List<GetMiddleware>? middlewares,
     Transition? transition,
     Duration? transitionDuration,
   }) {
+    final List<GetMiddleware> allMiddlewares = [
+      AuthMiddleware(),
+      if (requireKyc) KycMiddleware(allowPending: allowPendingKyc),
+      ...?middlewares,
+    ];
+    
     return GetPage(
       name: name,
       page: page,
-      middlewares: [
-        AuthMiddleware(),
-        ...?middlewares,
-      ],
+      middlewares: allMiddlewares,
       transition: transition,
       transitionDuration: transitionDuration,
     );

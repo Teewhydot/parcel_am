@@ -26,6 +26,8 @@ class AppColors {
 
   static const Color outline = Color(0xFFE2E8F0);
   static const Color outlineVariant = Color(0xFFCBD5E1);
+  
+  static const Color textSecondary = Color(0xFF64748B);
 
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.topCenter,

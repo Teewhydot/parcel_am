@@ -8,6 +8,7 @@ import 'package:parcel_am/features/travellink/presentation/screens/request_detai
 import 'package:parcel_am/features/travellink/presentation/screens/tracking_screen.dart';
 import 'package:parcel_am/features/travellink/presentation/screens/verification_screen.dart';
 import 'package:parcel_am/features/travellink/presentation/screens/browse_requests_screen.dart';
+import 'package:parcel_am/features/travellink/presentation/screens/kyc_blocked_screen.dart';
 
 import '../../features/travellink/presentation/screens/splash_screen.dart';
 import '../services/auth/auth_guard.dart';
@@ -43,6 +44,7 @@ class GetXRouteModule {
     AuthGuard.createProtectedRoute(
       name: Routes.payment,
       page: () => const PaymentScreen(),
+      requireKyc: true,
       transition: _transition,
       transitionDuration: _transitionDuration,
     ),
@@ -67,6 +69,13 @@ class GetXRouteModule {
     AuthGuard.createProtectedRoute(
       name: Routes.browseRequests,
       page: () => const BrowseRequestsScreen(),
+      requireKyc: true,
+      transition: _transition,
+      transitionDuration: _transitionDuration,
+    ),
+    GetPage(
+      name: Routes.kycBlocked,
+      page: () => const KycBlockedScreen(),
       transition: _transition,
       transitionDuration: _transitionDuration,
     ),
