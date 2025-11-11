@@ -11,4 +11,8 @@ class GetCurrentUserUseCase {
   Future<Either<Failure, UserEntity?>> call() async {
     return await repository.getCurrentUser();
   }
+
+  Future<Either<Failure, bool>> hasValidSession() async {
+    return await repository.hasValidSession();
+  }
 }

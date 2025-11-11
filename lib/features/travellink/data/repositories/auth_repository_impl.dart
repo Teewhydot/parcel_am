@@ -93,20 +93,50 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, UserEntity?>> getCurrentUser() async {
     try {
-      if (await networkInfo.isConnected) {
-        final userModel = await remoteDataSource.getCurrentUser();
-        if (userModel != null) {
-          await localDataSource.cacheUser(userModel);
-          return Right(userModel.toEntity());
-        }
-        return const Right(null);
-      } else {
-        final cachedUser = await localDataSource.getCachedUser();
-        if (cachedUser != null) {
-          return Right(cachedUser.toEntity());
-        }
+      final firebaseUser = await remoteDataSource.getCurrentUser();
+      
+      if (firebaseUser == null) {
         return const Right(null);
       }
+      
+      final cachedToken = await localDataSource.getCachedToken();
+      
+      if (cachedToken == null || cachedToken.toEntity().isExpired) {
+        return const Right(null);
+      }
+      
+      if (await networkInfo.isConnected) {
+        await localDataSource.cacheUser(firebaseUser);
+      }
+      
+      return Right(firebaseUser.toEntity());
+    } on AuthException catch (e) {
+      return Left(AuthFailure(failureMessage: e.message));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(failureMessage: e.message));
+    } on CacheException catch (e) {
+      return Left(CacheFailure(failureMessage: e.message));
+    } catch (e) {
+      return Left(UnknownFailure(failureMessage: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, bool>> hasValidSession() async {
+    try {
+      final firebaseUser = await remoteDataSource.getCurrentUser();
+      
+      if (firebaseUser == null) {
+        return const Right(false);
+      }
+      
+      final cachedToken = await localDataSource.getCachedToken();
+      
+      if (cachedToken == null || cachedToken.toEntity().isExpired) {
+        return const Right(false);
+      }
+      
+      return const Right(true);
     } on AuthException catch (e) {
       return Left(AuthFailure(failureMessage: e.message));
     } on ServerException catch (e) {

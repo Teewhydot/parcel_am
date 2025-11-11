@@ -19,6 +19,8 @@ abstract class AuthRepository {
 
   Future<Either<Failure, UserEntity?>> getCurrentUser();
 
+  Future<Either<Failure, bool>> hasValidSession();
+
   Future<Either<Failure, AuthTokenEntity?>> getStoredToken();
 
   Future<Either<Failure, void>> storeToken(AuthTokenEntity token);
