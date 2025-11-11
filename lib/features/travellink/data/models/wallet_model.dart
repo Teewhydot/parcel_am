@@ -1,68 +1,107 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/wallet_entity.dart';
 
-class WalletModel extends WalletEntity {
+class WalletModel {
+  final String id;
+  final String userId;
+  final double availableBalance;
+  final double heldBalance;
+  final double totalBalance;
+  final String currency;
+  final DateTime lastUpdated;
+
   const WalletModel({
-    required super.uid,
-    required super.availableBalance,
-    required super.pendingBalance,
-    required super.transactions,
-    required super.updatedAt,
+    required this.id,
+    required this.userId,
+    required this.availableBalance,
+    required this.heldBalance,
+    required this.totalBalance,
+    required this.currency,
+    required this.lastUpdated,
   });
 
   factory WalletModel.fromJson(Map<String, dynamic> json) {
     return WalletModel(
-      uid: json['uid'],
-      availableBalance: (json['availableBalance'] ?? 0).toDouble(),
-      pendingBalance: (json['pendingBalance'] ?? 0).toDouble(),
-      transactions: json['transactions'] ?? [],
-      updatedAt: DateTime.parse(json['updatedAt']),
+      id: json['id'] as String,
+      userId: json['userId'] as String,
+      availableBalance: (json['availableBalance'] as num).toDouble(),
+      heldBalance: (json['heldBalance'] as num).toDouble(),
+      totalBalance: (json['totalBalance'] as num).toDouble(),
+      currency: json['currency'] as String? ?? 'USD',
+      lastUpdated: json['lastUpdated'] is Timestamp
+          ? (json['lastUpdated'] as Timestamp).toDate()
+          : DateTime.parse(json['lastUpdated'] as String),
+    );
+  }
+
+  factory WalletModel.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return WalletModel(
+      id: doc.id,
+      userId: data['userId'] as String,
+      availableBalance: (data['availableBalance'] as num).toDouble(),
+      heldBalance: (data['heldBalance'] as num).toDouble(),
+      totalBalance: (data['totalBalance'] as num).toDouble(),
+      currency: data['currency'] as String? ?? 'USD',
+      lastUpdated: data['lastUpdated'] is Timestamp
+          ? (data['lastUpdated'] as Timestamp).toDate()
+          : DateTime.now(),
+    );
+  }
+
+  factory WalletModel.fromEntity(WalletEntity entity) {
+    return WalletModel(
+      id: entity.id,
+      userId: entity.userId,
+      availableBalance: entity.availableBalance,
+      heldBalance: entity.heldBalance,
+      totalBalance: entity.totalBalance,
+      currency: entity.currency,
+      lastUpdated: entity.lastUpdated,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'uid': uid,
+      'id': id,
+      'userId': userId,
       'availableBalance': availableBalance,
-      'pendingBalance': pendingBalance,
-      'transactions': transactions,
-      'updatedAt': updatedAt.toIso8601String(),
+      'heldBalance': heldBalance,
+      'totalBalance': totalBalance,
+      'currency': currency,
+      'lastUpdated': Timestamp.fromDate(lastUpdated),
     };
-  }
-
-  factory WalletModel.fromEntity(WalletEntity entity) {
-    return WalletModel(
-      uid: entity.uid,
-      availableBalance: entity.availableBalance,
-      pendingBalance: entity.pendingBalance,
-      transactions: entity.transactions,
-      updatedAt: entity.updatedAt,
-    );
   }
 
   WalletEntity toEntity() {
     return WalletEntity(
-      uid: uid,
+      id: id,
+      userId: userId,
       availableBalance: availableBalance,
-      pendingBalance: pendingBalance,
-      transactions: transactions,
-      updatedAt: updatedAt,
+      heldBalance: heldBalance,
+      totalBalance: totalBalance,
+      currency: currency,
+      lastUpdated: lastUpdated,
     );
   }
 
-  @override
   WalletModel copyWith({
-    String? uid,
+    String? id,
+    String? userId,
     double? availableBalance,
-    double? pendingBalance,
-    List<dynamic>? transactions,
-    DateTime? updatedAt,
+    double? heldBalance,
+    double? totalBalance,
+    String? currency,
+    DateTime? lastUpdated,
   }) {
     return WalletModel(
-      uid: uid ?? this.uid,
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
       availableBalance: availableBalance ?? this.availableBalance,
-      pendingBalance: pendingBalance ?? this.pendingBalance,
-      transactions: transactions ?? this.transactions,
-      updatedAt: updatedAt ?? this.updatedAt,
+      heldBalance: heldBalance ?? this.heldBalance,
+      totalBalance: totalBalance ?? this.totalBalance,
+      currency: currency ?? this.currency,
+      lastUpdated: lastUpdated ?? this.lastUpdated,
     );
   }
 }

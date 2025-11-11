@@ -1,42 +1,52 @@
 import 'package:equatable/equatable.dart';
 
 class WalletEntity extends Equatable {
-  final String uid;
+  final String id;
+  final String userId;
   final double availableBalance;
-  final double pendingBalance;
-  final List<dynamic> transactions;
-  final DateTime updatedAt;
+  final double heldBalance;
+  final double totalBalance;
+  final String currency;
+  final DateTime lastUpdated;
 
   const WalletEntity({
-    required this.uid,
+    required this.id,
+    required this.userId,
     required this.availableBalance,
-    required this.pendingBalance,
-    required this.transactions,
-    required this.updatedAt,
+    required this.heldBalance,
+    required this.totalBalance,
+    required this.currency,
+    required this.lastUpdated,
   });
 
   WalletEntity copyWith({
-    String? uid,
+    String? id,
+    String? userId,
     double? availableBalance,
-    double? pendingBalance,
-    List<dynamic>? transactions,
-    DateTime? updatedAt,
+    double? heldBalance,
+    double? totalBalance,
+    String? currency,
+    DateTime? lastUpdated,
   }) {
     return WalletEntity(
-      uid: uid ?? this.uid,
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
       availableBalance: availableBalance ?? this.availableBalance,
-      pendingBalance: pendingBalance ?? this.pendingBalance,
-      transactions: transactions ?? this.transactions,
-      updatedAt: updatedAt ?? this.updatedAt,
+      heldBalance: heldBalance ?? this.heldBalance,
+      totalBalance: totalBalance ?? this.totalBalance,
+      currency: currency ?? this.currency,
+      lastUpdated: lastUpdated ?? this.lastUpdated,
     );
   }
 
   @override
   List<Object?> get props => [
-        uid,
+        id,
+        userId,
         availableBalance,
-        pendingBalance,
-        transactions,
-        updatedAt,
+        heldBalance,
+        totalBalance,
+        currency,
+        lastUpdated,
       ];
 }

@@ -1,0 +1,189 @@
+import 'package:dartz/dartz.dart';
+import '../../domain/entities/wallet_entity.dart';
+import '../../domain/entities/transaction_entity.dart';
+import '../../domain/repositories/wallet_repository.dart';
+import '../../../../core/errors/failures.dart';
+import '../../domain/exceptions/wallet_exceptions.dart';
+import '../../domain/exceptions/custom_exceptions.dart';
+import '../datasources/wallet_remote_data_source.dart';
+import '../../../../core/network/network_info.dart';
+
+class WalletRepositoryImpl implements WalletRepository {
+  final WalletRemoteDataSource remoteDataSource;
+  final NetworkInfo networkInfo;
+
+  WalletRepositoryImpl({
+    required this.remoteDataSource,
+    required this.networkInfo,
+  });
+
+  @override
+  Future<Either<Failure, WalletEntity>> getWallet(String userId) async {
+    try {
+      if (await networkInfo.isConnected) {
+        final walletModel = await remoteDataSource.getWallet(userId);
+        return Right(walletModel.toEntity());
+      } else {
+        return const Left(
+            NoInternetFailure(failureMessage: 'No internet connection'));
+      }
+    } on WalletNotFoundException catch (e) {
+      return Left(ServerFailure(failureMessage: e.message));
+    } on WalletException catch (e) {
+      return Left(ServerFailure(failureMessage: e.message));
+    } on ServerException {
+      return const Left(ServerFailure(failureMessage: 'Server error occurred'));
+    } catch (e) {
+      return Left(UnknownFailure(failureMessage: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, WalletEntity>> updateBalance(
+    String walletId,
+    double amount,
+  ) async {
+    try {
+      if (await networkInfo.isConnected) {
+        final walletModel =
+            await remoteDataSource.updateBalance(walletId, amount);
+        return Right(walletModel.toEntity());
+      } else {
+        return const Left(
+            NoInternetFailure(failureMessage: 'No internet connection'));
+      }
+    } on InsufficientBalanceException catch (e) {
+      return Left(ValidationFailure(failureMessage: e.message));
+    } on WalletNotFoundException catch (e) {
+      return Left(ServerFailure(failureMessage: e.message));
+    } on WalletException catch (e) {
+      return Left(ServerFailure(failureMessage: e.message));
+    } on ServerException {
+      return const Left(ServerFailure(failureMessage: 'Server error occurred'));
+    } catch (e) {
+      return Left(UnknownFailure(failureMessage: e.toString()));
+    }
+  }
+
+  @override
+  Stream<Either<Failure, WalletEntity>> watchBalance(String userId) async* {
+    try {
+      await for (final walletModel in remoteDataSource.watchWallet(userId)) {
+        yield Right(walletModel.toEntity());
+      }
+    } on WalletNotFoundException catch (e) {
+      yield Left(ServerFailure(failureMessage: e.message));
+    } on WalletException catch (e) {
+      yield Left(ServerFailure(failureMessage: e.message));
+    } on ServerException {
+      yield const Left(ServerFailure(failureMessage: 'Server error occurred'));
+    } catch (e) {
+      yield Left(UnknownFailure(failureMessage: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, WalletEntity>> holdBalance(
+    String walletId,
+    double amount,
+    String referenceId,
+  ) async {
+    try {
+      if (await networkInfo.isConnected) {
+        final walletModel = await remoteDataSource.holdBalance(
+          walletId,
+          amount,
+          referenceId,
+        );
+        return Right(walletModel.toEntity());
+      } else {
+        return const Left(
+            NoInternetFailure(failureMessage: 'No internet connection'));
+      }
+    } on InsufficientBalanceException catch (e) {
+      return Left(ValidationFailure(failureMessage: e.message));
+    } on InvalidAmountException catch (e) {
+      return Left(ValidationFailure(failureMessage: e.message));
+    } on WalletNotFoundException catch (e) {
+      return Left(ServerFailure(failureMessage: e.message));
+    } on HoldBalanceFailedException catch (e) {
+      return Left(ServerFailure(failureMessage: e.message));
+    } on WalletException catch (e) {
+      return Left(ServerFailure(failureMessage: e.message));
+    } on ServerException {
+      return const Left(ServerFailure(failureMessage: 'Server error occurred'));
+    } catch (e) {
+      return Left(UnknownFailure(failureMessage: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, WalletEntity>> releaseBalance(
+    String walletId,
+    double amount,
+    String referenceId,
+  ) async {
+    try {
+      if (await networkInfo.isConnected) {
+        final walletModel = await remoteDataSource.releaseBalance(
+          walletId,
+          amount,
+          referenceId,
+        );
+        return Right(walletModel.toEntity());
+      } else {
+        return const Left(
+            NoInternetFailure(failureMessage: 'No internet connection'));
+      }
+    } on InvalidAmountException catch (e) {
+      return Left(ValidationFailure(failureMessage: e.message));
+    } on WalletNotFoundException catch (e) {
+      return Left(ServerFailure(failureMessage: e.message));
+    } on ReleaseBalanceFailedException catch (e) {
+      return Left(ServerFailure(failureMessage: e.message));
+    } on WalletException catch (e) {
+      return Left(ServerFailure(failureMessage: e.message));
+    } on ServerException {
+      return const Left(ServerFailure(failureMessage: 'Server error occurred'));
+    } catch (e) {
+      return Left(UnknownFailure(failureMessage: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, TransactionEntity>> recordTransaction(
+    String walletId,
+    double amount,
+    TransactionType type,
+    String? description,
+    String? referenceId,
+  ) async {
+    try {
+      if (await networkInfo.isConnected) {
+        final wallet = await remoteDataSource.getWallet(walletId);
+        final transactionModel = await remoteDataSource.recordTransaction(
+          walletId,
+          wallet.userId,
+          amount,
+          type,
+          description,
+          referenceId,
+        );
+        return Right(transactionModel.toEntity());
+      } else {
+        return const Left(
+            NoInternetFailure(failureMessage: 'No internet connection'));
+      }
+    } on InvalidAmountException catch (e) {
+      return Left(ValidationFailure(failureMessage: e.message));
+    } on TransactionFailedException catch (e) {
+      return Left(ServerFailure(failureMessage: e.message));
+    } on WalletException catch (e) {
+      return Left(ServerFailure(failureMessage: e.message));
+    } on ServerException {
+      return const Left(ServerFailure(failureMessage: 'Server error occurred'));
+    } catch (e) {
+      return Left(UnknownFailure(failureMessage: e.toString()));
+    }
+  }
+}
