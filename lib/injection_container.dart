@@ -37,6 +37,13 @@ import 'features/travellink/domain/usecases/hold_balance_for_escrow_usecase.dart
 import 'features/travellink/domain/usecases/release_escrow_balance_usecase.dart';
 import 'features/travellink/presentation/bloc/wallet/wallet_bloc.dart';
 
+import 'features/kyc/data/datasources/kyc_remote_datasource.dart';
+import 'features/kyc/data/repositories/kyc_repository_impl.dart';
+import 'features/kyc/domain/repositories/kyc_repository.dart';
+import 'features/kyc/domain/usecases/submit_kyc_usecase.dart';
+import 'features/kyc/domain/usecases/get_kyc_status_usecase.dart';
+import 'features/kyc/domain/usecases/watch_kyc_status_usecase.dart';
+
 final sl = GetIt.instance;
 
 class NetworkInfoImpl implements NetworkInfo {
@@ -129,6 +136,22 @@ Future<void> init() async {
 
   // Data sources
   sl.registerLazySingleton<WalletRemoteDataSource>(() => WalletRemoteDataSourceImpl(
+    firestore: sl(),
+  ));
+
+  //! Features - KYC
+  // Use cases
+  sl.registerLazySingleton(() => SubmitKycUseCase(sl()));
+  sl.registerLazySingleton(() => GetKycStatusUseCase(sl()));
+  sl.registerLazySingleton(() => WatchKycStatusUseCase(sl()));
+
+  // Repository
+  sl.registerLazySingleton<KycRepository>(() => KycRepositoryImpl(
+    remoteDataSource: sl(),
+  ));
+
+  // Data sources
+  sl.registerLazySingleton<KycRemoteDataSource>(() => KycRemoteDataSourceImpl(
     firestore: sl(),
   ));
 

@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/kyc_entity.dart';
 import '../../domain/entities/kyc_status.dart';
 
@@ -26,6 +27,22 @@ class KycModel extends KycEntity {
           ? DateTime.parse(json['reviewedAt'] as String)
           : null,
       metadata: json['metadata'] as Map<String, dynamic>?,
+    );
+  }
+
+  factory KycModel.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return KycModel(
+      userId: doc.id,
+      status: _statusFromString(data['status'] as String? ?? 'nokyc'),
+      documentUrls: (data['documentUrls'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
+      rejectionReason: data['rejectionReason'] as String?,
+      submittedAt: (data['submittedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      reviewedAt: (data['reviewedAt'] as Timestamp?)?.toDate(),
+      metadata: data['metadata'] as Map<String, dynamic>?,
     );
   }
 
