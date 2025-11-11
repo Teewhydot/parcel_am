@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_spacing.dart';
+import '../../../../core/bloc/base/base_state.dart';
+import '../../../../injection_container.dart';
 import '../widgets/bottom_navigation.dart';
+import '../bloc/wallet/wallet_bloc.dart';
+import '../bloc/wallet/wallet_event.dart';
+import '../bloc/wallet/wallet_data.dart';
+import '../../domain/models/package_model.dart';
 
 class PaymentScreen extends StatefulWidget {
   const PaymentScreen({super.key});
@@ -15,6 +22,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
   String paymentMethod = 'bank';
   final TextEditingController _accountNumberController = TextEditingController();
   final TextEditingController _bankNameController = TextEditingController();
+  late WalletBloc _walletBloc;
+  PaymentInfo? _paymentInfo;
 
   final List<Map<String, dynamic>> steps = [
     {'id': 'confirm', 'title': 'Confirm Order', 'icon': Icons.shield},
@@ -57,27 +66,91 @@ class _PaymentScreenState extends State<PaymentScreen> {
     }
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _walletBloc = sl<WalletBloc>();
+    _walletBloc.add(const WalletLoadRequested());
+  }
+
+  @override
+  void dispose() {
+    _walletBloc.close();
+    _accountNumberController.dispose();
+    _bankNameController.dispose();
+    super.dispose();
+  }
+
   void nextStep() {
     if (currentStep < steps.length - 1) {
-      setState(() {
-        currentStep++;
-      });
+      if (currentStep == 1) {
+        _processPaymentAndEscrow();
+      } else {
+        setState(() {
+          currentStep++;
+        });
+      }
     }
+  }
+
+  void _processPaymentAndEscrow() {
+    final transactionId = 'TXN_${DateTime.now().millisecondsSinceEpoch}';
+    final totalAmount = 3650.0;
+
+    _paymentInfo = PaymentInfo(
+      transactionId: transactionId,
+      status: 'processing',
+      amount: 3500.0,
+      serviceFee: 150.0,
+      totalAmount: totalAmount,
+      paymentMethod: paymentMethod,
+      paidAt: DateTime.now(),
+      isEscrow: true,
+      escrowStatus: 'held',
+      escrowHeldAt: DateTime.now(),
+    );
+
+    _walletBloc.add(WalletEscrowHoldRequested(
+      transactionId: transactionId,
+      amount: totalAmount,
+      packageId: 'PKG_001',
+    ));
+
+    setState(() {
+      currentStep++;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Secure Payment'),
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
+    return BlocProvider.value(
+      value: _walletBloc,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Secure Payment'),
+          backgroundColor: AppColors.surface,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
         ),
-      ),
-      body: Column(
+        body: BlocListener<WalletBloc, BaseState<WalletData>>(
+          listener: (context, state) {
+            if (state is ErrorState<WalletData>) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.errorMessage ?? 'An error occurred'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            } else if (state is LoadedState<WalletData> && currentStep == 2) {
+              setState(() {
+                currentStep = 3;
+              });
+            }
+          },
+          child: Column(
         children: [
           // Progress Steps
           Container(
@@ -171,8 +244,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
               ),
             ),
         ],
+          ),
+        ),
+        bottomNavigationBar: const BottomNavigation(currentIndex: 1),
       ),
-      bottomNavigationBar: const BottomNavigation(currentIndex: 1),
     );
   }
 
@@ -525,39 +600,95 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   Widget _buildEscrowDepositStep() {
-    return Column(
-      children: [
-        // Escrow Process Card
-        Card(
-          child: Padding(
-            padding: AppSpacing.paddingXXL,
-            child: Column(
-              children: [
-                Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(32),
-                  ),
-                  child: const Icon(
-                    Icons.lock,
-                    color: Colors.white,
-                    size: 32,
+    return BlocBuilder<WalletBloc, BaseState<WalletData>>(
+      builder: (context, state) {
+        return Column(
+          children: [
+            if (state is LoadedState<WalletData> && state.data != null) ...[
+              Card(
+                child: Padding(
+                  padding: AppSpacing.paddingLG,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Wallet Balance',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      AppSpacing.verticalSpacing(SpacingSize.lg),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Available Balance',
+                            style: TextStyle(color: AppColors.onSurfaceVariant),
+                          ),
+                          Text(
+                            '₦${state.data!.availableBalance.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      AppSpacing.verticalSpacing(SpacingSize.sm),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Pending (Escrow)',
+                            style: TextStyle(color: AppColors.onSurfaceVariant),
+                          ),
+                          Text(
+                            '₦${state.data!.pendingBalance.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.accent,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-                AppSpacing.verticalSpacing(SpacingSize.lg),
-                const Text(
-                  'Securing Your Payment',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                AppSpacing.verticalSpacing(SpacingSize.sm),
-                Text(
-                  'Your ${packageDetails['total']} is being deposited into our secure escrow system',
-                  textAlign: TextAlign.center,
+              ),
+              AppSpacing.verticalSpacing(SpacingSize.lg),
+            ],
+            Card(
+              child: Padding(
+                padding: AppSpacing.paddingXXL,
+                child: Column(
+                  children: [
+                    Container(
+                      width: 64,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(32),
+                      ),
+                      child: const Icon(
+                        Icons.lock,
+                        color: Colors.white,
+                        size: 32,
+                      ),
+                    ),
+                    AppSpacing.verticalSpacing(SpacingSize.lg),
+                    const Text(
+                      'Securing Your Payment',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    AppSpacing.verticalSpacing(SpacingSize.sm),
+                    Text(
+                      'Your ${packageDetails['total']} is being deposited into our secure escrow system',
+                      textAlign: TextAlign.center,
                   style: const TextStyle(
                     color: AppColors.onSurfaceVariant,
                     fontSize: 14,
@@ -623,7 +754,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
             ),
           ),
         ),
-      ],
+          ],
+        );
+      },
     );
   }
 

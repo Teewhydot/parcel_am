@@ -152,6 +152,8 @@ class PaymentInfo {
   final DateTime? paidAt;
   final bool isEscrow;
   final DateTime? escrowReleaseDate;
+  final String escrowStatus;
+  final DateTime? escrowHeldAt;
 
   PaymentInfo({
     required this.transactionId,
@@ -163,5 +165,35 @@ class PaymentInfo {
     this.paidAt,
     required this.isEscrow,
     this.escrowReleaseDate,
+    this.escrowStatus = 'pending',
+    this.escrowHeldAt,
   });
+
+  PaymentInfo copyWith({
+    String? transactionId,
+    String? status,
+    double? amount,
+    double? serviceFee,
+    double? totalAmount,
+    String? paymentMethod,
+    DateTime? paidAt,
+    bool? isEscrow,
+    DateTime? escrowReleaseDate,
+    String? escrowStatus,
+    DateTime? escrowHeldAt,
+  }) {
+    return PaymentInfo(
+      transactionId: transactionId ?? this.transactionId,
+      status: status ?? this.status,
+      amount: amount ?? this.amount,
+      serviceFee: serviceFee ?? this.serviceFee,
+      totalAmount: totalAmount ?? this.totalAmount,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+      paidAt: paidAt ?? this.paidAt,
+      isEscrow: isEscrow ?? this.isEscrow,
+      escrowReleaseDate: escrowReleaseDate ?? this.escrowReleaseDate,
+      escrowStatus: escrowStatus ?? this.escrowStatus,
+      escrowHeldAt: escrowHeldAt ?? this.escrowHeldAt,
+    );
+  }
 }

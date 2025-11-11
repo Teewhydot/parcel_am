@@ -27,3 +27,35 @@ class WalletBalanceUpdated extends WalletEvent {
   @override
   List<Object?> get props => [availableBalance, pendingBalance];
 }
+
+class WalletEscrowHoldRequested extends WalletEvent {
+  final String transactionId;
+  final double amount;
+  final String packageId;
+
+  const WalletEscrowHoldRequested({
+    required this.transactionId,
+    required this.amount,
+    required this.packageId,
+  });
+
+  @override
+  List<Object?> get props => [transactionId, amount, packageId];
+}
+
+class WalletEscrowReleaseRequested extends WalletEvent {
+  final String transactionId;
+  final double amount;
+
+  const WalletEscrowReleaseRequested({
+    required this.transactionId,
+    required this.amount,
+  });
+
+  @override
+  List<Object?> get props => [transactionId, amount];
+}
+
+class WalletBalanceRefreshRequested extends WalletEvent {
+  const WalletBalanceRefreshRequested();
+}
