@@ -10,9 +10,19 @@ class ReleaseEscrowBalanceUseCase {
   ReleaseEscrowBalanceUseCase(this.repository);
 
   Future<Either<Failure, WalletEntity>> call(ReleaseEscrowParams params) async {
-    return await repository.releaseEscrowBalance(
-      userId: params.userId,
-      orderId: params.orderId,
+    // Since releaseBalance needs an amount, we need to get it from the wallet first
+    final walletResult = await repository.getWallet(params.userId);
+    return walletResult.fold(
+      (failure) => Left(failure),
+      (wallet) async {
+        // Find the held amount for this order
+        final heldAmount = wallet.heldBalance; // Use held balance as it represents held funds
+        return await repository.releaseBalance(
+          wallet.id,
+          heldAmount,
+          params.orderId,
+        );
+      },
     );
   }
 }

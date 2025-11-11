@@ -86,7 +86,11 @@ class GetXRouteModule {
     ),
     AuthGuard.createProtectedRoute(
       name: Routes.wallet,
-      page: () => const WalletScreen(),
+      page: () {
+        // Get current user ID from auth service or pass via route arguments
+        final userId = Get.arguments as String? ?? '';
+        return WalletScreen(userId: userId);
+      },
       transition: _transition,
       transitionDuration: _transitionDuration,
       requiresKyc: true,

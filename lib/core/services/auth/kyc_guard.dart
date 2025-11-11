@@ -3,33 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart' hide Transition;
 import 'package:get/get.dart';
 import '../../../features/travellink/presentation/bloc/auth/auth_bloc.dart';
 import '../../../features/travellink/presentation/bloc/auth/auth_data.dart';
+import '../../../features/travellink/domain/entities/user_entity.dart';
 import '../../../core/bloc/base/base_state.dart';
 import '../../routes/routes.dart';
-
-/// Enum representing KYC verification status
-enum KycStatus {
-  notStarted,
-  pending,
-  verified,
-  rejected,
-  unknown;
-
-  static KycStatus fromString(String status) {
-    switch (status.toLowerCase()) {
-      case 'verified':
-        return KycStatus.verified;
-      case 'pending':
-        return KycStatus.pending;
-      case 'rejected':
-        return KycStatus.rejected;
-      case 'not_started':
-      case 'notstarted':
-        return KycStatus.notStarted;
-      default:
-        return KycStatus.unknown;
-    }
-  }
-}
 
 /// Mixin to provide KYC checking capabilities to any class
 mixin KycCheckMixin {
@@ -37,23 +13,23 @@ mixin KycCheckMixin {
   KycStatus checkKycStatus(BuildContext context) {
     try {
       final authState = context.read<AuthBloc>().state;
-      
+
       if (authState is DataState<AuthData>) {
         final user = authState.data?.user;
-        if (user != null && user.isVerified) {
-          return KycStatus.fromString(user.verificationStatus);
+        if (user != null) {
+          return user.kycStatus;
         }
       }
-      
+
       return KycStatus.notStarted;
     } catch (e) {
-      return KycStatus.unknown;
+      return KycStatus.notStarted;
     }
   }
 
   /// Check if user has completed KYC verification
   bool isKycVerified(BuildContext context) {
-    return checkKycStatus(context) == KycStatus.verified;
+    return checkKycStatus(context).isVerified;
   }
 
   /// Check if KYC is pending
@@ -72,15 +48,15 @@ class KycGuard with KycCheckMixin {
   /// Check if user has KYC verification and redirect if not
   bool checkKycAccess(BuildContext context, {bool allowPending = false}) {
     final status = checkKycStatus(context);
-    
-    if (status == KycStatus.verified) {
+
+    if (status.isVerified) {
       return true;
     }
-    
+
     if (allowPending && status == KycStatus.pending) {
       return true;
     }
-    
+
     // Redirect to KYC blocked screen with status
     Get.toNamed(
       Routes.kycBlocked,
@@ -101,11 +77,11 @@ class KycGuard with KycCheckMixin {
       builder: (context, state) {
         final authData = state is DataState<AuthData> ? state.data : null;
         final user = authData?.user;
-        
+
         if (state.isLoading) {
           return loadingWidget ?? const _DefaultLoadingWidget();
         }
-        
+
         if (user == null) {
           // Not authenticated, redirect to login
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -113,17 +89,17 @@ class KycGuard with KycCheckMixin {
           });
           return blockedWidget ?? const _DefaultBlockedWidget();
         }
-        
-        final status = KycStatus.fromString(user.verificationStatus);
-        
-        if (status == KycStatus.verified) {
+
+        final status = user.kycStatus;
+
+        if (status.isVerified) {
           return child;
         }
-        
+
         if (allowPending && status == KycStatus.pending) {
           return child;
         }
-        
+
         // Redirect to KYC blocked screen
         WidgetsBinding.instance.addPostFrameCallback((_) {
           Get.toNamed(
@@ -131,7 +107,7 @@ class KycGuard with KycCheckMixin {
             arguments: {'status': status},
           );
         });
-        
+
         return blockedWidget ?? const _DefaultBlockedWidget();
       },
     );
@@ -178,22 +154,22 @@ class KycMiddleware extends GetMiddleware with KycCheckMixin {
   @override
   RouteSettings? redirect(String? route) {
     if (route == null) return null;
-    
+
     final kycGuard = KycGuard.instance;
-    
+
     if (kycGuard.requiresKyc(route)) {
       if (Get.context != null) {
         try {
           final status = checkKycStatus(Get.context!);
-          
-          if (status == KycStatus.verified) {
+
+          if (status.isVerified) {
             return null; // Allow access
           }
-          
+
           if (allowPending && status == KycStatus.pending) {
             return null; // Allow access
           }
-          
+
           // Redirect to KYC blocked screen
           return RouteSettings(
             name: Routes.kycBlocked,
@@ -205,7 +181,7 @@ class KycMiddleware extends GetMiddleware with KycCheckMixin {
         }
       }
     }
-    
+
     return null; // Continue with the original route
   }
 }

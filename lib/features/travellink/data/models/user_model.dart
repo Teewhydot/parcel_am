@@ -35,7 +35,7 @@ class UserModel extends UserEntity {
       totalEarnings: json['totalEarnings']?.toDouble(),
       availableBalance: json['availableBalance']?.toDouble(),
       pendingBalance: json['pendingBalance']?.toDouble(),
-      kycStatus: json['kycStatus'] ?? 'not_submitted',
+      kycStatus: KycStatus.fromString(json['kycStatus'] ?? 'not_submitted'),
     );
   }
 
@@ -55,7 +55,7 @@ class UserModel extends UserEntity {
       'totalEarnings': totalEarnings,
       'availableBalance': availableBalance,
       'pendingBalance': pendingBalance,
-      'kycStatus': kycStatus,
+      'kycStatus': kycStatus.toJson(),
     };
   }
 
@@ -115,7 +115,7 @@ class UserModel extends UserEntity {
     double? totalEarnings,
     double? availableBalance,
     double? pendingBalance,
-    String? kycStatus,
+    KycStatus? kycStatus,
   }) {
     return UserModel(
       uid: uid ?? this.uid,

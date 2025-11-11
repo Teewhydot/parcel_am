@@ -185,8 +185,9 @@ class WalletScreen extends StatelessWidget {
                           ),
                         ),
                       ),
-                    if (state is AsyncLoadingState && state.isRefreshing)
-                      const LinearProgressIndicator(),
+                    if (state is AsyncLoadingState)
+                      if ((state as AsyncLoadingState).isRefreshing)
+                        const LinearProgressIndicator(),
                   ],
                 ),
               ),

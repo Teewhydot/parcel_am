@@ -10,10 +10,10 @@ class HoldBalanceForEscrowUseCase {
   HoldBalanceForEscrowUseCase(this.repository);
 
   Future<Either<Failure, WalletEntity>> call(HoldEscrowParams params) async {
-    return await repository.holdBalanceForEscrow(
-      userId: params.userId,
-      amount: params.amount,
-      orderId: params.orderId,
+    return await repository.holdBalance(
+      params.userId,
+      params.amount,
+      params.orderId,
     );
   }
 }

@@ -42,7 +42,7 @@ void main() {
     verificationStatus: 'verified',
     createdAt: DateTime.now(),
     additionalData: {},
-    kycStatus: 'not_submitted',
+    kycStatus: KycStatus.notStarted,
   );
 
   setUp(() {
@@ -89,7 +89,7 @@ void main() {
         isA<LoadedState<AuthData>>().having(
           (state) => state.data?.user?.kycStatus,
           'kycStatus',
-          'approved',
+          KycStatus.approved,
         ),
       ],
     );
@@ -117,7 +117,7 @@ void main() {
         isA<LoadedState<AuthData>>().having(
           (state) => state.data?.user?.kycStatus,
           'kycStatus',
-          'pending',
+          KycStatus.pending,
         ),
       );
 

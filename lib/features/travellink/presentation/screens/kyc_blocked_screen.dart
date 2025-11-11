@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../domain/entities/user_entity.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_scaffold.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/routes/routes.dart';
-import '../../../../core/services/auth/kyc_guard.dart';
 
 class KycBlockedScreen extends StatelessWidget {
   const KycBlockedScreen({super.key});
@@ -24,14 +24,14 @@ class KycBlockedScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _buildStatusIcon(status),
-              const AppSpacing.verticalLarge(),
+              AppSpacing.verticalSpacing(SpacingSize.xl),
               _buildTitle(status),
-              const AppSpacing.verticalMedium(),
+              AppSpacing.verticalSpacing(SpacingSize.lg),
               _buildDescription(status),
-              const AppSpacing.verticalExtraLarge(),
+              AppSpacing.verticalSpacing(SpacingSize.xxxl),
               _buildActionButton(status, context),
               if (status != KycStatus.pending) ...[
-                const AppSpacing.verticalMedium(),
+                AppSpacing.verticalSpacing(SpacingSize.lg),
                 _buildSecondaryButton(context),
               ],
             ],
@@ -50,7 +50,12 @@ class KycBlockedScreen extends StatelessWidget {
         icon = Icons.verified_user_outlined;
         color = AppColors.warning;
         break;
+      case KycStatus.incomplete:
+        icon = Icons.info_outlined;
+        color = AppColors.warning;
+        break;
       case KycStatus.pending:
+      case KycStatus.underReview:
         icon = Icons.pending_outlined;
         color = AppColors.primary;
         break;
@@ -58,14 +63,9 @@ class KycBlockedScreen extends StatelessWidget {
         icon = Icons.cancel_outlined;
         color = AppColors.error;
         break;
-      case KycStatus.verified:
+      case KycStatus.approved:
         icon = Icons.verified;
         color = AppColors.success;
-        break;
-      case KycStatus.unknown:
-      default:
-        icon = Icons.help_outline;
-        color = AppColors.textSecondary;
         break;
     }
 
@@ -91,23 +91,25 @@ class KycBlockedScreen extends StatelessWidget {
       case KycStatus.notStarted:
         title = 'KYC Verification Required';
         break;
+      case KycStatus.incomplete:
+        title = 'Complete Your Verification';
+        break;
       case KycStatus.pending:
+      case KycStatus.underReview:
         title = 'Verification Pending';
         break;
       case KycStatus.rejected:
         title = 'Verification Rejected';
         break;
-      case KycStatus.verified:
+      case KycStatus.approved:
         title = 'Account Verified';
-        break;
-      case KycStatus.unknown:
-      default:
-        title = 'Verification Status Unknown';
         break;
     }
 
-    return AppText.headingLarge(
+    return AppText(
       title,
+      fontSize: 24,
+      fontWeight: FontWeight.bold,
       textAlign: TextAlign.center,
     );
   }
@@ -120,7 +122,12 @@ class KycBlockedScreen extends StatelessWidget {
         description =
             'This feature requires identity verification. Please complete your KYC verification to access this feature and unlock full platform capabilities.';
         break;
+      case KycStatus.incomplete:
+        description =
+            'Your verification is incomplete. Please complete all required steps to access this feature.';
+        break;
       case KycStatus.pending:
+      case KycStatus.underReview:
         description =
             'Your identity verification is currently being reviewed. This typically takes 24-48 hours. We\'ll notify you once your verification is complete.';
         break;
@@ -128,18 +135,13 @@ class KycBlockedScreen extends StatelessWidget {
         description =
             'Your identity verification was unsuccessful. Please review your information and resubmit your documents. Contact support if you need assistance.';
         break;
-      case KycStatus.verified:
+      case KycStatus.approved:
         description =
             'Your account is verified! You now have full access to all platform features.';
         break;
-      case KycStatus.unknown:
-      default:
-        description =
-            'We couldn\'t determine your verification status. Please try again or contact support for assistance.';
-        break;
     }
 
-    return AppText.bodyMedium(
+    return AppText(
       description,
       textAlign: TextAlign.center,
       color: AppColors.textSecondary,
@@ -152,10 +154,12 @@ class KycBlockedScreen extends StatelessWidget {
 
     switch (status) {
       case KycStatus.notStarted:
+      case KycStatus.incomplete:
         buttonText = 'Start Verification';
         onPressed = () => Get.offNamed(Routes.verification);
         break;
       case KycStatus.pending:
+      case KycStatus.underReview:
         buttonText = 'Check Status';
         onPressed = () => Get.offNamed(Routes.verification);
         break;
@@ -163,29 +167,22 @@ class KycBlockedScreen extends StatelessWidget {
         buttonText = 'Resubmit Documents';
         onPressed = () => Get.offNamed(Routes.verification);
         break;
-      case KycStatus.verified:
+      case KycStatus.approved:
         buttonText = 'Continue';
         onPressed = () => Get.back();
         break;
-      case KycStatus.unknown:
-      default:
-        buttonText = 'Go to Verification';
-        onPressed = () => Get.offNamed(Routes.verification);
-        break;
     }
 
-    return AppButton.primary(
+    return AppButton(
       onPressed: onPressed,
-      text: buttonText,
-      fullWidth: true,
+      child: Text(buttonText),
     );
   }
 
   Widget _buildSecondaryButton(BuildContext context) {
-    return AppButton.secondary(
+    return AppButton(
       onPressed: () => Get.offNamed(Routes.dashboard),
-      text: 'Back to Dashboard',
-      fullWidth: true,
+      child: const Text('Back to Dashboard'),
     );
   }
 }

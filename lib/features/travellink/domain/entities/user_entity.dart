@@ -25,6 +25,46 @@ enum KycStatus {
     }
   }
 
+  String toJson() {
+    switch (this) {
+      case KycStatus.notStarted:
+        return 'not_started';
+      case KycStatus.incomplete:
+        return 'incomplete';
+      case KycStatus.pending:
+        return 'pending';
+      case KycStatus.underReview:
+        return 'under_review';
+      case KycStatus.approved:
+        return 'approved';
+      case KycStatus.rejected:
+        return 'rejected';
+    }
+  }
+
+  static KycStatus fromString(String value) {
+    switch (value.toLowerCase()) {
+      case 'not_started':
+      case 'notstarted':
+      case 'not_submitted':
+        return KycStatus.notStarted;
+      case 'incomplete':
+        return KycStatus.incomplete;
+      case 'pending':
+        return KycStatus.pending;
+      case 'under_review':
+      case 'underreview':
+        return KycStatus.underReview;
+      case 'approved':
+      case 'verified':
+        return KycStatus.approved;
+      case 'rejected':
+        return KycStatus.rejected;
+      default:
+        return KycStatus.notStarted;
+    }
+  }
+
   bool get isVerified => this == KycStatus.approved;
   bool get requiresAction => this == KycStatus.notStarted || this == KycStatus.incomplete || this == KycStatus.rejected;
 }
@@ -45,7 +85,6 @@ class UserEntity extends Equatable {
   final double? totalEarnings;
   final double? availableBalance;
   final double? pendingBalance;
-  final String kycStatus;
 
   const UserEntity({
     required this.uid,
@@ -63,7 +102,6 @@ class UserEntity extends Equatable {
     this.totalEarnings,
     this.availableBalance,
     this.pendingBalance,
-    this.kycStatus = 'not_submitted',
   });
 
   UserEntity copyWith({
@@ -82,7 +120,6 @@ class UserEntity extends Equatable {
     double? totalEarnings,
     double? availableBalance,
     double? pendingBalance,
-    String? kycStatus,
   }) {
     return UserEntity(
       uid: uid ?? this.uid,
@@ -100,7 +137,6 @@ class UserEntity extends Equatable {
       totalEarnings: totalEarnings ?? this.totalEarnings,
       availableBalance: availableBalance ?? this.availableBalance,
       pendingBalance: pendingBalance ?? this.pendingBalance,
-      kycStatus: kycStatus ?? this.kycStatus,
     );
   }
 
@@ -121,6 +157,5 @@ class UserEntity extends Equatable {
         totalEarnings,
         availableBalance,
         pendingBalance,
-        kycStatus,
       ];
 }

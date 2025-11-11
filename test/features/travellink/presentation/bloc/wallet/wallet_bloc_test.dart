@@ -2,7 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:parcel_am/features/travellink/presentation/bloc/wallet/wallet_bloc.dart';
 import 'package:parcel_am/features/travellink/presentation/bloc/wallet/wallet_event.dart';
-import 'package:parcel_am/features/travellink/presentation/bloc/wallet/wallet_state.dart';
+import 'package:parcel_am/features/travellink/presentation/bloc/wallet/wallet_data.dart';
+import 'package:parcel_am/core/bloc/base/base_state.dart';
 
 void main() {
   late WalletBloc walletBloc;
@@ -16,44 +17,51 @@ void main() {
   });
 
   group('WalletBloc', () {
-    test('initial state is WalletInitial', () {
-      expect(walletBloc.state, const WalletInitial());
+    test('initial state is InitialState', () {
+      expect(walletBloc.state, isA<InitialState<WalletData>>());
     });
 
-    blocTest<WalletBloc, WalletState>(
-      'emits [WalletLoading, WalletLoaded] when WalletLoadRequested is added',
+    blocTest<WalletBloc, BaseState<WalletData>>(
+      'emits [LoadingState, LoadedState] when WalletStarted is added',
       build: () => walletBloc,
-      act: (bloc) => bloc.add(const WalletLoadRequested()),
+      act: (bloc) => bloc.add(const WalletStarted('user123')),
       expect: () => [
-        const WalletLoading(),
-        isA<WalletLoaded>()
-            .having((state) => state.availableBalance, 'availableBalance', 45600.00)
-            .having((state) => state.pendingBalance, 'pendingBalance', 12400.00),
+        isA<LoadingState<WalletData>>(),
+        isA<LoadedState<WalletData>>()
+            .having((state) => state.data?.availableBalance, 'availableBalance', 50000.0)
+            .having((state) => state.data?.pendingBalance, 'pendingBalance', 0.0),
       ],
     );
 
-    blocTest<WalletBloc, WalletState>(
-      'emits [WalletLoaded] when WalletBalanceUpdated is added',
+    blocTest<WalletBloc, BaseState<WalletData>>(
+      'emits [LoadedState] when WalletBalanceUpdated is added',
       build: () => walletBloc,
       act: (bloc) => bloc.add(const WalletBalanceUpdated(
         availableBalance: 50000.0,
         pendingBalance: 15000.0,
       )),
       expect: () => [
-        isA<WalletLoaded>()
-            .having((state) => state.availableBalance, 'availableBalance', 50000.0)
-            .having((state) => state.pendingBalance, 'pendingBalance', 15000.0)
-            .having((state) => state.totalBalance, 'totalBalance', 65000.0),
+        isA<LoadedState<WalletData>>()
+            .having((state) => state.data?.availableBalance, 'availableBalance', 50000.0)
+            .having((state) => state.data?.pendingBalance, 'pendingBalance', 15000.0)
+            .having((state) => state.data?.balance, 'balance', 65000.0),
       ],
     );
 
-    test('totalBalance calculation is correct', () {
-      const state = WalletLoaded(
+    test('balance calculation is correct', () {
+      const walletData = WalletData(
         availableBalance: 10000.0,
         pendingBalance: 5000.0,
-        lastUpdated: null,
       );
-      expect(state.totalBalance, 15000.0);
+      expect(walletData.balance, 15000.0);
+    });
+
+    test('escrowBalance returns pendingBalance', () {
+      const walletData = WalletData(
+        availableBalance: 10000.0,
+        pendingBalance: 5000.0,
+      );
+      expect(walletData.escrowBalance, 5000.0);
     });
   });
 }

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:parcel_am/core/bloc/base/base_bloc.dart';
 import 'package:parcel_am/core/bloc/base/base_state.dart';
+import '../../../domain/entities/user_entity.dart';
 import '../../../domain/usecases/login_usecase.dart';
 import '../../../domain/usecases/register_usecase.dart';
 import '../../../domain/usecases/logout_usecase.dart';
@@ -228,8 +229,10 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
     final currentData = _getCurrentAuthData();
     if (currentData.user == null) return;
 
-    final updatedUser = currentData.user!.copyWith(kycStatus: event.kycStatus);
-    
+    final updatedUser = currentData.user!.copyWith(
+      kycStatus: KycStatus.fromString(event.kycStatus),
+    );
+
     emit(LoadedState<AuthData>(
       data: currentData.copyWith(user: updatedUser),
       lastUpdated: DateTime.now(),

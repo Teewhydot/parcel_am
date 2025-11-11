@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../../core/services/auth/kyc_guard.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../travellink/domain/entities/user_entity.dart';
 
 /// Example widget demonstrating KYC check before action
 class KycRequiredButton extends StatelessWidget with KycCheckMixin {
@@ -21,19 +22,19 @@ class KycRequiredButton extends StatelessWidget with KycCheckMixin {
   Widget build(BuildContext context) {
     return AppButton.primary(
       onPressed: () => _handlePress(context),
-      text: text,
+      child: Text(text),
     );
   }
 
   void _handlePress(BuildContext context) {
     final status = checkKycStatus(context);
-    
-    if (status == KycStatus.verified) {
+
+    if (status == KycStatus.approved) {
       onPressed();
       return;
     }
-    
-    if (allowPending && status == KycStatus.pending) {
+
+    if (allowPending && (status == KycStatus.pending || status == KycStatus.underReview)) {
       onPressed();
       return;
     }

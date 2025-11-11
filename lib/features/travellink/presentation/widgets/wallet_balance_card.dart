@@ -6,23 +6,30 @@ import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_icon.dart';
 import '../../../../core/widgets/app_container.dart';
+import '../../../../core/bloc/base/base_state.dart';
 import '../bloc/wallet/wallet_bloc.dart';
-import '../bloc/wallet/wallet_state.dart';
+import '../bloc/wallet/wallet_data.dart';
 import '../bloc/wallet/wallet_event.dart';
+import '../bloc/auth/auth_bloc.dart';
+import '../bloc/auth/auth_data.dart';
 
 class WalletBalanceCard extends StatelessWidget {
   const WalletBalanceCard({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<WalletBloc, WalletState>(
+    // Get userId from AuthBloc
+    final authState = context.read<AuthBloc>().state;
+    final userId = authState.data?.user?.uid ?? '';
+
+    return BlocBuilder<WalletBloc, BaseState<WalletData>>(
       builder: (context, state) {
-        if (state is WalletLoading) {
+        if (state.isLoading && !state.hasData) {
           return _buildLoadingCard();
-        } else if (state is WalletLoaded) {
-          return _buildBalanceCard(context, state);
-        } else if (state is WalletError) {
-          return _buildErrorCard(context, state.message);
+        } else if (state.hasData) {
+          return _buildBalanceCard(context, state.data!, userId);
+        } else if (state.isError) {
+          return _buildErrorCard(context, state.errorMessage ?? 'Error loading wallet');
         }
         return _buildLoadingCard();
       },
@@ -59,7 +66,7 @@ class WalletBalanceCard extends StatelessWidget {
     );
   }
 
-  Widget _buildBalanceCard(BuildContext context, WalletLoaded state) {
+  Widget _buildBalanceCard(BuildContext context, WalletData data, String userId) {
     return AppCard.elevated(
       padding: AppSpacing.paddingXL,
       child: Column(
@@ -86,7 +93,7 @@ class WalletBalanceCard extends StatelessWidget {
               IconButton(
                 icon: const Icon(Icons.refresh, size: 20),
                 onPressed: () {
-                  context.read<WalletBloc>().add(const WalletRefreshRequested());
+                  context.read<WalletBloc>().add(WalletRefreshRequested(userId));
                 },
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
@@ -99,7 +106,7 @@ class WalletBalanceCard extends StatelessWidget {
               Expanded(
                 child: _BalanceItem(
                   label: 'Available',
-                  amount: state.availableBalance,
+                  amount: data.availableBalance,
                   color: AppColors.success,
                   icon: Icons.check_circle,
                 ),
@@ -114,7 +121,7 @@ class WalletBalanceCard extends StatelessWidget {
               Expanded(
                 child: _BalanceItem(
                   label: 'Pending',
-                  amount: state.pendingBalance,
+                  amount: data.pendingBalance,
                   color: AppColors.accent,
                   icon: Icons.pending,
                 ),
@@ -136,7 +143,7 @@ class WalletBalanceCard extends StatelessWidget {
                   color: AppColors.primary,
                 ),
                 AppText.titleLarge(
-                  '₦${_formatAmount(state.totalBalance)}',
+                  '₦${_formatAmount(data.balance)}',
                   fontWeight: FontWeight.bold,
                   color: AppColors.primary,
                 ),
@@ -146,7 +153,7 @@ class WalletBalanceCard extends StatelessWidget {
           AppSpacing.verticalSpacing(SpacingSize.sm),
           Center(
             child: AppText.labelSmall(
-              'Last updated: ${_formatTime(state.lastUpdated)}',
+              'Last updated: ${_formatTime(DateTime.now())}',
               color: AppColors.onSurfaceVariant,
             ),
           ),
@@ -186,11 +193,17 @@ class WalletBalanceCard extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
                 AppSpacing.verticalSpacing(SpacingSize.sm),
-                TextButton(
-                  onPressed: () {
-                    context.read<WalletBloc>().add(const WalletRefreshRequested());
+                Builder(
+                  builder: (context) {
+                    final authState = context.read<AuthBloc>().state;
+                    final userId = authState.data?.user?.uid ?? '';
+                    return TextButton(
+                      onPressed: () {
+                        context.read<WalletBloc>().add(WalletRefreshRequested(userId));
+                      },
+                      child: const Text('Retry'),
+                    );
                   },
-                  child: const Text('Retry'),
                 ),
               ],
             ),

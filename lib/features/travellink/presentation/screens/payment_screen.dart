@@ -988,11 +988,4 @@ class _PaymentScreenState extends State<PaymentScreen> {
       ],
     );
   }
-
-  @override
-  void dispose() {
-    _accountNumberController.dispose();
-    _bankNameController.dispose();
-    super.dispose();
-  }
 }

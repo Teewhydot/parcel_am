@@ -7,12 +7,26 @@ abstract class WalletEvent extends Equatable {
   List<Object?> get props => [];
 }
 
+class WalletStarted extends WalletEvent {
+  final String userId;
+
+  const WalletStarted(this.userId);
+
+  @override
+  List<Object?> get props => [userId];
+}
+
 class WalletLoadRequested extends WalletEvent {
   const WalletLoadRequested();
 }
 
 class WalletRefreshRequested extends WalletEvent {
-  const WalletRefreshRequested();
+  final String userId;
+
+  const WalletRefreshRequested(this.userId);
+
+  @override
+  List<Object?> get props => [userId];
 }
 
 class WalletBalanceUpdated extends WalletEvent {

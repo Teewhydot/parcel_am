@@ -1,10 +1,11 @@
 /// Example usage of KYC access control system
-/// 
+///
 /// This file demonstrates various ways to use the KYC guard system.
 /// Delete this file after reviewing the examples.
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../features/travellink/domain/entities/user_entity.dart';
 import '../services/auth/auth_guard.dart';
 import '../services/auth/kyc_guard.dart';
 import '../routes/routes.dart';
@@ -138,17 +139,18 @@ class ExampleService {
     final status = kycGuard.checkKycStatus(context);
     
     switch (status) {
-      case KycStatus.verified:
+      case KycStatus.approved:
         // Proceed with operation
         await _executeOperation();
         break;
       case KycStatus.pending:
+      case KycStatus.underReview:
         // Show pending message or allow limited access
         _showPendingMessage();
         break;
       case KycStatus.notStarted:
+      case KycStatus.incomplete:
       case KycStatus.rejected:
-      case KycStatus.unknown:
         // Redirect to KYC screen
         Get.toNamed(Routes.kycBlocked, arguments: {'status': status});
         break;

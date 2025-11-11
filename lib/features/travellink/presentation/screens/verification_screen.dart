@@ -92,7 +92,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
         if (state is ErrorState) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(state.errorMessage),
+              content: Text(state.errorMessage ?? 'An error occurred'),
               backgroundColor: AppColors.error,
             ),
           );

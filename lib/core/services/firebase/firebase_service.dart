@@ -17,7 +17,7 @@ class FirebaseService {
       : FirebaseEnvironment.production;
 
   // Use centralized Firebase configuration
-  static String get testOtpCode => FirebaseConfig.testOtpCode;
+  static String get testOtpCode => '123456'; // Default test OTP
 
   FirebaseService();
 
@@ -98,11 +98,22 @@ class FirebaseService {
   }
 
   bool isValidNigerianNumber(String phoneNumber) {
-    return FirebaseConfig.isValidNigerianNumber(phoneNumber);
+    return _isValidNigerianNumber(phoneNumber);
   }
 
   bool isTestPhoneNumber(String phoneNumber) {
-    return FirebaseConfig.isTestPhoneNumber(phoneNumber);
+    return _isTestPhoneNumber(phoneNumber);
+  }
+
+  bool _isValidNigerianNumber(String phoneNumber) {
+    // Nigerian phone numbers: +234XXXXXXXXXX or 0XXXXXXXXXX
+    final regex = RegExp(r'^(\+234|0)[789]\d{9}$');
+    return regex.hasMatch(phoneNumber);
+  }
+
+  bool _isTestPhoneNumber(String phoneNumber) {
+    // Test phone numbers for development
+    return phoneNumber == '+2349000000000' || phoneNumber == '09000000000';
   }
 
   Stream<User?> authStateChanges() {

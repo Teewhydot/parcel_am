@@ -7,6 +7,11 @@ class WatchBalanceUseCase {
   WatchBalanceUseCase(this.repository);
 
   Stream<WalletEntity> call(String userId) {
-    return repository.watchBalance(userId);
+    return repository.watchBalance(userId).asyncMap((either) async {
+      return either.fold(
+        (failure) => throw Exception(failure.toString()),
+        (wallet) => wallet,
+      );
+    });
   }
 }

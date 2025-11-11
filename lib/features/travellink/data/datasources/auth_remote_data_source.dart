@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
+import '../../domain/entities/user_entity.dart';
 import '../../domain/exceptions/auth_exceptions.dart';
 
 abstract class AuthRemoteDataSource {
@@ -154,13 +155,13 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   Future<UserModel> _mapFirebaseUserToModelWithKyc(User user) async {
-    String kycStatus = 'not_submitted';
-    
+    String kycStatusString = 'not_submitted';
+
     if (firestore != null) {
       try {
         final userDoc = await firestore!.collection('users').doc(user.uid).get();
         if (userDoc.exists) {
-          kycStatus = userDoc.data()?['kycStatus'] ?? 'not_submitted';
+          kycStatusString = userDoc.data()?['kycStatus'] ?? 'not_submitted';
         }
       } catch (e) {
         // Ignore errors and use default kycStatus
@@ -176,7 +177,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       createdAt: user.metadata.creationTime ?? DateTime.now(),
       additionalData: {},
       profilePhotoUrl: user.photoURL,
-      kycStatus: kycStatus,
+      kycStatus: KycStatus.fromString(kycStatusString),
     );
   }
 

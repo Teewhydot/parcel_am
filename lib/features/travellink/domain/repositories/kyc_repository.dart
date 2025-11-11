@@ -1,5 +1,5 @@
 import 'package:dartz/dartz.dart';
-import '../failures/failures.dart';
+import '../../../../core/errors/failures.dart';
 
 abstract class KycRepository {
   Future<Either<Failure, void>> submitKyc({
