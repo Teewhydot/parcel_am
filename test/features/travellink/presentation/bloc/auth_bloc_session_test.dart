@@ -27,7 +27,7 @@ import 'package:parcel_am/core/errors/failures.dart';
   WatchKycStatusUseCase,
   AuthRepository,
 ])
-import 'auth_bloc_kyc_test.mocks.dart';
+import 'auth_bloc_session_test.mocks.dart';
 
 void main() {
   late AuthBloc bloc;
@@ -74,10 +74,6 @@ void main() {
     bloc.close();
   });
 
-  test('initial state is InitialState', () {
-    expect(bloc.state, equals(const InitialState<AuthData>()));
-  });
-
   group('AuthStarted Session Restoration', () {
     test('emits InitialState when no token is stored', () async {
       when(mockAuthRepository.getStoredToken()).thenAnswer((_) async => const Right(null));
@@ -86,6 +82,7 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 100));
 
       expect(bloc.state, equals(const InitialState<AuthData>()));
+      verifyNever(mockAuthRepository.clearStoredData());
     });
 
     test('emits InitialState and clears data when token is expired', () async {
@@ -123,6 +120,7 @@ void main() {
           tUser,
         ),
       );
+      verifyNever(mockAuthRepository.clearStoredData());
     });
 
     test('emits InitialState and clears data when user fetch fails', () async {
@@ -140,84 +138,15 @@ void main() {
       verify(mockAuthRepository.clearStoredData()).called(1);
       expect(bloc.state, equals(const InitialState<AuthData>()));
     });
-  });
 
-  group('AuthKycStatusUpdated', () {
-    blocTest<AuthBloc, BaseState<AuthData>>(
-      'updates user kycStatus when AuthKycStatusUpdated is added',
-      build: () {
-        when(mockAuthRepository.getStoredToken()).thenAnswer((_) async => const Right(null));
-        when(mockGetCurrentUserUseCase()).thenAnswer((_) async => Right(tUser));
-        when(mockWatchKycStatusUseCase(any)).thenAnswer((_) => Stream.value('approved'));
-        return bloc;
-      },
-      act: (bloc) async {
-        bloc.add(const AuthStarted());
-        await Future.delayed(const Duration(milliseconds: 100));
-        bloc.add(const AuthKycStatusUpdated('approved'));
-      },
-      skip: 2,
-      expect: () => [
-        isA<LoadedState<AuthData>>().having(
-          (state) => state.data?.user?.kycStatus,
-          'kycStatus',
-          KycStatus.approved,
-        ),
-      ],
-    );
-  });
+    test('emits InitialState when token fetch fails', () async {
+      when(mockAuthRepository.getStoredToken()).thenAnswer((_) async => const Left(CacheFailure(failureMessage: 'Cache error')));
 
-  group('KYC Status Stream Integration', () {
-    test('subscribes to KYC status stream after login', () async {
-      final kycStatusController = StreamController<String>();
-      
-      when(mockAuthRepository.getStoredToken()).thenAnswer((_) async => const Right(null));
-      when(mockLoginUseCase(any)).thenAnswer((_) async => Right(tUser));
-      when(mockWatchKycStatusUseCase(any)).thenAnswer((_) => kycStatusController.stream);
-
-      bloc.add(const AuthLoginRequested(
-        email: 'john@example.com',
-        password: 'password123',
-      ));
-
-      await Future.delayed(const Duration(milliseconds: 100));
-
-      kycStatusController.add('pending');
-      await Future.delayed(const Duration(milliseconds: 100));
-
-      expect(
-        bloc.state,
-        isA<LoadedState<AuthData>>().having(
-          (state) => state.data?.user?.kycStatus,
-          'kycStatus',
-          KycStatus.pending,
-        ),
-      );
-
-      kycStatusController.close();
-    });
-
-    test('unsubscribes from KYC status stream on logout', () async {
-      final kycStatusController = StreamController<String>();
-      
-      when(mockAuthRepository.getStoredToken()).thenAnswer((_) async => const Right(null));
-      when(mockLoginUseCase(any)).thenAnswer((_) async => Right(tUser));
-      when(mockWatchKycStatusUseCase(any)).thenAnswer((_) => kycStatusController.stream);
-      when(mockLogoutUseCase()).thenAnswer((_) async => const Right(null));
-
-      bloc.add(const AuthLoginRequested(
-        email: 'john@example.com',
-        password: 'password123',
-      ));
-
-      await Future.delayed(const Duration(milliseconds: 100));
-
-      bloc.add(const AuthLogoutRequested());
+      bloc.add(const AuthStarted());
       await Future.delayed(const Duration(milliseconds: 100));
 
       expect(bloc.state, equals(const InitialState<AuthData>()));
-
-      kycStatusController.close();
+      verifyNever(mockAuthRepository.clearStoredData());
     });
   });
 }

@@ -8,8 +8,11 @@ import '../../../domain/usecases/register_usecase.dart';
 import '../../../domain/usecases/logout_usecase.dart';
 import '../../../domain/usecases/get_current_user_usecase.dart';
 import '../../../domain/usecases/watch_kyc_status_usecase.dart';
+import '../../../domain/repositories/auth_repository.dart';
 import 'auth_event.dart';
 import 'auth_data.dart';
+
+export '../../../domain/usecases/login_usecase.dart' show ResetPasswordUseCase;
 
 class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
   final LoginUseCase loginUseCase;
@@ -18,6 +21,7 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
   final GetCurrentUserUseCase getCurrentUserUseCase;
   final ResetPasswordUseCase resetPasswordUseCase;
   final WatchKycStatusUseCase watchKycStatusUseCase;
+  final AuthRepository authRepository;
   
   Timer? _resendTimer;
   StreamSubscription<String>? _kycStatusSubscription;
@@ -29,6 +33,7 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
     required this.getCurrentUserUseCase,
     required this.resetPasswordUseCase,
     required this.watchKycStatusUseCase,
+    required this.authRepository,
   }) : super(const InitialState<AuthData>()) {
     
     on<AuthStarted>(_onAuthStarted);
@@ -46,25 +51,38 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
   Future<void> _onAuthStarted(AuthStarted event, Emitter<BaseState<AuthData>> emit) async {
     emit(const LoadingState<AuthData>(message: 'Checking authentication...'));
     
-    final result = await getCurrentUserUseCase();
+    final tokenResult = await authRepository.getStoredToken();
     
-    result.fold(
-      (failure) {
-        emit(ErrorState<AuthData>(
-          errorMessage: failure.failureMessage,
-          errorCode: 'auth_check_failed',
-        ));
+    await tokenResult.fold(
+      (failure) async {
+        emit(const InitialState<AuthData>());
       },
-      (user) {
-        if (user != null) {
-          emit(LoadedState<AuthData>(
-            data: const AuthData().copyWith(user: user),
-            lastUpdated: DateTime.now(),
-          ));
-          _subscribeToKycStatus(user.uid);
-        } else {
+      (token) async {
+        if (token == null || token.isExpired) {
+          await authRepository.clearStoredData();
           emit(const InitialState<AuthData>());
+          return;
         }
+        
+        final userResult = await getCurrentUserUseCase();
+        
+        userResult.fold(
+          (failure) async {
+            await authRepository.clearStoredData();
+            emit(const InitialState<AuthData>());
+          },
+          (user) {
+            if (user != null) {
+              emit(LoadedState<AuthData>(
+                data: const AuthData().copyWith(user: user),
+                lastUpdated: DateTime.now(),
+              ));
+              _subscribeToKycStatus(user.uid);
+            } else {
+              emit(const InitialState<AuthData>());
+            }
+          },
+        );
       },
     );
   }

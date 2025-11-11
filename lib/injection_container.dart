@@ -65,6 +65,7 @@ Future<void> init() async {
     getCurrentUserUseCase: sl(),
     resetPasswordUseCase: sl(),
     watchKycStatusUseCase: sl(),
+    authRepository: sl(),
   ));
 
   // Use cases
