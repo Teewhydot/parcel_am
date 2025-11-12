@@ -16,11 +16,11 @@ abstract class AuthRemoteDataSource {
   Future<void> syncKycStatus(String userId, String kycStatus);
 }
 
-class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
+class FirebaseRemoteDataSourceImpl implements AuthRemoteDataSource {
   final FirebaseAuth firebaseAuth;
   final FirebaseFirestore? firestore;
 
-  AuthRemoteDataSourceImpl({
+  FirebaseRemoteDataSourceImpl({
     required this.firebaseAuth,
     this.firestore,
   });

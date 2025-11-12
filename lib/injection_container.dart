@@ -10,39 +10,12 @@ import 'core/network/network_info.dart';
 import 'core/services/navigation_service/nav_config.dart';
 
 import 'features/travellink/data/datasources/auth_remote_data_source.dart';
-import 'features/travellink/data/datasources/auth_local_data_source.dart';
 import 'features/travellink/data/datasources/kyc_remote_data_source.dart' as travellink_kyc_ds;
-import 'features/travellink/data/repositories/auth_repository_impl.dart';
-import 'features/travellink/data/repositories/kyc_repository_impl.dart' as travellink_kyc_repo;
-import 'features/travellink/domain/repositories/auth_repository.dart';
-import 'features/travellink/domain/repositories/kyc_repository.dart' as travellink_kyc_repo_interface;
-import 'features/travellink/domain/usecases/login_usecase.dart';
-import 'features/travellink/domain/usecases/register_usecase.dart';
-import 'features/travellink/domain/usecases/logout_usecase.dart';
-import 'features/travellink/domain/usecases/get_current_user_usecase.dart';
-import 'features/travellink/domain/usecases/submit_kyc_usecase.dart' as travellink_submit_kyc;
-import 'features/travellink/domain/usecases/get_kyc_status_usecase.dart' as travellink_get_kyc_status;
-import 'features/travellink/domain/usecases/watch_kyc_status_usecase.dart' as travellink_watch_kyc;
-import 'features/travellink/presentation/bloc/auth/auth_bloc.dart';
-import 'features/travellink/presentation/bloc/kyc/kyc_bloc.dart';
+import 'features/travellink/data/datasources/wallet_remote_data_source.dart' as travellink_wallet_ds;
 
 import 'features/wallet/data/datasources/wallet_remote_datasource.dart';
-import 'features/wallet/data/repositories/wallet_repository_impl.dart' as wallet_impl;
-import 'features/wallet/domain/repositories/wallet_repository.dart' as wallet_repo;
-
-import 'features/travellink/domain/repositories/wallet_repository.dart';
-import 'features/travellink/domain/usecases/get_wallet_usecase.dart';
-import 'features/travellink/domain/usecases/watch_balance_usecase.dart';
-import 'features/travellink/domain/usecases/hold_balance_for_escrow_usecase.dart';
-import 'features/travellink/domain/usecases/release_escrow_balance_usecase.dart';
-import 'features/travellink/presentation/bloc/wallet/wallet_bloc.dart';
 
 import 'features/kyc/data/datasources/kyc_remote_datasource.dart' as kyc_ds;
-import 'features/kyc/data/repositories/kyc_repository_impl.dart' as kyc_repo;
-import 'features/kyc/domain/repositories/kyc_repository.dart' as kyc_repo_interface;
-import 'features/kyc/domain/usecases/submit_kyc_usecase.dart' as kyc_submit;
-import 'features/kyc/domain/usecases/get_kyc_status_usecase.dart' as kyc_get_status;
-import 'features/kyc/domain/usecases/watch_kyc_status_usecase.dart' as kyc_watch;
 
 final sl = GetIt.instance;
 
@@ -56,110 +29,38 @@ class NetworkInfoImpl implements NetworkInfo {
 }
 
 Future<void> init() async {
-  //! Features - Auth
-  // BLoC
-  sl.registerFactory(() => AuthBloc(
-    loginUseCase: sl(),
-    registerUseCase: sl(),
-    logoutUseCase: sl(),
-    getCurrentUserUseCase: sl(),
-    resetPasswordUseCase: sl(),
-    watchKycStatusUseCase: sl(),
-    authRepository: sl(),
-  ));
+  //! Core Services
+  sl.registerLazySingleton<NetworkInfo>(() => NetworkInfoImpl(sl()));
+  sl.registerLazySingleton<NavigationService>(() => GetxNavigationService());
 
-  // Use cases
-  sl.registerLazySingleton(() => LoginUseCase(sl()));
-  sl.registerLazySingleton(() => RegisterUseCase(sl()));
-  sl.registerLazySingleton(() => LogoutUseCase(sl()));
-  sl.registerLazySingleton(() => GetCurrentUserUseCase(sl()));
-  sl.registerLazySingleton(() => ResetPasswordUseCase(sl()));
-
-  // Repository
-  sl.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl(
-    remoteDataSource: sl(),
-    localDataSource: sl(),
-    networkInfo: sl(),
-  ));
-
-  // Data sources
-  sl.registerLazySingleton<AuthRemoteDataSource>(() => AuthRemoteDataSourceImpl(
+  //! Features - Auth Data Sources
+  sl.registerLazySingleton<AuthRemoteDataSource>(() => FirebaseRemoteDataSourceImpl(
     firebaseAuth: sl(),
     firestore: sl(),
   ));
-  sl.registerLazySingleton<AuthLocalDataSource>(() => AuthLocalDataSourceImpl(
-    sharedPreferences: sl(),
-  ));
 
-  //! Features - KYC (TravelLink)
-  // BLoC
-  sl.registerFactory(() => KycBloc(
-    submitKycUseCase: sl(),
-    getKycStatusUseCase: sl(),
-    watchKycStatusUseCase: sl(),
-  ));
-
-  // Use cases
-  sl.registerLazySingleton(() => travellink_submit_kyc.SubmitKycUseCase(sl()));
-  sl.registerLazySingleton(() => travellink_get_kyc_status.GetKycStatusUseCase(sl()));
-  sl.registerLazySingleton(() => travellink_watch_kyc.WatchKycStatusUseCase(sl()));
-
-  // Repository
-  sl.registerLazySingleton<travellink_kyc_repo_interface.KycRepository>(() => travellink_kyc_repo.KycRepositoryImpl(
-    remoteDataSource: sl(),
-  ));
-
-  // Data sources
+  //! Features - KYC (TravelLink) Data Sources
   sl.registerLazySingleton<travellink_kyc_ds.KycRemoteDataSource>(() => travellink_kyc_ds.KycRemoteDataSourceImpl(
     firestore: sl(),
     storage: sl(),
   ));
 
-  //! Features - Wallet (TravelLink)
-  // BLoC
-  sl.registerFactory(() => WalletBloc(
-    watchBalanceUseCase: sl(),
-    holdBalanceUseCase: sl(),
-    releaseBalanceUseCase: sl(),
+  //! Features - Wallet (TravelLink) Data Sources
+  sl.registerLazySingleton<travellink_wallet_ds.WalletRemoteDataSource>(() => travellink_wallet_ds.WalletRemoteDataSourceImpl(
+    firestore: sl(),
   ));
 
-  // Use cases
-  sl.registerLazySingleton(() => GetWalletUseCase(sl()));
-  sl.registerLazySingleton(() => WatchBalanceUseCase(sl()));
-  sl.registerLazySingleton(() => HoldBalanceForEscrowUseCase(sl()));
-  sl.registerLazySingleton(() => ReleaseEscrowBalanceUseCase(sl()));
-
-  // Repository
-  sl.registerLazySingleton<wallet_repo.WalletRepository>(() => wallet_impl.WalletRepositoryImpl(
-    remoteDataSource: sl(),
-  ));
-
-  // Data sources
+  //! Features - Wallet (Standalone) Data Sources
   sl.registerLazySingleton<WalletRemoteDataSource>(() => WalletRemoteDataSourceImpl(
     firestore: sl(),
   ));
 
-  //! Features - KYC (Standalone module - if needed separately)
-  // Use cases
-  sl.registerLazySingleton(() => kyc_submit.SubmitKycUseCase(sl()));
-  sl.registerLazySingleton(() => kyc_get_status.GetKycStatusUseCase(sl()));
-  sl.registerLazySingleton(() => kyc_watch.WatchKycStatusUseCase(sl()));
-
-  // Repository
-  sl.registerLazySingleton<kyc_repo_interface.KycRepository>(() => kyc_repo.KycRepositoryImpl(
-    remoteDataSource: sl(),
-  ));
-
-  // Data sources
+  //! Features - KYC (Standalone module) Data Sources
   sl.registerLazySingleton<kyc_ds.KycRemoteDataSource>(() => kyc_ds.KycRemoteDataSourceImpl(
     firestore: sl(),
   ));
 
-  //! Core
-  sl.registerLazySingleton<NetworkInfo>(() => NetworkInfoImpl(sl()));
-  sl.registerLazySingleton<NavigationService>(() => GetxNavigationService());
-
-  //! External
+  //! External Services
   final sharedPreferences = await SharedPreferences.getInstance();
   sl.registerLazySingleton(() => sharedPreferences);
   sl.registerLazySingleton(() => http.Client());

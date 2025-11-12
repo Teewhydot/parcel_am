@@ -1,26 +1,19 @@
 import 'dart:async';
 import 'package:dartz/dartz.dart';
+import 'package:get_it/get_it.dart';
 import '../../domain/entities/user_entity.dart';
 import '../../domain/entities/auth_token_entity.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../../../core/errors/failures.dart';
 import '../../domain/exceptions/auth_exceptions.dart';
 import '../datasources/auth_remote_data_source.dart';
-import '../datasources/auth_local_data_source.dart';
 import '../models/user_model.dart';
 import '../models/auth_token_model.dart';
 import '../../../../core/network/network_info.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
-  final AuthRemoteDataSource remoteDataSource;
-  final AuthLocalDataSource localDataSource;
-  final NetworkInfo networkInfo;
-
-  AuthRepositoryImpl({
-    required this.remoteDataSource,
-    required this.localDataSource,
-    required this.networkInfo,
-  });
+  final remoteDataSource = GetIt.instance<AuthRemoteDataSource>();
+  final networkInfo = GetIt.instance<NetworkInfo>();
 
   @override
   Future<Either<Failure, UserEntity>> signInWithEmailAndPassword(
@@ -30,7 +23,6 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       if (await networkInfo.isConnected) {
         final userModel = await remoteDataSource.signInWithEmailAndPassword(email, password);
-        await localDataSource.cacheUser(userModel);
         return Right(userModel.toEntity());
       } else {
         return const Left(NoInternetFailure(failureMessage: 'No internet connection'));
@@ -55,7 +47,6 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       if (await networkInfo.isConnected) {
         final userModel = await remoteDataSource.signUpWithEmailAndPassword(email, password, displayName);
-        await localDataSource.cacheUser(userModel);
         return Right(userModel.toEntity());
       } else {
         return const Left(NoInternetFailure(failureMessage: 'No internet connection'));
@@ -76,7 +67,6 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       await Future.wait([
         remoteDataSource.signOut(),
-        localDataSource.clearAllCachedData(),
       ]);
       return const Right(null);
     } on AuthException catch (e) {
@@ -98,17 +88,7 @@ class AuthRepositoryImpl implements AuthRepository {
       if (firebaseUser == null) {
         return const Right(null);
       }
-      
-      final cachedToken = await localDataSource.getCachedToken();
-      
-      if (cachedToken == null || cachedToken.toEntity().isExpired) {
-        return const Right(null);
-      }
-      
-      if (await networkInfo.isConnected) {
-        await localDataSource.cacheUser(firebaseUser);
-      }
-      
+    
       return Right(firebaseUser.toEntity());
     } on AuthException catch (e) {
       return Left(AuthFailure(failureMessage: e.message));
@@ -130,11 +110,6 @@ class AuthRepositoryImpl implements AuthRepository {
         return const Right(false);
       }
       
-      final cachedToken = await localDataSource.getCachedToken();
-      
-      if (cachedToken == null || cachedToken.toEntity().isExpired) {
-        return const Right(false);
-      }
       
       return const Right(true);
     } on AuthException catch (e) {
@@ -151,10 +126,7 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, AuthTokenEntity?>> getStoredToken() async {
     try {
-      final tokenModel = await localDataSource.getCachedToken();
-      if (tokenModel != null) {
-        return Right(tokenModel.toEntity());
-      }
+    
       return const Right(null);
     } on CacheException catch (e) {
       return Left(CacheFailure(failureMessage: e.message));
@@ -167,7 +139,6 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Either<Failure, void>> storeToken(AuthTokenEntity token) async {
     try {
       final tokenModel = AuthTokenModel.fromEntity(token);
-      await localDataSource.cacheToken(tokenModel);
       return const Right(null);
     } on CacheException catch (e) {
       return Left(CacheFailure(failureMessage: e.message));
@@ -179,7 +150,6 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, void>> clearStoredData() async {
     try {
-      await localDataSource.clearAllCachedData();
       return const Right(null);
     } on CacheException catch (e) {
       return Left(CacheFailure(failureMessage: e.message));
@@ -192,7 +162,6 @@ class AuthRepositoryImpl implements AuthRepository {
   Stream<UserEntity?> get authStateChanges {
     return remoteDataSource.authStateChanges.map((userModel) {
       if (userModel != null) {
-        localDataSource.cacheUser(userModel);
         return userModel.toEntity();
       }
       return null;
@@ -205,7 +174,6 @@ class AuthRepositoryImpl implements AuthRepository {
       if (await networkInfo.isConnected) {
         final userModel = UserModel.fromEntity(user);
         final updatedUserModel = await remoteDataSource.updateUserProfile(userModel);
-        await localDataSource.cacheUser(updatedUserModel);
         return Right(updatedUserModel.toEntity());
       } else {
         return const Left(NoInternetFailure(failureMessage: 'No internet connection'));

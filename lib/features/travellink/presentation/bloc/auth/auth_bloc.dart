@@ -3,38 +3,22 @@ import 'package:bloc/bloc.dart';
 import 'package:parcel_am/core/bloc/base/base_bloc.dart';
 import 'package:parcel_am/core/bloc/base/base_state.dart';
 import '../../../domain/entities/user_entity.dart';
-import '../../../domain/usecases/login_usecase.dart';
-import '../../../domain/usecases/register_usecase.dart';
-import '../../../domain/usecases/logout_usecase.dart';
-import '../../../domain/usecases/get_current_user_usecase.dart';
-import '../../../domain/usecases/watch_kyc_status_usecase.dart';
-import '../../../domain/repositories/auth_repository.dart';
+import '../../../domain/usecases/auth_usecase.dart';
+import '../../../domain/usecases/kyc_usecase.dart';
 import 'auth_event.dart';
 import 'auth_data.dart';
 
-export '../../../domain/usecases/login_usecase.dart' show ResetPasswordUseCase;
-
 class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
-  final LoginUseCase loginUseCase;
-  final RegisterUseCase registerUseCase;
-  final LogoutUseCase logoutUseCase;
-  final GetCurrentUserUseCase getCurrentUserUseCase;
-  final ResetPasswordUseCase resetPasswordUseCase;
-  final WatchKycStatusUseCase watchKycStatusUseCase;
-  final AuthRepository authRepository;
-  
-  Timer? _resendTimer;
+  final AuthUseCase _authUseCase;
+  final KycUseCase _kycUseCase;
   StreamSubscription<String>? _kycStatusSubscription;
 
   AuthBloc({
-    required this.loginUseCase,
-    required this.registerUseCase,
-    required this.logoutUseCase,
-    required this.getCurrentUserUseCase,
-    required this.resetPasswordUseCase,
-    required this.watchKycStatusUseCase,
-    required this.authRepository,
-  }) : super(const InitialState<AuthData>()) {
+    AuthUseCase? authUseCase,
+    KycUseCase? kycUseCase,
+  })  : _authUseCase = authUseCase ?? AuthUseCase(),
+        _kycUseCase = kycUseCase ?? KycUseCase(),
+        super(const InitialState<AuthData>()) {
     
     on<AuthStarted>(_onAuthStarted);
     on<AuthEmailChanged>(_onEmailChanged);
@@ -49,40 +33,24 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
   }
 
   Future<void> _onAuthStarted(AuthStarted event, Emitter<BaseState<AuthData>> emit) async {
-    emit(const LoadingState<AuthData>(message: 'Checking authentication...'));
-    
-    final tokenResult = await authRepository.getStoredToken();
-    
-    await tokenResult.fold(
+    emit(const LoadingState<AuthData>(message: 'Checking current user...'));
+
+    final result = await _authUseCase.getCurrentUser();
+
+    await result.fold(
       (failure) async {
         emit(const InitialState<AuthData>());
       },
-      (token) async {
-        if (token == null || token.isExpired) {
-          await authRepository.clearStoredData();
+      (user) async {
+        if (user == null) {
           emit(const InitialState<AuthData>());
           return;
         }
-        
-        final userResult = await getCurrentUserUseCase();
-        
-        userResult.fold(
-          (failure) async {
-            await authRepository.clearStoredData();
-            emit(const InitialState<AuthData>());
-          },
-          (user) {
-            if (user != null) {
-              emit(LoadedState<AuthData>(
-                data: const AuthData().copyWith(user: user),
-                lastUpdated: DateTime.now(),
-              ));
-              _subscribeToKycStatus(user.uid);
-            } else {
-              emit(const InitialState<AuthData>());
-            }
-          },
-        );
+        emit(LoadedState<AuthData>(
+          data: const AuthData().copyWith(user: user),
+          lastUpdated: DateTime.now(),
+        ));
+        _subscribeToKycStatus(user.uid);
       },
     );
   }
@@ -105,12 +73,9 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
 
   Future<void> _onLoginRequested(AuthLoginRequested event, Emitter<BaseState<AuthData>> emit) async {
     emit(const LoadingState<AuthData>(message: 'Logging in...'));
-    
-    final result = await loginUseCase(LoginParams(
-      email: event.email,
-      password: event.password,
-    ));
-    
+
+    final result = await _authUseCase.login(event.email, event.password);
+
     result.fold(
       (failure) {
         emit(ErrorState<AuthData>(
@@ -136,13 +101,13 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
 
   Future<void> _onRegisterRequested(AuthRegisterRequested event, Emitter<BaseState<AuthData>> emit) async {
     emit(const LoadingState<AuthData>(message: 'Creating account...'));
-    
-    final result = await registerUseCase(RegisterParams(
+
+    final result = await _authUseCase.register(
       email: event.email,
       password: event.password,
       displayName: event.displayName,
-    ));
-    
+    );
+
     result.fold(
       (failure) {
         emit(ErrorState<AuthData>(
@@ -165,11 +130,11 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
 
   Future<void> _onLogoutRequested(AuthLogoutRequested event, Emitter<BaseState<AuthData>> emit) async {
     emit(const LoadingState<AuthData>(message: 'Logging out...'));
-    
+
     _kycStatusSubscription?.cancel();
-    
-    final result = await logoutUseCase();
-    
+
+    final result = await _authUseCase.logout();
+
     result.fold(
       (failure) {
         emit(ErrorState<AuthData>(
@@ -184,8 +149,8 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
   }
 
   Future<void> _onCheckAuthState(AuthCheckAuthState event, Emitter<BaseState<AuthData>> emit) async {
-    final result = await getCurrentUserUseCase();
-    
+    final result = await _authUseCase.getCurrentUser();
+
     result.fold(
       (failure) {
         emit(const InitialState<AuthData>());
@@ -229,7 +194,7 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
   Future<void> _onPasswordResetRequested(AuthPasswordResetRequested event, Emitter<BaseState<AuthData>> emit) async {
     emit(const LoadingState<AuthData>(message: 'Sending reset email...'));
 
-    final result = await resetPasswordUseCase(event.email);
+    final result = await _authUseCase.resetPassword(event.email);
 
     result.fold(
       (failure) {
@@ -262,7 +227,7 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
 
   void _subscribeToKycStatus(String userId) {
     _kycStatusSubscription?.cancel();
-    _kycStatusSubscription = watchKycStatusUseCase(userId).listen(
+    _kycStatusSubscription = _kycUseCase.watchKycStatus(userId).listen(
       (status) {
         add(AuthKycStatusUpdated(status));
       },

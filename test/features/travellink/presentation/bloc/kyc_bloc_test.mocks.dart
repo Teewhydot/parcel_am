@@ -8,14 +8,10 @@ import 'dart:async' as _i5;
 import 'package:dartz/dartz.dart' as _i3;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:parcel_am/core/errors/failures.dart' as _i6;
-import 'package:parcel_am/features/travellink/domain/repositories/kyc_repository.dart'
+import 'package:parcel_am/features/travellink/data/repositories/kyc_repository_impl.dart'
     as _i2;
-import 'package:parcel_am/features/travellink/domain/usecases/get_kyc_status_usecase.dart'
-    as _i7;
-import 'package:parcel_am/features/travellink/domain/usecases/submit_kyc_usecase.dart'
+import 'package:parcel_am/features/travellink/domain/usecases/kyc_usecase.dart'
     as _i4;
-import 'package:parcel_am/features/travellink/domain/usecases/watch_kyc_status_usecase.dart'
-    as _i8;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -31,8 +27,9 @@ import 'package:parcel_am/features/travellink/domain/usecases/watch_kyc_status_u
 // ignore_for_file: camel_case_types
 // ignore_for_file: subtype_of_sealed_class
 
-class _FakeKycRepository_0 extends _i1.SmartFake implements _i2.KycRepository {
-  _FakeKycRepository_0(Object parent, Invocation parentInvocation)
+class _FakeKycRepositoryImpl_0 extends _i1.SmartFake
+    implements _i2.KycRepositoryImpl {
+  _FakeKycRepositoryImpl_0(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
@@ -41,97 +38,85 @@ class _FakeEither_1<L, R> extends _i1.SmartFake implements _i3.Either<L, R> {
     : super(parent, parentInvocation);
 }
 
-/// A class which mocks [SubmitKycUseCase].
+/// A class which mocks [KycUseCase].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockSubmitKycUseCase extends _i1.Mock implements _i4.SubmitKycUseCase {
-  MockSubmitKycUseCase() {
+class MockKycUseCase extends _i1.Mock implements _i4.KycUseCase {
+  MockKycUseCase() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i2.KycRepository get repository =>
+  _i2.KycRepositoryImpl get kycRepo =>
       (super.noSuchMethod(
-            Invocation.getter(#repository),
-            returnValue: _FakeKycRepository_0(
+            Invocation.getter(#kycRepo),
+            returnValue: _FakeKycRepositoryImpl_0(
               this,
-              Invocation.getter(#repository),
+              Invocation.getter(#kycRepo),
             ),
           )
-          as _i2.KycRepository);
+          as _i2.KycRepositoryImpl);
 
   @override
-  _i5.Future<_i3.Either<_i6.Failure, void>> call(_i4.SubmitKycParams? params) =>
+  _i5.Future<_i3.Either<_i6.Failure, void>> submitKyc({
+    required String? userId,
+    required String? fullName,
+    required String? dateOfBirth,
+    required String? address,
+    required String? idType,
+    required String? idNumber,
+    required String? frontImagePath,
+    required String? backImagePath,
+    required String? selfieImagePath,
+  }) =>
       (super.noSuchMethod(
-            Invocation.method(#call, [params]),
+            Invocation.method(#submitKyc, [], {
+              #userId: userId,
+              #fullName: fullName,
+              #dateOfBirth: dateOfBirth,
+              #address: address,
+              #idType: idType,
+              #idNumber: idNumber,
+              #frontImagePath: frontImagePath,
+              #backImagePath: backImagePath,
+              #selfieImagePath: selfieImagePath,
+            }),
             returnValue: _i5.Future<_i3.Either<_i6.Failure, void>>.value(
               _FakeEither_1<_i6.Failure, void>(
                 this,
-                Invocation.method(#call, [params]),
+                Invocation.method(#submitKyc, [], {
+                  #userId: userId,
+                  #fullName: fullName,
+                  #dateOfBirth: dateOfBirth,
+                  #address: address,
+                  #idType: idType,
+                  #idNumber: idNumber,
+                  #frontImagePath: frontImagePath,
+                  #backImagePath: backImagePath,
+                  #selfieImagePath: selfieImagePath,
+                }),
               ),
             ),
           )
           as _i5.Future<_i3.Either<_i6.Failure, void>>);
-}
-
-/// A class which mocks [GetKycStatusUseCase].
-///
-/// See the documentation for Mockito's code generation for more information.
-class MockGetKycStatusUseCase extends _i1.Mock
-    implements _i7.GetKycStatusUseCase {
-  MockGetKycStatusUseCase() {
-    _i1.throwOnMissingStub(this);
-  }
 
   @override
-  _i2.KycRepository get repository =>
+  _i5.Future<_i3.Either<_i6.Failure, String>> getKycStatus(String? userId) =>
       (super.noSuchMethod(
-            Invocation.getter(#repository),
-            returnValue: _FakeKycRepository_0(
-              this,
-              Invocation.getter(#repository),
-            ),
-          )
-          as _i2.KycRepository);
-
-  @override
-  _i5.Future<_i3.Either<_i6.Failure, String>> call(String? userId) =>
-      (super.noSuchMethod(
-            Invocation.method(#call, [userId]),
+            Invocation.method(#getKycStatus, [userId]),
             returnValue: _i5.Future<_i3.Either<_i6.Failure, String>>.value(
               _FakeEither_1<_i6.Failure, String>(
                 this,
-                Invocation.method(#call, [userId]),
+                Invocation.method(#getKycStatus, [userId]),
               ),
             ),
           )
           as _i5.Future<_i3.Either<_i6.Failure, String>>);
-}
-
-/// A class which mocks [WatchKycStatusUseCase].
-///
-/// See the documentation for Mockito's code generation for more information.
-class MockWatchKycStatusUseCase extends _i1.Mock
-    implements _i8.WatchKycStatusUseCase {
-  MockWatchKycStatusUseCase() {
-    _i1.throwOnMissingStub(this);
-  }
 
   @override
-  _i2.KycRepository get repository =>
+  _i5.Stream<String> watchKycStatus(String? userId) =>
       (super.noSuchMethod(
-            Invocation.getter(#repository),
-            returnValue: _FakeKycRepository_0(
-              this,
-              Invocation.getter(#repository),
-            ),
-          )
-          as _i2.KycRepository);
-
-  @override
-  _i5.Stream<String> call(String? userId) =>
-      (super.noSuchMethod(
-            Invocation.method(#call, [userId]),
+            Invocation.method(#watchKycStatus, [userId]),
             returnValue: _i5.Stream<String>.empty(),
           )
           as _i5.Stream<String>);

@@ -1,23 +1,17 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../domain/usecases/submit_kyc_usecase.dart';
-import '../../../domain/usecases/get_kyc_status_usecase.dart';
-import '../../../domain/usecases/watch_kyc_status_usecase.dart';
+import '../../../domain/usecases/kyc_usecase.dart';
 import 'kyc_event.dart';
 import 'kyc_state.dart';
 
 class KycBloc extends Bloc<KycEvent, KycState> {
-  final SubmitKycUseCase submitKycUseCase;
-  final GetKycStatusUseCase getKycStatusUseCase;
-  final WatchKycStatusUseCase watchKycStatusUseCase;
-
+  final KycUseCase _kycUseCase;
   StreamSubscription<String>? _kycStatusSubscription;
 
   KycBloc({
-    required this.submitKycUseCase,
-    required this.getKycStatusUseCase,
-    required this.watchKycStatusUseCase,
-  }) : super(const KycInitial()) {
+    KycUseCase? kycUseCase,
+  })  : _kycUseCase = kycUseCase ?? KycUseCase(),
+        super(const KycInitial()) {
     on<KycSubmitRequested>(_onSubmitRequested);
     on<KycStatusRequested>(_onStatusRequested);
     on<KycStatusUpdated>(_onStatusUpdated);
@@ -30,18 +24,16 @@ class KycBloc extends Bloc<KycEvent, KycState> {
   ) async {
     emit(const KycLoading(message: 'Submitting KYC documents...'));
 
-    final result = await submitKycUseCase(
-      SubmitKycParams(
-        userId: '',
-        fullName: event.fullName,
-        dateOfBirth: event.dateOfBirth,
-        address: event.address,
-        idType: event.idType,
-        idNumber: event.idNumber,
-        frontImagePath: event.frontImagePath,
-        backImagePath: event.backImagePath,
-        selfieImagePath: event.selfieImagePath,
-      ),
+    final result = await _kycUseCase.submitKyc(
+      userId: '',
+      fullName: event.fullName,
+      dateOfBirth: event.dateOfBirth,
+      address: event.address,
+      idType: event.idType,
+      idNumber: event.idNumber,
+      frontImagePath: event.frontImagePath,
+      backImagePath: event.backImagePath,
+      selfieImagePath: event.selfieImagePath,
     );
 
     result.fold(
@@ -63,7 +55,7 @@ class KycBloc extends Bloc<KycEvent, KycState> {
   ) async {
     emit(const KycLoading(message: 'Checking KYC status...'));
 
-    final result = await getKycStatusUseCase('');
+    final result = await _kycUseCase.getKycStatus('');
 
     result.fold(
       (failure) {
@@ -88,18 +80,16 @@ class KycBloc extends Bloc<KycEvent, KycState> {
   ) async {
     emit(const KycLoading(message: 'Resubmitting KYC documents...'));
 
-    final result = await submitKycUseCase(
-      SubmitKycParams(
-        userId: '',
-        fullName: event.fullName,
-        dateOfBirth: event.dateOfBirth,
-        address: event.address,
-        idType: event.idType,
-        idNumber: event.idNumber,
-        frontImagePath: event.frontImagePath,
-        backImagePath: event.backImagePath,
-        selfieImagePath: event.selfieImagePath,
-      ),
+    final result = await _kycUseCase.submitKyc(
+      userId: '',
+      fullName: event.fullName,
+      dateOfBirth: event.dateOfBirth,
+      address: event.address,
+      idType: event.idType,
+      idNumber: event.idNumber,
+      frontImagePath: event.frontImagePath,
+      backImagePath: event.backImagePath,
+      selfieImagePath: event.selfieImagePath,
     );
 
     result.fold(
@@ -117,7 +107,7 @@ class KycBloc extends Bloc<KycEvent, KycState> {
 
   void subscribeToKycStatus(String userId) {
     _kycStatusSubscription?.cancel();
-    _kycStatusSubscription = watchKycStatusUseCase(userId).listen(
+    _kycStatusSubscription = _kycUseCase.watchKycStatus(userId).listen(
       (status) {
         add(KycStatusUpdated(status));
       },

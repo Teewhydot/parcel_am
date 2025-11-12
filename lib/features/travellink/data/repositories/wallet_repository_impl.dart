@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import 'package:get_it/get_it.dart';
 import '../../domain/entities/wallet_entity.dart';
 import '../../domain/entities/transaction_entity.dart';
 import '../../domain/repositories/wallet_repository.dart';
@@ -9,13 +10,8 @@ import '../datasources/wallet_remote_data_source.dart';
 import '../../../../core/network/network_info.dart';
 
 class WalletRepositoryImpl implements WalletRepository {
-  final WalletRemoteDataSource remoteDataSource;
-  final NetworkInfo networkInfo;
-
-  WalletRepositoryImpl({
-    required this.remoteDataSource,
-    required this.networkInfo,
-  });
+  final remoteDataSource = GetIt.instance<WalletRemoteDataSource>();
+  final networkInfo = GetIt.instance<NetworkInfo>();
 
   @override
   Future<Either<Failure, WalletEntity>> getWallet(String userId) async {

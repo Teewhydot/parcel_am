@@ -4,14 +4,9 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
 import 'package:dartz/dartz.dart';
-import 'package:parcel_am/features/travellink/domain/usecases/login_usecase.dart';
-import 'package:parcel_am/features/travellink/domain/usecases/register_usecase.dart';
-import 'package:parcel_am/features/travellink/domain/usecases/logout_usecase.dart';
-import 'package:parcel_am/features/travellink/domain/usecases/get_current_user_usecase.dart';
-import 'package:parcel_am/features/travellink/domain/usecases/watch_kyc_status_usecase.dart';
-import 'package:parcel_am/features/travellink/domain/repositories/auth_repository.dart';
+import 'package:parcel_am/features/travellink/domain/usecases/auth_usecase.dart';
+import 'package:parcel_am/features/travellink/domain/usecases/kyc_usecase.dart';
 import 'package:parcel_am/features/travellink/domain/entities/user_entity.dart';
-import 'package:parcel_am/features/travellink/domain/entities/auth_token_entity.dart';
 import 'package:parcel_am/features/travellink/presentation/bloc/auth/auth_bloc.dart';
 import 'package:parcel_am/features/travellink/presentation/bloc/auth/auth_event.dart';
 import 'package:parcel_am/features/travellink/presentation/bloc/auth/auth_data.dart';
@@ -19,25 +14,15 @@ import 'package:parcel_am/core/bloc/base/base_state.dart';
 import 'package:parcel_am/core/errors/failures.dart';
 
 @GenerateMocks([
-  LoginUseCase,
-  RegisterUseCase,
-  LogoutUseCase,
-  GetCurrentUserUseCase,
-  ResetPasswordUseCase,
-  WatchKycStatusUseCase,
-  AuthRepository,
+  AuthUseCase,
+  KycUseCase,
 ])
 import 'auth_bloc_kyc_test.mocks.dart';
 
 void main() {
   late AuthBloc bloc;
-  late MockLoginUseCase mockLoginUseCase;
-  late MockRegisterUseCase mockRegisterUseCase;
-  late MockLogoutUseCase mockLogoutUseCase;
-  late MockGetCurrentUserUseCase mockGetCurrentUserUseCase;
-  late MockResetPasswordUseCase mockResetPasswordUseCase;
-  late MockWatchKycStatusUseCase mockWatchKycStatusUseCase;
-  late MockAuthRepository mockAuthRepository;
+  late MockAuthUseCase mockAuthUseCase;
+  late MockKycUseCase mockKycUseCase;
 
   final tUser = UserEntity(
     uid: 'user123',
@@ -51,22 +36,12 @@ void main() {
   );
 
   setUp(() {
-    mockLoginUseCase = MockLoginUseCase();
-    mockRegisterUseCase = MockRegisterUseCase();
-    mockLogoutUseCase = MockLogoutUseCase();
-    mockGetCurrentUserUseCase = MockGetCurrentUserUseCase();
-    mockResetPasswordUseCase = MockResetPasswordUseCase();
-    mockWatchKycStatusUseCase = MockWatchKycStatusUseCase();
-    mockAuthRepository = MockAuthRepository();
+    mockAuthUseCase = MockAuthUseCase();
+    mockKycUseCase = MockKycUseCase();
 
     bloc = AuthBloc(
-      loginUseCase: mockLoginUseCase,
-      registerUseCase: mockRegisterUseCase,
-      logoutUseCase: mockLogoutUseCase,
-      getCurrentUserUseCase: mockGetCurrentUserUseCase,
-      resetPasswordUseCase: mockResetPasswordUseCase,
-      watchKycStatusUseCase: mockWatchKycStatusUseCase,
-      authRepository: mockAuthRepository,
+      authUseCase: mockAuthUseCase,
+      kycUseCase: mockKycUseCase,
     );
   });
 
@@ -79,8 +54,8 @@ void main() {
   });
 
   group('AuthStarted Session Restoration', () {
-    test('emits InitialState when no token is stored', () async {
-      when(mockAuthRepository.getStoredToken()).thenAnswer((_) async => const Right(null));
+    test('emits InitialState when getCurrentUser returns null', () async {
+      when(mockAuthUseCase.getCurrentUser()).thenAnswer((_) async => const Right(null));
 
       bloc.add(const AuthStarted());
       await Future.delayed(const Duration(milliseconds: 100));
@@ -88,29 +63,9 @@ void main() {
       expect(bloc.state, equals(const InitialState<AuthData>()));
     });
 
-    test('emits InitialState and clears data when token is expired', () async {
-      final expiredToken = AuthTokenEntity(
-        accessToken: 'expired_token',
-        expiresAt: DateTime.now().subtract(const Duration(hours: 1)),
-      );
-      when(mockAuthRepository.getStoredToken()).thenAnswer((_) async => Right(expiredToken));
-      when(mockAuthRepository.clearStoredData()).thenAnswer((_) async => const Right(null));
-
-      bloc.add(const AuthStarted());
-      await Future.delayed(const Duration(milliseconds: 100));
-
-      verify(mockAuthRepository.clearStoredData()).called(1);
-      expect(bloc.state, equals(const InitialState<AuthData>()));
-    });
-
-    test('emits LoadedState when token is valid and user exists', () async {
-      final validToken = AuthTokenEntity(
-        accessToken: 'valid_token',
-        expiresAt: DateTime.now().add(const Duration(hours: 1)),
-      );
-      when(mockAuthRepository.getStoredToken()).thenAnswer((_) async => Right(validToken));
-      when(mockGetCurrentUserUseCase()).thenAnswer((_) async => Right(tUser));
-      when(mockWatchKycStatusUseCase(any)).thenAnswer((_) => Stream.value('notStarted'));
+    test('emits LoadedState when user exists', () async {
+      when(mockAuthUseCase.getCurrentUser()).thenAnswer((_) async => Right(tUser));
+      when(mockKycUseCase.watchKycStatus(any)).thenAnswer((_) => Stream.value('notStarted'));
 
       bloc.add(const AuthStarted());
       await Future.delayed(const Duration(milliseconds: 100));
@@ -125,19 +80,14 @@ void main() {
       );
     });
 
-    test('emits InitialState and clears data when user fetch fails', () async {
-      final validToken = AuthTokenEntity(
-        accessToken: 'valid_token',
-        expiresAt: DateTime.now().add(const Duration(hours: 1)),
+    test('emits InitialState when user fetch fails', () async {
+      when(mockAuthUseCase.getCurrentUser()).thenAnswer(
+        (_) async => const Left(AuthFailure(failureMessage: 'Auth failed')),
       );
-      when(mockAuthRepository.getStoredToken()).thenAnswer((_) async => Right(validToken));
-      when(mockGetCurrentUserUseCase()).thenAnswer((_) async => const Left(AuthFailure(failureMessage: 'Auth failed')));
-      when(mockAuthRepository.clearStoredData()).thenAnswer((_) async => const Right(null));
 
       bloc.add(const AuthStarted());
       await Future.delayed(const Duration(milliseconds: 100));
 
-      verify(mockAuthRepository.clearStoredData()).called(1);
       expect(bloc.state, equals(const InitialState<AuthData>()));
     });
   });
@@ -146,9 +96,8 @@ void main() {
     blocTest<AuthBloc, BaseState<AuthData>>(
       'updates user kycStatus when AuthKycStatusUpdated is added',
       build: () {
-        when(mockAuthRepository.getStoredToken()).thenAnswer((_) async => const Right(null));
-        when(mockGetCurrentUserUseCase()).thenAnswer((_) async => Right(tUser));
-        when(mockWatchKycStatusUseCase(any)).thenAnswer((_) => Stream.value('approved'));
+        when(mockAuthUseCase.getCurrentUser()).thenAnswer((_) async => Right(tUser));
+        when(mockKycUseCase.watchKycStatus(any)).thenAnswer((_) => Stream.value('approved'));
         return bloc;
       },
       act: (bloc) async {
@@ -156,7 +105,7 @@ void main() {
         await Future.delayed(const Duration(milliseconds: 100));
         bloc.add(const AuthKycStatusUpdated('approved'));
       },
-      skip: 2,
+      skip: 3, // Skip LoadingState, LoadedState from AuthStarted, and LoadedState from stream
       expect: () => [
         isA<LoadedState<AuthData>>().having(
           (state) => state.data?.user?.kycStatus,
@@ -170,10 +119,9 @@ void main() {
   group('KYC Status Stream Integration', () {
     test('subscribes to KYC status stream after login', () async {
       final kycStatusController = StreamController<String>();
-      
-      when(mockAuthRepository.getStoredToken()).thenAnswer((_) async => const Right(null));
-      when(mockLoginUseCase(any)).thenAnswer((_) async => Right(tUser));
-      when(mockWatchKycStatusUseCase(any)).thenAnswer((_) => kycStatusController.stream);
+
+      when(mockAuthUseCase.login(any, any)).thenAnswer((_) async => Right(tUser));
+      when(mockKycUseCase.watchKycStatus(any)).thenAnswer((_) => kycStatusController.stream);
 
       bloc.add(const AuthLoginRequested(
         email: 'john@example.com',
@@ -199,11 +147,10 @@ void main() {
 
     test('unsubscribes from KYC status stream on logout', () async {
       final kycStatusController = StreamController<String>();
-      
-      when(mockAuthRepository.getStoredToken()).thenAnswer((_) async => const Right(null));
-      when(mockLoginUseCase(any)).thenAnswer((_) async => Right(tUser));
-      when(mockWatchKycStatusUseCase(any)).thenAnswer((_) => kycStatusController.stream);
-      when(mockLogoutUseCase()).thenAnswer((_) async => const Right(null));
+
+      when(mockAuthUseCase.login(any, any)).thenAnswer((_) async => Right(tUser));
+      when(mockKycUseCase.watchKycStatus(any)).thenAnswer((_) => kycStatusController.stream);
+      when(mockAuthUseCase.logout()).thenAnswer((_) async => const Right(null));
 
       bloc.add(const AuthLoginRequested(
         email: 'john@example.com',

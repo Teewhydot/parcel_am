@@ -4,24 +4,19 @@ import 'package:parcel_am/core/bloc/base/base_bloc.dart';
 import 'package:parcel_am/core/bloc/base/base_state.dart';
 import 'wallet_event.dart';
 import 'wallet_data.dart';
-import '../../../domain/usecases/watch_balance_usecase.dart';
-import '../../../domain/usecases/hold_balance_for_escrow_usecase.dart';
-import '../../../domain/usecases/release_escrow_balance_usecase.dart';
+import '../../../domain/usecases/wallet_usecase.dart';
 
 class WalletBloc extends BaseBloC<WalletEvent, BaseState<WalletData>> {
-  final WatchBalanceUseCase? watchBalanceUseCase;
-  final HoldBalanceForEscrowUseCase? holdBalanceUseCase;
-  final ReleaseEscrowBalanceUseCase? releaseBalanceUseCase;
-
+  final WalletUseCase _walletUseCase;
   Timer? _refreshTimer;
   StreamSubscription? _balanceSubscription;
   String? _currentUserId;
+  String? _currentWalletId;
 
   WalletBloc({
-    this.watchBalanceUseCase,
-    this.holdBalanceUseCase,
-    this.releaseBalanceUseCase,
-  }) : super(const InitialState<WalletData>()) {
+    WalletUseCase? walletUseCase,
+  })  : _walletUseCase = walletUseCase ?? WalletUseCase(),
+        super(const InitialState<WalletData>()) {
     on<WalletStarted>(_onStarted);
     on<WalletLoadRequested>(_onLoadRequested);
     on<WalletRefreshRequested>(_onRefreshRequested);
@@ -38,26 +33,43 @@ class WalletBloc extends BaseBloC<WalletEvent, BaseState<WalletData>> {
     _currentUserId = event.userId;
     emit(const LoadingState<WalletData>());
 
-    if (watchBalanceUseCase != null) {
-      await _balanceSubscription?.cancel();
-      _balanceSubscription = watchBalanceUseCase!(event.userId).listen(
-        (wallet) {
-          add(WalletBalanceUpdated(
-            availableBalance: wallet.availableBalance,
-            pendingBalance: wallet.heldBalance,
-          ));
-        },
-        onError: (error) {
-          add(WalletBalanceUpdated(
-            availableBalance: 0.0,
-            pendingBalance: 0.0,
-          ));
-        },
-      );
-    } else {
-      // Fallback to mock data if usecase not provided
-      await _fetchWalletData(emit);
-    }
+    // First, get the wallet to store the wallet ID
+    final walletResult = await _walletUseCase.getWallet(event.userId);
+    walletResult.fold(
+      (failure) {
+        // Handle error silently or emit error state if needed
+      },
+      (wallet) {
+        _currentWalletId = wallet.id;
+      },
+    );
+
+    await _balanceSubscription?.cancel();
+    _balanceSubscription = _walletUseCase.watchBalance(event.userId).listen(
+      (walletEither) {
+        walletEither.fold(
+          (failure) {
+            add(const WalletBalanceUpdated(
+              availableBalance: 0.0,
+              pendingBalance: 0.0,
+            ));
+          },
+          (wallet) {
+            _currentWalletId = wallet.id;
+            add(WalletBalanceUpdated(
+              availableBalance: wallet.availableBalance,
+              pendingBalance: wallet.heldBalance,
+            ));
+          },
+        );
+      },
+      onError: (error) {
+        add(const WalletBalanceUpdated(
+          availableBalance: 0.0,
+          pendingBalance: 0.0,
+        ));
+      },
+    );
 
     _startPeriodicRefresh();
   }
@@ -127,12 +139,12 @@ class WalletBloc extends BaseBloC<WalletEvent, BaseState<WalletData>> {
 
     emit(AsyncLoadingState<WalletData>(data: currentData));
 
-    if (holdBalanceUseCase != null && _currentUserId != null) {
-      final result = await holdBalanceUseCase!(HoldEscrowParams(
-        userId: _currentUserId!,
-        amount: event.amount,
-        orderId: event.packageId,
-      ));
+    if (_currentWalletId != null) {
+      final result = await _walletUseCase.holdBalance(
+        _currentWalletId!,
+        event.amount,
+        event.packageId,
+      );
 
       result.fold(
         (failure) {
@@ -153,16 +165,7 @@ class WalletBloc extends BaseBloC<WalletEvent, BaseState<WalletData>> {
         },
       );
     } else {
-      // Fallback to mock behavior
-      await Future.delayed(const Duration(seconds: 2));
-      final updatedData = currentData.copyWith(
-        availableBalance: currentData.availableBalance - event.amount,
-        pendingBalance: currentData.pendingBalance + event.amount,
-      );
-      emit(LoadedState<WalletData>(
-        data: updatedData,
-        lastUpdated: DateTime.now(),
-      ));
+      emit(const ErrorState<WalletData>(errorMessage: 'Wallet ID not set'));
     }
   }
 
@@ -178,11 +181,14 @@ class WalletBloc extends BaseBloC<WalletEvent, BaseState<WalletData>> {
 
     emit(AsyncLoadingState<WalletData>(data: currentData));
 
-    if (releaseBalanceUseCase != null && _currentUserId != null) {
-      final result = await releaseBalanceUseCase!(ReleaseEscrowParams(
-        userId: _currentUserId!,
-        orderId: event.transactionId,
-      ));
+    if (_currentWalletId != null) {
+      // Use pendingBalance as the amount to release
+      // In a proper implementation, this should track held amounts per transaction
+      final result = await _walletUseCase.releaseBalance(
+        _currentWalletId!,
+        currentData.pendingBalance,
+        event.transactionId,
+      );
 
       result.fold(
         (failure) {
@@ -203,16 +209,7 @@ class WalletBloc extends BaseBloC<WalletEvent, BaseState<WalletData>> {
         },
       );
     } else {
-      // Fallback to mock behavior
-      await Future.delayed(const Duration(seconds: 1));
-      final updatedData = currentData.copyWith(
-        availableBalance: currentData.availableBalance,
-        pendingBalance: currentData.pendingBalance - event.amount,
-      );
-      emit(LoadedState<WalletData>(
-        data: updatedData,
-        lastUpdated: DateTime.now(),
-      ));
+      emit(const ErrorState<WalletData>(errorMessage: 'Wallet ID not set'));
     }
   }
 

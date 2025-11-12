@@ -1,12 +1,11 @@
 import 'package:dartz/dartz.dart';
+import 'package:get_it/get_it.dart';
 import '../../../../core/errors/failures.dart';
 import '../../domain/repositories/kyc_repository.dart';
 import '../datasources/kyc_remote_data_source.dart';
 
 class KycRepositoryImpl implements KycRepository {
-  final KycRemoteDataSource remoteDataSource;
-
-  KycRepositoryImpl({required this.remoteDataSource});
+  final remoteDataSource = GetIt.instance<KycRemoteDataSource>();
 
   @override
   Future<Either<Failure, void>> submitKyc({

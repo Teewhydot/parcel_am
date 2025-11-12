@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
 import 'package:parcel_am/core/widgets/app_scaffold.dart';
 
 import '../../../../core/routes/routes.dart';
@@ -58,9 +59,7 @@ class _SplashScreenState extends State<SplashScreen>
     
     _hasNavigated = true;
     
-    if (state is DataState<AuthData> && 
-        state.data != null && 
-        state.data!.user != null) {
+    if (state is LoadedState) {
       sl<NavigationService>().navigateAndReplace(Routes.dashboard);
     } else if (state is InitialState || state is ErrorState) {
       sl<NavigationService>().navigateAndReplace(Routes.onboarding);
@@ -69,11 +68,13 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<AuthBloc, BaseState<AuthData>>(
-      listener: (context, state) {
-        _navigateBasedOnState(state);
-      },
+    return BlocManager<AuthBloc, BaseState<AuthData>>(
+      bloc: context.read<AuthBloc>(),
+      onError: (context, state) => _navigateBasedOnState(state),
+      onSuccess: (context, state) => _navigateBasedOnState(state),
       child: AppScaffold(
+        safeAreaBottom: false,
+        safeAreaTop: false,
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -115,39 +116,12 @@ class _SplashScreenState extends State<SplashScreen>
                                         color: AppColors.primary,
                                       ),
                                     ),
-                                    const Positioned(
-                                      right: 16,
-                                      bottom: 16,
-                                      child: Icon(
-                                        Icons.security,
-                                        size: 24,
-                                        color: AppColors.accent,
-                                      ),
-                                    ),
+                                   
                                   ],
                                 ),
                               ),
                               // Animated pulse dot
-                              Positioned(
-                                right: -8,
-                                top: -8,
-                                child: TweenAnimationBuilder<double>(
-                                  duration: const Duration(milliseconds: 1500),
-                                  tween: Tween(begin: 0.0, end: 1.0),
-                                  builder: (context, value, child) {
-                                    return Transform.scale(
-                                      scale: 0.5 + (value * 0.5),
-                                      child: AppContainer(
-                                        width: 24,
-                                        height: 24,
-                                        variant: ContainerVariant.filled,
-                                        color: AppColors.accent,
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
+                             
                             ],
                           ),
 
@@ -155,7 +129,7 @@ class _SplashScreenState extends State<SplashScreen>
 
                           // App Name
                           AppText.headlineLarge(
-                            'TravelLink',
+                            'ParcelAm',
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                             textAlign: TextAlign.center,
