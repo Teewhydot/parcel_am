@@ -1,7 +1,6 @@
 import 'dart:io';
 
 void main() {
-  print('🔍 Verifying KYC Integration...\n');
   
   final checks = <String, bool>{};
   
@@ -55,26 +54,19 @@ void main() {
                           File('test/features/travellink/presentation/bloc/auth_bloc_kyc_test.dart').existsSync();
   
   // Print results
-  print('Results:');
-  print('━' * 60);
   
   int passed = 0;
   int total = checks.length;
   
   checks.forEach((check, result) {
     final icon = result ? '✅' : '❌';
-    print('$icon $check');
     if (result) passed++;
   });
   
-  print('━' * 60);
-  print('\n📊 Summary: $passed/$total checks passed\n');
   
   if (passed == total) {
-    print('🎉 All checks passed! KYC integration is complete.');
     exit(0);
   } else {
-    print('⚠️  Some checks failed. Please review the integration.');
     exit(1);
   }
 }

@@ -83,13 +83,13 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, UserEntity?>> getCurrentUser() async {
     try {
-      final firebaseUser = await remoteDataSource.getCurrentUser();
+      final user = await remoteDataSource.getCurrentUser();
       
-      if (firebaseUser == null) {
+      if (user == null) {
         return const Right(null);
       }
     
-      return Right(firebaseUser.toEntity());
+      return Right(user.toEntity());
     } on AuthException catch (e) {
       return Left(AuthFailure(failureMessage: e.message));
     } on ServerException catch (e) {
@@ -104,9 +104,9 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, bool>> hasValidSession() async {
     try {
-      final firebaseUser = await remoteDataSource.getCurrentUser();
+      final user = await remoteDataSource.getCurrentUser();
       
-      if (firebaseUser == null) {
+      if (user == null) {
         return const Right(false);
       }
       

@@ -25,7 +25,7 @@ class ExampleService {
 
 /// Example app demonstrating BlocManager usage
 class BlocManagerExampleApp extends StatelessWidget {
-  const BlocManagerExampleApp({Key? key}) : super(key: key);
+  const BlocManagerExampleApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +40,7 @@ class BlocManagerExampleApp extends StatelessWidget {
 
 /// Home screen with multiple BlocManager examples
 class ExampleHomeScreen extends StatelessWidget {
-  const ExampleHomeScreen({Key? key}) : super(key: key);
+  const ExampleHomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -247,7 +247,7 @@ class CounterBloc extends Bloc<CounterEvent, CounterState>
 }
 
 class CounterExampleScreen extends StatelessWidget {
-  const CounterExampleScreen({Key? key}) : super(key: key);
+  const CounterExampleScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -265,7 +265,7 @@ class CounterExampleScreen extends StatelessWidget {
 }
 
 class CounterView extends StatelessWidget {
-  const CounterView({Key? key}) : super(key: key);
+  const CounterView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -405,7 +405,7 @@ class MessageBloc extends Bloc<MessageEvent, MessageState>
 }
 
 class CrossBlocExampleScreen extends StatelessWidget {
-  const CrossBlocExampleScreen({Key? key}) : super(key: key);
+  const CrossBlocExampleScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -427,7 +427,7 @@ class CrossBlocExampleScreen extends StatelessWidget {
 }
 
 class CrossBlocView extends StatelessWidget {
-  const CrossBlocView({Key? key}) : super(key: key);
+  const CrossBlocView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -521,7 +521,7 @@ class CrossBlocView extends StatelessWidget {
 // ===============================================
 
 class PersistenceExampleScreen extends StatelessWidget {
-  const PersistenceExampleScreen({Key? key}) : super(key: key);
+  const PersistenceExampleScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -544,7 +544,7 @@ class PersistenceExampleScreen extends StatelessWidget {
 }
 
 class PerformanceExampleScreen extends StatelessWidget {
-  const PerformanceExampleScreen({Key? key}) : super(key: key);
+  const PerformanceExampleScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

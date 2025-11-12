@@ -38,8 +38,7 @@ void main() {
     mockKycUseCase = MockKycUseCase();
 
     bloc = AuthBloc(
-      authUseCase: mockAuthUseCase,
-      kycUseCase: mockKycUseCase,
+     
     );
   });
 

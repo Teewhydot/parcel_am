@@ -27,7 +27,7 @@ class FirebaseRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   @override
   Future<UserModel> signInWithEmailAndPassword(String email, String password) async {
-    try {
+    
       final credential = await firebaseAuth.signInWithEmailAndPassword(
         email: email,
         password: password,
@@ -39,16 +39,12 @@ class FirebaseRemoteDataSourceImpl implements AuthRemoteDataSource {
       }
 
       return await _mapFirebaseUserToModelWithKyc(user);
-    } on FirebaseAuthException catch (e) {
-      throw _mapFirebaseAuthException(e);
-    } catch (e) {
-      throw ServerException(e.toString());
-    }
+   
   }
 
   @override
   Future<UserModel> signUpWithEmailAndPassword(String email, String password, String displayName) async {
-    try {
+  
       final credential = await firebaseAuth.createUserWithEmailAndPassword(
         email: email,
         password: password,
@@ -74,32 +70,22 @@ class FirebaseRemoteDataSourceImpl implements AuthRemoteDataSource {
       }
 
       return await _mapFirebaseUserToModelWithKyc(updatedUser!);
-    } on FirebaseAuthException catch (e) {
-      throw _mapFirebaseAuthException(e);
-    } catch (e) {
-      throw ServerException(e.toString());
-    }
+   
   }
 
   @override
   Future<void> signOut() async {
-    try {
+    
       await firebaseAuth.signOut();
-    } catch (e) {
-      throw ServerException(e.toString());
-    }
+    
   }
 
   @override
   Future<UserModel?> getCurrentUser() async {
-    try {
+  
       final user = firebaseAuth.currentUser;
       if (user == null) return null;
-      
-      return await _mapFirebaseUserToModelWithKyc(user);
-    } catch (e) {
-      throw ServerException(e.toString());
-    }
+     return await _mapFirebaseUserToModelWithKyc(user);
   }
 
   @override
@@ -112,7 +98,7 @@ class FirebaseRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   @override
   Future<UserModel> updateUserProfile(UserModel user) async {
-    try {
+  
       final firebaseUser = firebaseAuth.currentUser;
       if (firebaseUser == null) {
         throw const UserNotFoundException();
@@ -123,22 +109,14 @@ class FirebaseRemoteDataSourceImpl implements AuthRemoteDataSource {
       
       final updatedUser = firebaseAuth.currentUser;
       return await _mapFirebaseUserToModelWithKyc(updatedUser!);
-    } on FirebaseAuthException catch (e) {
-      throw _mapFirebaseAuthException(e);
-    } catch (e) {
-      throw ServerException(e.toString());
-    }
+  
   }
 
   @override
   Future<void> resetPassword(String email) async {
-    try {
+  
       await firebaseAuth.sendPasswordResetEmail(email: email);
-    } on FirebaseAuthException catch (e) {
-      throw _mapFirebaseAuthException(e);
-    } catch (e) {
-      throw ServerException(e.toString());
-    }
+   
   }
 
   UserModel _mapFirebaseUserToModel(User user) {
@@ -158,14 +136,12 @@ class FirebaseRemoteDataSourceImpl implements AuthRemoteDataSource {
     String kycStatusString = 'not_submitted';
 
     if (firestore != null) {
-      try {
+    
         final userDoc = await firestore!.collection('users').doc(user.uid).get();
         if (userDoc.exists) {
           kycStatusString = userDoc.data()?['kycStatus'] ?? 'not_submitted';
         }
-      } catch (e) {
-        // Ignore errors and use default kycStatus
-      }
+     
     }
 
     return UserModel(
@@ -183,15 +159,13 @@ class FirebaseRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   @override
   Future<void> syncKycStatus(String userId, String kycStatus) async {
-    try {
+  
       if (firestore == null) return;
       
       await firestore!.collection('users').doc(userId).update({
         'kycStatus': kycStatus,
       });
-    } catch (e) {
-      throw ServerException('Failed to sync KYC status: $e');
-    }
+   
   }
 
   AuthException _mapFirebaseAuthException(FirebaseAuthException e) {

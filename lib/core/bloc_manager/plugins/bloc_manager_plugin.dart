@@ -81,7 +81,6 @@ class LoggingPlugin extends BaseBlocManagerPlugin {
     if (customLogger != null) {
       customLogger!(message);
     } else {
-      print('[BlocManager] $message');
     }
   }
 
@@ -132,13 +131,9 @@ class PerformancePlugin extends BaseBlocManagerPlugin {
     final lifespan = DateTime.now().difference(_blocCreationTimes[bloc]!);
     final stateChanges = _stateChangeCount[bloc] ?? 0;
     
-    print('[Performance] BLoC ${bloc.runtimeType}:');
-    print('  Lifespan: ${lifespan.inMilliseconds}ms');
-    print('  State changes: $stateChanges');
     
     if (stateChanges > 0) {
       final avgTime = _calculateAverageStateChangeTime(bloc);
-      print('  Average state change time: ${avgTime?.inMilliseconds ?? 0}ms');
     }
     
     _blocCreationTimes.remove(bloc);

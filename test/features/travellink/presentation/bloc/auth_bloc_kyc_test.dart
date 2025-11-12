@@ -39,10 +39,7 @@ void main() {
     mockAuthUseCase = MockAuthUseCase();
     mockKycUseCase = MockKycUseCase();
 
-    bloc = AuthBloc(
-      authUseCase: mockAuthUseCase,
-      kycUseCase: mockKycUseCase,
-    );
+    bloc = AuthBloc();
   });
 
   tearDown(() {

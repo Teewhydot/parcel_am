@@ -9,8 +9,6 @@ import 'dart:convert';
 /// everything is set up correctly for phone authentication.
 
 void main() async {
-  print('🔥 TravelLink Firebase Setup Checker');
-  print('=====================================\n');
 
   final checks = [
     _checkGoogleServicesJson,
@@ -26,33 +24,19 @@ void main() async {
   for (final check in checks) {
     final result = await check();
     if (!result) allPassed = false;
-    print(''); // Add spacing
+    // Add spacing
   }
 
-  print('\n📋 SUMMARY');
-  print('==========');
   if (allPassed) {
-    print('✅ All checks passed! Your Firebase setup looks good.');
-    print('🚀 You can now run: flutter run');
   } else {
-    print('❌ Some checks failed. Please fix the issues above.');
-    print('📖 See docs/FIREBASE_SERVER_SETUP.md for detailed instructions.');
   }
   
-  print('\n📱 Next Steps:');
-  print('1. Complete Firebase Console setup');
-  print('2. Add SHA-1 certificates');
-  print('3. Test with debug build');
-  print('4. Configure test phone numbers');
 }
 
 Future<bool> _checkGoogleServicesJson() async {
-  print('📄 Checking google-services.json...');
   
   final file = File('android/app/google-services.json');
   if (!await file.exists()) {
-    print('❌ google-services.json not found in android/app/');
-    print('   Download it from Firebase Console → Project Settings → Your Apps');
     return false;
   }
 
@@ -64,32 +48,24 @@ Future<bool> _checkGoogleServicesJson() async {
     final packageName = json['client']?[0]?['client_info']?['android_client_info']?['package_name'];
     
     if (projectId == null || packageName == null) {
-      print('❌ Invalid google-services.json format');
       return false;
     }
     
-    print('✅ Found google-services.json');
-    print('   Project ID: $projectId');
-    print('   Package: $packageName');
     
     if (packageName != 'com.example.parcel_am') {
-      print('⚠️  Warning: Package name mismatch. Expected: com.example.parcel_am');
     }
     
     return true;
   } catch (e) {
-    print('❌ Error reading google-services.json: $e');
     return false;
   }
 }
 
 Future<bool> _checkAndroidConfiguration() async {
-  print('🤖 Checking Android configuration...');
   
   // Check build.gradle (app level)
   final appBuildGradle = File('android/app/build.gradle');
   if (!await appBuildGradle.exists()) {
-    print('❌ android/app/build.gradle not found');
     return false;
   }
 
@@ -99,13 +75,10 @@ Future<bool> _checkAndroidConfiguration() async {
   final hasApplicationId = buildGradleContent.contains('applicationId "com.example.parcel_am"');
   
   if (!hasGoogleServicesPlugin) {
-    print('❌ Google Services plugin not applied in android/app/build.gradle');
-    print('   Add: apply plugin: \'com.google.gms.google-services\'');
     return false;
   }
   
   if (!hasApplicationId) {
-    print('⚠️  Warning: Application ID might not match Firebase configuration');
   }
 
   // Check project level build.gradle
@@ -115,22 +88,17 @@ Future<bool> _checkAndroidConfiguration() async {
     final hasGoogleServicesClasspath = projectContent.contains('com.google.gms:google-services');
     
     if (!hasGoogleServicesClasspath) {
-      print('❌ Google Services classpath missing in android/build.gradle');
-      print('   Add: classpath \'com.google.gms:google-services:4.3.15\'');
       return false;
     }
   }
 
-  print('✅ Android configuration looks good');
   return true;
 }
 
 Future<bool> _checkFirebaseConfig() async {
-  print('🔧 Checking Firebase configuration files...');
   
   final firebaseConfig = File('lib/core/config/firebase_config.dart');
   if (!await firebaseConfig.exists()) {
-    print('❌ firebase_config.dart not found');
     return false;
   }
 
@@ -141,11 +109,9 @@ Future<bool> _checkFirebaseConfig() async {
   final hasValidPrefixes = content.contains('valid_prefixes');
   
   if (!hasNigerianConfig || !hasTestOtpCode || !hasValidPrefixes) {
-    print('❌ Firebase configuration incomplete');
     return false;
   }
 
-  print('✅ Firebase configuration found');
   
   // Check for common Nigerian prefixes
   final commonPrefixes = ['803', '806', '813', '816', '818', '708', '803'];
@@ -159,16 +125,13 @@ Future<bool> _checkFirebaseConfig() async {
   }
   
   if (hasCommonPrefixes) {
-    print('✅ Nigerian phone prefixes configured');
   } else {
-    print('⚠️  Warning: Common Nigerian prefixes might be missing');
   }
   
   return true;
 }
 
 Future<bool> _checkPhoneAuthConfig() async {
-  print('📞 Checking phone authentication setup...');
   
   final authBloc = File('lib/features/travellink/presentation/bloc/auth/auth_bloc.dart');
   final authRepository = File('lib/features/travellink/data/repositories/auth_repository.dart');
@@ -184,9 +147,7 @@ Future<bool> _checkPhoneAuthConfig() async {
   
   for (final (name, file) in files) {
     if (await file.exists()) {
-      print('✅ $name found');
     } else {
-      print('❌ $name missing: ${file.path}');
       allExist = false;
     }
   }
@@ -195,11 +156,9 @@ Future<bool> _checkPhoneAuthConfig() async {
 }
 
 Future<bool> _checkBuildGradle() async {
-  print('🏗️ Checking build.gradle configuration...');
   
   final appBuildGradle = File('android/app/build.gradle');
   if (!await appBuildGradle.exists()) {
-    print('❌ android/app/build.gradle not found');
     return false;
   }
   
@@ -215,9 +174,7 @@ Future<bool> _checkBuildGradle() async {
   
   for (final (check, passed) in checks) {
     if (passed) {
-      print('✅ $check');
     } else {
-      print('⚠️  $check - might need attention');
     }
   }
   
@@ -225,11 +182,9 @@ Future<bool> _checkBuildGradle() async {
 }
 
 Future<bool> _checkPubspecDependencies() async {
-  print('📦 Checking pubspec.yaml dependencies...');
   
   final pubspec = File('pubspec.yaml');
   if (!await pubspec.exists()) {
-    print('❌ pubspec.yaml not found');
     return false;
   }
   
@@ -247,9 +202,7 @@ Future<bool> _checkPubspecDependencies() async {
   
   for (final dep in requiredDeps) {
     if (content.contains('$dep:')) {
-      print('✅ $dep');
     } else {
-      print('❌ $dep missing');
       allFound = false;
     }
   }

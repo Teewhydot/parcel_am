@@ -35,8 +35,8 @@ class BlocManager<T extends BlocBase<S>, S extends BaseState>
   final bool showLoadingIndicator;
 
   /// Whether to show success or error messages
-  final bool showResultErrorNotifications = true;
-  final bool showResultSuccessNotifications = true;
+  final bool showResultErrorNotifications;
+  final bool showResultSuccessNotifications;
 
   /// Custom loading widget
   final Widget? loadingWidget;
@@ -56,6 +56,8 @@ class BlocManager<T extends BlocBase<S>, S extends BaseState>
     this.onError,
     this.onSuccess,
     this.showLoadingIndicator = true,
+    this.showResultErrorNotifications = true,
+    this.showResultSuccessNotifications = false,
     this.loadingWidget,
     this.enablePullToRefresh = false,
     this.onRefresh,
@@ -66,20 +68,37 @@ class BlocManager<T extends BlocBase<S>, S extends BaseState>
     return BlocProvider<T>.value(
       value: bloc,
       child: BlocConsumer<T, S>(
+        buildWhen: (previous, current) {
+          // Always rebuild for initial load, loading states, errors, and empty states
+          if (previous is InitialState ||
+              current is InitialState ||
+              current is LoadingState ||
+              current is ErrorState ||
+              current is EmptyState) {
+            return true;
+          }
+
+          // For loaded states, check if we should rebuild
+          if (current is LoadedState && previous is LoadedState) {
+            // Don't rebuild if returning cached data with same content
+            if (current.isFromCache == true && previous.data == current.data) {
+              return false;
+            }
+          }
+
+          return true;
+        },
         builder: (context, state) {
           // Handle custom builder if provided
-          final Widget contentWidget = builder != null
-              ? builder!(context, state)
-              : child;
+          final Widget contentWidget =
+              builder != null ? builder!(context, state) : child;
 
           // Apply loading overlay if needed
           if (showLoadingIndicator && state.isLoading) {
             return LoadingOverlay(
               isLoading: true,
               color: AppColors.primary.withValues(alpha: 0.5),
-              progressIndicator:
-                  loadingWidget ??
-                  const SpinKitCircle(color: AppColors.white, size: 50.0),
+              progressIndicator: SpinKitCircle(color: AppColors.white, size: 50.0),
               child: contentWidget,
             );
           }
@@ -109,16 +128,27 @@ class BlocManager<T extends BlocBase<S>, S extends BaseState>
 
           // Handle success states
           if (state.isSuccess) {
-            Logger.logSuccess(
-              "Success condition met in SimplifiedEnhancedBlocManager",
-            );
+            Logger.logSuccess("Success condition met in BlocManager");
             if (onSuccess != null) {
               onSuccess!(context, state);
             }
             if (showResultSuccessNotifications) {
               DFoodUtils.showSnackBar(
                 state.successMessage ?? AppConstants.defaultSuccessMessage,
-                AppColors.success,
+              AppColors.primaryLight,
+              );
+            }
+          }
+          //Handle loaded state
+          if (state is LoadedState) {
+            Logger.logSuccess("Success condition met in BlocManager");
+            if (onSuccess != null) {
+              onSuccess!(context, state);
+            }
+            if (showResultSuccessNotifications) {
+              DFoodUtils.showSnackBar(
+                state.successMessage ?? AppConstants.defaultSuccessMessage,
+                AppColors.primaryLight,
               );
             }
           }

@@ -70,6 +70,8 @@ class _SplashScreenState extends State<SplashScreen>
   Widget build(BuildContext context) {
     return BlocManager<AuthBloc, BaseState<AuthData>>(
       bloc: context.read<AuthBloc>(),
+    showResultErrorNotifications: false,
+    showResultSuccessNotifications: false,
       onError: (context, state) => _navigateBasedOnState(state),
       onSuccess: (context, state) => _navigateBasedOnState(state),
       child: AppScaffold(
@@ -83,109 +85,107 @@ class _SplashScreenState extends State<SplashScreen>
             colors: [AppColors.primary, AppColors.secondary],
           ),
         ),
-        child: SafeArea(
-          child: AnimatedBuilder(
-            animation: _fadeAnimation,
-            builder: (context, child) {
-              return Opacity(
-                opacity: _fadeAnimation.value,
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // Logo
-                          Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              AppContainer(
-                                width: 96,
-                                height: 96,
-                                variant: ContainerVariant.filled,
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(48),
-                                child: Stack(
-                                  alignment: Alignment.center,
-                                  children: [
-                                    Transform.rotate(
-                                      angle: 0.785398, // 45 degrees in radians
-                                      child: const Icon(
-                                        Icons.flight_takeoff,
-                                        size: 40,
-                                        color: AppColors.primary,
-                                      ),
+        child: AnimatedBuilder(
+          animation: _fadeAnimation,
+          builder: (context, child) {
+            return Opacity(
+              opacity: _fadeAnimation.value,
+              child: Column(
+                children: [
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Logo
+                        Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            AppContainer(
+                              width: 96,
+                              height: 96,
+                              variant: ContainerVariant.filled,
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(48),
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  Transform.rotate(
+                                    angle: 0.785398, // 45 degrees in radians
+                                    child: const Icon(
+                                      Icons.flight_takeoff,
+                                      size: 40,
+                                      color: AppColors.primary,
                                     ),
-                                   
-                                  ],
-                                ),
+                                  ),
+                                 
+                                ],
                               ),
-                              // Animated pulse dot
-                             
-                            ],
-                          ),
-
-                          AppSpacing.verticalSpacing(SpacingSize.xxl),
-
-                          // App Name
-                          AppText.headlineLarge(
-                            'ParcelAm',
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            textAlign: TextAlign.center,
-                          ),
-                          AppSpacing.verticalSpacing(SpacingSize.sm),
-                          AppText.bodyLarge(
-                            'Secure package delivery across Nigeria',
-                            color: Colors.white.withValues(alpha: 0.8),
-                            textAlign: TextAlign.center,
-                          ),
-
-                          AppSpacing.verticalSpacing(SpacingSize.xxl),
-                          AppSpacing.verticalSpacing(SpacingSize.lg),
-
-                          // Feature Icons
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              _FeatureIcon(
-                                icon: Icons.security,
-                                title: 'Escrow Safe',
-                              ),
-                              _FeatureIcon(
-                                icon: Icons.verified_user,
-                                title: 'Verified Users',
-                              ),
-                              _FeatureIcon(
-                                icon: Icons.flight_takeoff,
-                                title: 'Fast Delivery',
-                              ),
-                            ],
-                          ),
-
-                          AppSpacing.verticalSpacing(SpacingSize.xxl),
-                          AppSpacing.verticalSpacing(SpacingSize.lg),
-
-                          // Loading Indicator
-                          _LoadingDots(),
-                        ],
-                      ),
+                            ),
+                            // Animated pulse dot
+                           
+                          ],
+                        ),
+        
+                        AppSpacing.verticalSpacing(SpacingSize.xxl),
+        
+                        // App Name
+                        AppText.headlineLarge(
+                          'ParcelAm',
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          textAlign: TextAlign.center,
+                        ),
+                        AppSpacing.verticalSpacing(SpacingSize.sm),
+                        AppText.bodyLarge(
+                          'Secure package delivery across Nigeria',
+                          color: Colors.white.withValues(alpha: 0.8),
+                          textAlign: TextAlign.center,
+                        ),
+        
+                        AppSpacing.verticalSpacing(SpacingSize.xxl),
+                        AppSpacing.verticalSpacing(SpacingSize.lg),
+        
+                        // Feature Icons
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _FeatureIcon(
+                              icon: Icons.security,
+                              title: 'Escrow Safe',
+                            ),
+                            _FeatureIcon(
+                              icon: Icons.verified_user,
+                              title: 'Verified Users',
+                            ),
+                            _FeatureIcon(
+                              icon: Icons.flight_takeoff,
+                              title: 'Fast Delivery',
+                            ),
+                          ],
+                        ),
+        
+                        AppSpacing.verticalSpacing(SpacingSize.xxl),
+                        AppSpacing.verticalSpacing(SpacingSize.lg),
+        
+                        // Loading Indicator
+                        _LoadingDots(),
+                      ],
                     ),
-
-                    // Bottom Tagline
-                    Padding(
-                      padding: AppSpacing.paddingLG,
-                      child: AppText.bodySmall(
-                        'Connecting Nigeria, One Package at a Time',
-                        color: Colors.white.withValues(alpha: 0.6),
-                        textAlign: TextAlign.center,
-                      ),
+                  ),
+        
+                  // Bottom Tagline
+                  Padding(
+                    padding: AppSpacing.paddingLG,
+                    child: AppText.bodySmall(
+                      'Connecting Nigeria, One Package at a Time',
+                      color: Colors.white.withValues(alpha: 0.6),
+                      textAlign: TextAlign.center,
                     ),
-                  ],
-                ),
-              );
-            },
-          ),
+                  ),
+                ],
+              ),
+            );
+          },
         ),
       ),
     ),
