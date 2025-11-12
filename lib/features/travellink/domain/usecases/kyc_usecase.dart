@@ -29,9 +29,6 @@ class KycUseCase {
     );
   }
 
-  Future<Either<Failure, String>> getKycStatus(String userId) {
-    return kycRepo.getKycStatus(userId);
-  }
 
   Stream<String> watchKycStatus(String userId) {
     return kycRepo.watchKycStatus(userId);

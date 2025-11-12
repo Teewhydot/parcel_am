@@ -13,7 +13,6 @@ class KycBloc extends Bloc<KycEvent, KycState> {
   })  : _kycUseCase = kycUseCase ?? KycUseCase(),
         super(const KycInitial()) {
     on<KycSubmitRequested>(_onSubmitRequested);
-    on<KycStatusRequested>(_onStatusRequested);
     on<KycStatusUpdated>(_onStatusUpdated);
     on<KycResubmitRequested>(_onResubmitRequested);
   }
@@ -45,24 +44,6 @@ class KycBloc extends Bloc<KycEvent, KycState> {
           status: 'pending',
           submittedAt: DateTime.now(),
         ));
-      },
-    );
-  }
-
-  Future<void> _onStatusRequested(
-    KycStatusRequested event,
-    Emitter<KycState> emit,
-  ) async {
-    emit(const KycLoading(message: 'Checking KYC status...'));
-
-    final result = await _kycUseCase.getKycStatus('');
-
-    result.fold(
-      (failure) {
-        emit(KycError(errorMessage: failure.failureMessage));
-      },
-      (status) {
-        _emitStatusState(status, emit);
       },
     );
   }

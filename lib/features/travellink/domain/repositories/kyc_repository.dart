@@ -13,8 +13,5 @@ abstract class KycRepository {
     required String backImagePath,
     required String selfieImagePath,
   });
-
-  Future<Either<Failure, String>> getKycStatus(String userId);
-
   Stream<String> watchKycStatus(String userId);
 }

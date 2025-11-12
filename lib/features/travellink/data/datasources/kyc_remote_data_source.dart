@@ -15,7 +15,6 @@ abstract class KycRemoteDataSource {
     required String selfieImagePath,
   });
 
-  Future<String> getKycStatus(String userId);
 
   Stream<String> watchKycStatus(String userId);
 }
@@ -67,19 +66,6 @@ class KycRemoteDataSourceImpl implements KycRemoteDataSource {
       });
     } catch (e) {
       throw Exception('Failed to submit KYC: $e');
-    }
-  }
-
-  @override
-  Future<String> getKycStatus(String userId) async {
-    try {
-      final userDoc = await firestore.collection('users').doc(userId).get();
-      if (!userDoc.exists) {
-        return 'not_submitted';
-      }
-      return userDoc.data()?['kycStatus'] ?? 'not_submitted';
-    } catch (e) {
-      throw Exception('Failed to get KYC status: $e');
     }
   }
 

@@ -37,15 +37,6 @@ class KycRepositoryImpl implements KycRepository {
     }
   }
 
-  @override
-  Future<Either<Failure, String>> getKycStatus(String userId) async {
-    try {
-      final status = await remoteDataSource.getKycStatus(userId);
-      return Right(status);
-    } catch (e) {
-      return Left(ServerFailure(failureMessage: e.toString()));
-    }
-  }
 
   @override
   Stream<String> watchKycStatus(String userId) {
