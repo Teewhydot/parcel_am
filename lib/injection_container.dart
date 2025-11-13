@@ -12,6 +12,20 @@ import 'core/services/navigation_service/nav_config.dart';
 import 'features/travellink/data/datasources/auth_remote_data_source.dart';
 import 'features/travellink/data/datasources/kyc_remote_data_source.dart' as travellink_kyc_ds;
 import 'features/travellink/data/datasources/wallet_remote_data_source.dart' as travellink_wallet_ds;
+import 'features/travellink/data/datasources/escrow_remote_data_source.dart';
+import 'features/travellink/data/datasources/parcel_remote_data_source.dart';
+
+import 'features/travellink/data/repositories/escrow_repository_impl.dart';
+import 'features/travellink/data/repositories/parcel_repository_impl.dart';
+
+import 'features/travellink/domain/repositories/escrow_repository.dart';
+import 'features/travellink/domain/repositories/parcel_repository.dart';
+
+import 'features/travellink/domain/usecases/escrow_usecase.dart';
+import 'features/travellink/domain/usecases/parcel_usecase.dart';
+
+import 'features/travellink/presentation/bloc/escrow/escrow_bloc.dart';
+import 'features/travellink/presentation/bloc/parcel/parcel_bloc.dart';
 
 import 'features/wallet/data/datasources/wallet_remote_datasource.dart';
 
@@ -59,6 +73,40 @@ Future<void> init() async {
   sl.registerLazySingleton<kyc_ds.KycRemoteDataSource>(() => kyc_ds.KycRemoteDataSourceImpl(
     firestore: sl(),
   ));
+
+  //! Features - Escrow Data Sources
+  sl.registerLazySingleton<EscrowRemoteDataSource>(() => EscrowRemoteDataSourceImpl(
+    firestore: sl(),
+  ));
+
+  //! Features - Parcel Data Sources
+  sl.registerLazySingleton<ParcelRemoteDataSource>(() => ParcelRemoteDataSourceImpl(
+    firestore: sl(),
+  ));
+
+  //! Features - Escrow Repository
+  sl.registerLazySingleton<EscrowRepository>(() => EscrowRepositoryImpl(
+    remoteDataSource: sl(),
+    networkInfo: sl(),
+  ));
+
+  //! Features - Parcel Repository
+  sl.registerLazySingleton<ParcelRepository>(() => ParcelRepositoryImpl(
+    remoteDataSource: sl(),
+    networkInfo: sl(),
+  ));
+
+  //! Features - Escrow Use Cases
+  sl.registerLazySingleton<EscrowUseCase>(() => EscrowUseCase(sl()));
+
+  //! Features - Parcel Use Cases
+  sl.registerLazySingleton<ParcelUseCase>(() => ParcelUseCase(sl()));
+
+  //! Features - Escrow BLoC
+  sl.registerFactory<EscrowBloc>(() => EscrowBloc(escrowUseCase: sl()));
+
+  //! Features - Parcel BLoC
+  sl.registerFactory<ParcelBloc>(() => ParcelBloc(parcelUseCase: sl()));
 
   //! External Services
   final sharedPreferences = await SharedPreferences.getInstance();
