@@ -68,6 +68,15 @@ enum ParcelStatus {
   bool get isDisputed => this == ParcelStatus.disputed;
 }
 
+enum ParcelType {
+  document,
+  electronics,
+  clothing,
+  food,
+  medication,
+  other,
+}
+
 class SenderDetails extends Equatable {
   final String userId;
   final String name;
@@ -205,6 +214,7 @@ class ParcelEntity extends Equatable {
   final double? price;
   final String? currency;
   final String? imageUrl;
+  final String? escrowId;
   final DateTime createdAt;
   final DateTime? updatedAt;
   final Map<String, dynamic>? metadata;
@@ -224,6 +234,7 @@ class ParcelEntity extends Equatable {
     this.price,
     this.currency,
     this.imageUrl,
+    this.escrowId,
     required this.createdAt,
     this.updatedAt,
     this.metadata,
@@ -244,6 +255,7 @@ class ParcelEntity extends Equatable {
     double? price,
     String? currency,
     String? imageUrl,
+    String? escrowId,
     DateTime? createdAt,
     DateTime? updatedAt,
     Map<String, dynamic>? metadata,
@@ -263,6 +275,7 @@ class ParcelEntity extends Equatable {
       price: price ?? this.price,
       currency: currency ?? this.currency,
       imageUrl: imageUrl ?? this.imageUrl,
+      escrowId: escrowId ?? this.escrowId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       metadata: metadata ?? this.metadata,
@@ -285,6 +298,7 @@ class ParcelEntity extends Equatable {
         price,
         currency,
         imageUrl,
+        escrowId,
         createdAt,
         updatedAt,
         metadata,
