@@ -1,7 +1,7 @@
 import 'package:dartz/dartz.dart';
 import '../../../../core/errors/failures.dart';
-import '../entities/chat_entity.dart';
-import '../entities/user_entity.dart';
+import '../entities/message.dart';
+import '../entities/chat.dart';
 import '../repositories/chat_repository.dart';
 
 class ChatUseCase {
@@ -9,35 +9,55 @@ class ChatUseCase {
 
   ChatUseCase(this.repository);
 
-  Stream<Either<Failure, List<ChatEntity>>> getChatList(String userId) {
-    return repository.getChatList(userId);
+  Stream<Either<Failure, List<Message>>> getMessagesStream(String chatId) {
+    return repository.getMessagesStream(chatId);
   }
 
-  Stream<Either<Failure, PresenceStatus>> getPresenceStatus(String userId) {
-    return repository.getPresenceStatus(userId);
+  Future<Either<Failure, void>> sendMessage(Message message) {
+    return repository.sendMessage(message);
   }
 
-  Future<Either<Failure, void>> deleteChat(String chatId) {
-    return repository.deleteChat(chatId);
+  Future<Either<Failure, void>> updateMessageStatus(
+    String messageId,
+    MessageStatus status,
+  ) {
+    return repository.updateMessageStatus(messageId, status);
   }
 
-  Future<Either<Failure, void>> markAsRead(String chatId) {
-    return repository.markAsRead(chatId);
+  Future<Either<Failure, void>> markMessageAsRead(
+    String chatId,
+    String messageId,
+    String userId,
+  ) {
+    return repository.markMessageAsRead(chatId, messageId, userId);
   }
 
-  Future<Either<Failure, void>> togglePin(String chatId, bool isPinned) {
-    return repository.togglePin(chatId, isPinned);
+  Future<Either<Failure, String>> uploadMedia(
+    String filePath,
+    String chatId,
+    MessageType type,
+    Function(double) onProgress,
+  ) {
+    return repository.uploadMedia(filePath, chatId, type, onProgress);
   }
 
-  Future<Either<Failure, void>> toggleMute(String chatId, bool isMuted) {
-    return repository.toggleMute(chatId, isMuted);
+  Future<Either<Failure, void>> setTypingStatus(
+    String chatId,
+    String userId,
+    bool isTyping,
+  ) {
+    return repository.setTypingStatus(chatId, userId, isTyping);
   }
 
-  Future<Either<Failure, List<ChatUserEntity>>> searchUsers(String query) {
-    return repository.searchUsers(query);
+  Future<Either<Failure, void>> updateLastSeen(String chatId, String userId) {
+    return repository.updateLastSeen(chatId, userId);
   }
 
-  Future<Either<Failure, String>> createChat(String currentUserId, String participantId) {
-    return repository.createChat(currentUserId, participantId);
+  Stream<Either<Failure, Chat>> getChatStream(String chatId) {
+    return repository.getChatStream(chatId);
+  }
+
+  Future<Either<Failure, void>> deleteMessage(String messageId) {
+    return repository.deleteMessage(messageId);
   }
 }

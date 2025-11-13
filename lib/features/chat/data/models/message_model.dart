@@ -1,162 +1,100 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../domain/entities/message_entity.dart';
+import '../../domain/entities/message.dart';
 
-class MessageModel {
-  final String id;
-  final String chatId;
-  final String senderId;
-  final String content;
-  final MessageType type;
-  final MessageStatus status;
-  final DateTime createdAt;
-  final DateTime? updatedAt;
-  final String? fileUrl;
-  final String? fileName;
-  final int? fileSize;
-  final String? thumbnailUrl;
-  final Map<String, dynamic> metadata;
-  final String? replyToMessageId;
-  final bool isDeleted;
-
+class MessageModel extends Message {
   const MessageModel({
-    required this.id,
-    required this.chatId,
-    required this.senderId,
-    required this.content,
-    required this.type,
-    required this.status,
-    required this.createdAt,
-    this.updatedAt,
-    this.fileUrl,
-    this.fileName,
-    this.fileSize,
-    this.thumbnailUrl,
-    this.metadata = const {},
-    this.replyToMessageId,
-    this.isDeleted = false,
+    required super.id,
+    required super.chatId,
+    required super.senderId,
+    required super.senderName,
+    super.senderAvatar,
+    required super.content,
+    required super.type,
+    required super.status,
+    required super.timestamp,
+    super.mediaUrl,
+    super.thumbnailUrl,
+    super.fileName,
+    super.fileSize,
+    super.replyToMessageId,
+    super.replyToMessage,
+    super.isDeleted,
+    super.readBy,
   });
 
-  factory MessageModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+  factory MessageModel.fromJson(Map<String, dynamic> json) {
     return MessageModel(
-      id: doc.id,
-      chatId: data['chatId'] as String,
-      senderId: data['senderId'] as String,
-      content: data['content'] as String? ?? '',
-      type: _typeFromString(data['type'] as String? ?? 'text'),
-      status: _statusFromString(data['status'] as String? ?? 'sent'),
-      createdAt: data['createdAt'] is Timestamp
-          ? (data['createdAt'] as Timestamp).toDate()
-          : DateTime.now(),
-      updatedAt: data['updatedAt'] is Timestamp
-          ? (data['updatedAt'] as Timestamp).toDate()
+      id: json['id'] as String,
+      chatId: json['chatId'] as String,
+      senderId: json['senderId'] as String,
+      senderName: json['senderName'] as String,
+      senderAvatar: json['senderAvatar'] as String?,
+      content: json['content'] as String,
+      type: MessageType.values.firstWhere(
+        (e) => e.name == json['type'],
+        orElse: () => MessageType.text,
+      ),
+      status: MessageStatus.values.firstWhere(
+        (e) => e.name == json['status'],
+        orElse: () => MessageStatus.sent,
+      ),
+      timestamp: (json['timestamp'] as Timestamp).toDate(),
+      mediaUrl: json['mediaUrl'] as String?,
+      thumbnailUrl: json['thumbnailUrl'] as String?,
+      fileName: json['fileName'] as String?,
+      fileSize: json['fileSize'] as int?,
+      replyToMessageId: json['replyToMessageId'] as String?,
+      isDeleted: json['isDeleted'] as bool? ?? false,
+      readBy: json['readBy'] != null
+          ? (json['readBy'] as Map<String, dynamic>).map(
+              (key, value) => MapEntry(key, (value as Timestamp).toDate()),
+            )
           : null,
-      fileUrl: data['fileUrl'] as String?,
-      fileName: data['fileName'] as String?,
-      fileSize: data['fileSize'] as int?,
-      thumbnailUrl: data['thumbnailUrl'] as String?,
-      metadata: data['metadata'] as Map<String, dynamic>? ?? {},
-      replyToMessageId: data['replyToMessageId'] as String?,
-      isDeleted: data['isDeleted'] as bool? ?? false,
-    );
-  }
-
-  factory MessageModel.fromEntity(MessageEntity entity) {
-    return MessageModel(
-      id: entity.id,
-      chatId: entity.chatId,
-      senderId: entity.senderId,
-      content: entity.content,
-      type: entity.type,
-      status: entity.status,
-      createdAt: entity.createdAt,
-      updatedAt: entity.updatedAt,
-      fileUrl: entity.fileUrl,
-      fileName: entity.fileName,
-      fileSize: entity.fileSize,
-      thumbnailUrl: entity.thumbnailUrl,
-      metadata: entity.metadata,
-      replyToMessageId: entity.replyToMessageId,
-      isDeleted: entity.isDeleted,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'chatId': chatId,
       'senderId': senderId,
+      'senderName': senderName,
+      'senderAvatar': senderAvatar,
       'content': content,
-      'type': _typeToString(type),
-      'status': _statusToString(status),
-      'createdAt': Timestamp.fromDate(createdAt),
-      'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
-      'fileUrl': fileUrl,
+      'type': type.name,
+      'status': status.name,
+      'timestamp': Timestamp.fromDate(timestamp),
+      'mediaUrl': mediaUrl,
+      'thumbnailUrl': thumbnailUrl,
       'fileName': fileName,
       'fileSize': fileSize,
-      'thumbnailUrl': thumbnailUrl,
-      'metadata': metadata,
       'replyToMessageId': replyToMessageId,
       'isDeleted': isDeleted,
+      'readBy': readBy?.map(
+        (key, value) => MapEntry(key, Timestamp.fromDate(value)),
+      ),
     };
   }
 
-  MessageEntity toEntity() {
-    return MessageEntity(
-      id: id,
-      chatId: chatId,
-      senderId: senderId,
-      content: content,
-      type: type,
-      status: status,
-      createdAt: createdAt,
-      updatedAt: updatedAt,
-      fileUrl: fileUrl,
-      fileName: fileName,
-      fileSize: fileSize,
-      thumbnailUrl: thumbnailUrl,
-      metadata: metadata,
-      replyToMessageId: replyToMessageId,
-      isDeleted: isDeleted,
+  factory MessageModel.fromEntity(Message message) {
+    return MessageModel(
+      id: message.id,
+      chatId: message.chatId,
+      senderId: message.senderId,
+      senderName: message.senderName,
+      senderAvatar: message.senderAvatar,
+      content: message.content,
+      type: message.type,
+      status: message.status,
+      timestamp: message.timestamp,
+      mediaUrl: message.mediaUrl,
+      thumbnailUrl: message.thumbnailUrl,
+      fileName: message.fileName,
+      fileSize: message.fileSize,
+      replyToMessageId: message.replyToMessageId,
+      replyToMessage: message.replyToMessage,
+      isDeleted: message.isDeleted,
+      readBy: message.readBy,
     );
-  }
-
-  static MessageType _typeFromString(String type) {
-    switch (type.toLowerCase()) {
-      case 'text':
-        return MessageType.text;
-      case 'image':
-        return MessageType.image;
-      case 'document':
-        return MessageType.document;
-      case 'video':
-        return MessageType.video;
-      default:
-        return MessageType.text;
-    }
-  }
-
-  static String _typeToString(MessageType type) {
-    return type.name;
-  }
-
-  static MessageStatus _statusFromString(String status) {
-    switch (status.toLowerCase()) {
-      case 'sending':
-        return MessageStatus.sending;
-      case 'sent':
-        return MessageStatus.sent;
-      case 'delivered':
-        return MessageStatus.delivered;
-      case 'read':
-        return MessageStatus.read;
-      case 'failed':
-        return MessageStatus.failed;
-      default:
-        return MessageStatus.sent;
-    }
-  }
-
-  static String _statusToString(MessageStatus status) {
-    return status.name;
   }
 }

@@ -1,117 +1,185 @@
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import '../../domain/entities/message.dart';
+import '../models/message_model.dart';
 import '../models/chat_model.dart';
 
 abstract class ChatRemoteDataSource {
-  Stream<List<ChatModel>> watchUserChats(String userId);
-  Stream<ChatModel> watchChat(String chatId);
-  Future<ChatModel> createChat(List<String> participantIds, Map<String, dynamic> participantInfo);
-  Future<void> updateChat(String chatId, Map<String, dynamic> updates);
-  Future<void> deleteChat(String chatId);
-  Future<void> markMessagesAsRead(String chatId, String userId);
-  Future<ChatModel?> getChatByParticipants(List<String> participantIds);
+  Stream<List<MessageModel>> getMessagesStream(String chatId);
+  Future<void> sendMessage(MessageModel message);
+  Future<void> updateMessageStatus(String messageId, MessageStatus status);
+  Future<void> markMessageAsRead(
+    String chatId,
+    String messageId,
+    String userId,
+  );
+  Future<String> uploadMedia(
+    String filePath,
+    String chatId,
+    MessageType type,
+    Function(double) onProgress,
+  );
+  Future<void> setTypingStatus(String chatId, String userId, bool isTyping);
+  Future<void> updateLastSeen(String chatId, String userId);
+  Stream<ChatModel> getChatStream(String chatId);
+  Future<void> deleteMessage(String messageId);
 }
 
 class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   final FirebaseFirestore firestore;
+  final FirebaseStorage storage;
 
-  ChatRemoteDataSourceImpl({required this.firestore});
+  ChatRemoteDataSourceImpl({
+    required this.firestore,
+    required this.storage,
+  });
 
   @override
-  Stream<List<ChatModel>> watchUserChats(String userId) {
+  Stream<List<MessageModel>> getMessagesStream(String chatId) {
     return firestore
-        .collection('chats')
-        .where('participantIds', arrayContains: userId)
-        .orderBy('updatedAt', descending: true)
-        .snapshots()
-        .map((snapshot) {
-      return snapshot.docs.map((doc) => ChatModel.fromFirestore(doc)).toList();
-    });
-  }
-
-  @override
-  Stream<ChatModel> watchChat(String chatId) {
-    return firestore
-        .collection('chats')
-        .doc(chatId)
-        .snapshots()
-        .map((snapshot) {
-      if (!snapshot.exists) {
-        throw Exception('Chat not found');
-      }
-      return ChatModel.fromFirestore(snapshot);
-    });
-  }
-
-  @override
-  Future<ChatModel> createChat(List<String> participantIds, Map<String, dynamic> participantInfo) async {
-    final now = DateTime.now();
-    final chatData = {
-      'participantIds': participantIds,
-      'participantInfo': participantInfo,
-      'lastMessage': null,
-      'lastMessageSenderId': null,
-      'lastMessageAt': null,
-      'unreadCount': {for (var id in participantIds) id: 0},
-      'createdAt': Timestamp.fromDate(now),
-      'updatedAt': Timestamp.fromDate(now),
-      'metadata': {},
-      'chatType': participantIds.length == 2 ? 'direct' : 'group',
-    };
-
-    final docRef = await firestore.collection('chats').add(chatData);
-    final doc = await docRef.get();
-    return ChatModel.fromFirestore(doc);
-  }
-
-  @override
-  Future<void> updateChat(String chatId, Map<String, dynamic> updates) async {
-    await firestore.collection('chats').doc(chatId).update({
-      ...updates,
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
-  }
-
-  @override
-  Future<void> deleteChat(String chatId) async {
-    await firestore.collection('chats').doc(chatId).delete();
-  }
-
-  @override
-  Future<void> markMessagesAsRead(String chatId, String userId) async {
-    await firestore.collection('chats').doc(chatId).update({
-      'unreadCount.$userId': 0,
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
-
-    final messagesQuery = await firestore
         .collection('chats')
         .doc(chatId)
         .collection('messages')
-        .where('senderId', isNotEqualTo: userId)
-        .where('status', isNotEqualTo: 'read')
-        .get();
-
-    final batch = firestore.batch();
-    for (var doc in messagesQuery.docs) {
-      batch.update(doc.reference, {'status': 'read'});
-    }
-    await batch.commit();
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        return MessageModel.fromJson(data);
+      }).toList();
+    });
   }
 
   @override
-  Future<ChatModel?> getChatByParticipants(List<String> participantIds) async {
-    final sortedIds = List<String>.from(participantIds)..sort();
-    
-    final querySnapshot = await firestore
+  Future<void> sendMessage(MessageModel message) async {
+    final messagesRef = firestore
         .collection('chats')
-        .where('participantIds', isEqualTo: sortedIds)
+        .doc(message.chatId)
+        .collection('messages');
+
+    final messageData = message.toJson();
+    
+    if (message.id.isEmpty || message.id.startsWith('temp_')) {
+      await messagesRef.add(messageData);
+    } else {
+      await messagesRef.doc(message.id).set(messageData);
+    }
+
+    await firestore.collection('chats').doc(message.chatId).update({
+      'lastMessage': messageData,
+      'lastMessageTime': message.timestamp,
+    });
+  }
+
+  @override
+  Future<void> updateMessageStatus(String messageId, MessageStatus status) async {
+    final messagesQuery = await firestore
+        .collectionGroup('messages')
+        .where('id', isEqualTo: messageId)
         .limit(1)
         .get();
 
-    if (querySnapshot.docs.isEmpty) {
-      return null;
+    if (messagesQuery.docs.isNotEmpty) {
+      await messagesQuery.docs.first.reference.update({
+        'status': status.name,
+      });
     }
+  }
 
-    return ChatModel.fromFirestore(querySnapshot.docs.first);
+  @override
+  Future<void> markMessageAsRead(
+    String chatId,
+    String messageId,
+    String userId,
+  ) async {
+    final messageRef = firestore
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .doc(messageId);
+
+    await messageRef.update({
+      'readBy.$userId': FieldValue.serverTimestamp(),
+      'status': MessageStatus.read.name,
+    });
+  }
+
+  @override
+  Future<String> uploadMedia(
+    String filePath,
+    String chatId,
+    MessageType type,
+    Function(double) onProgress,
+  ) async {
+    final file = File(filePath);
+    final fileName = file.path.split('/').last;
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final String folder = type == MessageType.image
+        ? 'images'
+        : type == MessageType.video
+            ? 'videos'
+            : 'documents';
+
+    final ref = storage.ref().child('chats/$chatId/$folder/$timestamp-$fileName');
+    
+    final uploadTask = ref.putFile(file);
+
+    uploadTask.snapshotEvents.listen((snapshot) {
+      final progress = snapshot.bytesTransferred / snapshot.totalBytes;
+      onProgress(progress);
+    });
+
+    final snapshot = await uploadTask;
+    final downloadUrl = await snapshot.ref.getDownloadURL();
+
+    return downloadUrl;
+  }
+
+  @override
+  Future<void> setTypingStatus(
+    String chatId,
+    String userId,
+    bool isTyping,
+  ) async {
+    await firestore.collection('chats').doc(chatId).update({
+      'isTyping.$userId': isTyping,
+    });
+  }
+
+  @override
+  Future<void> updateLastSeen(String chatId, String userId) async {
+    await firestore.collection('chats').doc(chatId).update({
+      'lastSeen.$userId': FieldValue.serverTimestamp(),
+    });
+  }
+
+  @override
+  Stream<ChatModel> getChatStream(String chatId) {
+    return firestore.collection('chats').doc(chatId).snapshots().map((snapshot) {
+      if (!snapshot.exists) {
+        throw Exception('Chat not found');
+      }
+      final data = snapshot.data()!;
+      data['id'] = snapshot.id;
+      return ChatModel.fromJson(data);
+    });
+  }
+
+  @override
+  Future<void> deleteMessage(String messageId) async {
+    final messagesQuery = await firestore
+        .collectionGroup('messages')
+        .where('id', isEqualTo: messageId)
+        .limit(1)
+        .get();
+
+    if (messagesQuery.docs.isNotEmpty) {
+      await messagesQuery.docs.first.reference.update({
+        'isDeleted': true,
+        'content': 'This message was deleted',
+      });
+    }
   }
 }

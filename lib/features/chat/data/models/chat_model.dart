@@ -1,67 +1,63 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../domain/entities/chat_entity.dart';
+import '../../domain/entities/chat.dart';
+import 'message_model.dart';
 
-class ChatModel extends ChatEntity {
+class ChatModel extends Chat {
   const ChatModel({
     required super.id,
-    required super.participantId,
-    required super.participantName,
-    super.participantAvatar,
+    required super.participantIds,
+    required super.participantNames,
+    required super.participantAvatars,
     super.lastMessage,
     super.lastMessageTime,
-    super.unreadCount,
-    super.presenceStatus,
-    super.lastSeen,
-    super.isPinned,
-    super.isMuted,
+    required super.unreadCount,
+    required super.isTyping,
+    required super.lastSeen,
+    required super.createdAt,
   });
 
-  factory ChatModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+  factory ChatModel.fromJson(Map<String, dynamic> json) {
     return ChatModel(
-      id: doc.id,
-      participantId: data['participantId'] ?? '',
-      participantName: data['participantName'] ?? 'Unknown',
-      participantAvatar: data['participantAvatar'],
-      lastMessage: data['lastMessage'],
-      lastMessageTime: data['lastMessageTime'] != null
-          ? (data['lastMessageTime'] as Timestamp).toDate()
+      id: json['id'] as String,
+      participantIds: List<String>.from(json['participantIds'] as List),
+      participantNames: Map<String, String>.from(json['participantNames'] as Map),
+      participantAvatars: Map<String, String?>.from(json['participantAvatars'] as Map),
+      lastMessage: json['lastMessage'] != null
+          ? MessageModel.fromJson(json['lastMessage'] as Map<String, dynamic>)
           : null,
-      unreadCount: data['unreadCount'] ?? 0,
-      presenceStatus: _presenceFromString(data['presenceStatus']),
-      lastSeen: data['lastSeen'] != null
-          ? (data['lastSeen'] as Timestamp).toDate()
+      lastMessageTime: json['lastMessageTime'] != null
+          ? (json['lastMessageTime'] as Timestamp).toDate()
           : null,
-      isPinned: data['isPinned'] ?? false,
-      isMuted: data['isMuted'] ?? false,
+      unreadCount: Map<String, int>.from(json['unreadCount'] as Map),
+      isTyping: Map<String, bool>.from(json['isTyping'] as Map),
+      lastSeen: (json['lastSeen'] as Map).map(
+        (key, value) => MapEntry(
+          key as String,
+          value != null ? (value as Timestamp).toDate() : null,
+        ),
+      ),
+      createdAt: (json['createdAt'] as Timestamp).toDate(),
     );
   }
 
-  Map<String, dynamic> toFirestore() {
+  Map<String, dynamic> toJson() {
     return {
-      'participantId': participantId,
-      'participantName': participantName,
-      'participantAvatar': participantAvatar,
-      'lastMessage': lastMessage,
-      'lastMessageTime': lastMessageTime != null
-          ? Timestamp.fromDate(lastMessageTime!)
+      'id': id,
+      'participantIds': participantIds,
+      'participantNames': participantNames,
+      'participantAvatars': participantAvatars,
+      'lastMessage': lastMessage != null
+          ? MessageModel.fromEntity(lastMessage!).toJson()
           : null,
+      'lastMessageTime':
+          lastMessageTime != null ? Timestamp.fromDate(lastMessageTime!) : null,
       'unreadCount': unreadCount,
-      'presenceStatus': presenceStatus.toString().split('.').last,
-      'lastSeen': lastSeen != null ? Timestamp.fromDate(lastSeen!) : null,
-      'isPinned': isPinned,
-      'isMuted': isMuted,
+      'isTyping': isTyping,
+      'lastSeen': lastSeen.map(
+        (key, value) =>
+            MapEntry(key, value != null ? Timestamp.fromDate(value) : null),
+      ),
+      'createdAt': Timestamp.fromDate(createdAt),
     };
-  }
-
-  static PresenceStatus _presenceFromString(String? status) {
-    switch (status) {
-      case 'online':
-        return PresenceStatus.online;
-      case 'typing':
-        return PresenceStatus.typing;
-      default:
-        return PresenceStatus.offline;
-    }
   }
 }

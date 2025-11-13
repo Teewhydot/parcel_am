@@ -1,10 +1,11 @@
 import 'package:dartz/dartz.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/network/network_info.dart';
-import '../../domain/entities/chat_entity.dart';
-import '../../domain/entities/user_entity.dart';
+import '../../domain/entities/message.dart';
+import '../../domain/entities/chat.dart';
 import '../../domain/repositories/chat_repository.dart';
-import '../datasources/chat_remote_datasource.dart';
+import '../datasources/chat_remote_data_source.dart';
+import '../models/message_model.dart';
 
 class ChatRepositoryImpl implements ChatRepository {
   final ChatRemoteDataSource remoteDataSource;
@@ -16,30 +17,30 @@ class ChatRepositoryImpl implements ChatRepository {
   });
 
   @override
-  Stream<Either<Failure, List<ChatEntity>>> getChatList(String userId) {
-    return remoteDataSource.getChatList(userId).map((chats) {
-      return Right(chats);
-    }).handleError((error) {
-      return Left(ServerFailure(failureMessage: error.toString()));
-    });
-  }
+  Stream<Either<Failure, List<Message>>> getMessagesStream(String chatId) async* {
+    if (!await networkInfo.isConnected) {
+      yield const Left(NetworkFailure(failureMessage: 'No internet connection'));
+      return;
+    }
 
-  @override
-  Stream<Either<Failure, PresenceStatus>> getPresenceStatus(String userId) {
-    return remoteDataSource.getPresenceStatus(userId).map((status) {
-      return Right(status);
-    }).handleError((error) {
-      return Left(ServerFailure(failureMessage: error.toString()));
-    });
-  }
-
-  @override
-  Future<Either<Failure, void>> deleteChat(String chatId) async {
     try {
-      if (!await networkInfo.isConnected) {
-        return const Left(NoInternetFailure(failureMessage: 'No internet connection'));
+      await for (final messages in remoteDataSource.getMessagesStream(chatId)) {
+        yield Right(messages);
       }
-      await remoteDataSource.deleteChat(chatId);
+    } catch (e) {
+      yield Left(ServerFailure(failureMessage: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> sendMessage(Message message) async {
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure(failureMessage: 'No internet connection'));
+    }
+
+    try {
+      final messageModel = MessageModel.fromEntity(message);
+      await remoteDataSource.sendMessage(messageModel);
       return const Right(null);
     } catch (e) {
       return Left(ServerFailure(failureMessage: e.toString()));
@@ -47,12 +48,16 @@ class ChatRepositoryImpl implements ChatRepository {
   }
 
   @override
-  Future<Either<Failure, void>> markAsRead(String chatId) async {
+  Future<Either<Failure, void>> updateMessageStatus(
+    String messageId,
+    MessageStatus status,
+  ) async {
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure(failureMessage: 'No internet connection'));
+    }
+
     try {
-      if (!await networkInfo.isConnected) {
-        return const Left(NoInternetFailure(failureMessage: 'No internet connection'));
-      }
-      await remoteDataSource.markAsRead(chatId);
+      await remoteDataSource.updateMessageStatus(messageId, status);
       return const Right(null);
     } catch (e) {
       return Left(ServerFailure(failureMessage: e.toString()));
@@ -60,12 +65,17 @@ class ChatRepositoryImpl implements ChatRepository {
   }
 
   @override
-  Future<Either<Failure, void>> togglePin(String chatId, bool isPinned) async {
+  Future<Either<Failure, void>> markMessageAsRead(
+    String chatId,
+    String messageId,
+    String userId,
+  ) async {
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure(failureMessage: 'No internet connection'));
+    }
+
     try {
-      if (!await networkInfo.isConnected) {
-        return const Left(NoInternetFailure(failureMessage: 'No internet connection'));
-      }
-      await remoteDataSource.togglePin(chatId, isPinned);
+      await remoteDataSource.markMessageAsRead(chatId, messageId, userId);
       return const Right(null);
     } catch (e) {
       return Left(ServerFailure(failureMessage: e.toString()));
@@ -73,12 +83,41 @@ class ChatRepositoryImpl implements ChatRepository {
   }
 
   @override
-  Future<Either<Failure, void>> toggleMute(String chatId, bool isMuted) async {
+  Future<Either<Failure, String>> uploadMedia(
+    String filePath,
+    String chatId,
+    MessageType type,
+    Function(double) onProgress,
+  ) async {
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure(failureMessage: 'No internet connection'));
+    }
+
     try {
-      if (!await networkInfo.isConnected) {
-        return const Left(NoInternetFailure(failureMessage: 'No internet connection'));
-      }
-      await remoteDataSource.toggleMute(chatId, isMuted);
+      final url = await remoteDataSource.uploadMedia(
+        filePath,
+        chatId,
+        type,
+        onProgress,
+      );
+      return Right(url);
+    } catch (e) {
+      return Left(ServerFailure(failureMessage: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> setTypingStatus(
+    String chatId,
+    String userId,
+    bool isTyping,
+  ) async {
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure(failureMessage: 'No internet connection'));
+    }
+
+    try {
+      await remoteDataSource.setTypingStatus(chatId, userId, isTyping);
       return const Right(null);
     } catch (e) {
       return Left(ServerFailure(failureMessage: e.toString()));
@@ -86,26 +125,44 @@ class ChatRepositoryImpl implements ChatRepository {
   }
 
   @override
-  Future<Either<Failure, List<ChatUserEntity>>> searchUsers(String query) async {
+  Future<Either<Failure, void>> updateLastSeen(String chatId, String userId) async {
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure(failureMessage: 'No internet connection'));
+    }
+
     try {
-      if (!await networkInfo.isConnected) {
-        return const Left(NoInternetFailure(failureMessage: 'No internet connection'));
-      }
-      final users = await remoteDataSource.searchUsers(query);
-      return Right(users);
+      await remoteDataSource.updateLastSeen(chatId, userId);
+      return const Right(null);
     } catch (e) {
       return Left(ServerFailure(failureMessage: e.toString()));
     }
   }
 
   @override
-  Future<Either<Failure, String>> createChat(String currentUserId, String participantId) async {
+  Stream<Either<Failure, Chat>> getChatStream(String chatId) async* {
+    if (!await networkInfo.isConnected) {
+      yield const Left(NetworkFailure(failureMessage: 'No internet connection'));
+      return;
+    }
+
     try {
-      if (!await networkInfo.isConnected) {
-        return const Left(NoInternetFailure(failureMessage: 'No internet connection'));
+      await for (final chat in remoteDataSource.getChatStream(chatId)) {
+        yield Right(chat);
       }
-      final chatId = await remoteDataSource.createChat(currentUserId, participantId);
-      return Right(chatId);
+    } catch (e) {
+      yield Left(ServerFailure(failureMessage: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> deleteMessage(String messageId) async {
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure(failureMessage: 'No internet connection'));
+    }
+
+    try {
+      await remoteDataSource.deleteMessage(messageId);
+      return const Right(null);
     } catch (e) {
       return Left(ServerFailure(failureMessage: e.toString()));
     }

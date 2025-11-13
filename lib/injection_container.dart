@@ -32,7 +32,7 @@ import 'features/wallet/data/datasources/wallet_remote_datasource.dart';
 
 import 'features/kyc/data/datasources/kyc_remote_datasource.dart' as kyc_ds;
 
-import 'features/chat/data/datasources/chat_remote_datasource.dart';
+import 'features/chat/data/datasources/chat_remote_data_source.dart';
 import 'features/chat/data/repositories/chat_repository_impl.dart';
 import 'features/chat/domain/repositories/chat_repository.dart';
 import 'features/chat/domain/usecases/chat_usecase.dart';
@@ -94,6 +94,7 @@ Future<void> init() async {
   //! Features - Chat Data Sources
   sl.registerLazySingleton<ChatRemoteDataSource>(() => ChatRemoteDataSourceImpl(
     firestore: sl(),
+    storage: sl(),
   ));
 
   //! Features - Escrow Repository

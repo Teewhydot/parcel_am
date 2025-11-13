@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../domain/entities/message.dart';
 
 abstract class ChatEvent extends Equatable {
   const ChatEvent();
@@ -7,77 +8,121 @@ abstract class ChatEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-class ChatLoadRequested extends ChatEvent {
+class LoadMessages extends ChatEvent {
+  final String chatId;
+
+  const LoadMessages(this.chatId);
+
+  @override
+  List<Object> get props => [chatId];
+}
+
+class LoadChat extends ChatEvent {
+  final String chatId;
+
+  const LoadChat(this.chatId);
+
+  @override
+  List<Object> get props => [chatId];
+}
+
+class SendMessage extends ChatEvent {
+  final Message message;
+
+  const SendMessage(this.message);
+
+  @override
+  List<Object> get props => [message];
+}
+
+class SendMediaMessage extends ChatEvent {
+  final String filePath;
+  final String chatId;
+  final String senderId;
+  final String senderName;
+  final String? senderAvatar;
+  final MessageType type;
+  final String? replyToMessageId;
+
+  const SendMediaMessage({
+    required this.filePath,
+    required this.chatId,
+    required this.senderId,
+    required this.senderName,
+    this.senderAvatar,
+    required this.type,
+    this.replyToMessageId,
+  });
+
+  @override
+  List<Object?> get props => [
+        filePath,
+        chatId,
+        senderId,
+        senderName,
+        senderAvatar,
+        type,
+        replyToMessageId,
+      ];
+}
+
+class MarkMessageAsRead extends ChatEvent {
+  final String chatId;
+  final String messageId;
   final String userId;
 
-  const ChatLoadRequested(this.userId);
+  const MarkMessageAsRead({
+    required this.chatId,
+    required this.messageId,
+    required this.userId,
+  });
 
   @override
-  List<Object> get props => [userId];
+  List<Object> get props => [chatId, messageId, userId];
 }
 
-class ChatDeleteRequested extends ChatEvent {
+class SetTypingStatus extends ChatEvent {
   final String chatId;
+  final String userId;
+  final bool isTyping;
 
-  const ChatDeleteRequested(this.chatId);
+  const SetTypingStatus({
+    required this.chatId,
+    required this.userId,
+    required this.isTyping,
+  });
 
   @override
-  List<Object> get props => [chatId];
+  List<Object> get props => [chatId, userId, isTyping];
 }
 
-class ChatMarkAsReadRequested extends ChatEvent {
+class UpdateLastSeen extends ChatEvent {
   final String chatId;
+  final String userId;
 
-  const ChatMarkAsReadRequested(this.chatId);
+  const UpdateLastSeen({
+    required this.chatId,
+    required this.userId,
+  });
 
   @override
-  List<Object> get props => [chatId];
+  List<Object> get props => [chatId, userId];
 }
 
-class ChatTogglePinRequested extends ChatEvent {
-  final String chatId;
-  final bool isPinned;
+class SetReplyToMessage extends ChatEvent {
+  final Message? message;
 
-  const ChatTogglePinRequested(this.chatId, this.isPinned);
+  const SetReplyToMessage(this.message);
 
   @override
-  List<Object> get props => [chatId, isPinned];
+  List<Object?> get props => [message];
 }
 
-class ChatToggleMuteRequested extends ChatEvent {
-  final String chatId;
-  final bool isMuted;
+class DeleteMessage extends ChatEvent {
+  final String messageId;
 
-  const ChatToggleMuteRequested(this.chatId, this.isMuted);
-
-  @override
-  List<Object> get props => [chatId, isMuted];
-}
-
-class ChatSearchUsersRequested extends ChatEvent {
-  final String query;
-
-  const ChatSearchUsersRequested(this.query);
+  const DeleteMessage(this.messageId);
 
   @override
-  List<Object> get props => [query];
-}
-
-class ChatCreateRequested extends ChatEvent {
-  final String currentUserId;
-  final String participantId;
-
-  const ChatCreateRequested(this.currentUserId, this.participantId);
-
-  @override
-  List<Object> get props => [currentUserId, participantId];
-}
-
-class ChatFilterChanged extends ChatEvent {
-  final String filter;
-
-  const ChatFilterChanged(this.filter);
-
-  @override
-  List<Object> get props => [filter];
+  List<Object> get props => [messageId];
 }

@@ -1,213 +1,208 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/bloc/base/base_bloc.dart';
-import '../../../../core/bloc/base/base_state.dart';
+import '../../domain/entities/message.dart';
 import '../../domain/usecases/chat_usecase.dart';
 import 'chat_event.dart';
-import 'chat_data.dart';
+import 'chat_state.dart';
 
-class ChatBloc extends BaseBloC<ChatEvent, BaseState<ChatData>> {
+class ChatBloc extends Bloc<ChatEvent, ChatState> {
   final ChatUseCase chatUseCase;
+  StreamSubscription? _messagesSubscription;
   StreamSubscription? _chatSubscription;
 
-  ChatBloc({required this.chatUseCase}) : super(const InitialState<ChatData>()) {
-    on<ChatLoadRequested>(_onChatLoadRequested);
-    on<ChatDeleteRequested>(_onChatDeleteRequested);
-    on<ChatMarkAsReadRequested>(_onChatMarkAsReadRequested);
-    on<ChatTogglePinRequested>(_onChatTogglePinRequested);
-    on<ChatToggleMuteRequested>(_onChatToggleMuteRequested);
-    on<ChatSearchUsersRequested>(_onChatSearchUsersRequested);
-    on<ChatCreateRequested>(_onChatCreateRequested);
-    on<ChatFilterChanged>(_onChatFilterChanged);
+  ChatBloc({required this.chatUseCase}) : super(ChatInitial()) {
+    on<LoadMessages>(_onLoadMessages);
+    on<LoadChat>(_onLoadChat);
+    on<SendMessage>(_onSendMessage);
+    on<SendMediaMessage>(_onSendMediaMessage);
+    on<MarkMessageAsRead>(_onMarkMessageAsRead);
+    on<SetTypingStatus>(_onSetTypingStatus);
+    on<UpdateLastSeen>(_onUpdateLastSeen);
+    on<SetReplyToMessage>(_onSetReplyToMessage);
+    on<DeleteMessage>(_onDeleteMessage);
   }
 
-  Future<void> _onChatLoadRequested(
-    ChatLoadRequested event,
-    Emitter<BaseState<ChatData>> emit,
+  Future<void> _onLoadMessages(
+    LoadMessages event,
+    Emitter<ChatState> emit,
   ) async {
-    emit(const LoadingState<ChatData>(message: 'Loading chats...'));
+    emit(ChatLoading());
 
-    await _chatSubscription?.cancel();
+    await _messagesSubscription?.cancel();
 
-    _chatSubscription = chatUseCase.getChatList(event.userId).listen(
-      (either) {
-        either.fold(
-          (failure) {
-            if (!isClosed) {
-              emit(ErrorState<ChatData>(
-                errorMessage: failure.failureMessage,
-                errorCode: 'chat_load_failed',
-              ));
-            }
-          },
-          (chats) {
-            if (!isClosed) {
-              final currentData = _getCurrentChatData();
-              emit(LoadedState<ChatData>(
-                data: currentData.copyWith(
-                  chats: chats,
-                  currentUserId: event.userId,
-                ),
-                lastUpdated: DateTime.now(),
-              ));
+    _messagesSubscription = chatUseCase.getMessagesStream(event.chatId).listen(
+      (result) {
+        result.fold(
+          (failure) => add(const LoadMessages('')),
+          (messages) {
+            if (state is MessagesLoaded) {
+              emit((state as MessagesLoaded).copyWith(messages: messages));
+            } else {
+              emit(MessagesLoaded(messages: messages));
             }
           },
         );
       },
-      onError: (error) {
-        if (!isClosed) {
-          emit(ErrorState<ChatData>(
-            errorMessage: error.toString(),
-            errorCode: 'chat_stream_error',
+    );
+  }
+
+  Future<void> _onLoadChat(
+    LoadChat event,
+    Emitter<ChatState> emit,
+  ) async {
+    await _chatSubscription?.cancel();
+
+    _chatSubscription = chatUseCase.getChatStream(event.chatId).listen(
+      (result) {
+        result.fold(
+          (failure) => null,
+          (chat) {
+            if (state is MessagesLoaded) {
+              emit((state as MessagesLoaded).copyWith(chat: chat));
+            }
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _onSendMessage(
+    SendMessage event,
+    Emitter<ChatState> emit,
+  ) async {
+    emit(MessageSending(event.message));
+
+    final result = await chatUseCase.sendMessage(event.message);
+
+    result.fold(
+      (failure) => emit(ChatError(failure.failureMessage)),
+      (_) {
+        emit(MessageSent(event.message));
+        if (state is MessagesLoaded) {
+          emit((state as MessagesLoaded).copyWith(clearReplyToMessage: true));
+        }
+      },
+    );
+  }
+
+  Future<void> _onSendMediaMessage(
+    SendMediaMessage event,
+    Emitter<ChatState> emit,
+  ) async {
+    if (state is MessagesLoaded) {
+      emit((state as MessagesLoaded).copyWith(
+        isUploading: true,
+        uploadProgress: 0.0,
+      ));
+    }
+
+    final uploadResult = await chatUseCase.uploadMedia(
+      event.filePath,
+      event.chatId,
+      event.type,
+      (progress) {
+        if (state is MessagesLoaded) {
+          emit((state as MessagesLoaded).copyWith(
+            uploadProgress: progress,
+            isUploading: true,
+          ));
+        }
+      },
+    );
+
+    await uploadResult.fold(
+      (failure) async {
+        emit(ChatError(failure.failureMessage));
+        if (state is MessagesLoaded) {
+          emit((state as MessagesLoaded).copyWith(isUploading: false));
+        }
+      },
+      (mediaUrl) async {
+        final fileName = event.filePath.split('/').last;
+        
+        final message = Message(
+          id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
+          chatId: event.chatId,
+          senderId: event.senderId,
+          senderName: event.senderName,
+          senderAvatar: event.senderAvatar,
+          content: event.type == MessageType.document ? fileName : '',
+          type: event.type,
+          status: MessageStatus.sending,
+          timestamp: DateTime.now(),
+          mediaUrl: mediaUrl,
+          fileName: event.type == MessageType.document ? fileName : null,
+          replyToMessageId: event.replyToMessageId,
+        );
+
+        add(SendMessage(message));
+
+        if (state is MessagesLoaded) {
+          emit((state as MessagesLoaded).copyWith(
+            isUploading: false,
+            uploadProgress: 0.0,
           ));
         }
       },
     );
   }
 
-  Future<void> _onChatDeleteRequested(
-    ChatDeleteRequested event,
-    Emitter<BaseState<ChatData>> emit,
+  Future<void> _onMarkMessageAsRead(
+    MarkMessageAsRead event,
+    Emitter<ChatState> emit,
   ) async {
-    final result = await chatUseCase.deleteChat(event.chatId);
-
-    result.fold(
-      (failure) {
-        emit(ErrorState<ChatData>(
-          errorMessage: failure.failureMessage,
-          errorCode: 'chat_delete_failed',
-        ));
-      },
-      (_) {
-        emit(const SuccessState<ChatData>(
-          successMessage: 'Chat deleted successfully',
-        ));
-      },
+    await chatUseCase.markMessageAsRead(
+      event.chatId,
+      event.messageId,
+      event.userId,
     );
   }
 
-  Future<void> _onChatMarkAsReadRequested(
-    ChatMarkAsReadRequested event,
-    Emitter<BaseState<ChatData>> emit,
+  Future<void> _onSetTypingStatus(
+    SetTypingStatus event,
+    Emitter<ChatState> emit,
   ) async {
-    await chatUseCase.markAsRead(event.chatId);
-  }
-
-  Future<void> _onChatTogglePinRequested(
-    ChatTogglePinRequested event,
-    Emitter<BaseState<ChatData>> emit,
-  ) async {
-    final result = await chatUseCase.togglePin(event.chatId, event.isPinned);
-
-    result.fold(
-      (failure) {
-        emit(ErrorState<ChatData>(
-          errorMessage: failure.failureMessage,
-          errorCode: 'chat_pin_failed',
-        ));
-      },
-      (_) {},
+    await chatUseCase.setTypingStatus(
+      event.chatId,
+      event.userId,
+      event.isTyping,
     );
   }
 
-  Future<void> _onChatToggleMuteRequested(
-    ChatToggleMuteRequested event,
-    Emitter<BaseState<ChatData>> emit,
+  Future<void> _onUpdateLastSeen(
+    UpdateLastSeen event,
+    Emitter<ChatState> emit,
   ) async {
-    final result = await chatUseCase.toggleMute(event.chatId, event.isMuted);
-
-    result.fold(
-      (failure) {
-        emit(ErrorState<ChatData>(
-          errorMessage: failure.failureMessage,
-          errorCode: 'chat_mute_failed',
-        ));
-      },
-      (_) {},
-    );
+    await chatUseCase.updateLastSeen(event.chatId, event.userId);
   }
 
-  Future<void> _onChatSearchUsersRequested(
-    ChatSearchUsersRequested event,
-    Emitter<BaseState<ChatData>> emit,
+  Future<void> _onSetReplyToMessage(
+    SetReplyToMessage event,
+    Emitter<ChatState> emit,
   ) async {
-    if (event.query.isEmpty) {
-      final currentData = _getCurrentChatData();
-      emit(LoadedState<ChatData>(
-        data: currentData.copyWith(searchResults: []),
-        lastUpdated: DateTime.now(),
+    if (state is MessagesLoaded) {
+      emit((state as MessagesLoaded).copyWith(
+        replyToMessage: event.message,
+        clearReplyToMessage: event.message == null,
       ));
-      return;
     }
+  }
 
-    emit(const LoadingState<ChatData>(message: 'Searching users...'));
-
-    final result = await chatUseCase.searchUsers(event.query);
+  Future<void> _onDeleteMessage(
+    DeleteMessage event,
+    Emitter<ChatState> emit,
+  ) async {
+    final result = await chatUseCase.deleteMessage(event.messageId);
 
     result.fold(
-      (failure) {
-        emit(ErrorState<ChatData>(
-          errorMessage: failure.failureMessage,
-          errorCode: 'user_search_failed',
-        ));
-      },
-      (users) {
-        final currentData = _getCurrentChatData();
-        emit(LoadedState<ChatData>(
-          data: currentData.copyWith(searchResults: users),
-          lastUpdated: DateTime.now(),
-        ));
-      },
+      (failure) => emit(ChatError(failure.failureMessage)),
+      (_) => null,
     );
-  }
-
-  Future<void> _onChatCreateRequested(
-    ChatCreateRequested event,
-    Emitter<BaseState<ChatData>> emit,
-  ) async {
-    emit(const LoadingState<ChatData>(message: 'Creating chat...'));
-
-    final result = await chatUseCase.createChat(
-      event.currentUserId,
-      event.participantId,
-    );
-
-    result.fold(
-      (failure) {
-        emit(ErrorState<ChatData>(
-          errorMessage: failure.failureMessage,
-          errorCode: 'chat_create_failed',
-        ));
-      },
-      (chatId) {
-        emit(SuccessState<ChatData>(
-          successMessage: 'Chat created successfully',
-          metadata: {'chatId': chatId},
-        ));
-      },
-    );
-  }
-
-  Future<void> _onChatFilterChanged(
-    ChatFilterChanged event,
-    Emitter<BaseState<ChatData>> emit,
-  ) async {
-    final currentData = _getCurrentChatData();
-    emit(LoadedState<ChatData>(
-      data: currentData.copyWith(filter: event.filter),
-      lastUpdated: DateTime.now(),
-    ));
-  }
-
-  ChatData _getCurrentChatData() {
-    if (state is DataState<ChatData> && (state as DataState<ChatData>).data != null) {
-      return (state as DataState<ChatData>).data!;
-    }
-    return const ChatData();
   }
 
   @override
   Future<void> close() {
+    _messagesSubscription?.cancel();
     _chatSubscription?.cancel();
     return super.close();
   }
