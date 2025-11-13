@@ -77,6 +77,7 @@ enum EscrowStatus {
   held,
   released,
   cancelled,
+  disputed,
 }
 
 class Transaction {

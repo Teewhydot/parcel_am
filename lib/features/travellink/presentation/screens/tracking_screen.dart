@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_scaffold.dart';
 import '../../../../core/widgets/app_container.dart';
@@ -10,6 +11,10 @@ import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../injection_container.dart';
 import '../widgets/bottom_navigation.dart';
 import '../../domain/models/package_model.dart';
+import '../bloc/package/package_bloc.dart';
+import '../bloc/package/package_event.dart';
+import '../bloc/package/package_state.dart';
+import '../../data/datasources/package_remote_data_source.dart';
 
 class TrackingScreen extends StatefulWidget {
   const TrackingScreen({super.key, this.packageId});
@@ -22,257 +27,238 @@ class TrackingScreen extends StatefulWidget {
 
 class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStateMixin {
   late TabController _tabController;
-  bool _isRefreshing = false;
-  bool _liveTracking = true;
-  PackageModel? _selectedPackage;
-
-  final List<PackageModel> _mockPackages = [
-    PackageModel(
-      id: 'TLN001',
-      title: 'iPhone 15 Pro Max',
-      description: 'Brand new iPhone from London to Lagos',
-      status: 'in_transit',
-      progress: 65,
-      origin: LocationInfo(
-        name: 'London, UK',
-        address: 'Heathrow Airport, London',
-        latitude: 51.4700,
-        longitude: -0.4543,
-      ),
-      destination: LocationInfo(
-        name: 'Lagos, Nigeria', 
-        address: 'Victoria Island, Lagos',
-        latitude: 6.5244,
-        longitude: 3.3792,
-      ),
-      currentLocation: LocationInfo(
-        name: 'Murtala Muhammed Airport, Lagos',
-        address: 'Murtala Muhammed Airport, Lagos',
-        latitude: 6.5773,
-        longitude: 3.3211,
-      ),
-      carrier: CarrierInfo(
-        id: 'C001',
-        name: 'Adaora Okafor',
-        phone: '+234 801 234 5678',
-        rating: 4.8,
-        vehicleType: 'plane',
-        vehicleNumber: 'BA 083',
-        isVerified: true,
-      ),
-      estimatedArrival: DateTime.now().add(const Duration(hours: 4)),
-      createdAt: DateTime.now().subtract(const Duration(hours: 12)),
-      packageType: 'Electronics',
-      weight: 1.0,
-      price: 25000,
-      urgency: 'normal',
-      senderId: 'S001',
-      trackingEvents: [
-        TrackingEvent(
-          id: '1',
-          title: 'Package Delivered',
-          description: 'Package successfully delivered to destination',
-          timestamp: DateTime.now().add(const Duration(hours: 4)),
-          location: 'Victoria Island, Lagos',
-          status: 'pending',
-        ),
-        TrackingEvent(
-          id: '2',
-          title: 'Out for Delivery',
-          description: 'Package is on its way to final destination',
-          timestamp: DateTime.now().add(const Duration(hours: 2)),
-          location: 'Lagos Mainland',
-          status: 'pending',
-        ),
-        TrackingEvent(
-          id: '3',
-          title: 'Arrived in Lagos',
-          description: 'Package has arrived at Lagos Airport',
-          timestamp: DateTime.now().subtract(const Duration(minutes: 30)),
-          location: 'Murtala Muhammed Airport',
-          status: 'current',
-        ),
-        TrackingEvent(
-          id: '4',
-          title: 'In Transit',
-          description: 'Package is on flight BA 083 to Lagos',
-          timestamp: DateTime.now().subtract(const Duration(hours: 8)),
-          location: 'London to Lagos Flight',
-          status: 'completed',
-        ),
-        TrackingEvent(
-          id: '5',
-          title: 'Package Collected',
-          description: 'Carrier collected package from sender',
-          timestamp: DateTime.now().subtract(const Duration(hours: 12)),
-          location: 'Heathrow Airport, London',
-          status: 'completed',
-        ),
-      ],
-    ),
-  ];
+  final TextEditingController _confirmationCodeController = TextEditingController();
+  final TextEditingController _disputeReasonController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _selectedPackage = _mockPackages.first;
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _confirmationCodeController.dispose();
+    _disputeReasonController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    
-    return AppScaffold(
-      title: 'Package Tracking',
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back),
-        onPressed: () => sl<NavigationService>().goBack(),
-      ),
-      actions: [
-        IconButton(
-          icon: _isRefreshing 
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.refresh),
-          onPressed: _handleRefresh,
-        ),
-        IconButton(
-          icon: const Icon(Icons.share),
-          onPressed: () {},
-        ),
-      ],
-      appBarBackgroundColor: AppColors.surface,
-      body: Column(
-        children: [
-          // Package Selector
-          AppContainer(
-            padding: AppSpacing.paddingLG,
-            child: Column(
-              children: _mockPackages.map((pkg) => GestureDetector(
-                onTap: () => setState(() => _selectedPackage = pkg),
-                child: AppContainer(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: AppSpacing.paddingMD,
-                  variant: ContainerVariant.outlined,
-                  border: Border.all(
-                    color: _selectedPackage?.id == pkg.id 
-                        ? AppColors.primary 
-                        : AppColors.outline,
-                  ),
-                  color: _selectedPackage?.id == pkg.id 
-                      ? AppColors.primary.withValues(alpha: 0.05)
-                      : null,
-                  child: Column(
-                    children: [
-                      Row(
+    return BlocProvider(
+      create: (context) => PackageBloc(
+        dataSource: PackageRemoteDataSourceImpl(firestore: sl()),
+      )..add(PackageStreamStarted(widget.packageId ?? 'TLN001')),
+      child: BlocConsumer<PackageBloc, PackageState>(
+        listener: (context, state) {
+          if (state.escrowMessage != null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.escrowMessage!),
+                backgroundColor: state.escrowReleaseStatus == EscrowReleaseStatus.released
+                    ? AppColors.success
+                    : state.escrowReleaseStatus == EscrowReleaseStatus.failed
+                        ? AppColors.error
+                        : AppColors.primary,
+              ),
+            );
+          }
+        },
+        builder: (context, state) {
+          return AppScaffold(
+            title: 'Package Tracking',
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => sl<NavigationService>().goBack(),
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.share),
+                onPressed: () {},
+              ),
+            ],
+            appBarBackgroundColor: AppColors.surface,
+            body: state.isLoading && state.package == null
+                ? const Center(child: CircularProgressIndicator())
+                : state.package != null
+                    ? Column(
                         children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    AppText(pkg.title),
-                                    AppSpacing.horizontalSpacing(SpacingSize.sm),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: _getStatusColor(pkg.status),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: AppText.labelSmall(
-                                        _getStatusText(pkg.status),
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                AppSpacing.verticalSpacing(SpacingSize.xs),
-                                AppText.bodySmall(
-                                  '${pkg.origin.name} → ${pkg.destination.name}',
-                                  color: AppColors.onSurfaceVariant,
-                                ),
-                              ],
-                            ),
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              AppText('₦${pkg.price.toInt()}'),
-                              AppText.bodySmall(
-                                'ID: ${pkg.id}',
-                                color: AppColors.onSurfaceVariant,
-                              ),
+                          _buildPackageHeader(state.package!),
+                          _buildEscrowStatusBanner(state.package!),
+                          TabBar(
+                            controller: _tabController,
+                            tabs: const [
+                              Tab(text: 'Live Map'),
+                              Tab(text: 'Timeline'),
+                              Tab(text: 'Details'),
                             ],
                           ),
-                        ],
-                      ),
-                      if (pkg.status != 'delivered') ...[
-                        AppSpacing.verticalSpacing(SpacingSize.sm),
-                        Column(
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          Expanded(
+                            child: TabBarView(
+                              controller: _tabController,
                               children: [
-                                AppText.labelSmall('Progress'),
-                                AppText.labelSmall('${pkg.progress}%'),
+                                _buildMapTab(state.package!),
+                                _buildTimelineTab(state.package!),
+                                _buildDetailsTab(state.package!, context),
                               ],
                             ),
-                            AppSpacing.verticalSpacing(SpacingSize.xs),
-                            LinearProgressIndicator(
-                              value: pkg.progress / 100,
-                              backgroundColor: Colors.grey.withValues(alpha: 0.3),
-                              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              )).toList(),
-            ),
-          ),
-
-          // Tab Navigation
-          TabBar(
-            controller: _tabController,
-            tabs: const [
-              Tab(text: 'Live Map'),
-              Tab(text: 'Timeline'),
-              Tab(text: 'Details'),
-            ],
-          ),
-
-          // Tab Content
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildMapTab(),
-                _buildTimelineTab(),
-                _buildDetailsTab(),
-              ],
-            ),
-          ),
-        ],
+                          ),
+                        ],
+                      )
+                    : const Center(child: Text('No package data')),
+            bottomNavigationBar: const BottomNavigation(currentIndex: 2),
+          );
+        },
       ),
-      bottomNavigationBar: const BottomNavigation(currentIndex: 2),
     );
   }
 
-  Widget _buildMapTab() {
+  Widget _buildPackageHeader(PackageModel package) {
+    return AppContainer(
+      padding: AppSpacing.paddingLG,
+      child: AppContainer(
+        padding: AppSpacing.paddingMD,
+        variant: ContainerVariant.outlined,
+        border: Border.all(color: AppColors.primary),
+        color: AppColors.primary.withValues(alpha: 0.05),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          AppText(package.title),
+                          AppSpacing.horizontalSpacing(SpacingSize.sm),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: _getStatusColor(package.status),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: AppText.labelSmall(
+                              _getStatusText(package.status),
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                      AppSpacing.verticalSpacing(SpacingSize.xs),
+                      AppText.bodySmall(
+                        '${package.origin.name} → ${package.destination.name}',
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    AppText('₦${package.price.toInt()}'),
+                    AppText.bodySmall('ID: ${package.id}', color: AppColors.onSurfaceVariant),
+                  ],
+                ),
+              ],
+            ),
+            if (package.status != 'delivered') ...
+
+[
+              AppSpacing.verticalSpacing(SpacingSize.sm),
+              Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      AppText.labelSmall('Progress'),
+                      AppText.labelSmall('${package.progress}%'),
+                    ],
+                  ),
+                  AppSpacing.verticalSpacing(SpacingSize.xs),
+                  LinearProgressIndicator(
+                    value: package.progress / 100,
+                    backgroundColor: Colors.grey.withValues(alpha: 0.3),
+                    valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEscrowStatusBanner(PackageModel package) {
+    final paymentInfo = package.paymentInfo;
+    if (paymentInfo == null || !paymentInfo.isEscrow) {
+      return const SizedBox.shrink();
+    }
+
+    Color statusColor;
+    IconData statusIcon;
+    String statusText;
+
+    switch (paymentInfo.escrowStatus) {
+      case 'held':
+        statusColor = AppColors.accent;
+        statusIcon = Icons.lock;
+        statusText = 'Escrow Held - ₦${paymentInfo.amount.toStringAsFixed(2)}';
+        break;
+      case 'released':
+        statusColor = AppColors.success;
+        statusIcon = Icons.check_circle;
+        statusText = 'Escrow Released - ₦${paymentInfo.amount.toStringAsFixed(2)}';
+        break;
+      case 'disputed':
+        statusColor = AppColors.error;
+        statusIcon = Icons.warning;
+        statusText = 'Escrow Disputed - Under Review';
+        break;
+      case 'cancelled':
+        statusColor = Colors.grey;
+        statusIcon = Icons.cancel;
+        statusText = 'Escrow Cancelled';
+        break;
+      default:
+        statusColor = AppColors.primary;
+        statusIcon = Icons.hourglass_empty;
+        statusText = 'Escrow Pending';
+    }
+
+    return AppContainer(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: AppSpacing.paddingMD,
+      color: statusColor.withValues(alpha: 0.1),
+      borderRadius: BorderRadius.circular(12),
+      child: Row(
+        children: [
+          Icon(statusIcon, color: statusColor, size: 20),
+          AppSpacing.horizontalSpacing(SpacingSize.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppText.labelMedium(statusText, color: statusColor, fontWeight: FontWeight.bold),
+                if (paymentInfo.escrowHeldAt != null)
+                  AppText.bodySmall('Since ${_formatDate(paymentInfo.escrowHeldAt!)}', color: AppColors.onSurfaceVariant),
+              ],
+            ),
+          ),
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMapTab(PackageModel package) {
     return SingleChildScrollView(
       padding: AppSpacing.paddingLG,
       child: Column(
@@ -289,70 +275,31 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        Icons.map,
-                        size: 64,
-                        color: AppColors.primary.withValues(alpha: 0.5),
-                      ),
+                      Icon(Icons.map, size: 64, color: AppColors.primary.withValues(alpha: 0.5)),
                       AppSpacing.verticalSpacing(SpacingSize.sm),
-                      AppText.bodyMedium(
-                        'Interactive Map View',
-                        color: AppColors.onSurfaceVariant,
-                      ),
-                      AppText.bodySmall(
-                        'Real-time package location',
-                        color: AppColors.onSurfaceVariant,
-                      ),
+                      AppText.bodyMedium('Interactive Map View', color: AppColors.onSurfaceVariant),
+                      AppText.bodySmall('Real-time package location', color: AppColors.onSurfaceVariant),
                     ],
                   ),
                 ),
-                
-                // Live indicator
-                if (_liveTracking)
-                  Positioned(
-                    top: 16,
-                    left: 16,
-                    child: AppContainer(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      variant: ContainerVariant.filled,
-                      color: AppColors.success,
-                      borderRadius: BorderRadius.circular(12),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          AppSpacing.horizontalSpacing(SpacingSize.xs),
-                          AppText.labelSmall('Live', color: Colors.white),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                // Live tracking toggle
                 Positioned(
                   top: 16,
-                  right: 16,
-                  child: AppButton.outline(
-                    onPressed: () => setState(() => _liveTracking = !_liveTracking),
-                    size: ButtonSize.small,
+                  left: 16,
+                  child: AppContainer(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    variant: ContainerVariant.filled,
+                    color: AppColors.success,
+                    borderRadius: BorderRadius.circular(12),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          _liveTracking ? Icons.pause : Icons.play_arrow,
-                          size: 16,
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
                         ),
                         AppSpacing.horizontalSpacing(SpacingSize.xs),
-                        AppText.labelSmall(
-                          _liveTracking ? 'Pause' : 'Resume',
-                        ),
+                        AppText.labelSmall('Live', color: Colors.white),
                       ],
                     ),
                   ),
@@ -360,10 +307,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
               ],
             ),
           ),
-
           AppSpacing.verticalSpacing(SpacingSize.lg),
-
-          // Current Status Card
           AppCard.elevated(
             child: Row(
               children: [
@@ -373,10 +317,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                   variant: ContainerVariant.filled,
                   color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(24),
-                  child: Icon(
-                    _getVehicleIcon(_selectedPackage?.carrier.vehicleType ?? ''),
-                    color: AppColors.primary,
-                  ),
+                  child: Icon(_getVehicleIcon(package.carrier.vehicleType), color: AppColors.primary),
                 ),
                 AppSpacing.horizontalSpacing(SpacingSize.md),
                 Expanded(
@@ -387,24 +328,17 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           AppText.titleMedium('Current Location'),
-                          AppText(
-                            'ETA: ${_formatETA(_selectedPackage?.estimatedArrival)}',
-                            color: AppColors.primary,
-                          ),
+                          AppText('ETA: ${_formatETA(package.estimatedArrival)}', color: AppColors.primary),
                         ],
                       ),
                       AppSpacing.verticalSpacing(SpacingSize.xs),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          AppText.bodySmall(
-                            _selectedPackage?.currentLocation?.name ?? 'Unknown',
-                            color: AppColors.onSurfaceVariant,
+                          Expanded(
+                            child: AppText.bodySmall(package.currentLocation?.name ?? 'Unknown', color: AppColors.onSurfaceVariant),
                           ),
-                          AppText.bodySmall(
-                            '${_selectedPackage?.progress ?? 0}% complete',
-                            color: AppColors.onSurfaceVariant,
-                          ),
+                          AppText.bodySmall('${package.progress}% complete', color: AppColors.onSurfaceVariant),
                         ],
                       ),
                     ],
@@ -413,20 +347,14 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
               ],
             ),
           ),
-
           AppSpacing.verticalSpacing(SpacingSize.lg),
-
-          // Carrier Info
           AppCard.elevated(
             child: Row(
               children: [
                 CircleAvatar(
                   radius: 20,
                   backgroundColor: AppColors.primary,
-                  child: AppText.titleMedium(
-                    (_selectedPackage?.carrier.name.split(' ').map((e) => e[0]).join() ?? 'AO'),
-                    color: Colors.white,
-                  ),
+                  child: AppText.titleMedium(package.carrier.name.split(' ').map((e) => e[0]).join(), color: Colors.white),
                 ),
                 AppSpacing.horizontalSpacing(SpacingSize.md),
                 Expanded(
@@ -436,20 +364,12 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          AppText.titleMedium(_selectedPackage?.carrier.name ?? 'Unknown'),
+                          AppText.titleMedium(package.carrier.name),
                           Row(
                             children: [
-                              AppButton.outline(
-                                onPressed: () {},
-                                size: ButtonSize.small,
-                                child: const Icon(Icons.phone, size: 16),
-                              ),
+                              AppButton.outline(onPressed: () {}, size: ButtonSize.small, child: const Icon(Icons.phone, size: 16)),
                               AppSpacing.horizontalSpacing(SpacingSize.sm),
-                              AppButton.outline(
-                                onPressed: () {},
-                                size: ButtonSize.small,
-                                child: const Icon(Icons.message, size: 16),
-                              ),
+                              AppButton.outline(onPressed: () {}, size: ButtonSize.small, child: const Icon(Icons.message, size: 16)),
                             ],
                           ),
                         ],
@@ -459,11 +379,11 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                         children: [
                           const Icon(Icons.star, size: 16, color: AppColors.accent),
                           AppSpacing.horizontalSpacing(SpacingSize.xs),
-                          AppText.bodySmall('${_selectedPackage?.carrier.rating ?? 0}'),
+                          AppText.bodySmall('${package.carrier.rating}'),
                           AppSpacing.horizontalSpacing(SpacingSize.sm),
                           AppText.bodySmall('•'),
                           AppSpacing.horizontalSpacing(SpacingSize.sm),
-                          AppText.bodySmall(_selectedPackage?.carrier.vehicleNumber ?? 'N/A'),
+                          AppText.bodySmall(package.carrier.vehicleNumber ?? 'N/A'),
                         ],
                       ),
                     ],
@@ -477,7 +397,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
     );
   }
 
-  Widget _buildTimelineTab() {
+  Widget _buildTimelineTab(PackageModel package) {
     return SingleChildScrollView(
       padding: AppSpacing.paddingLG,
       child: AppCard.elevated(
@@ -486,10 +406,10 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
           children: [
             AppText.titleMedium('Tracking Timeline'),
             AppSpacing.verticalSpacing(SpacingSize.lg),
-            ...(_selectedPackage?.trackingEvents ?? []).asMap().entries.map((entry) {
+            ...package.trackingEvents.asMap().entries.map((entry) {
               final index = entry.key;
               final event = entry.value;
-              final isLast = index == (_selectedPackage?.trackingEvents.length ?? 0) - 1;
+              final isLast = index == package.trackingEvents.length - 1;
               
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -568,29 +488,201 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
     );
   }
 
-  Widget _buildDetailsTab() {
+  Widget _buildDetailsTab(PackageModel package, BuildContext context) {
     return SingleChildScrollView(
       padding: AppSpacing.paddingLG,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Package Information
           AppCard.elevated(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                AppText.titleMedium('Package Information'),
-                AppSpacing.verticalSpacing(SpacingSize.lg),
-                _buildDetailRow('Package ID', _selectedPackage?.id ?? 'N/A'),
-                _buildDetailRow('Cost', '₦${_selectedPackage?.price.toInt() ?? 0}'),
-                _buildDetailRow('Status', _getStatusText(_selectedPackage?.status ?? '')),
-                _buildDetailRow('Progress', '${_selectedPackage?.progress ?? 0}%'),
+                AppText.titleMedium('Package Details'),
+                AppSpacing.verticalSpacing(SpacingSize.md),
+                _buildDetailRow('Type', package.packageType),
+                _buildDetailRow('Weight', '${package.weight} kg'),
+                _buildDetailRow('Urgency', package.urgency),
+                _buildDetailRow('Created', _formatDate(package.createdAt)),
+                _buildDetailRow('Est. Arrival', _formatDate(package.estimatedArrival)),
               ],
             ),
           ),
-
           AppSpacing.verticalSpacing(SpacingSize.lg),
-
-          // Route Information
+          if (package.paymentInfo != null) ...  [
+            AppCard.elevated(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      AppText.titleMedium('Payment & Escrow'),
+                      Icon(Icons.lock, color: _getEscrowStatusColor(package.paymentInfo!.escrowStatus), size: 20),
+                    ],
+                  ),
+                  AppSpacing.verticalSpacing(SpacingSize.md),
+                  _buildDetailRow('Transaction ID', package.paymentInfo!.transactionId),
+                  _buildDetailRow('Amount', '₦${package.paymentInfo!.amount.toStringAsFixed(2)}'),
+                  _buildDetailRow('Service Fee', '₦${package.paymentInfo!.serviceFee.toStringAsFixed(2)}'),
+                  _buildDetailRow('Total', '₦${package.paymentInfo!.totalAmount.toStringAsFixed(2)}'),
+                  _buildDetailRow('Escrow Status', package.paymentInfo!.escrowStatus.toUpperCase()),
+                  if (package.paymentInfo!.escrowHeldAt != null)
+                    _buildDetailRow('Held Since', _formatDate(package.paymentInfo!.escrowHeldAt!)),
+                ],
+              ),
+            ),
+            AppSpacing.verticalSpacing(SpacingSize.lg),
+          ],
+          if (package.status == 'delivered' && package.paymentInfo?.escrowStatus == 'held') ...[
+            BlocBuilder<PackageBloc, PackageState>(
+              builder: (context, state) {
+                return AppCard.elevated(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppText.titleMedium('Delivery Confirmation'),
+                      AppSpacing.verticalSpacing(SpacingSize.md),
+                      AppText.bodySmall('Enter the confirmation code to release escrow funds.', color: AppColors.onSurfaceVariant),
+                      AppSpacing.verticalSpacing(SpacingSize.md),
+                      TextField(
+                        controller: _confirmationCodeController,
+                        decoration: const InputDecoration(
+                          labelText: 'Confirmation Code',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.verified_user),
+                        ),
+                      ),
+                      AppSpacing.verticalSpacing(SpacingSize.md),
+                      SizedBox(
+                        width: double.infinity,
+                        child: AppButton.primary(
+                          onPressed: state.escrowReleaseStatus == EscrowReleaseStatus.processing
+                              ? null
+                              : () {
+                                  if (_confirmationCodeController.text.isNotEmpty) {
+                                    context.read<PackageBloc>().add(
+                                          DeliveryConfirmationRequested(
+                                            packageId: package.id,
+                                            confirmationCode: _confirmationCodeController.text,
+                                          ),
+                                        );
+                                    context.read<PackageBloc>().add(
+                                          EscrowReleaseRequested(
+                                            packageId: package.id,
+                                            transactionId: package.paymentInfo!.transactionId,
+                                          ),
+                                        );
+                                  }
+                                },
+                          child: state.escrowReleaseStatus == EscrowReleaseStatus.processing
+                              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                              : const AppText('Confirm & Release Escrow', color: Colors.white),
+                        ),
+                      ),
+                      if (state.escrowReleaseStatus == EscrowReleaseStatus.released) ...[
+                        AppSpacing.verticalSpacing(SpacingSize.md),
+                        AppContainer(
+                          padding: AppSpacing.paddingMD,
+                          color: AppColors.success.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.check_circle, color: AppColors.success),
+                              AppSpacing.horizontalSpacing(SpacingSize.sm),
+                              Expanded(
+                                child: AppText.bodySmall('Escrow released successfully!', color: AppColors.success),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                );
+              },
+            ),
+            AppSpacing.verticalSpacing(SpacingSize.lg),
+          ],
+          if (package.paymentInfo?.escrowStatus == 'held') ...[
+            BlocBuilder<PackageBloc, PackageState>(
+              builder: (context, state) {
+                return AppCard.elevated(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.warning, color: AppColors.error, size: 20),
+                          AppSpacing.horizontalSpacing(SpacingSize.sm),
+                          AppText.titleMedium('Dispute Escrow'),
+                        ],
+                      ),
+                      AppSpacing.verticalSpacing(SpacingSize.md),
+                      AppText.bodySmall('If there\\'s an issue with the delivery, you can file a dispute.', color: AppColors.onSurfaceVariant),
+                      AppSpacing.verticalSpacing(SpacingSize.md),
+                      TextField(
+                        controller: _disputeReasonController,
+                        maxLines: 3,
+                        decoration: const InputDecoration(
+                          labelText: 'Dispute Reason',
+                          border: OutlineInputBorder(),
+                          hintText: 'Explain the issue with the delivery...',
+                        ),
+                      ),
+                      AppSpacing.verticalSpacing(SpacingSize.md),
+                      SizedBox(
+                        width: double.infinity,
+                        child: AppButton.outline(
+                          onPressed: state.escrowReleaseStatus == EscrowReleaseStatus.processing
+                              ? null
+                              : () {
+                                  if (_disputeReasonController.text.isNotEmpty) {
+                                    context.read<PackageBloc>().add(
+                                          EscrowDisputeRequested(
+                                            packageId: package.id,
+                                            transactionId: package.paymentInfo!.transactionId,
+                                            reason: _disputeReasonController.text,
+                                          ),
+                                        );
+                                  }
+                                },
+                          child: state.escrowReleaseStatus == EscrowReleaseStatus.processing
+                              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                              : const AppText('File Dispute'),
+                        ),
+                      ),
+                      if (state.escrowReleaseStatus == EscrowReleaseStatus.disputed) ...[
+                        AppSpacing.verticalSpacing(SpacingSize.md),
+                        AppContainer(
+                          padding: AppSpacing.paddingMD,
+                          color: AppColors.accent.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.info, color: AppColors.accent),
+                              AppSpacing.horizontalSpacing(SpacingSize.sm),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    AppText.bodySmall('Dispute filed successfully', color: AppColors.accent, fontWeight: FontWeight.bold),
+                                    if (state.disputeId != null)
+                                      AppText.bodySmall('Dispute ID: ${state.disputeId}', color: AppColors.onSurfaceVariant),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
+          AppSpacing.verticalSpacing(SpacingSize.lg),
           AppCard.elevated(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -602,10 +694,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                     Container(
                       width: 24,
                       height: 24,
-                      decoration: const BoxDecoration(
-                        color: AppColors.success,
-                        shape: BoxShape.circle,
-                      ),
+                      decoration: const BoxDecoration(color: AppColors.success, shape: BoxShape.circle),
                       child: const Icon(Icons.circle, size: 8, color: Colors.white),
                     ),
                     AppSpacing.horizontalSpacing(SpacingSize.md),
@@ -613,11 +702,8 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          AppText('From: ${_selectedPackage?.origin.name ?? 'N/A'}', variant: TextVariant.titleSmall),
-                          AppText.bodySmall(
-                            _selectedPackage?.origin.address ?? 'N/A',
-                            color: AppColors.onSurfaceVariant,
-                          ),
+                          AppText('From: ${package.origin.name}', variant: TextVariant.titleSmall),
+                          AppText.bodySmall(package.origin.address, color: AppColors.onSurfaceVariant),
                         ],
                       ),
                     ),
@@ -636,10 +722,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                     Container(
                       width: 24,
                       height: 24,
-                      decoration: const BoxDecoration(
-                        color: AppColors.error,
-                        shape: BoxShape.circle,
-                      ),
+                      decoration: const BoxDecoration(color: AppColors.error, shape: BoxShape.circle),
                       child: const Icon(Icons.location_on, size: 12, color: Colors.white),
                     ),
                     AppSpacing.horizontalSpacing(SpacingSize.md),
@@ -647,32 +730,17 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          AppText('To: ${_selectedPackage?.destination.name ?? 'N/A'}', variant: TextVariant.titleSmall),
-                          AppText.bodySmall(
-                            _selectedPackage?.destination.address ?? 'N/A',
-                            color: AppColors.onSurfaceVariant,
-                          ),
+                          AppText('To: ${package.destination.name}', variant: TextVariant.titleSmall),
+                          AppText.bodySmall(package.destination.address, color: AppColors.onSurfaceVariant),
                         ],
                       ),
                     ),
                   ],
                 ),
-                AppSpacing.verticalSpacing(SpacingSize.lg),
-                const Divider(),
-                AppSpacing.verticalSpacing(SpacingSize.md),
-                Row(
-                  children: [
-                    Expanded(child: _buildDetailRow('Distance', '346 km')),
-                    Expanded(child: _buildDetailRow('ETA', _formatETA(_selectedPackage?.estimatedArrival))),
-                  ],
-                ),
               ],
             ),
           ),
-
           AppSpacing.verticalSpacing(SpacingSize.lg),
-
-          // Carrier Information
           AppCard.elevated(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -684,22 +752,19 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                     CircleAvatar(
                       radius: 24,
                       backgroundColor: AppColors.primary,
-                      child: AppText.titleMedium(
-                        (_selectedPackage?.carrier.name.split(' ').map((e) => e[0]).join() ?? 'AO'),
-                        color: Colors.white,
-                      ),
+                      child: AppText.titleMedium(package.carrier.name.split(' ').map((e) => e[0]).join(), color: Colors.white),
                     ),
                     AppSpacing.horizontalSpacing(SpacingSize.md),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          AppText.titleMedium(_selectedPackage?.carrier.name ?? 'Unknown'),
+                          AppText.titleMedium(package.carrier.name),
                           Row(
                             children: [
                               const Icon(Icons.star, size: 16, color: AppColors.accent),
                               AppSpacing.horizontalSpacing(SpacingSize.xs),
-                              AppText.bodySmall('${_selectedPackage?.carrier.rating ?? 0} rating'),
+                              AppText.bodySmall('${package.carrier.rating} rating'),
                             ],
                           ),
                         ],
@@ -710,8 +775,8 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                 AppSpacing.verticalSpacing(SpacingSize.lg),
                 Row(
                   children: [
-                    Expanded(child: _buildDetailRow('Phone', _selectedPackage?.carrier.phone ?? 'N/A')),
-                    Expanded(child: _buildDetailRow('Vehicle', _selectedPackage?.carrier.vehicleNumber ?? 'N/A')),
+                    Expanded(child: _buildDetailRow('Phone', package.carrier.phone)),
+                    Expanded(child: _buildDetailRow('Vehicle', package.carrier.vehicleNumber ?? 'N/A')),
                   ],
                 ),
                 AppSpacing.verticalSpacing(SpacingSize.lg),
@@ -756,69 +821,90 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
 
   Widget _buildDetailRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 8),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          SizedBox(
-            width: 80,
-            child: AppText.bodySmall(
-              label,
-              color: AppColors.onSurfaceVariant,
-            ),
-          ),
-          Expanded(
-            child: AppText.bodyMedium(value),
-          ),
+          AppText.bodyMedium(label, color: AppColors.onSurfaceVariant),
+          AppText.bodyMedium(value, fontWeight: FontWeight.w600),
         ],
       ),
     );
   }
 
-  Future<void> _handleRefresh() async {
-    setState(() => _isRefreshing = true);
-    await Future.delayed(const Duration(seconds: 1));
-    setState(() => _isRefreshing = false);
-  }
-
   Color _getStatusColor(String status) {
     switch (status) {
-      case 'pending': return AppColors.accent;
-      case 'picked_up': return AppColors.secondary;
-      case 'in_transit': return AppColors.primary;
-      case 'out_for_delivery': return AppColors.accent;
-      case 'delivered': return AppColors.success;
-      default: return AppColors.onSurfaceVariant;
+      case 'delivered':
+        return AppColors.success;
+      case 'in_transit':
+      case 'out_for_delivery':
+        return AppColors.accent;
+      case 'pending':
+        return AppColors.primary;
+      case 'cancelled':
+        return AppColors.error;
+      default:
+        return Colors.grey;
     }
   }
 
   String _getStatusText(String status) {
     switch (status) {
-      case 'pending': return 'Pending Pickup';
-      case 'picked_up': return 'Picked Up';
-      case 'in_transit': return 'In Transit';
-      case 'out_for_delivery': return 'Out for Delivery';
-      case 'delivered': return 'Delivered';
-      default: return 'Unknown';
+      case 'delivered':
+        return 'Delivered';
+      case 'in_transit':
+        return 'In Transit';
+      case 'out_for_delivery':
+        return 'Out for Delivery';
+      case 'pending':
+        return 'Pending';
+      case 'cancelled':
+        return 'Cancelled';
+      default:
+        return status;
+    }
+  }
+
+  Color _getEscrowStatusColor(String status) {
+    switch (status) {
+      case 'held':
+        return AppColors.accent;
+      case 'released':
+        return AppColors.success;
+      case 'disputed':
+        return AppColors.error;
+      case 'cancelled':
+        return Colors.grey;
+      default:
+        return AppColors.primary;
     }
   }
 
   IconData _getVehicleIcon(String vehicleType) {
-    switch (vehicleType) {
-      case 'car': return Icons.directions_car;
-      case 'bus': return Icons.directions_bus;
-      case 'plane': return Icons.flight;
-      case 'truck': return Icons.local_shipping;
-      default: return Icons.directions_car;
+    switch (vehicleType.toLowerCase()) {
+      case 'plane':
+        return Icons.flight;
+      case 'car':
+        return Icons.directions_car;
+      case 'bike':
+        return Icons.two_wheeler;
+      case 'truck':
+        return Icons.local_shipping;
+      default:
+        return Icons.directions_car;
     }
   }
 
   Color _getEventStatusColor(String status) {
     switch (status) {
-      case 'completed': return AppColors.success;
-      case 'current': return AppColors.primary;
-      case 'pending': return AppColors.onSurfaceVariant;
-      default: return AppColors.onSurfaceVariant;
+      case 'completed':
+        return AppColors.success;
+      case 'current':
+        return AppColors.primary;
+      case 'pending':
+        return AppColors.onSurfaceVariant;
+      default:
+        return AppColors.onSurfaceVariant;
     }
   }
 
@@ -835,7 +921,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
     if (dateTime == null) return 'N/A';
     final now = DateTime.now();
     final difference = dateTime.difference(now);
-    
+
     if (difference.isNegative) return 'Overdue';
     if (difference.inMinutes < 60) return '${difference.inMinutes}m';
     if (difference.inHours < 24) return '${difference.inHours}h ${difference.inMinutes % 60}m';
@@ -847,8 +933,8 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
   }
 
   String _formatDate(DateTime dateTime) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return '${months[dateTime.month - 1]} ${dateTime.day}';
   }
 }

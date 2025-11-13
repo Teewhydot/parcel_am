@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'dart:async';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_scaffold.dart';
 import '../../../../core/widgets/app_container.dart';
@@ -22,9 +23,113 @@ import '../bloc/wallet/wallet_state.dart';
 import '../../data/providers/auth_provider.dart';
 import '../../data/providers/theme_provider.dart';
 import '../../data/constants/verification_constants.dart';
+import '../../data/datasources/package_remote_data_source.dart';
+import '../../../../core/services/notification_service.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  StreamSubscription? _packagesSubscription;
+  StreamSubscription? _notificationSubscription;
+  List<Map<String, dynamic>> _activePackages = [];
+  final NotificationService _notificationService = NotificationService(firestore: sl());
+
+  @override
+  void initState() {
+    super.initState();
+    _subscribeToActivePackages();
+    _subscribeToEscrowNotifications();
+  }
+
+  @override
+  void dispose() {
+    _packagesSubscription?.cancel();
+    _notificationSubscription?.cancel();
+    _notificationService.dispose();
+    super.dispose();
+  }
+
+  void _subscribeToActivePackages() {
+    final authProvider = context.read<AuthProvider>();
+    final userId = authProvider.user?.uid ?? 'demo_user';
+    
+    final dataSource = PackageRemoteDataSourceImpl(firestore: sl());
+    _packagesSubscription = dataSource.getActivePackagesStream(userId).listen((packages) {
+      if (mounted) {
+        setState(() {
+          _activePackages = packages;
+        });
+      }
+    });
+  }
+
+  void _subscribeToEscrowNotifications() {
+    final authProvider = context.read<AuthProvider>();
+    final userId = authProvider.user?.uid ?? 'demo_user';
+    
+    _notificationService.subscribeToEscrowNotifications(userId);
+    _notificationSubscription = _notificationService.escrowNotifications.listen((notification) {
+      if (mounted) {
+        _showEscrowNotification(notification);
+      }
+    });
+  }
+
+  void _showEscrowNotification(EscrowNotification notification) {
+    Color backgroundColor;
+    IconData icon;
+
+    switch (notification.status) {
+      case 'held':
+        backgroundColor = AppColors.accent;
+        icon = Icons.lock;
+        break;
+      case 'released':
+        backgroundColor = AppColors.success;
+        icon = Icons.check_circle;
+        break;
+      case 'disputed':
+        backgroundColor = AppColors.error;
+        icon = Icons.warning;
+        break;
+      case 'cancelled':
+        backgroundColor = Colors.grey;
+        icon = Icons.cancel;
+        break;
+      default:
+        backgroundColor = AppColors.primary;
+        icon = Icons.info;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(icon, color: Colors.white),
+            const SizedBox(width: 12),
+            Expanded(child: Text(notification.message)),
+          ],
+        ),
+        backgroundColor: backgroundColor,
+        duration: const Duration(seconds: 4),
+        action: SnackBarAction(
+          label: 'View',
+          textColor: Colors.white,
+          onPressed: () {
+            sl<NavigationService>().navigateTo(
+              Routes.tracking,
+              arguments: {'packageId': notification.packageId},
+            );
+          },
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -81,7 +186,7 @@ class DashboardScreen extends StatelessWidget {
                             AppSpacing.verticalSpacing(SpacingSize.lg),
                             const UserStatsGrid(),
                             AppSpacing.verticalSpacing(SpacingSize.xxl),
-                            _RecentActivitySection(),
+                            _RecentActivitySection(activePackages: _activePackages),
                           ],
                         ),
                       ),
@@ -338,6 +443,10 @@ class _ActionCard extends StatelessWidget {
 }
 
 class _RecentActivitySection extends StatelessWidget {
+  final List<Map<String, dynamic>> activePackages;
+
+  const _RecentActivitySection({required this.activePackages});
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -346,7 +455,7 @@ class _RecentActivitySection extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             AppText.titleLarge(
-              'Recent Activity',
+              'Active Parcels',
               fontWeight: FontWeight.bold,
             ),
             AppButton.text(
@@ -356,57 +465,84 @@ class _RecentActivitySection extends StatelessWidget {
           ],
         ),
         AppSpacing.verticalSpacing(SpacingSize.lg),
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: 3,
-          itemBuilder: (context, index) {
-            final activities = [
-              {
-                'title': 'Documents to Abuja',
-                'subtitle': 'Lagos → Abuja',
-                'status': 'In Transit',
-                'statusColor': AppColors.accent,
-                'icon': Icons.inventory_2_outlined,
-                'hasAvatar': false,
-              },
-              {
-                'title': 'Electronics Package',
-                'subtitle': 'Package Delivered',
-                'status': '₦5,200',
-                'statusColor': AppColors.success,
-                'hasAvatar': true,
-                'avatarText': 'AK',
-              },
-              {
-                'title': 'Medical Supplies',
-                'subtitle': 'Kano → Kaduna',
-                'status': 'Pending',
-                'statusColor': AppColors.accent,
-                'icon': Icons.medical_services_outlined,
-                'hasAvatar': false,
-              },
-            ];
-            
-            final activity = activities[index];
-            return _ActivityItem(
-              title: activity['title'] as String,
-              subtitle: activity['subtitle'] as String,
-              status: activity['status'] as String,
-              statusColor: activity['statusColor'] as Color,
-              icon: activity['icon'] as IconData?,
-              hasAvatar: activity['hasAvatar'] as bool? ?? false,
-              avatarText: activity['avatarText'] as String? ?? '',
-              onTap: () {
-                if (index == 0) {
-                  sl<NavigationService>().navigateTo(Routes.tracking, arguments: {'packageId': 'TL-2024-001'});
-                }
-              },
-            );
-          },
-        ),
+        activePackages.isEmpty
+            ? AppContainer(
+                padding: AppSpacing.paddingXL,
+                child: Column(
+                  children: [
+                    const Icon(Icons.inbox_outlined, size: 48, color: AppColors.onSurfaceVariant),
+                    AppSpacing.verticalSpacing(SpacingSize.md),
+                    AppText.bodyMedium('No active parcels', color: AppColors.onSurfaceVariant),
+                  ],
+                ),
+              )
+            : ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: activePackages.length > 5 ? 5 : activePackages.length,
+                itemBuilder: (context, index) {
+                  final package = activePackages[index];
+                  final paymentInfo = package['paymentInfo'] as Map<String, dynamic>?;
+                  final escrowStatus = paymentInfo != null && paymentInfo['isEscrow'] == true
+                      ? paymentInfo['escrowStatus'] ?? 'pending'
+                      : null;
+
+                  return _ActivityItem(
+                    title: package['title'] ?? 'Unknown Package',
+                    subtitle: '${package['origin']?['name'] ?? 'Unknown'} → ${package['destination']?['name'] ?? 'Unknown'}',
+                    status: _getStatusText(package['status'] ?? ''),
+                    statusColor: _getStatusColor(package['status'] ?? ''),
+                    icon: Icons.inventory_2_outlined,
+                    hasAvatar: false,
+                    avatarText: '',
+                    escrowStatus: escrowStatus,
+                    onTap: () {
+                      sl<NavigationService>().navigateTo(
+                        Routes.tracking,
+                        arguments: {'packageId': package['id']},
+                      );
+                    },
+                  );
+                },
+              ),
       ],
     );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'delivered':
+        return AppColors.success;
+      case 'in_transit':
+      case 'out_for_delivery':
+        return AppColors.accent;
+      case 'pending':
+      case 'accepted':
+        return AppColors.primary;
+      case 'cancelled':
+        return AppColors.error;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  String _getStatusText(String status) {
+    switch (status) {
+      case 'delivered':
+        return 'Delivered';
+      case 'in_transit':
+        return 'In Transit';
+      case 'out_for_delivery':
+        return 'Out for Delivery';
+      case 'pending':
+        return 'Pending';
+      case 'accepted':
+        return 'Accepted';
+      case 'cancelled':
+        return 'Cancelled';
+      default:
+        return status;
+    }
   }
 }
 
@@ -419,6 +555,7 @@ class _ActivityItem extends StatelessWidget {
     this.icon,
     this.hasAvatar = false,
     this.avatarText = '',
+    this.escrowStatus,
     this.onTap,
   });
 
@@ -429,63 +566,122 @@ class _ActivityItem extends StatelessWidget {
   final IconData? icon;
   final bool hasAvatar;
   final String avatarText;
+  final String? escrowStatus;
   final VoidCallback? onTap;
+
+  Color _getEscrowStatusColor(String status) {
+    switch (status) {
+      case 'held':
+        return AppColors.accent;
+      case 'released':
+        return AppColors.success;
+      case 'disputed':
+        return AppColors.error;
+      case 'cancelled':
+        return Colors.grey;
+      default:
+        return AppColors.primary;
+    }
+  }
+
+  IconData _getEscrowStatusIcon(String status) {
+    switch (status) {
+      case 'held':
+        return Icons.lock;
+      case 'released':
+        return Icons.check_circle;
+      case 'disputed':
+        return Icons.warning;
+      case 'cancelled':
+        return Icons.cancel;
+      default:
+        return Icons.hourglass_empty;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return AppCard.elevated(
       margin: const EdgeInsets.only(bottom: 12),
       onTap: onTap,
-      child: Row(
+      child: Column(
         children: [
-          if (!hasAvatar)
-            AppIcon.filled(
-              icon: icon ?? Icons.inventory_2_outlined,
-              size: IconSize.small,
-              backgroundColor: AppColors.surfaceVariant,
-              color: AppColors.primary,
-            )
-          else
+          Row(
+            children: [
+              if (!hasAvatar)
+                AppIcon.filled(
+                  icon: icon ?? Icons.inventory_2_outlined,
+                  size: IconSize.small,
+                  backgroundColor: AppColors.surfaceVariant,
+                  color: AppColors.primary,
+                )
+              else
+                AppContainer(
+                  width: 40,
+                  height: 40,
+                  variant: ContainerVariant.surface,
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(20),
+                  alignment: Alignment.center,
+                  child: AppText.labelSmall(
+                    avatarText,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              AppSpacing.horizontalSpacing(SpacingSize.lg),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AppText.titleMedium(
+                      title,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    AppText.bodySmall(
+                      subtitle,
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  ],
+                ),
+              ),
+              AppContainer(
+                variant: ContainerVariant.filled,
+                color: statusColor.withValues(alpha: 0.1),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                borderRadius: BorderRadius.circular(12),
+                child: AppText.labelSmall(
+                  status,
+                  color: statusColor,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          if (escrowStatus != null) ...[
+            AppSpacing.verticalSpacing(SpacingSize.sm),
             AppContainer(
-              width: 40,
-              height: 40,
-              variant: ContainerVariant.surface,
-              color: AppColors.primary,
-              borderRadius: BorderRadius.circular(20),
-              alignment: Alignment.center,
-              child: AppText.labelSmall(
-                avatarText,
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              color: _getEscrowStatusColor(escrowStatus!).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    _getEscrowStatusIcon(escrowStatus!),
+                    size: 14,
+                    color: _getEscrowStatusColor(escrowStatus!),
+                  ),
+                  AppSpacing.horizontalSpacing(SpacingSize.xs),
+                  AppText.labelSmall(
+                    'Escrow: ${escrowStatus!.toUpperCase()}',
+                    color: _getEscrowStatusColor(escrowStatus!),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ],
               ),
             ),
-          AppSpacing.horizontalSpacing(SpacingSize.lg),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AppText.titleMedium(
-                  title,
-                  fontWeight: FontWeight.w600,
-                ),
-                AppText.bodySmall(
-                  subtitle,
-                  color: AppColors.onSurfaceVariant,
-                ),
-              ],
-            ),
-          ),
-          AppContainer(
-            variant: ContainerVariant.filled,
-            color: statusColor.withValues(alpha: 0.1),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            borderRadius: BorderRadius.circular(12),
-            child: AppText.labelSmall(
-              status,
-              color: statusColor,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+          ],
         ],
       ),
     );
