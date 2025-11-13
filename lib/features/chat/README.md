@@ -1,218 +1,170 @@
-# Chat Feature - Data Layer Implementation
+# Chat Feature
 
-This directory contains the complete data layer implementation for the chat feature using Firebase Firestore and Firebase Storage.
+A comprehensive real-time chat feature with chat list management, presence indicators, and user discovery.
+
+## Features
+
+### ✅ ChatsListScreen
+- **Real-time chat list** with BlocBuilder subscribed to ChatBloc stream
+- **Last message preview** with formatted timestamp using `timeago`
+- **Unread count badges** displayed for unread messages
+- **Real-time presence indicators** (online/offline/typing) for each chat
+- **Swipe-to-delete** functionality using `flutter_slidable`
+- **Long-press context menu** with options:
+  - Pin/Unpin chat
+  - Mute/Unmute notifications
+  - Mark as read
+  - Delete chat
+- **Search/Filter functionality** to find chats by name or message content
+- **Floating action button** to start new chats with user selection dialog
+- **Pull-to-refresh** to manually reload chat list
+
+### Presence Status
+- **Online**: Green indicator - user is active
+- **Offline**: Gray indicator - user is not online
+- **Typing**: Blue indicator with animation - user is typing
+
+### UI Components
+- **ChatListItem**: Individual chat tile with avatar, name, last message, timestamp, unread badge
+- **PresenceIndicator**: Real-time status indicator widget
+- **UserSelectionDialog**: Search and select users to start new conversations
 
 ## Architecture
 
-The implementation follows Clean Architecture principles with the following structure:
+Follows Clean Architecture pattern:
 
 ```
-chat/
+lib/features/chat/
 ├── data/
-│   ├── datasources/        # Remote data sources for Firebase operations
-│   ├── models/            # Data models with Firestore converters
-│   └── repositories/      # Repository implementations
-└── domain/
-    ├── entities/          # Domain entities
-    └── repositories/      # Repository interfaces
+│   ├── datasources/
+│   │   └── chat_remote_datasource.dart
+│   ├── models/
+│   │   ├── chat_model.dart
+│   │   └── user_model.dart
+│   └── repositories/
+│       └── chat_repository_impl.dart
+├── domain/
+│   ├── entities/
+│   │   ├── chat_entity.dart
+│   │   └── user_entity.dart
+│   ├── repositories/
+│   │   └── chat_repository.dart
+│   └── usecases/
+│       └── chat_usecase.dart
+└── presentation/
+    ├── bloc/
+    │   ├── chat_bloc.dart
+    │   ├── chat_event.dart
+    │   └── chat_data.dart
+    ├── screens/
+    │   ├── chats_list_screen.dart
+    │   └── chat_screen_example.dart
+    └── widgets/
+        ├── chat_list_item.dart
+        ├── presence_indicator.dart
+        └── user_selection_dialog.dart
 ```
-
-## Components
-
-### Domain Layer
-
-#### Entities
-- **ChatEntity**: Represents a chat conversation with participants, last message info, unread counts
-- **MessageEntity**: Represents individual messages with content, type (text/image/document/video), status
-- **PresenceEntity**: Represents user online/offline/typing status with last seen timestamp
-
-#### Repositories (Interfaces)
-- **ChatRepository**: Defines chat operations
-- **MessageRepository**: Defines message operations
-- **PresenceRepository**: Defines presence tracking operations
-
-### Data Layer
-
-#### Models
-All models include:
-- `fromFirestore()` factory for Firestore document deserialization
-- `toJson()` method for Firestore document serialization
-- `toEntity()` method to convert to domain entities
-- `fromEntity()` factory to convert from domain entities
-
-**ChatModel**:
-- Converts Firestore timestamps to DateTime
-- Handles nested unreadCount map
-- Manages participantInfo metadata
-
-**MessageModel**:
-- Supports multiple message types (text, image, document, video)
-- Tracks message status (sending, sent, delivered, read, failed)
-- Handles file attachments with URLs and metadata
-
-**PresenceModel**:
-- Tracks user online/offline/away status
-- Manages typing indicators per chat
-- Records last seen timestamps
-
-#### Data Sources
-
-**ChatRemoteDataSource**:
-- `watchUserChats()`: Real-time stream of user's chats
-- `watchChat()`: Real-time stream of specific chat
-- `createChat()`: Create new chat with participants
-- `updateChat()`: Update chat metadata
-- `deleteChat()`: Delete chat
-- `markMessagesAsRead()`: Mark all messages as read for a user
-- `getChatByParticipants()`: Find existing chat by participants
-
-**MessageRemoteDataSource**:
-- `watchMessages()`: Real-time stream of messages in a chat
-- `sendMessage()`: Send new message and update chat
-- `updateMessage()`: Update message content/status
-- `deleteMessage()`: Soft delete message
-- `uploadFile()`: Upload file to Firebase Storage (images/documents/videos)
-- `updateMessageStatus()`: Update message delivery status
-
-**PresenceRemoteDataSource**:
-- `watchUserPresence()`: Real-time stream of user's presence
-- `updatePresenceStatus()`: Update online/offline/away status
-- `updateTypingStatus()`: Update typing indicator
-- `updateLastSeen()`: Update last seen timestamp
-- `getUserPresence()`: Get current presence snapshot
-
-#### Repository Implementations
-
-All repository implementations:
-- Check network connectivity before operations
-- Wrap operations in Either<Failure, T> for error handling
-- Convert data models to domain entities
-- Transform streams to Stream<Either<Failure, T>>
-
-**ChatRepositoryImpl**: Implements ChatRepository with error handling
-**MessageRepositoryImpl**: Implements MessageRepository with file upload support
-**PresenceRepositoryImpl**: Implements PresenceRepository with real-time updates
-
-## Dependency Injection
-
-All components are registered in `lib/injection_container.dart`:
-
-```dart
-// Data Sources
-sl.registerLazySingleton<ChatRemoteDataSource>(...)
-sl.registerLazySingleton<MessageRemoteDataSource>(...)
-sl.registerLazySingleton<PresenceRemoteDataSource>(...)
-
-// Repositories
-sl.registerLazySingleton<ChatRepository>(...)
-sl.registerLazySingleton<MessageRepository>(...)
-sl.registerLazySingleton<PresenceRepository>(...)
-```
-
-## Firestore Structure
-
-### Collections
-
-**chats/**
-```
-{
-  participantIds: [userId1, userId2],
-  participantInfo: { userId1: { name, avatar }, ... },
-  lastMessage: "message text",
-  lastMessageSenderId: "userId",
-  lastMessageAt: Timestamp,
-  unreadCount: { userId1: 0, userId2: 3 },
-  createdAt: Timestamp,
-  updatedAt: Timestamp,
-  chatType: "direct" | "group"
-}
-```
-
-**chats/{chatId}/messages/**
-```
-{
-  chatId: "chatId",
-  senderId: "userId",
-  content: "message text",
-  type: "text" | "image" | "document" | "video",
-  status: "sending" | "sent" | "delivered" | "read" | "failed",
-  createdAt: Timestamp,
-  updatedAt: Timestamp?,
-  fileUrl: "https://...",
-  fileName: "file.jpg",
-  fileSize: 1024,
-  isDeleted: false
-}
-```
-
-**presence/**
-```
-{
-  status: "online" | "offline" | "away",
-  lastSeen: Timestamp,
-  isTyping: boolean,
-  typingInChatId: "chatId",
-  lastTypingAt: Timestamp
-}
-```
-
-## Storage Structure
-
-Files are stored in Firebase Storage:
-```
-chats/{chatId}/images/{timestamp}-{filename}
-chats/{chatId}/documents/{timestamp}-{filename}
-chats/{chatId}/videos/{timestamp}-{filename}
-```
-
-## Usage Example
-
-```dart
-// Get chat repository
-final chatRepo = sl<ChatRepository>();
-
-// Watch user chats
-chatRepo.watchUserChats(userId).listen((result) {
-  result.fold(
-    (failure) => print('Error: ${failure.failureMessage}'),
-    (chats) => print('Loaded ${chats.length} chats'),
-  );
-});
-
-// Send message
-final messageRepo = sl<MessageRepository>();
-final result = await messageRepo.sendMessage(messageEntity);
-result.fold(
-  (failure) => print('Failed to send'),
-  (message) => print('Message sent: ${message.id}'),
-);
-
-// Update presence
-final presenceRepo = sl<PresenceRepository>();
-await presenceRepo.updatePresenceStatus(userId, PresenceStatus.online);
-```
-
-## Error Handling
-
-All repository methods return `Either<Failure, T>` where Failure types include:
-- `NoInternetFailure`: No network connection
-- `ServerFailure`: Firebase/Firestore errors
-- `UnknownFailure`: Unexpected errors
-
-Streams emit `Stream<Either<Failure, T>>` for real-time error handling.
-
-## Testing
-
-Basic test structure provided in `test/features/chat/data/models/chat_model_test.dart`.
-
-Add more tests for:
-- Repository implementations with mocked data sources
-- Data source implementations with mocked Firestore
-- Model conversions (toJson/fromFirestore/toEntity)
 
 ## Dependencies
 
-- `cloud_firestore`: Firestore database operations
-- `firebase_storage`: File upload/download
-- `dartz`: Functional programming (Either type)
-- `equatable`: Value equality for entities
+The following packages are used:
+- `flutter_bloc` - State management
+- `cloud_firestore` - Real-time database
+- `flutter_slidable` - Swipe actions
+- `timeago` - Relative time formatting
+- `get_it` - Dependency injection
+
+## Usage
+
+### 1. Initialize Dependencies
+
+Dependencies are already registered in `lib/injection_container.dart`.
+
+### 2. Use in Your App
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:parcel_am/features/chat/presentation/bloc/chat_bloc.dart';
+import 'package:parcel_am/features/chat/presentation/screens/chats_list_screen.dart';
+import 'package:parcel_am/injection_container.dart' as di;
+
+// In your navigation or screen
+BlocProvider(
+  create: (context) => di.sl<ChatBloc>(),
+  child: ChatsListScreen(currentUserId: 'user123'),
+);
+```
+
+### 3. Firestore Data Structure
+
+#### Chats Collection
+```json
+{
+  "chats": {
+    "chatId": {
+      "participants": ["userId1", "userId2"],
+      "participantId": "userId2",
+      "participantName": "John Doe",
+      "participantAvatar": "https://...",
+      "lastMessage": "Hey, how are you?",
+      "lastMessageTime": Timestamp,
+      "unreadCount": 3,
+      "presenceStatus": "online",
+      "isPinned": false,
+      "isMuted": false,
+      "createdAt": Timestamp
+    }
+  }
+}
+```
+
+#### Users Collection (for presence)
+```json
+{
+  "users": {
+    "userId": {
+      "displayName": "John Doe",
+      "photoURL": "https://...",
+      "email": "john@example.com",
+      "presenceStatus": "online",
+      "isOnline": true
+    }
+  }
+}
+```
+
+## BLoC Events
+
+- `ChatLoadRequested(userId)` - Load chat list for user
+- `ChatDeleteRequested(chatId)` - Delete a chat
+- `ChatMarkAsReadRequested(chatId)` - Mark chat as read
+- `ChatTogglePinRequested(chatId, isPinned)` - Pin/unpin chat
+- `ChatToggleMuteRequested(chatId, isMuted)` - Mute/unmute chat
+- `ChatSearchUsersRequested(query)` - Search for users
+- `ChatCreateRequested(currentUserId, participantId)` - Create new chat
+- `ChatFilterChanged(filter)` - Filter existing chats
+
+## Customization
+
+### Change Colors
+Edit `lib/core/theme/app_colors.dart` to customize the color scheme.
+
+### Modify Chat Item UI
+Edit `lib/features/chat/presentation/widgets/chat_list_item.dart`.
+
+### Add More Context Menu Options
+Edit the `_showContextMenu` method in `chats_list_screen.dart`.
+
+## Future Enhancements
+
+- [ ] Add chat detail screen with messages
+- [ ] Implement message sending and receiving
+- [ ] Add image/file sharing
+- [ ] Voice messages
+- [ ] Message reactions
+- [ ] Group chats
+- [ ] End-to-end encryption
+- [ ] Push notifications for new messages
+- [ ] Chat archiving
+- [ ] Message search within conversations

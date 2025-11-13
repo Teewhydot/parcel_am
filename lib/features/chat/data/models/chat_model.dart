@@ -1,109 +1,67 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/chat_entity.dart';
 
-class ChatModel {
-  final String id;
-  final List<String> participantIds;
-  final Map<String, dynamic> participantInfo;
-  final String? lastMessage;
-  final String? lastMessageSenderId;
-  final DateTime? lastMessageAt;
-  final Map<String, int> unreadCount;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-  final Map<String, dynamic> metadata;
-  final String? chatType;
-
+class ChatModel extends ChatEntity {
   const ChatModel({
-    required this.id,
-    required this.participantIds,
-    required this.participantInfo,
-    this.lastMessage,
-    this.lastMessageSenderId,
-    this.lastMessageAt,
-    required this.unreadCount,
-    required this.createdAt,
-    required this.updatedAt,
-    this.metadata = const {},
-    this.chatType,
+    required super.id,
+    required super.participantId,
+    required super.participantName,
+    super.participantAvatar,
+    super.lastMessage,
+    super.lastMessageTime,
+    super.unreadCount,
+    super.presenceStatus,
+    super.lastSeen,
+    super.isPinned,
+    super.isMuted,
   });
 
   factory ChatModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return ChatModel(
       id: doc.id,
-      participantIds: List<String>.from(data['participantIds'] ?? []),
-      participantInfo: data['participantInfo'] as Map<String, dynamic>? ?? {},
-      lastMessage: data['lastMessage'] as String?,
-      lastMessageSenderId: data['lastMessageSenderId'] as String?,
-      lastMessageAt: data['lastMessageAt'] is Timestamp
-          ? (data['lastMessageAt'] as Timestamp).toDate()
+      participantId: data['participantId'] ?? '',
+      participantName: data['participantName'] ?? 'Unknown',
+      participantAvatar: data['participantAvatar'],
+      lastMessage: data['lastMessage'],
+      lastMessageTime: data['lastMessageTime'] != null
+          ? (data['lastMessageTime'] as Timestamp).toDate()
           : null,
-      unreadCount: _parseUnreadCount(data['unreadCount']),
-      createdAt: data['createdAt'] is Timestamp
-          ? (data['createdAt'] as Timestamp).toDate()
-          : DateTime.now(),
-      updatedAt: data['updatedAt'] is Timestamp
-          ? (data['updatedAt'] as Timestamp).toDate()
-          : DateTime.now(),
-      metadata: data['metadata'] as Map<String, dynamic>? ?? {},
-      chatType: data['chatType'] as String?,
+      unreadCount: data['unreadCount'] ?? 0,
+      presenceStatus: _presenceFromString(data['presenceStatus']),
+      lastSeen: data['lastSeen'] != null
+          ? (data['lastSeen'] as Timestamp).toDate()
+          : null,
+      isPinned: data['isPinned'] ?? false,
+      isMuted: data['isMuted'] ?? false,
     );
   }
 
-  factory ChatModel.fromEntity(ChatEntity entity) {
-    return ChatModel(
-      id: entity.id,
-      participantIds: entity.participantIds,
-      participantInfo: entity.participantInfo,
-      lastMessage: entity.lastMessage,
-      lastMessageSenderId: entity.lastMessageSenderId,
-      lastMessageAt: entity.lastMessageAt,
-      unreadCount: entity.unreadCount,
-      createdAt: entity.createdAt,
-      updatedAt: entity.updatedAt,
-      metadata: entity.metadata,
-      chatType: entity.chatType,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toFirestore() {
     return {
-      'participantIds': participantIds,
-      'participantInfo': participantInfo,
+      'participantId': participantId,
+      'participantName': participantName,
+      'participantAvatar': participantAvatar,
       'lastMessage': lastMessage,
-      'lastMessageSenderId': lastMessageSenderId,
-      'lastMessageAt': lastMessageAt != null ? Timestamp.fromDate(lastMessageAt!) : null,
+      'lastMessageTime': lastMessageTime != null
+          ? Timestamp.fromDate(lastMessageTime!)
+          : null,
       'unreadCount': unreadCount,
-      'createdAt': Timestamp.fromDate(createdAt),
-      'updatedAt': Timestamp.fromDate(updatedAt),
-      'metadata': metadata,
-      'chatType': chatType,
+      'presenceStatus': presenceStatus.toString().split('.').last,
+      'lastSeen': lastSeen != null ? Timestamp.fromDate(lastSeen!) : null,
+      'isPinned': isPinned,
+      'isMuted': isMuted,
     };
   }
 
-  ChatEntity toEntity() {
-    return ChatEntity(
-      id: id,
-      participantIds: participantIds,
-      participantInfo: participantInfo,
-      lastMessage: lastMessage,
-      lastMessageSenderId: lastMessageSenderId,
-      lastMessageAt: lastMessageAt,
-      unreadCount: unreadCount,
-      createdAt: createdAt,
-      updatedAt: updatedAt,
-      metadata: metadata,
-      chatType: chatType,
-    );
-  }
-
-  static Map<String, int> _parseUnreadCount(dynamic data) {
-    if (data == null) return {};
-    if (data is Map<String, int>) return data;
-    if (data is Map) {
-      return data.map((key, value) => MapEntry(key.toString(), (value as num).toInt()));
+  static PresenceStatus _presenceFromString(String? status) {
+    switch (status) {
+      case 'online':
+        return PresenceStatus.online;
+      case 'typing':
+        return PresenceStatus.typing;
+      default:
+        return PresenceStatus.offline;
     }
-    return {};
   }
 }

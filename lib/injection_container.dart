@@ -32,17 +32,11 @@ import 'features/wallet/data/datasources/wallet_remote_datasource.dart';
 
 import 'features/kyc/data/datasources/kyc_remote_datasource.dart' as kyc_ds;
 
-import 'features/chat/data/datasources/chat_remote_data_source.dart';
-import 'features/chat/data/datasources/message_remote_data_source.dart';
-import 'features/chat/data/datasources/presence_remote_data_source.dart';
-
+import 'features/chat/data/datasources/chat_remote_datasource.dart';
 import 'features/chat/data/repositories/chat_repository_impl.dart';
-import 'features/chat/data/repositories/message_repository_impl.dart';
-import 'features/chat/data/repositories/presence_repository_impl.dart';
-
 import 'features/chat/domain/repositories/chat_repository.dart';
-import 'features/chat/domain/repositories/message_repository.dart';
-import 'features/chat/domain/repositories/presence_repository.dart';
+import 'features/chat/domain/usecases/chat_usecase.dart';
+import 'features/chat/presentation/bloc/chat_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -102,15 +96,6 @@ Future<void> init() async {
     firestore: sl(),
   ));
 
-  sl.registerLazySingleton<MessageRemoteDataSource>(() => MessageRemoteDataSourceImpl(
-    firestore: sl(),
-    storage: sl(),
-  ));
-
-  sl.registerLazySingleton<PresenceRemoteDataSource>(() => PresenceRemoteDataSourceImpl(
-    firestore: sl(),
-  ));
-
   //! Features - Escrow Repository
   sl.registerLazySingleton<EscrowRepository>(() => EscrowRepositoryImpl(
     remoteDataSource: sl(),
@@ -123,18 +108,8 @@ Future<void> init() async {
     networkInfo: sl(),
   ));
 
-  //! Features - Chat Repositories
+  //! Features - Chat Repository
   sl.registerLazySingleton<ChatRepository>(() => ChatRepositoryImpl(
-    remoteDataSource: sl(),
-    networkInfo: sl(),
-  ));
-
-  sl.registerLazySingleton<MessageRepository>(() => MessageRepositoryImpl(
-    remoteDataSource: sl(),
-    networkInfo: sl(),
-  ));
-
-  sl.registerLazySingleton<PresenceRepository>(() => PresenceRepositoryImpl(
     remoteDataSource: sl(),
     networkInfo: sl(),
   ));
@@ -145,6 +120,9 @@ Future<void> init() async {
   //! Features - Parcel Use Cases
   sl.registerLazySingleton<ParcelUseCase>(() => ParcelUseCase(sl()));
 
+  //! Features - Chat Use Cases
+  sl.registerLazySingleton<ChatUseCase>(() => ChatUseCase(sl()));
+
   //! Features - Escrow BLoC
   sl.registerFactory<EscrowBloc>(() => EscrowBloc(escrowUseCase: sl()));
 
@@ -153,6 +131,9 @@ Future<void> init() async {
 
   //! Features - Wallet BLoC
   sl.registerFactory<WalletBloc>(() => WalletBloc());
+
+  //! Features - Chat BLoC
+  sl.registerFactory<ChatBloc>(() => ChatBloc(chatUseCase: sl()));
 
   //! External Services
   final sharedPreferences = await SharedPreferences.getInstance();

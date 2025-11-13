@@ -1,63 +1,74 @@
 import 'package:equatable/equatable.dart';
-import 'message_entity.dart';
+
+enum PresenceStatus { online, offline, typing }
 
 class ChatEntity extends Equatable {
   final String id;
-  final List<String> participantIds;
-  final Map<String, dynamic> participantDetails;
-  final MessageEntity? lastMessage;
+  final String participantId;
+  final String participantName;
+  final String? participantAvatar;
+  final String? lastMessage;
   final DateTime? lastMessageTime;
   final int unreadCount;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-  final Map<String, dynamic>? metadata;
+  final PresenceStatus presenceStatus;
+  final DateTime? lastSeen;
+  final bool isPinned;
+  final bool isMuted;
 
   const ChatEntity({
     required this.id,
-    required this.participantIds,
-    required this.participantDetails,
+    required this.participantId,
+    required this.participantName,
+    this.participantAvatar,
     this.lastMessage,
     this.lastMessageTime,
-    required this.unreadCount,
-    required this.createdAt,
-    required this.updatedAt,
-    this.metadata,
+    this.unreadCount = 0,
+    this.presenceStatus = PresenceStatus.offline,
+    this.lastSeen,
+    this.isPinned = false,
+    this.isMuted = false,
   });
 
   ChatEntity copyWith({
     String? id,
-    List<String>? participantIds,
-    Map<String, dynamic>? participantDetails,
-    MessageEntity? lastMessage,
+    String? participantId,
+    String? participantName,
+    String? participantAvatar,
+    String? lastMessage,
     DateTime? lastMessageTime,
     int? unreadCount,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-    Map<String, dynamic>? metadata,
+    PresenceStatus? presenceStatus,
+    DateTime? lastSeen,
+    bool? isPinned,
+    bool? isMuted,
   }) {
     return ChatEntity(
       id: id ?? this.id,
-      participantIds: participantIds ?? this.participantIds,
-      participantDetails: participantDetails ?? this.participantDetails,
+      participantId: participantId ?? this.participantId,
+      participantName: participantName ?? this.participantName,
+      participantAvatar: participantAvatar ?? this.participantAvatar,
       lastMessage: lastMessage ?? this.lastMessage,
       lastMessageTime: lastMessageTime ?? this.lastMessageTime,
       unreadCount: unreadCount ?? this.unreadCount,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-      metadata: metadata ?? this.metadata,
+      presenceStatus: presenceStatus ?? this.presenceStatus,
+      lastSeen: lastSeen ?? this.lastSeen,
+      isPinned: isPinned ?? this.isPinned,
+      isMuted: isMuted ?? this.isMuted,
     );
   }
 
   @override
   List<Object?> get props => [
         id,
-        participantIds,
-        participantDetails,
+        participantId,
+        participantName,
+        participantAvatar,
         lastMessage,
         lastMessageTime,
         unreadCount,
-        createdAt,
-        updatedAt,
-        metadata,
+        presenceStatus,
+        lastSeen,
+        isPinned,
+        isMuted,
       ];
 }
