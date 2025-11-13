@@ -1,0 +1,815 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/app_spacing.dart';
+import '../../../../injection_container.dart';
+import '../bloc/parcel/parcel_bloc.dart';
+import '../bloc/parcel/parcel_event.dart';
+import '../bloc/parcel/parcel_state.dart';
+import '../bloc/escrow/escrow_bloc.dart';
+import '../bloc/escrow/escrow_event.dart';
+import '../bloc/escrow/escrow_state.dart';
+import '../../domain/models/package_model.dart';
+import 'payment_screen.dart';
+
+class CreateParcelScreen extends StatefulWidget {
+  const CreateParcelScreen({super.key});
+
+  @override
+  State<CreateParcelScreen> createState() => _CreateParcelScreenState();
+}
+
+class _CreateParcelScreenState extends State<CreateParcelScreen> {
+  final PageController _pageController = PageController();
+  int _currentStep = 0;
+  late ParcelBloc _parcelBloc;
+  late EscrowBloc _escrowBloc;
+
+  final _titleController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _weightController = TextEditingController();
+  final _priceController = TextEditingController();
+  final _originNameController = TextEditingController();
+  final _originAddressController = TextEditingController();
+  final _destNameController = TextEditingController();
+  final _destAddressController = TextEditingController();
+
+  String _packageType = 'Documents';
+  String _urgency = 'Standard';
+  PackageModel? _createdParcel;
+
+  final List<String> _packageTypes = [
+    'Documents',
+    'Electronics',
+    'Clothing',
+    'Food',
+    'Fragile',
+    'Other',
+  ];
+
+  final List<String> _urgencyLevels = [
+    'Standard',
+    'Express',
+    'Urgent',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _parcelBloc = sl<ParcelBloc>();
+    _escrowBloc = sl<EscrowBloc>();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _titleController.dispose();
+    _descriptionController.dispose();
+    _weightController.dispose();
+    _priceController.dispose();
+    _originNameController.dispose();
+    _originAddressController.dispose();
+    _destNameController.dispose();
+    _destAddressController.dispose();
+    _parcelBloc.close();
+    _escrowBloc.close();
+    super.dispose();
+  }
+
+  void _nextStep() {
+    if (_currentStep < 3) {
+      setState(() => _currentStep++);
+      _pageController.animateToPage(
+        _currentStep,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  void _previousStep() {
+    if (_currentStep > 0) {
+      setState(() => _currentStep--);
+      _pageController.animateToPage(
+        _currentStep,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  void _createParcel() {
+    final origin = LocationInfo(
+      name: _originNameController.text,
+      address: _originAddressController.text,
+      latitude: 9.0820,
+      longitude: 8.6753,
+    );
+
+    final destination = LocationInfo(
+      name: _destNameController.text,
+      address: _destAddressController.text,
+      latitude: 6.5244,
+      longitude: 3.3792,
+    );
+
+    _parcelBloc.add(ParcelCreateRequested(
+      title: _titleController.text,
+      description: _descriptionController.text,
+      packageType: _packageType,
+      weight: double.tryParse(_weightController.text) ?? 0.0,
+      price: double.tryParse(_priceController.text) ?? 0.0,
+      urgency: _urgency,
+      origin: origin,
+      destination: destination,
+    ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: _parcelBloc),
+        BlocProvider.value(value: _escrowBloc),
+      ],
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Create Parcel'),
+          backgroundColor: AppColors.surface,
+          elevation: 0,
+        ),
+        body: MultiBlocListener(
+          listeners: [
+            BlocListener<ParcelBloc, ParcelState>(
+              listener: (context, state) {
+                if (state is ParcelCreated) {
+                  setState(() => _createdParcel = state.parcel);
+                  _nextStep();
+                } else if (state is ParcelError) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(state.message),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+            ),
+            BlocListener<EscrowBloc, EscrowState>(
+              listener: (context, state) {
+                if (state.status == EscrowStatus.held) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Payment secured in escrow'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                  if (_createdParcel != null) {
+                    final paymentInfo = PaymentInfo(
+                      transactionId: state.transactionId!,
+                      status: 'completed',
+                      amount: state.amount!,
+                      serviceFee: 150.0,
+                      totalAmount: state.amount! + 150.0,
+                      paymentMethod: 'bank',
+                      paidAt: DateTime.now(),
+                      isEscrow: true,
+                      escrowStatus: 'held',
+                      escrowHeldAt: DateTime.now(),
+                    );
+                    _parcelBloc.add(ParcelPaymentCompleted(
+                      parcelId: _createdParcel!.id,
+                      paymentInfo: paymentInfo,
+                    ));
+                  }
+                } else if (state.status == EscrowStatus.error) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(state.errorMessage ?? 'Escrow error'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+            ),
+          ],
+          child: Column(
+            children: [
+              _buildStepIndicator(),
+              Expanded(
+                child: PageView(
+                  controller: _pageController,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: [
+                    _buildParcelDetailsStep(),
+                    _buildLocationStep(),
+                    _buildReviewStep(),
+                    _buildPaymentStep(),
+                  ],
+                ),
+              ),
+              _buildNavigationButtons(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStepIndicator() {
+    final steps = ['Details', 'Location', 'Review', 'Payment'];
+    return Container(
+      padding: AppSpacing.paddingLG,
+      color: AppColors.surface,
+      child: Row(
+        children: List.generate(steps.length, (index) {
+          final isActive = index == _currentStep;
+          final isCompleted = index < _currentStep;
+          return Expanded(
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    if (index > 0)
+                      Expanded(
+                        child: Container(
+                          height: 2,
+                          color: isCompleted
+                              ? AppColors.primary
+                              : AppColors.outline,
+                        ),
+                      ),
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isCompleted || isActive
+                            ? AppColors.primary
+                            : AppColors.surfaceVariant,
+                      ),
+                      child: Center(
+                        child: isCompleted
+                            ? const Icon(Icons.check,
+                                color: Colors.white, size: 18)
+                            : Text(
+                                '${index + 1}',
+                                style: TextStyle(
+                                  color: isActive
+                                      ? Colors.white
+                                      : AppColors.onSurfaceVariant,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                      ),
+                    ),
+                    if (index < steps.length - 1)
+                      Expanded(
+                        child: Container(
+                          height: 2,
+                          color: isCompleted
+                              ? AppColors.primary
+                              : AppColors.outline,
+                        ),
+                      ),
+                  ],
+                ),
+                AppSpacing.verticalSpacing(SpacingSize.xs),
+                Text(
+                  steps[index],
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                    color: isActive
+                        ? AppColors.primary
+                        : AppColors.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildParcelDetailsStep() {
+    return SingleChildScrollView(
+      padding: AppSpacing.paddingLG,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Parcel Details',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          AppSpacing.verticalSpacing(SpacingSize.lg),
+          TextField(
+            controller: _titleController,
+            decoration: const InputDecoration(
+              labelText: 'Parcel Title',
+              border: OutlineInputBorder(),
+              hintText: 'e.g., Business Documents',
+            ),
+          ),
+          AppSpacing.verticalSpacing(SpacingSize.md),
+          TextField(
+            controller: _descriptionController,
+            maxLines: 3,
+            decoration: const InputDecoration(
+              labelText: 'Description',
+              border: OutlineInputBorder(),
+              hintText: 'Provide details about your parcel',
+            ),
+          ),
+          AppSpacing.verticalSpacing(SpacingSize.md),
+          DropdownButtonFormField<String>(
+            value: _packageType,
+            decoration: const InputDecoration(
+              labelText: 'Package Type',
+              border: OutlineInputBorder(),
+            ),
+            items: _packageTypes
+                .map((type) => DropdownMenuItem(
+                      value: type,
+                      child: Text(type),
+                    ))
+                .toList(),
+            onChanged: (value) => setState(() => _packageType = value!),
+          ),
+          AppSpacing.verticalSpacing(SpacingSize.md),
+          TextField(
+            controller: _weightController,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              labelText: 'Weight (kg)',
+              border: OutlineInputBorder(),
+              hintText: 'Enter weight',
+            ),
+          ),
+          AppSpacing.verticalSpacing(SpacingSize.md),
+          TextField(
+            controller: _priceController,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              labelText: 'Offered Price (₦)',
+              border: OutlineInputBorder(),
+              hintText: 'Enter price',
+            ),
+          ),
+          AppSpacing.verticalSpacing(SpacingSize.md),
+          DropdownButtonFormField<String>(
+            value: _urgency,
+            decoration: const InputDecoration(
+              labelText: 'Urgency',
+              border: OutlineInputBorder(),
+            ),
+            items: _urgencyLevels
+                .map((level) => DropdownMenuItem(
+                      value: level,
+                      child: Text(level),
+                    ))
+                .toList(),
+            onChanged: (value) => setState(() => _urgency = value!),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLocationStep() {
+    return SingleChildScrollView(
+      padding: AppSpacing.paddingLG,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Pickup & Delivery',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          AppSpacing.verticalSpacing(SpacingSize.lg),
+          const Text(
+            'Pickup Location',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
+          AppSpacing.verticalSpacing(SpacingSize.md),
+          TextField(
+            controller: _originNameController,
+            decoration: const InputDecoration(
+              labelText: 'Location Name',
+              border: OutlineInputBorder(),
+              hintText: 'e.g., My Office',
+            ),
+          ),
+          AppSpacing.verticalSpacing(SpacingSize.md),
+          TextField(
+            controller: _originAddressController,
+            maxLines: 2,
+            decoration: const InputDecoration(
+              labelText: 'Address',
+              border: OutlineInputBorder(),
+              hintText: 'Enter full address',
+            ),
+          ),
+          AppSpacing.verticalSpacing(SpacingSize.lg),
+          const Text(
+            'Delivery Location',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
+          AppSpacing.verticalSpacing(SpacingSize.md),
+          TextField(
+            controller: _destNameController,
+            decoration: const InputDecoration(
+              labelText: 'Location Name',
+              border: OutlineInputBorder(),
+              hintText: 'e.g., Client Office',
+            ),
+          ),
+          AppSpacing.verticalSpacing(SpacingSize.md),
+          TextField(
+            controller: _destAddressController,
+            maxLines: 2,
+            decoration: const InputDecoration(
+              labelText: 'Address',
+              border: OutlineInputBorder(),
+              hintText: 'Enter full address',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReviewStep() {
+    return BlocBuilder<ParcelBloc, ParcelState>(
+      builder: (context, state) {
+        if (state is ParcelCreating) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 80,
+                  height: 80,
+                  child: CircularProgressIndicator(
+                    value: state.progress,
+                    strokeWidth: 6,
+                    color: AppColors.primary,
+                  ),
+                ),
+                AppSpacing.verticalSpacing(SpacingSize.lg),
+                Text(
+                  'Creating parcel... ${(state.progress * 100).toInt()}%',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return SingleChildScrollView(
+          padding: AppSpacing.paddingLG,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Review Parcel',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              AppSpacing.verticalSpacing(SpacingSize.lg),
+              Card(
+                child: Padding(
+                  padding: AppSpacing.paddingLG,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildReviewItem('Title', _titleController.text),
+                      _buildReviewItem(
+                          'Description', _descriptionController.text),
+                      _buildReviewItem('Type', _packageType),
+                      _buildReviewItem('Weight', '${_weightController.text} kg'),
+                      _buildReviewItem('Price', '₦${_priceController.text}'),
+                      _buildReviewItem('Urgency', _urgency),
+                    ],
+                  ),
+                ),
+              ),
+              AppSpacing.verticalSpacing(SpacingSize.md),
+              Card(
+                child: Padding(
+                  padding: AppSpacing.paddingLG,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Locations',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w600),
+                      ),
+                      AppSpacing.verticalSpacing(SpacingSize.md),
+                      _buildReviewItem(
+                          'Pickup', _originNameController.text),
+                      _buildReviewItem(
+                          'Delivery', _destNameController.text),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildReviewItem(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+                color: AppColors.onSurfaceVariant,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentStep() {
+    return BlocBuilder<EscrowBloc, EscrowState>(
+      builder: (context, escrowState) {
+        return SingleChildScrollView(
+          padding: AppSpacing.paddingLG,
+          child: Column(
+            children: [
+              const Icon(
+                Icons.check_circle,
+                color: AppColors.primary,
+                size: 80,
+              ),
+              AppSpacing.verticalSpacing(SpacingSize.lg),
+              const Text(
+                'Parcel Created!',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              AppSpacing.verticalSpacing(SpacingSize.md),
+              const Text(
+                'Your parcel has been created successfully. Complete payment to proceed.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: AppColors.onSurfaceVariant),
+              ),
+              AppSpacing.verticalSpacing(SpacingSize.lg),
+              if (_createdParcel != null)
+                Card(
+                  child: Padding(
+                    padding: AppSpacing.paddingLG,
+                    child: Column(
+                      children: [
+                        _buildPaymentRow(
+                            'Delivery Fee', '₦${_createdParcel!.price}'),
+                        _buildPaymentRow('Service Fee', '₦150'),
+                        const Divider(),
+                        _buildPaymentRow(
+                          'Total',
+                          '₦${_createdParcel!.price + 150}',
+                          isBold: true,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              AppSpacing.verticalSpacing(SpacingSize.lg),
+              Container(
+                padding: AppSpacing.paddingLG,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      _getEscrowIcon(escrowState.status),
+                      color: AppColors.primary,
+                    ),
+                    AppSpacing.horizontalSpacing(SpacingSize.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _getEscrowStatusText(escrowState.status),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                          Text(
+                            _getEscrowDescriptionText(escrowState.status),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (escrowState.status == EscrowStatus.holding)
+                      const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                  ],
+                ),
+              ),
+              AppSpacing.verticalSpacing(SpacingSize.lg),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: escrowState.status == EscrowStatus.idle ||
+                          escrowState.status == EscrowStatus.error
+                      ? () {
+                          if (_createdParcel != null) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const PaymentScreen(),
+                              ),
+                            );
+                          }
+                        }
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Proceed to Payment'),
+                ),
+              ),
+              if (escrowState.status == EscrowStatus.held) ...[
+                AppSpacing.verticalSpacing(SpacingSize.md),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Done'),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPaymentRow(String label, String amount, {bool isBold = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+              fontSize: isBold ? 18 : 14,
+            ),
+          ),
+          Text(
+            amount,
+            style: TextStyle(
+              fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
+              fontSize: isBold ? 18 : 14,
+              color: isBold ? AppColors.primary : null,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  IconData _getEscrowIcon(EscrowStatus status) {
+    switch (status) {
+      case EscrowStatus.holding:
+        return Icons.hourglass_bottom;
+      case EscrowStatus.held:
+        return Icons.lock;
+      case EscrowStatus.releasing:
+        return Icons.hourglass_bottom;
+      case EscrowStatus.released:
+        return Icons.check_circle;
+      case EscrowStatus.error:
+        return Icons.error;
+      default:
+        return Icons.shield;
+    }
+  }
+
+  String _getEscrowStatusText(EscrowStatus status) {
+    switch (status) {
+      case EscrowStatus.holding:
+        return 'Securing Payment...';
+      case EscrowStatus.held:
+        return 'Payment Secured';
+      case EscrowStatus.releasing:
+        return 'Releasing Payment...';
+      case EscrowStatus.released:
+        return 'Payment Released';
+      case EscrowStatus.error:
+        return 'Payment Error';
+      default:
+        return 'Escrow Protection';
+    }
+  }
+
+  String _getEscrowDescriptionText(EscrowStatus status) {
+    switch (status) {
+      case EscrowStatus.holding:
+        return 'Please wait while we secure your payment';
+      case EscrowStatus.held:
+        return 'Your payment is safely held in escrow';
+      case EscrowStatus.releasing:
+        return 'Releasing payment to carrier';
+      case EscrowStatus.released:
+        return 'Payment has been released successfully';
+      case EscrowStatus.error:
+        return 'An error occurred. Please try again';
+      default:
+        return 'Your payment will be securely held until delivery';
+    }
+  }
+
+  Widget _buildNavigationButtons() {
+    return BlocBuilder<ParcelBloc, ParcelState>(
+      builder: (context, state) {
+        final isCreating = state is ParcelCreating;
+        final isLastStep = _currentStep == 3;
+
+        if (isLastStep) {
+          return const SizedBox.shrink();
+        }
+
+        return Container(
+          padding: AppSpacing.paddingLG,
+          decoration: const BoxDecoration(
+            color: AppColors.surface,
+            border: Border(top: BorderSide(color: AppColors.outline)),
+          ),
+          child: Row(
+            children: [
+              if (_currentStep > 0)
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: isCreating ? null : _previousStep,
+                    child: const Text('Back'),
+                  ),
+                ),
+              if (_currentStep > 0) AppSpacing.horizontalSpacing(SpacingSize.md),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: isCreating
+                      ? null
+                      : () {
+                          if (_currentStep == 2) {
+                            _createParcel();
+                          } else {
+                            _nextStep();
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: Text(_currentStep == 2 ? 'Create Parcel' : 'Next'),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}

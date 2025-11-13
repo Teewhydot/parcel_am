@@ -26,6 +26,7 @@ import 'features/travellink/domain/usecases/parcel_usecase.dart';
 
 import 'features/travellink/presentation/bloc/escrow/escrow_bloc.dart';
 import 'features/travellink/presentation/bloc/parcel/parcel_bloc.dart';
+import 'features/travellink/presentation/bloc/wallet/wallet_bloc.dart';
 
 import 'features/wallet/data/datasources/wallet_remote_datasource.dart';
 
@@ -107,6 +108,9 @@ Future<void> init() async {
 
   //! Features - Parcel BLoC
   sl.registerFactory<ParcelBloc>(() => ParcelBloc(parcelUseCase: sl()));
+
+  //! Features - Wallet BLoC
+  sl.registerFactory<WalletBloc>(() => WalletBloc());
 
   //! External Services
   final sharedPreferences = await SharedPreferences.getInstance();

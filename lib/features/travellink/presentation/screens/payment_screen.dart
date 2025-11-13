@@ -8,6 +8,9 @@ import '../widgets/bottom_navigation.dart';
 import '../bloc/wallet/wallet_bloc.dart';
 import '../bloc/wallet/wallet_event.dart';
 import '../bloc/wallet/wallet_data.dart';
+import '../bloc/escrow/escrow_bloc.dart';
+import '../bloc/escrow/escrow_event.dart';
+import '../bloc/escrow/escrow_state.dart';
 import '../../domain/models/package_model.dart';
 
 class PaymentScreen extends StatefulWidget {
@@ -23,6 +26,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   final TextEditingController _accountNumberController = TextEditingController();
   final TextEditingController _bankNameController = TextEditingController();
   late WalletBloc _walletBloc;
+  late EscrowBloc _escrowBloc;
   PaymentInfo? _paymentInfo;
 
   final List<Map<String, dynamic>> steps = [
@@ -70,12 +74,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
   void initState() {
     super.initState();
     _walletBloc = sl<WalletBloc>();
+    _escrowBloc = sl<EscrowBloc>();
     _walletBloc.add(const WalletLoadRequested());
   }
 
   @override
   void dispose() {
     _walletBloc.close();
+    _escrowBloc.close();
     _accountNumberController.dispose();
     _bankNameController.dispose();
     super.dispose();
@@ -106,9 +112,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
       paymentMethod: paymentMethod,
       paidAt: DateTime.now(),
       isEscrow: true,
-      escrowStatus: 'held',
+      escrowStatus: 'holding',
       escrowHeldAt: DateTime.now(),
     );
+
+    _escrowBloc.add(EscrowHoldRequested(
+      transactionId: transactionId,
+      amount: totalAmount,
+      packageId: 'PKG_001',
+    ));
 
     _walletBloc.add(WalletEscrowHoldRequested(
       transactionId: transactionId,
@@ -123,8 +135,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: _walletBloc,
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: _walletBloc),
+        BlocProvider.value(value: _escrowBloc),
+      ],
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Secure Payment'),
@@ -135,21 +150,38 @@ class _PaymentScreenState extends State<PaymentScreen> {
             onPressed: () => Navigator.of(context).pop(),
           ),
         ),
-        body: BlocListener<WalletBloc, BaseState<WalletData>>(
-          listener: (context, state) {
-            if (state is ErrorState<WalletData>) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.errorMessage ?? 'An error occurred'),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            } else if (state is LoadedState<WalletData> && currentStep == 2) {
-              setState(() {
-                currentStep = 3;
-              });
-            }
-          },
+        body: MultiBlocListener(
+          listeners: [
+            BlocListener<WalletBloc, BaseState<WalletData>>(
+              listener: (context, state) {
+                if (state is ErrorState<WalletData>) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(state.errorMessage ?? 'An error occurred'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+            ),
+            BlocListener<EscrowBloc, EscrowState>(
+              listener: (context, state) {
+                if (state.status == EscrowStatus.held && currentStep == 2) {
+                  setState(() {
+                    currentStep = 3;
+                    _paymentInfo = _paymentInfo?.copyWith(escrowStatus: 'held');
+                  });
+                } else if (state.status == EscrowStatus.error) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(state.errorMessage ?? 'Escrow error occurred'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+            ),
+          ],
           child: Column(
         children: [
           // Progress Steps
@@ -600,65 +632,86 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   Widget _buildEscrowDepositStep() {
-    return BlocBuilder<WalletBloc, BaseState<WalletData>>(
-      builder: (context, state) {
-        return Column(
-          children: [
-            if (state is LoadedState<WalletData> && state.data != null) ...[
-              Card(
-                child: Padding(
-                  padding: AppSpacing.paddingLG,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Wallet Balance',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      AppSpacing.verticalSpacing(SpacingSize.lg),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return BlocBuilder<EscrowBloc, EscrowState>(
+      builder: (context, escrowState) {
+        return BlocBuilder<WalletBloc, BaseState<WalletData>>(
+          builder: (context, walletState) {
+            return Column(
+              children: [
+                if (walletState is LoadedState<WalletData> && walletState.data != null) ...[
+                  Card(
+                    child: Padding(
+                      padding: AppSpacing.paddingLG,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Available Balance',
-                            style: TextStyle(color: AppColors.onSurfaceVariant),
+                          Row(
+                            children: [
+                              const Text(
+                                'Wallet Balance',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const Spacer(),
+                              Icon(
+                                _getEscrowStatusIcon(escrowState.status),
+                                color: _getEscrowStatusColor(escrowState.status),
+                                size: 20,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                _getEscrowStatusLabel(escrowState.status),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: _getEscrowStatusColor(escrowState.status),
+                                ),
+                              ),
+                            ],
                           ),
-                          Text(
-                            '₦${state.data!.availableBalance.toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          AppSpacing.verticalSpacing(SpacingSize.lg),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Available Balance',
+                                style: TextStyle(color: AppColors.onSurfaceVariant),
+                              ),
+                              Text(
+                                '₦${walletState.data!.availableBalance.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                          AppSpacing.verticalSpacing(SpacingSize.sm),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Pending (Escrow)',
+                                style: TextStyle(color: AppColors.onSurfaceVariant),
+                              ),
+                              Text(
+                                '₦${walletState.data!.pendingBalance.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.accent,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                      AppSpacing.verticalSpacing(SpacingSize.sm),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Pending (Escrow)',
-                            style: TextStyle(color: AppColors.onSurfaceVariant),
-                          ),
-                          Text(
-                            '₦${state.data!.pendingBalance.toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.accent,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
-              AppSpacing.verticalSpacing(SpacingSize.lg),
-            ],
+                  AppSpacing.verticalSpacing(SpacingSize.lg),
+                ],
             Card(
               child: Padding(
                 padding: AppSpacing.paddingXXL,
@@ -755,9 +808,62 @@ class _PaymentScreenState extends State<PaymentScreen> {
           ),
         ),
           ],
+            );
+          },
         );
       },
     );
+  }
+
+  IconData _getEscrowStatusIcon(EscrowStatus status) {
+    switch (status) {
+      case EscrowStatus.holding:
+        return Icons.hourglass_bottom;
+      case EscrowStatus.held:
+        return Icons.lock;
+      case EscrowStatus.releasing:
+        return Icons.lock_open;
+      case EscrowStatus.released:
+        return Icons.check_circle;
+      case EscrowStatus.error:
+        return Icons.error;
+      default:
+        return Icons.shield;
+    }
+  }
+
+  Color _getEscrowStatusColor(EscrowStatus status) {
+    switch (status) {
+      case EscrowStatus.holding:
+        return Colors.orange;
+      case EscrowStatus.held:
+        return Colors.blue;
+      case EscrowStatus.releasing:
+        return Colors.purple;
+      case EscrowStatus.released:
+        return Colors.green;
+      case EscrowStatus.error:
+        return Colors.red;
+      default:
+        return AppColors.onSurfaceVariant;
+    }
+  }
+
+  String _getEscrowStatusLabel(EscrowStatus status) {
+    switch (status) {
+      case EscrowStatus.holding:
+        return 'HOLDING';
+      case EscrowStatus.held:
+        return 'HELD';
+      case EscrowStatus.releasing:
+        return 'RELEASING';
+      case EscrowStatus.released:
+        return 'RELEASED';
+      case EscrowStatus.error:
+        return 'ERROR';
+      default:
+        return 'IDLE';
+    }
   }
 
   Widget _buildEscrowStep(int step, String title, String description, Color color) {
