@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_scaffold.dart';
 import '../../../../core/widgets/app_container.dart';
@@ -25,6 +27,8 @@ import '../../data/providers/theme_provider.dart';
 import '../../data/constants/verification_constants.dart';
 import '../../data/datasources/package_remote_data_source.dart';
 import '../../../../core/services/notification_service.dart';
+import '../../../../core/services/presence_service.dart';
+import '../../../../core/services/chat_notification_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -38,12 +42,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
   StreamSubscription? _notificationSubscription;
   List<Map<String, dynamic>> _activePackages = [];
   final NotificationService _notificationService = NotificationService(firestore: sl());
+  late final PresenceService _presenceService;
+  late final ChatNotificationService _chatNotificationService;
 
   @override
   void initState() {
     super.initState();
     _subscribeToActivePackages();
     _subscribeToEscrowNotifications();
+    _initializePresenceAndChatNotifications();
   }
 
   @override
@@ -51,7 +58,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _packagesSubscription?.cancel();
     _notificationSubscription?.cancel();
     _notificationService.dispose();
+    _presenceService.dispose();
+    _chatNotificationService.dispose();
     super.dispose();
+  }
+
+  void _initializePresenceAndChatNotifications() {
+    final authProvider = context.read<AuthProvider>();
+    final userId = authProvider.user?.uid ?? '';
+    
+    if (userId.isNotEmpty) {
+      _presenceService = PresenceService(firestore: sl<FirebaseFirestore>());
+      _presenceService.initialize(userId);
+
+      _chatNotificationService = ChatNotificationService(
+        firestore: sl<FirebaseFirestore>(),
+        notificationsPlugin: FlutterLocalNotificationsPlugin(),
+      );
+      _chatNotificationService.initialize(userId);
+      _chatNotificationService.requestPermissions();
+    }
   }
 
   void _subscribeToActivePackages() {
@@ -251,6 +277,7 @@ class _HeaderSection extends StatelessWidget {
                           );
                         },
                       ),
+                      _ChatButton(),
                       _NotificationButton(),
                     ],
                   ),
@@ -282,6 +309,79 @@ class _HeaderSection extends StatelessWidget {
               ),
             ],
           ),
+        );
+      },
+    );
+  }
+}
+
+class _ChatButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthProvider>();
+    final userId = authProvider.user?.uid ?? '';
+
+    if (userId.isEmpty) {
+      return IconButton(
+        icon: const Icon(Icons.chat_outlined, color: Colors.white),
+        onPressed: () {
+          sl<NavigationService>().navigateTo(Routes.chatsList);
+        },
+      );
+    }
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('chats')
+          .where('participants', arrayContains: userId)
+          .snapshots(),
+      builder: (context, snapshot) {
+        int totalUnread = 0;
+
+        if (snapshot.hasData) {
+          for (var doc in snapshot.data!.docs) {
+            final chatData = doc.data() as Map<String, dynamic>;
+            final unreadCount =
+                (chatData['unreadCount'] as Map<String, dynamic>?)?[userId] ?? 0;
+            totalUnread += unreadCount as int;
+          }
+        }
+
+        return Stack(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.chat_outlined, color: Colors.white),
+              onPressed: () {
+                sl<NavigationService>().navigateTo(Routes.chatsList);
+              },
+            ),
+            if (totalUnread > 0)
+              Positioned(
+                right: 8,
+                top: 8,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: AppColors.accent,
+                    shape: BoxShape.circle,
+                  ),
+                  constraints: const BoxConstraints(
+                    minWidth: 16,
+                    minHeight: 16,
+                  ),
+                  child: Center(
+                    child: Text(
+                      totalUnread > 9 ? '9+' : totalUnread.toString(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
         );
       },
     );

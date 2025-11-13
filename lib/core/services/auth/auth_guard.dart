@@ -89,6 +89,8 @@ class AuthGuard {
       Routes.requestDetails,
       Routes.browseRequests,
       Routes.verification,
+      Routes.chatsList,
+      Routes.chat,
     ];
     
     return protectedRoutes.contains(routeName);

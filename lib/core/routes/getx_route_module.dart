@@ -10,6 +10,8 @@ import 'package:parcel_am/features/travellink/presentation/screens/verification_
 import 'package:parcel_am/features/travellink/presentation/screens/browse_requests_screen.dart';
 import 'package:parcel_am/features/travellink/presentation/screens/kyc_blocked_screen.dart';
 import 'package:parcel_am/features/travellink/presentation/screens/wallet_screen.dart';
+import 'package:parcel_am/features/travellink/presentation/screens/chats_list_screen.dart';
+import 'package:parcel_am/features/travellink/presentation/screens/chat_screen.dart';
 
 import '../../features/travellink/presentation/screens/splash_screen.dart';
 import '../services/auth/auth_guard.dart';
@@ -94,6 +96,25 @@ class GetXRouteModule {
       transition: _transition,
       transitionDuration: _transitionDuration,
       requiresKyc: true,
+    ),
+    AuthGuard.createProtectedRoute(
+      name: Routes.chatsList,
+      page: () => const ChatsListScreen(),
+      transition: _transition,
+      transitionDuration: _transitionDuration,
+      requiresKyc: false,
+    ),
+    AuthGuard.createProtectedRoute(
+      name: Routes.chat,
+      page: () {
+        final args = Get.arguments as Map<String, dynamic>? ?? {};
+        final chatId = args['chatId'] as String? ?? '';
+        final otherUserId = args['otherUserId'] as String? ?? '';
+        return ChatScreen(chatId: chatId, otherUserId: otherUserId);
+      },
+      transition: _transition,
+      transitionDuration: _transitionDuration,
+      requiresKyc: false,
     ),
   ];
 }

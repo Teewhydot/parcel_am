@@ -13,4 +13,6 @@ class Routes {
   static const String browseRequests = '/browseRequests';
   static const String kycBlocked = '/kycBlocked';
   static const String wallet = '/wallet';
+  static const String chatsList = '/chatsList';
+  static const String chat = '/chat';
 }
