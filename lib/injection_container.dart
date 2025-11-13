@@ -32,6 +32,18 @@ import 'features/wallet/data/datasources/wallet_remote_datasource.dart';
 
 import 'features/kyc/data/datasources/kyc_remote_datasource.dart' as kyc_ds;
 
+import 'features/chat/data/datasources/chat_remote_data_source.dart';
+import 'features/chat/data/datasources/message_remote_data_source.dart';
+import 'features/chat/data/datasources/presence_remote_data_source.dart';
+
+import 'features/chat/data/repositories/chat_repository_impl.dart';
+import 'features/chat/data/repositories/message_repository_impl.dart';
+import 'features/chat/data/repositories/presence_repository_impl.dart';
+
+import 'features/chat/domain/repositories/chat_repository.dart';
+import 'features/chat/domain/repositories/message_repository.dart';
+import 'features/chat/domain/repositories/presence_repository.dart';
+
 final sl = GetIt.instance;
 
 class NetworkInfoImpl implements NetworkInfo {
@@ -85,6 +97,20 @@ Future<void> init() async {
     firestore: sl(),
   ));
 
+  //! Features - Chat Data Sources
+  sl.registerLazySingleton<ChatRemoteDataSource>(() => ChatRemoteDataSourceImpl(
+    firestore: sl(),
+  ));
+
+  sl.registerLazySingleton<MessageRemoteDataSource>(() => MessageRemoteDataSourceImpl(
+    firestore: sl(),
+    storage: sl(),
+  ));
+
+  sl.registerLazySingleton<PresenceRemoteDataSource>(() => PresenceRemoteDataSourceImpl(
+    firestore: sl(),
+  ));
+
   //! Features - Escrow Repository
   sl.registerLazySingleton<EscrowRepository>(() => EscrowRepositoryImpl(
     remoteDataSource: sl(),
@@ -93,6 +119,22 @@ Future<void> init() async {
 
   //! Features - Parcel Repository
   sl.registerLazySingleton<ParcelRepository>(() => ParcelRepositoryImpl(
+    remoteDataSource: sl(),
+    networkInfo: sl(),
+  ));
+
+  //! Features - Chat Repositories
+  sl.registerLazySingleton<ChatRepository>(() => ChatRepositoryImpl(
+    remoteDataSource: sl(),
+    networkInfo: sl(),
+  ));
+
+  sl.registerLazySingleton<MessageRepository>(() => MessageRepositoryImpl(
+    remoteDataSource: sl(),
+    networkInfo: sl(),
+  ));
+
+  sl.registerLazySingleton<PresenceRepository>(() => PresenceRepositoryImpl(
     remoteDataSource: sl(),
     networkInfo: sl(),
   ));
