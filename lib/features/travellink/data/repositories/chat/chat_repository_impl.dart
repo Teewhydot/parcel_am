@@ -13,21 +13,25 @@ class ChatRepositoryImpl implements ChatRepository {
       : _remoteDataSource = remoteDataSource ?? ChatRemoteDataSourceImpl();
 
   @override
-  Stream<Either<Failure, List<ChatEntity>>> watchUserChats(String userId) {
-    return _remoteDataSource.watchUserChats(userId).map((chats) {
-      return Right(chats);
-    }).handleError((error) {
-      return Left(ServerFailure(failureMessage: error.toString()));
-    });
+  Stream<Either<Failure, List<ChatEntity>>> watchUserChats(String userId) async* {
+    try {
+      await for (final chats in _remoteDataSource.watchUserChats(userId)) {
+        yield Right(chats);
+      }
+    } catch (error) {
+      yield Left(ServerFailure(failureMessage: error.toString()));
+    }
   }
 
   @override
-  Stream<Either<Failure, List<MessageEntity>>> watchMessages(String chatId) {
-    return _remoteDataSource.watchMessages(chatId).map((messages) {
-      return Right(messages);
-    }).handleError((error) {
-      return Left(ServerFailure(failureMessage: error.toString()));
-    });
+  Stream<Either<Failure, List<MessageEntity>>> watchMessages(String chatId) async* {
+    try {
+      await for (final messages in _remoteDataSource.watchMessages(chatId)) {
+        yield Right(messages);
+      }
+    } catch (error) {
+      yield Left(ServerFailure(failureMessage: error.toString()));
+    }
   }
 
   @override
@@ -84,12 +88,14 @@ class ChatRepositoryImpl implements ChatRepository {
   }
 
   @override
-  Stream<Either<Failure, PresenceEntity>> watchUserPresence(String userId) {
-    return _remoteDataSource.watchUserPresence(userId).map((presence) {
-      return Right(presence);
-    }).handleError((error) {
-      return Left(ServerFailure(failureMessage: error.toString()));
-    });
+  Stream<Either<Failure, PresenceEntity>> watchUserPresence(String userId) async* {
+    try {
+      await for (final presence in _remoteDataSource.watchUserPresence(userId)) {
+        yield Right(presence);
+      }
+    } catch (error) {
+      yield Left(ServerFailure(failureMessage: error.toString()));
+    }
   }
 
   @override
@@ -129,11 +135,13 @@ class ChatRepositoryImpl implements ChatRepository {
   }
 
   @override
-  Stream<Either<Failure, Map<String, bool>>> watchTypingStatus(String chatId) {
-    return _remoteDataSource.watchTypingStatus(chatId).map((typingStatus) {
-      return Right(typingStatus);
-    }).handleError((error) {
-      return Left(ServerFailure(failureMessage: error.toString()));
-    });
+  Stream<Either<Failure, Map<String, bool>>> watchTypingStatus(String chatId) async* {
+    try {
+      await for (final typingStatus in _remoteDataSource.watchTypingStatus(chatId)) {
+        yield Right(typingStatus);
+      }
+    } catch (error) {
+      yield Left(ServerFailure(failureMessage: error.toString()));
+    }
   }
 }

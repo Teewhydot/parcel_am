@@ -92,7 +92,7 @@ class ChatListExample extends StatelessWidget {
                       chatId: chat['chatId'] as String,
                       otherUserId: chat['userId'] as String,
                       otherUserName: chat['name'] as String,
-                      otherUserAvatar: chat['avatar'] as String?,
+                      otherUserAvatar: chat['avatar'],
                     ),
                   ),
                 ),

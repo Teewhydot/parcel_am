@@ -8,19 +8,19 @@ void main() {
       final chatModel = ChatModel(
         id: 'chat1',
         participantIds: ['user1', 'user2'],
-        participantInfo: {'user1': 'John', 'user2': 'Jane'},
-        lastMessage: 'Hello',
-        lastMessageSenderId: 'user1',
-        lastMessageAt: now,
+        participantNames: {'user1': 'John', 'user2': 'Jane'},
+        participantAvatars: {'user1': null, 'user2': null},
+        lastMessage: null,
+        lastMessageTime: now,
         unreadCount: {'user1': 0, 'user2': 1},
+        isTyping: {'user1': false, 'user2': false},
+        lastSeen: {'user1': now, 'user2': now},
         createdAt: now,
-        updatedAt: now,
-        chatType: 'direct',
       );
 
       expect(chatModel.id, 'chat1');
       expect(chatModel.participantIds.length, 2);
-      expect(chatModel.lastMessage, 'Hello');
+      expect(chatModel.participantNames['user1'], 'John');
     });
   });
 }

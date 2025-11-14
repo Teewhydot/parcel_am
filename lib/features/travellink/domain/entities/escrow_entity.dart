@@ -1,13 +1,5 @@
 import 'package:equatable/equatable.dart';
-
-enum EscrowStatus {
-  pending,
-  held,
-  released,
-  cancelled,
-  refunded,
-  disputed,
-}
+import '../../../escrow/domain/entities/escrow_status.dart';
 
 class EscrowEntity extends Equatable {
   final String id;

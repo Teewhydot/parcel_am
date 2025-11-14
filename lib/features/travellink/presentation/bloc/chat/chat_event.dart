@@ -53,3 +53,48 @@ class ChatStreamError extends ChatEvent {
   @override
   List<Object?> get props => [error];
 }
+
+class ChatFilterChanged extends ChatEvent {
+  final String filter;
+
+  const ChatFilterChanged(this.filter);
+
+  @override
+  List<Object?> get props => [filter];
+}
+
+class ChatTogglePinRequested extends ChatEvent {
+  final String chatId;
+
+  const ChatTogglePinRequested(this.chatId);
+
+  @override
+  List<Object?> get props => [chatId];
+}
+
+class ChatToggleMuteRequested extends ChatEvent {
+  final String chatId;
+
+  const ChatToggleMuteRequested(this.chatId);
+
+  @override
+  List<Object?> get props => [chatId];
+}
+
+class ChatMarkAsReadRequested extends ChatEvent {
+  final String chatId;
+
+  const ChatMarkAsReadRequested(this.chatId);
+
+  @override
+  List<Object?> get props => [chatId];
+}
+
+class ChatDeleteRequested extends ChatEvent {
+  final String chatId;
+
+  const ChatDeleteRequested(this.chatId);
+
+  @override
+  List<Object?> get props => [chatId];
+}

@@ -1,4 +1,3 @@
-import '../../../../../core/bloc/base/base_state.dart';
 import '../../../domain/entities/escrow_entity.dart';
 
 class EscrowData {

@@ -1,23 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import '../../../../core/theme/app_colors.dart';
-import '../../domain/entities/chat_entity.dart';
-import 'presence_indicator.dart';
+import '../../../travellink/domain/entities/chat/chat_entity.dart';
+import '../../../travellink/domain/entities/chat/chat_entity_extensions.dart';
 
 class ChatListItem extends StatelessWidget {
   final ChatEntity chat;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
+  final String currentUserId;
 
   const ChatListItem({
-    Key? key,
+    super.key,
     required this.chat,
     required this.onTap,
     required this.onLongPress,
-  }) : super(key: key);
+    required this.currentUserId,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final unreadCount = chat.getUnreadCount(currentUserId);
+    final participantName = chat.participantName;
+    final participantAvatar = chat.participantAvatar;
+
     return InkWell(
       onTap: onTap,
       onLongPress: onLongPress,
@@ -25,31 +31,24 @@ class ChatListItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            Stack(
-              children: [
-                CircleAvatar(
-                  radius: 28,
-                  backgroundColor: AppColors.primary.withOpacity(0.1),
-                  backgroundImage: chat.participantAvatar != null
-                      ? NetworkImage(chat.participantAvatar!)
-                      : null,
-                  child: chat.participantAvatar == null
-                      ? Text(
-                          chat.participantName[0].toUpperCase(),
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primary,
-                          ),
-                        )
-                      : null,
-                ),
-                Positioned(
-                  right: 0,
-                  bottom: 0,
-                  child: PresenceIndicator(status: chat.presenceStatus),
-                ),
-              ],
+            CircleAvatar(
+              radius: 28,
+              backgroundColor: AppColors.primary.withOpacity(0.1),
+              backgroundImage: participantAvatar != null
+                  ? NetworkImage(participantAvatar)
+                  : null,
+              child: participantAvatar == null
+                  ? Text(
+                      participantName.isNotEmpty
+                          ? participantName[0].toUpperCase()
+                          : '?',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primary,
+                      ),
+                    )
+                  : null,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -60,9 +59,9 @@ class ChatListItem extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          chat.participantName,
+                          participantName,
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: chat.unreadCount > 0 ? FontWeight.w600 : FontWeight.w500,
+                                fontWeight: unreadCount > 0 ? FontWeight.w600 : FontWeight.w500,
                               ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -72,8 +71,8 @@ class ChatListItem extends StatelessWidget {
                         Text(
                           timeago.format(chat.lastMessageTime!, locale: 'en_short'),
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: chat.unreadCount > 0 ? AppColors.primary : AppColors.textSecondary,
-                                fontWeight: chat.unreadCount > 0 ? FontWeight.w600 : FontWeight.normal,
+                                color: unreadCount > 0 ? AppColors.primary : AppColors.textSecondary,
+                                fontWeight: unreadCount > 0 ? FontWeight.w600 : FontWeight.normal,
                               ),
                         ),
                     ],
@@ -82,39 +81,26 @@ class ChatListItem extends StatelessWidget {
                   Row(
                     children: [
                       if (chat.isMuted)
-                        Padding(
-                          padding: const EdgeInsets.only(right: 4),
+                        const Padding(
+                          padding: EdgeInsets.only(right: 4),
                           child: Icon(
                             Icons.notifications_off,
                             size: 14,
                             color: AppColors.textSecondary,
                           ),
                         ),
-                      if (chat.presenceStatus == PresenceStatus.typing)
-                        Expanded(
-                          child: Text(
-                            'typing...',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: AppColors.info,
-                                  fontStyle: FontStyle.italic,
-                                ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        )
-                      else
-                        Expanded(
-                          child: Text(
-                            chat.lastMessage ?? 'No messages yet',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: chat.unreadCount > 0 ? AppColors.onSurface : AppColors.textSecondary,
-                                  fontWeight: chat.unreadCount > 0 ? FontWeight.w500 : FontWeight.normal,
-                                ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                      Expanded(
+                        child: Text(
+                          chat.lastMessage ?? 'No messages yet',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: unreadCount > 0 ? AppColors.onSurface : AppColors.textSecondary,
+                                fontWeight: unreadCount > 0 ? FontWeight.w500 : FontWeight.normal,
+                              ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      if (chat.unreadCount > 0) ...[
+                      ),
+                      if (unreadCount > 0) ...[
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -123,7 +109,7 @@ class ChatListItem extends StatelessWidget {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            chat.unreadCount > 99 ? '99+' : chat.unreadCount.toString(),
+                            unreadCount > 99 ? '99+' : unreadCount.toString(),
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 12,

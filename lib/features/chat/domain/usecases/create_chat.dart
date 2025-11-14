@@ -10,9 +10,25 @@ class CreateChat {
   CreateChat(this.repository);
 
   Future<Either<Failure, ChatEntity>> call(CreateChatParams params) async {
-    return await repository.createChat(
-      params.participantIds,
-      params.metadata,
+    final result = await repository.createChat(params.participantIds);
+    return result.fold(
+      (failure) => Left(failure),
+      (chat) {
+        // Convert Chat to ChatEntity (simple 1-to-1 chat assumption)
+        final otherUserId = chat.participantIds.firstWhere(
+          (id) => id != params.participantIds.first,
+          orElse: () => chat.participantIds.first,
+        );
+        return Right(ChatEntity(
+          id: chat.id,
+          participantId: otherUserId,
+          participantName: chat.participantNames[otherUserId] ?? 'Unknown',
+          participantAvatar: chat.participantAvatars[otherUserId],
+          lastMessage: chat.lastMessage?.content,
+          lastMessageTime: chat.lastMessageTime,
+          unreadCount: chat.unreadCount[params.participantIds.first] ?? 0,
+        ));
+      },
     );
   }
 }

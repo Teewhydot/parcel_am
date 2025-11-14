@@ -31,11 +31,11 @@ class EscrowBloc extends BaseBloC<EscrowEvent, BaseState<EscrowData>> {
     emit(AsyncLoadingState<EscrowData>(data: currentData));
 
     final result = await _escrowUseCase.createEscrow(
-      walletId: event.walletId,
-      userId: event.userId,
+      parcelId: event.parcelId,
+      senderId: event.senderId,
+      travelerId: event.travelerId,
       amount: event.amount,
-      referenceId: event.referenceId,
-      referenceType: event.referenceType,
+      currency: event.currency,
     );
 
     result.fold(

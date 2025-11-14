@@ -206,8 +206,4 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
     return const AuthData();
   }
 
-  @override
-  Future<void> close() {
-    return super.close();
-  }
 }

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class ChatNotificationService {
@@ -39,7 +38,7 @@ class ChatNotificationService {
         .listen((snapshot) {
       for (var change in snapshot.docChanges) {
         if (change.type == DocumentChangeType.modified) {
-          final chatData = change.doc.data() as Map<String, dynamic>?;
+          final chatData = change.doc.data();
           if (chatData != null) {
             _handleChatUpdate(change.doc.id, chatData);
           }

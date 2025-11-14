@@ -1,4 +1,4 @@
-import '../../domain/models/package_model.dart';
+import '../../../domain/models/package_model.dart';
 
 class PackageState {
   final bool isLoading;

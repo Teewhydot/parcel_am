@@ -21,7 +21,6 @@ import '../widgets/user_stats_grid.dart';
 import '../widgets/wallet_balance_card.dart';
 import '../bloc/wallet/wallet_bloc.dart';
 import '../bloc/wallet/wallet_event.dart';
-import '../bloc/wallet/wallet_state.dart';
 import '../../data/providers/auth_provider.dart';
 import '../../data/providers/theme_provider.dart';
 import '../../data/constants/verification_constants.dart';

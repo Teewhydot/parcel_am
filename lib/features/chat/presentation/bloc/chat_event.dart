@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import '../../domain/entities/message.dart';
+import '../../domain/entities/message_type.dart';
 
 abstract class ChatEvent extends Equatable {
   const ChatEvent();
@@ -125,4 +126,76 @@ class DeleteMessage extends ChatEvent {
 
   @override
   List<Object> get props => [messageId];
+}
+
+class ChatLoadRequested extends ChatEvent {
+  final String userId;
+
+  const ChatLoadRequested(this.userId);
+
+  @override
+  List<Object> get props => [userId];
+}
+
+class ChatFilterChanged extends ChatEvent {
+  final String filter;
+
+  const ChatFilterChanged(this.filter);
+
+  @override
+  List<Object> get props => [filter];
+}
+
+class ChatTogglePinRequested extends ChatEvent {
+  final String chatId;
+
+  const ChatTogglePinRequested(this.chatId);
+
+  @override
+  List<Object> get props => [chatId];
+}
+
+class ChatToggleMuteRequested extends ChatEvent {
+  final String chatId;
+
+  const ChatToggleMuteRequested(this.chatId);
+
+  @override
+  List<Object> get props => [chatId];
+}
+
+class ChatMarkAsReadRequested extends ChatEvent {
+  final String chatId;
+
+  const ChatMarkAsReadRequested(this.chatId);
+
+  @override
+  List<Object> get props => [chatId];
+}
+
+class ChatDeleteRequested extends ChatEvent {
+  final String chatId;
+
+  const ChatDeleteRequested(this.chatId);
+
+  @override
+  List<Object> get props => [chatId];
+}
+
+class ChatCreateRequested extends ChatEvent {
+  final List<String> participantIds;
+
+  const ChatCreateRequested(this.participantIds);
+
+  @override
+  List<Object> get props => [participantIds];
+}
+
+class ChatSearchUsersRequested extends ChatEvent {
+  final String query;
+
+  const ChatSearchUsersRequested(this.query);
+
+  @override
+  List<Object> get props => [query];
 }

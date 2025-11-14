@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:parcel/features/travellink/presentation/bloc/package/package_bloc.dart';
-import 'package:parcel/features/travellink/presentation/bloc/package/package_event.dart';
-import 'package:parcel/features/travellink/presentation/bloc/package/package_state.dart';
-import 'package:parcel/features/travellink/data/datasources/package_remote_data_source.dart';
+import 'package:parcel_am/features/travellink/presentation/bloc/package/package_bloc.dart';
+import 'package:parcel_am/features/travellink/presentation/bloc/package/package_event.dart';
+import 'package:parcel_am/features/travellink/presentation/bloc/package/package_state.dart';
+import 'package:parcel_am/features/travellink/data/datasources/package_remote_data_source.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
 

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/entities/message.dart';
+import '../../domain/entities/message_type.dart';
 import '../../domain/usecases/chat_usecase.dart';
 import 'chat_event.dart';
 import 'chat_state.dart';

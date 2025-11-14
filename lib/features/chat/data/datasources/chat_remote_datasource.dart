@@ -83,7 +83,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     final snapshot = await firestore
         .collection('users')
         .where('displayName', isGreaterThanOrEqualTo: query)
-        .where('displayName', isLessThan: query + 'z')
+        .where('displayName', isLessThan: '${query}z')
         .limit(20)
         .get();
 

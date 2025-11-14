@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../domain/entities/message.dart';
+import '../../domain/entities/message_type.dart';
 
 class MessageInput extends StatefulWidget {
   final Function(String) onSend;

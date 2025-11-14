@@ -1,4 +1,3 @@
-import '../../../../../core/bloc/base/base_state.dart';
 import '../../../domain/entities/parcel_entity.dart';
 
 class ParcelData {

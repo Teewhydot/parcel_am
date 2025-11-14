@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:parcel_am/core/bloc/base/base_bloc.dart';
 import 'package:parcel_am/core/bloc/base/base_state.dart';
 import '../../../domain/usecases/chat/presence_usecase.dart';
-import '../../../domain/entities/chat/presence_entity.dart';
 import 'presence_event.dart';
 import 'presence_data.dart';
 

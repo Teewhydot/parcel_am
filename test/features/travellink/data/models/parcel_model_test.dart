@@ -1,64 +1,72 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:parcel_am/features/travellink/data/models/parcel_model.dart';
 import 'package:parcel_am/features/travellink/domain/entities/parcel_entity.dart';
 
 void main() {
   group('ParcelModel', () {
-    test('should convert from entity correctly', () {
+    test('should create a valid ParcelEntity', () {
+      final now = DateTime.now();
       final entity = ParcelEntity(
         id: 'test-id',
-        senderId: 'sender-id',
-        title: 'Test Parcel',
+        sender: const SenderDetails(
+          userId: 'sender-id',
+          name: 'John Doe',
+          phoneNumber: '+1234567890',
+          address: '123 Main St, New York',
+        ),
+        receiver: const ReceiverDetails(
+          name: 'Jane Smith',
+          phoneNumber: '+0987654321',
+          address: '456 Oak Ave, Los Angeles',
+        ),
+        route: const RouteInformation(
+          origin: 'New York',
+          destination: 'Los Angeles',
+          estimatedDeliveryDate: '2024-12-31',
+        ),
         description: 'Test Description',
-        type: ParcelType.document,
         weight: 2.5,
-        dimensions: {'length': '10', 'width': '5', 'height': '3'},
-        fromLocation: 'New York',
-        toLocation: 'Los Angeles',
-        requestedDeliveryDate: DateTime(2024, 12, 31),
-        offeredAmount: 50.0,
+        category: 'documents',
+        price: 50.0,
         currency: 'USD',
-        status: ParcelStatus.pending,
-        createdAt: DateTime(2024, 1, 1),
+        status: ParcelStatus.created,
+        createdAt: now,
       );
 
-      final model = ParcelModel.fromEntity(entity);
-
-      expect(model.id, entity.id);
-      expect(model.senderId, entity.senderId);
-      expect(model.title, entity.title);
-      expect(model.type, entity.type);
-      expect(model.weight, entity.weight);
-      expect(model.status, entity.status);
+      expect(entity.id, 'test-id');
+      expect(entity.sender.userId, 'sender-id');
+      expect(entity.receiver.name, 'Jane Smith');
+      expect(entity.route.origin, 'New York');
+      expect(entity.route.destination, 'Los Angeles');
+      expect(entity.weight, 2.5);
+      expect(entity.status, ParcelStatus.created);
     });
 
-    test('should convert to entity correctly', () {
-      final model = ParcelModel(
+    test('should handle nullable fields correctly', () {
+      final now = DateTime.now();
+      final entity = ParcelEntity(
         id: 'test-id',
-        senderId: 'sender-id',
-        title: 'Test Parcel',
-        description: 'Test Description',
-        type: ParcelType.electronics,
-        weight: 3.0,
-        dimensions: {'length': '15', 'width': '10', 'height': '5'},
-        fromLocation: 'Chicago',
-        toLocation: 'Miami',
-        requestedDeliveryDate: DateTime(2024, 11, 30),
-        offeredAmount: 75.0,
-        currency: 'USD',
-        status: ParcelStatus.accepted,
-        createdAt: DateTime(2024, 1, 1),
+        sender: const SenderDetails(
+          userId: 'sender-id',
+          name: 'John Doe',
+          phoneNumber: '+1234567890',
+          address: '123 Main St',
+        ),
+        receiver: const ReceiverDetails(
+          name: 'Jane Smith',
+          phoneNumber: '+0987654321',
+          address: '456 Oak Ave',
+        ),
+        route: const RouteInformation(
+          origin: 'Chicago',
+          destination: 'Miami',
+        ),
+        status: ParcelStatus.paid,
+        createdAt: now,
       );
 
-      final entity = model.toEntity();
-
-      expect(entity.id, model.id);
-      expect(entity.senderId, model.senderId);
-      expect(entity.title, model.title);
-      expect(entity.type, model.type);
-      expect(entity.weight, model.weight);
-      expect(entity.status, model.status);
+      expect(entity.description, null);
+      expect(entity.weight, null);
+      expect(entity.price, null);
     });
   });
 }

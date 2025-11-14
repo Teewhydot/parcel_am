@@ -14,6 +14,7 @@ abstract class EscrowRepository {
   );
   Future<Either<Failure, EscrowEntity>> holdEscrow(String escrowId);
   Future<Either<Failure, EscrowEntity>> releaseEscrow(String escrowId);
-  Future<Either<Failure, EscrowEntity>> cancelEscrow(String escrowId);
+  Future<Either<Failure, EscrowEntity>> cancelEscrow(String escrowId, String reason);
+  Future<Either<Failure, List<EscrowEntity>>> getUserEscrows(String userId);
   Future<Either<Failure, EscrowEntity>> getEscrow(String escrowId);
 }

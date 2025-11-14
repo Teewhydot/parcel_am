@@ -38,7 +38,7 @@ class BlocManager<T extends BlocBase<S>, S> extends StatefulWidget {
   final bool lazy;
 
   const BlocManager({
-    Key? key,
+    super.key,
     required this.config,
     required this.create,
     required this.child,
@@ -49,7 +49,7 @@ class BlocManager<T extends BlocBase<S>, S> extends StatefulWidget {
     this.errorBuilder,
     this.listener,
     this.lazy = false,
-  }) : super(key: key);
+  });
 
   @override
   State<BlocManager<T, S>> createState() => _BlocManagerState<T, S>();

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../../domain/entities/message.dart';
+import '../../domain/entities/message_type.dart';
 import '../models/message_model.dart';
 import '../models/chat_model.dart';
 
@@ -24,6 +25,13 @@ abstract class ChatRemoteDataSource {
   Future<void> updateLastSeen(String chatId, String userId);
   Stream<ChatModel> getChatStream(String chatId);
   Future<void> deleteMessage(String messageId);
+
+  // Chat management methods
+  Future<ChatModel> createChat(List<String> participantIds);
+  Future<ChatModel> getChat(String chatId);
+  Future<List<ChatModel>> getUserChats(String userId);
+  Stream<ChatModel> watchChat(String chatId);
+  Stream<List<ChatModel>> watchUserChats(String userId);
 }
 
 class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
@@ -181,5 +189,85 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         'content': 'This message was deleted',
       });
     }
+  }
+
+  @override
+  Future<ChatModel> createChat(List<String> participantIds) async {
+    final chatRef = firestore.collection('chats').doc();
+
+    final chatData = {
+      'participantIds': participantIds,
+      'participantNames': <String, String>{},
+      'participantAvatars': <String, String?>{},
+      'createdAt': FieldValue.serverTimestamp(),
+      'lastMessage': null,
+      'lastMessageTime': null,
+      'unreadCount': <String, int>{},
+      'isTyping': <String, bool>{},
+      'lastSeen': <String, dynamic>{},
+    };
+
+    await chatRef.set(chatData);
+
+    final createdDoc = await chatRef.get();
+    final data = createdDoc.data()!;
+    data['id'] = createdDoc.id;
+    return ChatModel.fromJson(data);
+  }
+
+  @override
+  Future<ChatModel> getChat(String chatId) async {
+    final doc = await firestore.collection('chats').doc(chatId).get();
+
+    if (!doc.exists) {
+      throw Exception('Chat not found');
+    }
+
+    final data = doc.data()!;
+    data['id'] = doc.id;
+    return ChatModel.fromJson(data);
+  }
+
+  @override
+  Future<List<ChatModel>> getUserChats(String userId) async {
+    final snapshot = await firestore
+        .collection('chats')
+        .where('participantIds', arrayContains: userId)
+        .orderBy('lastMessageTime', descending: true)
+        .get();
+
+    return snapshot.docs.map((doc) {
+      final data = doc.data();
+      data['id'] = doc.id;
+      return ChatModel.fromJson(data);
+    }).toList();
+  }
+
+  @override
+  Stream<ChatModel> watchChat(String chatId) {
+    return firestore.collection('chats').doc(chatId).snapshots().map((snapshot) {
+      if (!snapshot.exists) {
+        throw Exception('Chat not found');
+      }
+      final data = snapshot.data()!;
+      data['id'] = snapshot.id;
+      return ChatModel.fromJson(data);
+    });
+  }
+
+  @override
+  Stream<List<ChatModel>> watchUserChats(String userId) {
+    return firestore
+        .collection('chats')
+        .where('participantIds', arrayContains: userId)
+        .orderBy('lastMessageTime', descending: true)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        return ChatModel.fromJson(data);
+      }).toList();
+    });
   }
 }

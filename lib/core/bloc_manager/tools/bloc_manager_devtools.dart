@@ -270,7 +270,7 @@ class DevToolsEvent {
 
 /// Flutter widget for displaying BlocManager developer tools
 class BlocManagerDevToolsWidget extends StatefulWidget {
-  const BlocManagerDevToolsWidget({Key? key}) : super(key: key);
+  const BlocManagerDevToolsWidget({super.key});
 
   @override
   State<BlocManagerDevToolsWidget> createState() => _BlocManagerDevToolsWidgetState();

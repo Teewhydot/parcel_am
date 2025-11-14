@@ -4,6 +4,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../../../../injection_container.dart';
+import '../../../escrow/domain/entities/escrow_status.dart';
 import '../widgets/bottom_navigation.dart';
 import '../bloc/wallet/wallet_bloc.dart';
 import '../bloc/wallet/wallet_event.dart';
@@ -116,11 +117,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
       escrowHeldAt: DateTime.now(),
     );
 
-    _escrowBloc.add(EscrowHoldRequested(
-      transactionId: transactionId,
-      amount: totalAmount,
-      packageId: 'PKG_001',
-    ));
+    // Use transactionId as placeholder escrowId
+    _escrowBloc.add(EscrowHoldRequested(transactionId));
 
     _walletBloc.add(WalletEscrowHoldRequested(
       transactionId: transactionId,
@@ -164,17 +162,18 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 }
               },
             ),
-            BlocListener<EscrowBloc, EscrowState>(
+            BlocListener<EscrowBloc, BaseState<EscrowData>>(
               listener: (context, state) {
-                if (state.status == EscrowStatus.held && currentStep == 2) {
+                final escrow = state.data?.currentEscrow;
+                if (escrow?.status == EscrowStatus.held && currentStep == 2) {
                   setState(() {
                     currentStep = 3;
                     _paymentInfo = _paymentInfo?.copyWith(escrowStatus: 'held');
                   });
-                } else if (state.status == EscrowStatus.error) {
+                } else if (state is ErrorState<EscrowData>) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(state.errorMessage ?? 'Escrow error occurred'),
+                      content: Text(state.errorMessage),
                       backgroundColor: Colors.red,
                     ),
                   );
@@ -632,8 +631,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   Widget _buildEscrowDepositStep() {
-    return BlocBuilder<EscrowBloc, EscrowState>(
+    return BlocBuilder<EscrowBloc, BaseState<EscrowData>>(
       builder: (context, escrowState) {
+        final escrowStatus = escrowState.data?.currentEscrow?.status;
         return BlocBuilder<WalletBloc, BaseState<WalletData>>(
           builder: (context, walletState) {
             return Column(
@@ -656,17 +656,17 @@ class _PaymentScreenState extends State<PaymentScreen> {
                               ),
                               const Spacer(),
                               Icon(
-                                _getEscrowStatusIcon(escrowState.status),
-                                color: _getEscrowStatusColor(escrowState.status),
+                                _getEscrowStatusIcon(escrowStatus),
+                                color: _getEscrowStatusColor(escrowStatus),
                                 size: 20,
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                _getEscrowStatusLabel(escrowState.status),
+                                _getEscrowStatusLabel(escrowStatus),
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
-                                  color: _getEscrowStatusColor(escrowState.status),
+                                  color: _getEscrowStatusColor(escrowStatus),
                                 ),
                               ),
                             ],
@@ -815,7 +815,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
     );
   }
 
-  IconData _getEscrowStatusIcon(EscrowStatus status) {
+  IconData _getEscrowStatusIcon(EscrowStatus? status) {
+    if (status == null) return Icons.shield;
     switch (status) {
       case EscrowStatus.holding:
         return Icons.hourglass_bottom;
@@ -832,7 +833,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
     }
   }
 
-  Color _getEscrowStatusColor(EscrowStatus status) {
+  Color _getEscrowStatusColor(EscrowStatus? status) {
+    if (status == null) return AppColors.onSurfaceVariant;
     switch (status) {
       case EscrowStatus.holding:
         return Colors.orange;
@@ -849,7 +851,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
     }
   }
 
-  String _getEscrowStatusLabel(EscrowStatus status) {
+  String _getEscrowStatusLabel(EscrowStatus? status) {
+    if (status == null) return 'IDLE';
     switch (status) {
       case EscrowStatus.holding:
         return 'HOLDING';

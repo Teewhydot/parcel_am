@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../data/datasources/package_remote_data_source.dart';
-import '../../domain/models/package_model.dart';
+import '../../../data/datasources/package_remote_data_source.dart';
+import '../../../domain/models/package_model.dart';
 import 'package_event.dart';
 import 'package_state.dart';
 

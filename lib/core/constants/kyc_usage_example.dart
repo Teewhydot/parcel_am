@@ -2,6 +2,7 @@
 ///
 /// This file demonstrates various ways to use the KYC guard system.
 /// Delete this file after reviewing the examples.
+library;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';

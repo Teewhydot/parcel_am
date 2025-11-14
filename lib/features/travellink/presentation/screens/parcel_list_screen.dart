@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_spacing.dart';
+import '../../../../core/bloc/base/base_state.dart';
 import '../../../../injection_container.dart';
 import '../bloc/parcel/parcel_bloc.dart';
 import '../bloc/parcel/parcel_event.dart';
 import '../bloc/parcel/parcel_state.dart';
-import '../../domain/models/package_model.dart';
+import '../../domain/entities/parcel_entity.dart';
 import '../widgets/bottom_navigation.dart';
 import 'create_parcel_screen.dart';
 
@@ -19,18 +21,28 @@ class ParcelListScreen extends StatefulWidget {
 
 class _ParcelListScreenState extends State<ParcelListScreen> {
   late ParcelBloc _parcelBloc;
+  String? _currentUserId;
 
   @override
   void initState() {
     super.initState();
     _parcelBloc = sl<ParcelBloc>();
-    _parcelBloc.add(const ParcelListRequested());
+    _currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    if (_currentUserId != null) {
+      _parcelBloc.add(ParcelLoadUserParcels(_currentUserId!));
+    }
   }
 
   @override
   void dispose() {
     _parcelBloc.close();
     super.dispose();
+  }
+
+  void _refreshParcels() {
+    if (_currentUserId != null) {
+      _parcelBloc.add(ParcelLoadUserParcels(_currentUserId!));
+    }
   }
 
   @override
@@ -45,116 +57,106 @@ class _ParcelListScreenState extends State<ParcelListScreen> {
           actions: [
             IconButton(
               icon: const Icon(Icons.refresh),
-              onPressed: () => _parcelBloc.add(const ParcelListRequested()),
+              onPressed: _refreshParcels,
             ),
           ],
         ),
-        body: StreamBuilder<List<PackageModel>>(
-          stream: _parcelBloc.parcelsStream,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
+        body: BlocBuilder<ParcelBloc, BaseState<ParcelData>>(
+          builder: (context, state) {
+            if (state is LoadingState<ParcelData>) {
               return const Center(child: CircularProgressIndicator());
             }
 
-            return BlocBuilder<ParcelBloc, ParcelState>(
-              builder: (context, state) {
-                if (state is ParcelLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (state is ParcelError) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.error_outline,
-                          size: 64,
-                          color: Colors.red,
-                        ),
-                        AppSpacing.verticalSpacing(SpacingSize.md),
-                        Text(
-                          state.message,
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                        AppSpacing.verticalSpacing(SpacingSize.lg),
-                        ElevatedButton(
-                          onPressed: () =>
-                              _parcelBloc.add(const ParcelListRequested()),
-                          child: const Text('Retry'),
-                        ),
-                      ],
+            if (state is ErrorState<ParcelData>) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: Colors.red,
                     ),
-                  );
-                }
-
-                final parcels = snapshot.data ?? [];
-
-                if (parcels.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.inbox_outlined,
-                          size: 80,
-                          color: AppColors.onSurfaceVariant.withValues(alpha: 0.5),
-                        ),
-                        AppSpacing.verticalSpacing(SpacingSize.lg),
-                        const Text(
-                          'No parcels yet',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        AppSpacing.verticalSpacing(SpacingSize.sm),
-                        const Text(
-                          'Create your first parcel to get started',
-                          style: TextStyle(
-                            color: AppColors.onSurfaceVariant,
-                          ),
-                        ),
-                        AppSpacing.verticalSpacing(SpacingSize.lg),
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const CreateParcelScreen(),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.add),
-                          label: const Text('Create Parcel'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 12,
-                            ),
-                          ),
-                        ),
-                      ],
+                    AppSpacing.verticalSpacing(SpacingSize.md),
+                    Text(
+                      state.errorMessage,
+                      style: const TextStyle(fontSize: 16),
                     ),
-                  );
-                }
+                    AppSpacing.verticalSpacing(SpacingSize.lg),
+                    ElevatedButton(
+                      onPressed: _refreshParcels,
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              );
+            }
 
-                return RefreshIndicator(
-                  onRefresh: () async {
-                    _parcelBloc.add(const ParcelListRequested());
-                  },
-                  child: ListView.builder(
-                    padding: AppSpacing.paddingLG,
-                    itemCount: parcels.length,
-                    itemBuilder: (context, index) {
-                      final parcel = parcels[index];
-                      return _ParcelCard(parcel: parcel);
-                    },
-                  ),
-                );
+            final parcels = state.data?.userParcels ?? [];
+
+            if (parcels.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.inbox_outlined,
+                      size: 80,
+                      color: AppColors.onSurfaceVariant.withValues(alpha: 0.5),
+                    ),
+                    AppSpacing.verticalSpacing(SpacingSize.lg),
+                    const Text(
+                      'No parcels yet',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    AppSpacing.verticalSpacing(SpacingSize.sm),
+                    const Text(
+                      'Create your first parcel to get started',
+                      style: TextStyle(
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                    AppSpacing.verticalSpacing(SpacingSize.lg),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const CreateParcelScreen(),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.add),
+                      label: const Text('Create Parcel'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            return RefreshIndicator(
+              onRefresh: () async {
+                _refreshParcels();
               },
+              child: ListView.builder(
+                padding: AppSpacing.paddingLG,
+                itemCount: parcels.length,
+                itemBuilder: (context, index) {
+                  final parcel = parcels[index];
+                  return _ParcelCard(parcel: parcel);
+                },
+              ),
             );
           },
         ),
@@ -177,7 +179,7 @@ class _ParcelListScreenState extends State<ParcelListScreen> {
 }
 
 class _ParcelCard extends StatelessWidget {
-  final PackageModel parcel;
+  final ParcelEntity parcel;
 
   const _ParcelCard({required this.parcel});
 
@@ -205,7 +207,7 @@ class _ParcelCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
-                      _getPackageIcon(parcel.packageType),
+                      _getPackageIcon(parcel.status),
                       color: _getStatusColor(parcel.status),
                     ),
                   ),
@@ -215,14 +217,14 @@ class _ParcelCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          parcel.title,
+                          parcel.description ?? 'Parcel #${parcel.id.substring(0, 8)}',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                         Text(
-                          '${parcel.origin.name} → ${parcel.destination.name}',
+                          '${parcel.route.origin} → ${parcel.route.destination}',
                           style: const TextStyle(
                             fontSize: 14,
                             color: AppColors.onSurfaceVariant,
@@ -240,76 +242,63 @@ class _ParcelCard extends StatelessWidget {
                   Expanded(
                     child: _buildInfoItem(
                       Icons.scale,
-                      '${parcel.weight} kg',
+                      parcel.weight != null ? '${parcel.weight} kg' : 'N/A',
                     ),
                   ),
                   Expanded(
                     child: _buildInfoItem(
-                      Icons.speed,
-                      parcel.urgency,
+                      Icons.category,
+                      parcel.category ?? 'General',
                     ),
                   ),
                   Expanded(
                     child: _buildInfoItem(
                       Icons.payments,
-                      '₦${parcel.price.toStringAsFixed(0)}',
+                      parcel.price != null ? '₦${parcel.price!.toStringAsFixed(0)}' : 'TBD',
                     ),
                   ),
                 ],
               ),
-              if (parcel.paymentInfo != null) ...[
+              if (parcel.escrowId != null) ...[
                 AppSpacing.verticalSpacing(SpacingSize.md),
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: _getEscrowColor(parcel.paymentInfo!.escrowStatus)
+                    color: _getStatusColor(parcel.status)
                         .withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: _getEscrowColor(parcel.paymentInfo!.escrowStatus)
+                      color: _getStatusColor(parcel.status)
                           .withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(
                     children: [
                       Icon(
-                        _getEscrowIcon(parcel.paymentInfo!.escrowStatus),
+                        Icons.security,
                         size: 16,
-                        color: _getEscrowColor(parcel.paymentInfo!.escrowStatus),
+                        color: _getStatusColor(parcel.status),
                       ),
                       AppSpacing.horizontalSpacing(SpacingSize.sm),
                       Text(
-                        _getEscrowText(parcel.paymentInfo!.escrowStatus),
+                        'Escrow Protected',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color:
-                              _getEscrowColor(parcel.paymentInfo!.escrowStatus),
+                          color: _getStatusColor(parcel.status),
                         ),
                       ),
                       const Spacer(),
-                      Text(
-                        '₦${parcel.paymentInfo!.totalAmount.toStringAsFixed(2)}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color:
-                              _getEscrowColor(parcel.paymentInfo!.escrowStatus),
+                      if (parcel.price != null)
+                        Text(
+                          '₦${parcel.price!.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: _getStatusColor(parcel.status),
+                          ),
                         ),
-                      ),
                     ],
-                  ),
-                ),
-              ],
-              if (parcel.progress > 0) ...[
-                AppSpacing.verticalSpacing(SpacingSize.sm),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: parcel.progress,
-                    minHeight: 6,
-                    backgroundColor: AppColors.surfaceVariant,
-                    color: AppColors.primary,
                   ),
                 ),
               ],
@@ -339,7 +328,7 @@ class _ParcelCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusChip(String status) {
+  Widget _buildStatusChip(ParcelStatus status) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -350,7 +339,7 @@ class _ParcelCard extends StatelessWidget {
         ),
       ),
       child: Text(
-        _getStatusText(status),
+        status.displayName,
         style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w600,
@@ -360,52 +349,39 @@ class _ParcelCard extends StatelessWidget {
     );
   }
 
-  Color _getStatusColor(String status) {
+  Color _getStatusColor(ParcelStatus status) {
     switch (status) {
-      case 'pending_payment':
+      case ParcelStatus.created:
         return Colors.orange;
-      case 'payment_confirmed':
+      case ParcelStatus.paid:
         return Colors.blue;
-      case 'in_transit':
+      case ParcelStatus.inTransit:
         return Colors.purple;
-      case 'delivered':
+      case ParcelStatus.delivered:
         return Colors.green;
-      case 'cancelled':
+      case ParcelStatus.cancelled:
         return Colors.red;
+      case ParcelStatus.disputed:
+        return Colors.amber;
       default:
         return AppColors.onSurfaceVariant;
     }
   }
 
-  String _getStatusText(String status) {
+  IconData _getPackageIcon(ParcelStatus status) {
     switch (status) {
-      case 'pending_payment':
-        return 'Pending Payment';
-      case 'payment_confirmed':
-        return 'Paid';
-      case 'in_transit':
-        return 'In Transit';
-      case 'delivered':
-        return 'Delivered';
-      case 'cancelled':
-        return 'Cancelled';
-      default:
-        return status;
-    }
-  }
-
-  IconData _getPackageIcon(String packageType) {
-    switch (packageType) {
-      case 'Documents':
+      case ParcelStatus.created:
         return Icons.description;
-      case 'Electronics':
-        return Icons.devices;
-      case 'Clothing':
-        return Icons.checkroom;
-      case 'Food':
-        return Icons.restaurant;
-      case 'Fragile':
-        return Icons.bubble_chart;
+      case ParcelStatus.paid:
+        return Icons.payment;
+      case ParcelStatus.inTransit:
+        return Icons.local_shipping;
+      case ParcelStatus.delivered:
+        return Icons.check_circle;
+      case ParcelStatus.cancelled:
+        return Icons.cancel;
+      case ParcelStatus.disputed:
+        return Icons.warning;
       default:
         return Icons.inventory_2;
     }

@@ -8,7 +8,6 @@ import 'core/routes/getx_route_module.dart';
 import 'core/routes/routes.dart';
 import 'core/theme/app_theme.dart';
 import 'features/travellink/presentation/bloc/auth/auth_bloc.dart';
-import 'injection_container.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

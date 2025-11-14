@@ -98,16 +98,10 @@ Future<void> init() async {
   ));
 
   //! Features - Escrow Repository
-  sl.registerLazySingleton<EscrowRepository>(() => EscrowRepositoryImpl(
-    remoteDataSource: sl(),
-    networkInfo: sl(),
-  ));
+  sl.registerLazySingleton<EscrowRepository>(() => EscrowRepositoryImpl());
 
   //! Features - Parcel Repository
-  sl.registerLazySingleton<ParcelRepository>(() => ParcelRepositoryImpl(
-    remoteDataSource: sl(),
-    networkInfo: sl(),
-  ));
+  sl.registerLazySingleton<ParcelRepository>(() => ParcelRepositoryImpl());
 
   //! Features - Chat Repository
   sl.registerLazySingleton<ChatRepository>(() => ChatRepositoryImpl(

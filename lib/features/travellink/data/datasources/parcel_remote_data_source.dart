@@ -48,7 +48,7 @@ class ParcelRemoteDataSourceImpl implements ParcelRemoteDataSource {
           .orderBy('createdAt', descending: true);
       
       if (status != null) {
-        query = query.where('status', isEqualTo: status.toJson()) as Query<Map<String, dynamic>>;
+        query = query.where('status', isEqualTo: status.toJson());
       }
 
       return query.snapshots().map((snapshot) {
@@ -181,7 +181,7 @@ class ParcelRemoteDataSourceImpl implements ParcelRemoteDataSource {
           .orderBy('createdAt', descending: true);
       
       if (status != null) {
-        query = query.where('status', isEqualTo: status.toJson()) as Query<Map<String, dynamic>>;
+        query = query.where('status', isEqualTo: status.toJson());
       }
 
       final querySnapshot = await query.get();

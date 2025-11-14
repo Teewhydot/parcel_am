@@ -8,23 +8,23 @@ abstract class EscrowEvent extends Equatable {
 }
 
 class EscrowCreateRequested extends EscrowEvent {
-  final String walletId;
-  final String userId;
+  final String parcelId;
+  final String senderId;
+  final String travelerId;
   final double amount;
-  final String referenceId;
-  final String referenceType;
+  final String currency;
 
   const EscrowCreateRequested({
-    required this.walletId,
-    required this.userId,
+    required this.parcelId,
+    required this.senderId,
+    required this.travelerId,
     required this.amount,
-    required this.referenceId,
-    required this.referenceType,
+    this.currency = 'NGN',
   });
 
   @override
   List<Object?> get props =>
-      [walletId, userId, amount, referenceId, referenceType];
+      [parcelId, senderId, travelerId, amount, currency];
 }
 
 class EscrowHoldRequested extends EscrowEvent {

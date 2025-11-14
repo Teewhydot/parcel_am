@@ -619,7 +619,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                         ],
                       ),
                       AppSpacing.verticalSpacing(SpacingSize.md),
-                      AppText.bodySmall('If there\\'s an issue with the delivery, you can file a dispute.', color: AppColors.onSurfaceVariant),
+                      AppText.bodySmall('If there\'s an issue with the delivery, you can file a dispute.', color: AppColors.onSurfaceVariant),
                       AppSpacing.verticalSpacing(SpacingSize.md),
                       TextField(
                         controller: _disputeReasonController,

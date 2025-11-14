@@ -40,6 +40,14 @@ class ChatModel extends Chat {
     );
   }
 
+  factory ChatModel.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data();
+    if (data == null) {
+      throw Exception('Document data is null');
+    }
+    return ChatModel.fromJson({...data, 'id': doc.id});
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,

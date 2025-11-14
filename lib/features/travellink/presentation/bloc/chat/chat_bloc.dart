@@ -18,6 +18,11 @@ class ChatBloc extends BaseBloC<ChatEvent, BaseState<ChatData>> {
     on<ChatUpdated>(_onChatUpdated);
     on<ChatMarkAsRead>(_onChatMarkAsRead);
     on<ChatStreamError>(_onChatStreamError);
+    on<ChatFilterChanged>(_onChatFilterChanged);
+    on<ChatTogglePinRequested>(_onChatTogglePinRequested);
+    on<ChatToggleMuteRequested>(_onChatToggleMuteRequested);
+    on<ChatMarkAsReadRequested>(_onChatMarkAsReadRequested);
+    on<ChatDeleteRequested>(_onChatDeleteRequested);
   }
 
   Future<void> _onChatLoadRequested(
@@ -119,6 +124,99 @@ class ChatBloc extends BaseBloC<ChatEvent, BaseState<ChatData>> {
       errorMessage: event.error,
       data: currentData,
     ));
+  }
+
+  void _onChatFilterChanged(
+    ChatFilterChanged event,
+    Emitter<BaseState<ChatData>> emit,
+  ) {
+    final currentData = _getCurrentData();
+    emit(LoadedState<ChatData>(
+      data: currentData.copyWith(filter: event.filter),
+      lastUpdated: DateTime.now(),
+    ));
+  }
+
+  Future<void> _onChatTogglePinRequested(
+    ChatTogglePinRequested event,
+    Emitter<BaseState<ChatData>> emit,
+  ) async {
+    final currentData = _getCurrentData();
+
+    // Find the chat and toggle pin status
+    final updatedChats = currentData.chats.map((chat) {
+      if (chat.id == event.chatId) {
+        final newMetadata = Map<String, dynamic>.from(chat.metadata);
+        newMetadata['isPinned'] = !(chat.metadata['isPinned'] as bool? ?? false);
+        return chat.copyWith(metadata: newMetadata);
+      }
+      return chat;
+    }).toList();
+
+    emit(LoadedState<ChatData>(
+      data: currentData.copyWith(chats: updatedChats),
+      lastUpdated: DateTime.now(),
+    ));
+
+    // TODO: Persist to Firestore via repository
+  }
+
+  Future<void> _onChatToggleMuteRequested(
+    ChatToggleMuteRequested event,
+    Emitter<BaseState<ChatData>> emit,
+  ) async {
+    final currentData = _getCurrentData();
+
+    // Find the chat and toggle mute status
+    final updatedChats = currentData.chats.map((chat) {
+      if (chat.id == event.chatId) {
+        final newMetadata = Map<String, dynamic>.from(chat.metadata);
+        newMetadata['isMuted'] = !(chat.metadata['isMuted'] as bool? ?? false);
+        return chat.copyWith(metadata: newMetadata);
+      }
+      return chat;
+    }).toList();
+
+    emit(LoadedState<ChatData>(
+      data: currentData.copyWith(chats: updatedChats),
+      lastUpdated: DateTime.now(),
+    ));
+
+    // TODO: Persist to Firestore via repository
+  }
+
+  Future<void> _onChatMarkAsReadRequested(
+    ChatMarkAsReadRequested event,
+    Emitter<BaseState<ChatData>> emit,
+  ) async {
+    final currentData = _getCurrentData();
+    final userId = currentData.currentUserId;
+
+    if (userId != null) {
+      await _onChatMarkAsRead(
+        ChatMarkAsRead(event.chatId, userId),
+        emit,
+      );
+    }
+  }
+
+  Future<void> _onChatDeleteRequested(
+    ChatDeleteRequested event,
+    Emitter<BaseState<ChatData>> emit,
+  ) async {
+    final currentData = _getCurrentData();
+
+    // Remove the chat from the list
+    final updatedChats = currentData.chats
+        .where((chat) => chat.id != event.chatId)
+        .toList();
+
+    emit(LoadedState<ChatData>(
+      data: currentData.copyWith(chats: updatedChats),
+      lastUpdated: DateTime.now(),
+    ));
+
+    // TODO: Delete from Firestore via repository
   }
 
   ChatData _getCurrentData() {

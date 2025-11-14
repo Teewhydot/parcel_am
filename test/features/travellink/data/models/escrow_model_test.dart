@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:parcel_am/features/travellink/data/models/escrow_model.dart';
 import 'package:parcel_am/features/travellink/domain/entities/escrow_entity.dart';
+import 'package:parcel_am/features/escrow/domain/entities/escrow_status.dart';
 
 void main() {
   group('EscrowModel', () {

@@ -2,7 +2,6 @@ import 'package:dartz/dartz.dart';
 import 'package:get_it/get_it.dart';
 import '../../failures/failures.dart';
 import '../../entities/chat/chat_entity.dart';
-import '../../entities/chat/message_entity.dart';
 import '../../repositories/chat/chat_repository.dart';
 
 class ChatUseCase {

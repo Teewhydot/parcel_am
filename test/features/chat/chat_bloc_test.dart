@@ -5,6 +5,7 @@ import 'package:mockito/annotations.dart';
 import 'package:dartz/dartz.dart';
 import 'package:parcel_am/core/errors/failures.dart';
 import 'package:parcel_am/features/chat/domain/entities/message.dart';
+import 'package:parcel_am/features/chat/domain/entities/message_type.dart';
 import 'package:parcel_am/features/chat/domain/usecases/chat_usecase.dart';
 import 'package:parcel_am/features/chat/presentation/bloc/chat_bloc.dart';
 import 'package:parcel_am/features/chat/presentation/bloc/chat_event.dart';

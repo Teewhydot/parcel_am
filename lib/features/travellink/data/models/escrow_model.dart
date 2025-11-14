@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/escrow_entity.dart';
+import '../../../escrow/domain/entities/escrow_status.dart';
 
 class EscrowModel {
   final String id;

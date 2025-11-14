@@ -1,3 +1,5 @@
+import '../../../../escrow/domain/entities/escrow_status.dart';
+
 class WalletData {
   final double availableBalance;
   final double pendingBalance;
@@ -71,13 +73,6 @@ class EscrowTransaction {
       status: status ?? this.status,
     );
   }
-}
-
-enum EscrowStatus {
-  held,
-  released,
-  cancelled,
-  disputed,
 }
 
 class Transaction {

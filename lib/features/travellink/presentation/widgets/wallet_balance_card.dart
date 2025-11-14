@@ -11,7 +11,6 @@ import '../bloc/wallet/wallet_bloc.dart';
 import '../bloc/wallet/wallet_data.dart';
 import '../bloc/wallet/wallet_event.dart';
 import '../bloc/auth/auth_bloc.dart';
-import '../bloc/auth/auth_data.dart';
 
 class WalletBalanceCard extends StatelessWidget {
   const WalletBalanceCard({super.key});

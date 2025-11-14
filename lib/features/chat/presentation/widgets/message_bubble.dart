@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../domain/entities/message.dart';
+import '../../domain/entities/message_type.dart';
 import 'package:intl/intl.dart';
 
 class MessageBubble extends StatelessWidget {

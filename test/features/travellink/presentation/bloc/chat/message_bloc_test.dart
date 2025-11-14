@@ -6,7 +6,6 @@ import 'package:dartz/dartz.dart';
 import 'package:parcel_am/core/bloc/base/base_state.dart';
 import 'package:parcel_am/features/travellink/domain/usecases/chat/message_usecase.dart';
 import 'package:parcel_am/features/travellink/domain/entities/chat/message_entity.dart';
-import 'package:parcel_am/features/travellink/domain/failures/failures.dart';
 import 'package:parcel_am/features/travellink/presentation/bloc/chat/message_bloc.dart';
 import 'package:parcel_am/features/travellink/presentation/bloc/chat/message_event.dart';
 import 'package:parcel_am/features/travellink/presentation/bloc/chat/message_data.dart';

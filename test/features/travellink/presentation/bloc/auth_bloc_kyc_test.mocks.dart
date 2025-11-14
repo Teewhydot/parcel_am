@@ -297,19 +297,6 @@ class MockKycUseCase extends _i1.Mock implements _i10.KycUseCase {
           as _i6.Future<_i3.Either<_i8.Failure, void>>);
 
   @override
-  _i6.Future<_i3.Either<_i8.Failure, String>> getKycStatus(String? userId) =>
-      (super.noSuchMethod(
-            Invocation.method(#getKycStatus, [userId]),
-            returnValue: _i6.Future<_i3.Either<_i8.Failure, String>>.value(
-              _FakeEither_1<_i8.Failure, String>(
-                this,
-                Invocation.method(#getKycStatus, [userId]),
-              ),
-            ),
-          )
-          as _i6.Future<_i3.Either<_i8.Failure, String>>);
-
-  @override
   _i6.Stream<String> watchKycStatus(String? userId) =>
       (super.noSuchMethod(
             Invocation.method(#watchKycStatus, [userId]),

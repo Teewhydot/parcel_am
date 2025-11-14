@@ -7,10 +7,10 @@ class PresenceIndicator extends StatelessWidget {
   final double size;
 
   const PresenceIndicator({
-    Key? key,
+    super.key,
     required this.status,
     this.size = 12,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

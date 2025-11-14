@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/escrow_model.dart';
-import '../../domain/entities/escrow_entity.dart';
 import '../../domain/exceptions/custom_exceptions.dart';
+import '../../../escrow/domain/entities/escrow_status.dart';
 
 abstract class EscrowRemoteDataSource {
   Stream<EscrowModel> watchEscrowStatus(String escrowId);
@@ -20,8 +20,9 @@ abstract class EscrowRemoteDataSource {
   );
   Future<EscrowModel> holdEscrow(String escrowId);
   Future<EscrowModel> releaseEscrow(String escrowId);
-  Future<EscrowModel> cancelEscrow(String escrowId);
+  Future<EscrowModel> cancelEscrow(String escrowId, String reason);
   Future<EscrowModel> getEscrow(String escrowId);
+  Future<List<EscrowModel>> getUserEscrows(String userId);
 }
 
 class EscrowRemoteDataSourceImpl implements EscrowRemoteDataSource {
@@ -143,8 +144,29 @@ class EscrowRemoteDataSourceImpl implements EscrowRemoteDataSource {
   }
 
   @override
-  Future<EscrowModel> cancelEscrow(String escrowId) async {
-    return updateEscrowStatus(escrowId, EscrowStatus.cancelled);
+  Future<EscrowModel> cancelEscrow(String escrowId, String reason) async {
+    try {
+      final docRef = firestore.collection('escrows').doc(escrowId);
+
+      final updateData = {
+        'status': EscrowStatus.cancelled.name,
+        'cancelReason': reason,
+        'cancelledAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      await docRef.update(updateData);
+
+      final updatedDoc = await docRef.get();
+      if (!updatedDoc.exists) {
+        throw ServerException();
+      }
+      return EscrowModel.fromFirestore(updatedDoc);
+    } on FirebaseException {
+      throw ServerException();
+    } catch (e) {
+      throw ServerException();
+    }
   }
 
   @override
@@ -157,6 +179,40 @@ class EscrowRemoteDataSourceImpl implements EscrowRemoteDataSource {
       }
 
       return EscrowModel.fromFirestore(doc);
+    } on FirebaseException {
+      throw ServerException();
+    } catch (e) {
+      throw ServerException();
+    }
+  }
+
+  @override
+  Future<List<EscrowModel>> getUserEscrows(String userId) async {
+    try {
+      final snapshot = await firestore
+          .collection('escrows')
+          .where('senderId', isEqualTo: userId)
+          .orderBy('createdAt', descending: true)
+          .get();
+
+      final senderEscrows = snapshot.docs
+          .map((doc) => EscrowModel.fromFirestore(doc))
+          .toList();
+
+      final travelerSnapshot = await firestore
+          .collection('escrows')
+          .where('travelerId', isEqualTo: userId)
+          .orderBy('createdAt', descending: true)
+          .get();
+
+      final travelerEscrows = travelerSnapshot.docs
+          .map((doc) => EscrowModel.fromFirestore(doc))
+          .toList();
+
+      final allEscrows = [...senderEscrows, ...travelerEscrows];
+      allEscrows.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+      return allEscrows;
     } on FirebaseException {
       throw ServerException();
     } catch (e) {

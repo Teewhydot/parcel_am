@@ -1,24 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import 'package:timeago/timeago.dart' as timeago;
-import '../../../../core/bloc/base/base_state.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../domain/entities/chat_entity.dart';
-import '../bloc/chat_bloc.dart';
-import '../bloc/chat_event.dart';
-import '../bloc/chat_data.dart';
-import '../widgets/presence_indicator.dart';
+import '../../../../core/bloc/base/base_state.dart';
+import '../../../travellink/domain/entities/chat/chat_entity.dart';
+import '../../../travellink/domain/entities/chat/chat_entity_extensions.dart';
+import '../../../travellink/presentation/bloc/chat/chat_bloc.dart';
+import '../../../travellink/presentation/bloc/chat/chat_event.dart';
+import '../../../travellink/presentation/bloc/chat/chat_data.dart';
 import '../widgets/chat_list_item.dart';
-import '../widgets/user_selection_dialog.dart';
 
 class ChatsListScreen extends StatefulWidget {
   final String currentUserId;
 
   const ChatsListScreen({
-    Key? key,
+    super.key,
     required this.currentUserId,
-  }) : super(key: key);
+  });
 
   @override
   State<ChatsListScreen> createState() => _ChatsListScreenState();
@@ -93,7 +91,7 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
       ),
       body: BlocConsumer<ChatBloc, BaseState<ChatData>>(
         listener: (context, state) {
-          if (state is ErrorState<ChatData>) {
+          if (state is AsyncErrorState<ChatData>) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.errorMessage),
@@ -101,11 +99,11 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
               ),
             );
           }
-          if (state is SuccessState<ChatData> && state.metadata?['chatId'] != null) {
-            // Navigate to chat detail screen
+          if (state is AsyncLoadedState<ChatData> && state.data != null) {
+            // Chat created successfully, show message
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.successMessage),
+              const SnackBar(
+                content: Text('Chat created successfully'),
                 backgroundColor: AppColors.success,
               ),
             );
@@ -116,7 +114,7 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (state is ErrorState<ChatData> && state.data == null) {
+          if (state is AsyncErrorState<ChatData> && state.data == null) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -226,7 +224,7 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
           SlidableAction(
             onPressed: (context) {
               context.read<ChatBloc>().add(
-                    ChatTogglePinRequested(chat.id, !chat.isPinned),
+                    ChatTogglePinRequested(chat.id),
                   );
             },
             backgroundColor: AppColors.info,
@@ -237,7 +235,7 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
           SlidableAction(
             onPressed: (context) {
               context.read<ChatBloc>().add(
-                    ChatToggleMuteRequested(chat.id, !chat.isMuted),
+                    ChatToggleMuteRequested(chat.id),
                   );
             },
             backgroundColor: AppColors.warning,
@@ -258,8 +256,10 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
       ),
       child: ChatListItem(
         chat: chat,
+        currentUserId: widget.currentUserId,
         onTap: () {
-          if (chat.unreadCount > 0) {
+          final unreadCount = chat.getUnreadCount(widget.currentUserId);
+          if (unreadCount > 0) {
             context.read<ChatBloc>().add(ChatMarkAsReadRequested(chat.id));
           }
           // Navigate to chat detail screen
@@ -307,7 +307,7 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
               title: Text(chat.isPinned ? 'Unpin' : 'Pin'),
               onTap: () {
                 context.read<ChatBloc>().add(
-                      ChatTogglePinRequested(chat.id, !chat.isPinned),
+                      ChatTogglePinRequested(chat.id),
                     );
                 Navigator.pop(bottomSheetContext);
               },
@@ -317,7 +317,7 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
               title: Text(chat.isMuted ? 'Unmute' : 'Mute'),
               onTap: () {
                 context.read<ChatBloc>().add(
-                      ChatToggleMuteRequested(chat.id, !chat.isMuted),
+                      ChatToggleMuteRequested(chat.id),
                     );
                 Navigator.pop(bottomSheetContext);
               },
@@ -346,16 +346,9 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
   }
 
   void _showUserSelectionDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => UserSelectionDialog(
-        currentUserId: widget.currentUserId,
-        onUserSelected: (userId) {
-          context.read<ChatBloc>().add(
-                ChatCreateRequested(widget.currentUserId, userId),
-              );
-        },
-      ),
+    // TODO: Implement user selection dialog with proper ChatBloc integration
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('User selection not yet implemented')),
     );
   }
 }

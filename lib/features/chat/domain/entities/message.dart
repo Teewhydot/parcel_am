@@ -1,6 +1,5 @@
 import 'package:equatable/equatable.dart';
-
-enum MessageType { text, image, video, document }
+import 'message_type.dart';
 
 enum MessageStatus { sending, sent, delivered, read, failed }
 

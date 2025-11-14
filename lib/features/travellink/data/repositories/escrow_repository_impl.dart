@@ -105,10 +105,10 @@ class EscrowRepositoryImpl implements EscrowRepository {
   }
 
   @override
-  Future<Either<Failure, EscrowEntity>> cancelEscrow(String escrowId) async {
+  Future<Either<Failure, EscrowEntity>> cancelEscrow(String escrowId, String reason) async {
     try {
       if (await networkInfo.isConnected) {
-        final escrowModel = await remoteDataSource.cancelEscrow(escrowId);
+        final escrowModel = await remoteDataSource.cancelEscrow(escrowId, reason);
         return Right(escrowModel.toEntity());
       } else {
         return const Left(
@@ -127,6 +127,23 @@ class EscrowRepositoryImpl implements EscrowRepository {
       if (await networkInfo.isConnected) {
         final escrowModel = await remoteDataSource.getEscrow(escrowId);
         return Right(escrowModel.toEntity());
+      } else {
+        return const Left(
+            NoInternetFailure(failureMessage: 'No internet connection'));
+      }
+    } on ServerException {
+      return const Left(ServerFailure(failureMessage: 'Server error occurred'));
+    } catch (e) {
+      return Left(UnknownFailure(failureMessage: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<EscrowEntity>>> getUserEscrows(String userId) async {
+    try {
+      if (await networkInfo.isConnected) {
+        final escrowModels = await remoteDataSource.getUserEscrows(userId);
+        return Right(escrowModels.map((model) => model.toEntity()).toList());
       } else {
         return const Left(
             NoInternetFailure(failureMessage: 'No internet connection'));

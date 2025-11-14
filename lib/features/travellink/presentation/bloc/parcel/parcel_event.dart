@@ -83,3 +83,16 @@ class ParcelLoadUserParcels extends ParcelEvent {
   @override
   List<Object?> get props => [userId];
 }
+
+class ParcelPaymentCompleted extends ParcelEvent {
+  final String parcelId;
+  final String transactionId;
+
+  const ParcelPaymentCompleted({
+    required this.parcelId,
+    required this.transactionId,
+  });
+
+  @override
+  List<Object?> get props => [parcelId, transactionId];
+}

@@ -9,18 +9,18 @@ class EscrowUseCase {
   EscrowUseCase(this.repository);
 
   Future<Either<Failure, EscrowEntity>> createEscrow({
-    required String walletId,
-    required String userId,
+    required String parcelId,
+    required String senderId,
+    required String travelerId,
     required double amount,
-    required String referenceId,
-    required String referenceType,
+    String currency = 'NGN',
   }) {
     return repository.createEscrow(
-      walletId: walletId,
-      userId: userId,
-      amount: amount,
-      referenceId: referenceId,
-      referenceType: referenceType,
+      parcelId,
+      senderId,
+      travelerId,
+      amount,
+      currency,
     );
   }
 

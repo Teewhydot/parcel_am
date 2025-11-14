@@ -1,9 +1,18 @@
 import 'package:dartz/dartz.dart';
 import '../../../../core/errors/failures.dart';
 import '../entities/message.dart';
+import '../entities/message_type.dart';
 import '../entities/chat.dart';
 
 abstract class ChatRepository {
+  // Chat management
+  Future<Either<Failure, Chat>> createChat(List<String> participantIds);
+  Future<Either<Failure, Chat>> getChat(String chatId);
+  Future<Either<Failure, List<Chat>>> getUserChats(String userId);
+  Stream<Chat> watchChat(String chatId);
+  Stream<List<Chat>> watchUserChats(String userId);
+
+  // Message management
   Stream<Either<Failure, List<Message>>> getMessagesStream(String chatId);
   Future<Either<Failure, void>> sendMessage(Message message);
   Future<Either<Failure, void>> updateMessageStatus(

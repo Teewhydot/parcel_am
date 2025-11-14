@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/message.dart';
+import '../../domain/entities/message_entity.dart';
+import '../../domain/entities/message_type.dart';
 
 class MessageModel extends Message {
   const MessageModel({
@@ -53,6 +55,14 @@ class MessageModel extends Message {
     );
   }
 
+  factory MessageModel.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data();
+    if (data == null) {
+      throw Exception('Document data is null');
+    }
+    return MessageModel.fromJson({...data, 'id': doc.id});
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -95,6 +105,28 @@ class MessageModel extends Message {
       replyToMessage: message.replyToMessage,
       isDeleted: message.isDeleted,
       readBy: message.readBy,
+    );
+  }
+
+  MessageEntity toEntity() {
+    return MessageEntity(
+      id: id,
+      chatId: chatId,
+      senderId: senderId,
+      content: content,
+      type: type,
+      timestamp: timestamp,
+      isRead: status == MessageStatus.read,
+      replyToMessageId: replyToMessageId,
+      metadata: {
+        'senderName': senderName,
+        'senderAvatar': senderAvatar,
+        'mediaUrl': mediaUrl,
+        'thumbnailUrl': thumbnailUrl,
+        'fileName': fileName,
+        'fileSize': fileSize,
+        'isDeleted': isDeleted,
+      },
     );
   }
 }

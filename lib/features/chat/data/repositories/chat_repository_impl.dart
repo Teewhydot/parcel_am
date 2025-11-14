@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/network/network_info.dart';
 import '../../domain/entities/message.dart';
+import '../../domain/entities/message_type.dart';
 import '../../domain/entities/chat.dart';
 import '../../domain/repositories/chat_repository.dart';
 import '../datasources/chat_remote_data_source.dart';
@@ -166,5 +167,57 @@ class ChatRepositoryImpl implements ChatRepository {
     } catch (e) {
       return Left(ServerFailure(failureMessage: e.toString()));
     }
+  }
+
+  @override
+  Future<Either<Failure, Chat>> createChat(List<String> participantIds) async {
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure(failureMessage: 'No internet connection'));
+    }
+
+    try {
+      final chat = await remoteDataSource.createChat(participantIds);
+      return Right(chat);
+    } catch (e) {
+      return Left(ServerFailure(failureMessage: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Chat>> getChat(String chatId) async {
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure(failureMessage: 'No internet connection'));
+    }
+
+    try {
+      final chat = await remoteDataSource.getChat(chatId);
+      return Right(chat);
+    } catch (e) {
+      return Left(ServerFailure(failureMessage: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<Chat>>> getUserChats(String userId) async {
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure(failureMessage: 'No internet connection'));
+    }
+
+    try {
+      final chats = await remoteDataSource.getUserChats(userId);
+      return Right(chats);
+    } catch (e) {
+      return Left(ServerFailure(failureMessage: e.toString()));
+    }
+  }
+
+  @override
+  Stream<Chat> watchChat(String chatId) {
+    return remoteDataSource.watchChat(chatId);
+  }
+
+  @override
+  Stream<List<Chat>> watchUserChats(String userId) {
+    return remoteDataSource.watchUserChats(userId);
   }
 }
