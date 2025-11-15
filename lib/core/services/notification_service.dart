@@ -6,7 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter_app_badger/flutter_app_badger.dart';
+import 'package:app_badge_plus/app_badge_plus.dart';
 import '../../features/notifications/data/datasources/notification_remote_datasource.dart';
 import '../../features/notifications/data/models/notification_model.dart';
 import '../routes/routes.dart';
@@ -568,14 +568,10 @@ class NotificationService {
   Future<void> updateBadgeCount(int count) async {
     try {
       // Check if the device supports app badges
-      final isSupported = await FlutterAppBadger.isAppBadgeSupported();
+      final isSupported = await AppBadgePlus.isSupported();
 
       if (isSupported) {
-        if (count > 0) {
-          await FlutterAppBadger.updateBadgeCount(count);
-        } else {
-          await FlutterAppBadger.removeBadge();
-        }
+        await AppBadgePlus.updateBadge(count);
 
         if (kDebugMode) {
           print('Badge count updated to: $count');
@@ -595,7 +591,7 @@ class NotificationService {
   /// Clear app badge (set to 0)
   Future<void> clearBadge() async {
     try {
-      await FlutterAppBadger.removeBadge();
+      await AppBadgePlus.updateBadge(0);
       if (kDebugMode) {
         print('Badge cleared');
       }
