@@ -2,10 +2,12 @@ import 'package:dartz/dartz.dart';
 import '../../../../core/errors/failures.dart';
 import '../entities/wallet_entity.dart';
 import '../entities/transaction_entity.dart';
-import '../../data/repositories/wallet_repository_impl.dart';
+import '../repositories/wallet_repository.dart';
 
 class WalletUseCase {
-  final walletRepo = WalletRepositoryImpl();
+  final WalletRepository walletRepo;
+
+  WalletUseCase(this.walletRepo);
 
   Future<Either<Failure, WalletEntity>> getWallet(String userId) {
     return walletRepo.getWallet(userId);

@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_scaffold.dart';
 import '../../../../core/widgets/app_container.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_spacing.dart';
-import '../../../../core/bloc/base/base_state.dart';
-import '../bloc/auth/auth_bloc.dart';
-import '../bloc/auth/auth_data.dart';
+import '../../../../injection_container.dart' as di;
+import '../../../chat/domain/entities/message.dart';
+import '../../../chat/domain/entities/message_type.dart';
+import '../../../chat/presentation/bloc/chat_bloc.dart';
+import '../../../chat/presentation/bloc/chat_event.dart';
+import '../../../chat/presentation/bloc/chat_state.dart';
 
 class ChatScreen extends StatefulWidget {
   final String chatId;
@@ -24,71 +27,62 @@ class ChatScreen extends StatefulWidget {
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
+class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  String? _currentUserId;
+  String? _currentUserName;
+  String? _currentUserAvatar;
+  late ChatBloc _chatBloc;
 
   @override
   void initState() {
     super.initState();
-    _markMessagesAsRead();
+    WidgetsBinding.instance.addObserver(this);
+    _loadCurrentUser();
+    _chatBloc = di.sl<ChatBloc>();
+    _initializeChat();
+  }
+
+  void _loadCurrentUser() {
+    final user = FirebaseAuth.instance.currentUser;
+    _currentUserId = user?.uid;
+    _currentUserName = user?.displayName ?? 'You';
+    _currentUserAvatar = user?.photoURL;
+  }
+
+  void _initializeChat() {
+    _chatBloc.add(LoadMessages(widget.chatId));
+    _chatBloc.add(LoadChat(widget.chatId));
+    _updateLastSeen();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _messageController.dispose();
     _scrollController.dispose();
+    _updateLastSeen();
+    _chatBloc.close();
     super.dispose();
   }
 
-  Future<void> _markMessagesAsRead() async {
-    final authState = context.read<AuthBloc>().state;
-    final userId = authState is LoadedState<AuthData> ? authState.data?.user?.uid ?? '' : '';
-
-    if (userId.isEmpty) return;
-
-    await FirebaseFirestore.instance
-        .collection('chats')
-        .doc(widget.chatId)
-        .update({
-      'unreadCount.$userId': 0,
-    });
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      _updateLastSeen();
+    } else if (state == AppLifecycleState.resumed) {
+      _updateLastSeen();
+    }
   }
 
-  Future<void> _sendMessage() async {
-    final message = _messageController.text.trim();
-    if (message.isEmpty) return;
-
-    final authState = context.read<AuthBloc>().state;
-    final userId = authState is LoadedState<AuthData> ? authState.data?.user?.uid ?? '' : '';
-
-    if (userId.isEmpty) return;
-
-    _messageController.clear();
-
-    final messageData = {
-      'senderId': userId,
-      'text': message,
-      'timestamp': FieldValue.serverTimestamp(),
-      'read': false,
-    };
-
-    await FirebaseFirestore.instance
-        .collection('chats')
-        .doc(widget.chatId)
-        .collection('messages')
-        .add(messageData);
-
-    await FirebaseFirestore.instance
-        .collection('chats')
-        .doc(widget.chatId)
-        .update({
-      'lastMessage': message,
-      'lastMessageTime': FieldValue.serverTimestamp(),
-      'unreadCount.${widget.otherUserId}': FieldValue.increment(1),
-    });
-
-    _scrollToBottom();
+  void _updateLastSeen() {
+    if (_currentUserId != null) {
+      _chatBloc.add(
+        UpdateLastSeen(chatId: widget.chatId, userId: _currentUserId!),
+      );
+    }
   }
 
   void _scrollToBottom() {
@@ -101,30 +95,125 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  void _handleSendMessage() {
+    final content = _messageController.text.trim();
+    if (content.isEmpty || _currentUserId == null) return;
+
+    _messageController.clear();
+
+    final message = Message(
+      id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
+      chatId: widget.chatId,
+      senderId: _currentUserId!,
+      senderName: _currentUserName ?? 'You',
+      senderAvatar: _currentUserAvatar,
+      content: content,
+      type: MessageType.text,
+      status: MessageStatus.sending,
+      timestamp: DateTime.now(),
+    );
+
+    _chatBloc.add(SendMessage(message));
+
+    // Scroll after a brief delay to allow message to be added
+    Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
+  }
+
+  void _handleTyping(bool isTyping) {
+    if (_currentUserId != null) {
+      _chatBloc.add(
+        SetTypingStatus(
+          chatId: widget.chatId,
+          userId: _currentUserId!,
+          isTyping: isTyping,
+        ),
+      );
+    }
+  }
+
+  void _markMessagesAsRead(List<Message> messages) {
+    if (_currentUserId == null) return;
+
+    for (final message in messages) {
+      if (message.senderId != _currentUserId &&
+          message.status != MessageStatus.read) {
+        _chatBloc.add(
+          MarkMessageAsRead(
+            chatId: widget.chatId,
+            messageId: message.id,
+            userId: _currentUserId!,
+          ),
+        );
+      }
+    }
+  }
+
+  String _getOnlineStatus(MessagesLoaded state) {
+    if (state.chat == null) return 'Offline';
+
+    final isTyping = state.chat!.isTyping[widget.otherUserId] ?? false;
+    if (isTyping) return 'typing...';
+
+    final lastSeen = state.chat!.lastSeen[widget.otherUserId];
+    if (lastSeen == null) return 'Offline';
+
+    final now = DateTime.now();
+    final difference = now.difference(lastSeen);
+
+    if (difference.inMinutes < 5) return 'Online';
+    if (difference.inHours < 1) {
+      return 'Last seen ${difference.inMinutes}m ago';
+    }
+    if (difference.inDays < 1) {
+      return 'Last seen ${difference.inHours}h ago';
+    }
+    return 'Last seen ${difference.inDays}d ago';
+  }
+
+  String _getOtherUserName(MessagesLoaded state) {
+    // Try to get name from chat metadata if available
+    // Otherwise, fall back to a default
+    return 'User';
+  }
+
+  bool _isOnline(MessagesLoaded state) {
+    if (state.chat == null) return false;
+
+    final lastSeen = state.chat!.lastSeen[widget.otherUserId];
+    if (lastSeen == null) return false;
+
+    final now = DateTime.now();
+    final difference = now.difference(lastSeen);
+
+    return difference.inMinutes < 5;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return AppScaffold(
-      hasGradientBackground: true,
-      body: Column(
-        children: [
-          _buildHeader(),
-          Expanded(
-            child: AppContainer(
-              variant: ContainerVariant.surface,
-              color: AppColors.background,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(24),
-                topRight: Radius.circular(24),
-              ),
-              child: Column(
-                children: [
-                  Expanded(child: _buildMessagesList()),
-                  _buildMessageInput(),
-                ],
+    return BlocProvider.value(
+      value: _chatBloc,
+      child: AppScaffold(
+        body: Column(
+          children: [
+            _buildHeader(),
+            Expanded(
+              child: AppContainer(
+                variant: ContainerVariant.surface,
+                color: AppColors.background,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
+                ),
+                child: Column(
+                  children: [
+                    Expanded(child: _buildMessagesList()),
+                    _buildMessageInput(),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -132,16 +221,17 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _buildHeader() {
     return AppContainer(
       padding: AppSpacing.paddingXL,
-      child: StreamBuilder<DocumentSnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('users')
-            .doc(widget.otherUserId)
-            .snapshots(),
-        builder: (context, snapshot) {
-          final userData = snapshot.data?.data() as Map<String, dynamic>?;
-          final displayName = userData?['displayName'] ?? 'Unknown User';
-          final isOnline = userData?['presence']?['isOnline'] ?? false;
-          final lastSeen = userData?['presence']?['lastSeen'] as Timestamp?;
+      child: BlocBuilder<ChatBloc, ChatState>(
+        builder: (context, state) {
+          final displayName = state is MessagesLoaded
+              ? _getOtherUserName(state)
+              : 'User';
+          final status = state is MessagesLoaded
+              ? _getOnlineStatus(state)
+              : 'Offline';
+          final isOnline = state is MessagesLoaded
+              ? _isOnline(state)
+              : false;
 
           return Row(
             children: [
@@ -156,7 +246,9 @@ class _ChatScreenState extends State<ChatScreen> {
                     radius: 20,
                     backgroundColor: Colors.white.withOpacity(0.3),
                     child: Text(
-                      displayName[0].toUpperCase(),
+                      displayName.isNotEmpty
+                          ? displayName[0].toUpperCase()
+                          : 'U',
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -191,11 +283,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                     AppSpacing.verticalSpacing(SpacingSize.xs),
                     AppText.bodySmall(
-                      isOnline
-                          ? 'Online'
-                          : lastSeen != null
-                              ? 'Last seen ${_formatLastSeen(lastSeen)}'
-                              : 'Offline',
+                      status,
                       color: Colors.white70,
                     ),
                   ],
@@ -209,72 +297,75 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildMessagesList() {
-    return BlocSelector<AuthBloc, BaseState<AuthData>, String>(
-      selector: (state) {
-        if (state is LoadedState<AuthData>) {
-          return state.data?.user?.uid ?? '';
+    return BlocConsumer<ChatBloc, ChatState>(
+      listener: (context, state) {
+        if (state is ChatError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        } else if (state is MessageSent) {
+          Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
+        } else if (state is MessagesLoaded) {
+          _markMessagesAsRead(state.messages);
         }
-        return '';
       },
-      builder: (context, userId) {
-        return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('chats')
-          .doc(widget.chatId)
-          .collection('messages')
-          .orderBy('timestamp', descending: false)
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return const Center(child: Text('Error loading messages'));
-        }
-
-        if (snapshot.connectionState == ConnectionState.waiting) {
+      builder: (context, state) {
+        if (state is ChatLoading) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final messages = snapshot.data?.docs ?? [];
+        if (state is MessagesLoaded) {
+          final messages = state.messages;
 
-        if (messages.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.chat_bubble_outline,
-                  size: 64,
-                  color: AppColors.onSurfaceVariant,
-                ),
-                AppSpacing.verticalSpacing(SpacingSize.md),
-                AppText.bodyLarge(
-                  'No messages yet',
-                  color: AppColors.onSurfaceVariant,
-                ),
-              ],
-            ),
+          if (messages.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.chat_bubble_outline,
+                    size: 64,
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                  AppSpacing.verticalSpacing(SpacingSize.md),
+                  AppText.bodyLarge(
+                    'No messages yet',
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                  AppSpacing.verticalSpacing(SpacingSize.sm),
+                  AppText.bodyMedium(
+                    'Start the conversation!',
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            );
+          }
+
+          // Scroll to bottom after messages load
+          WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+
+          return ListView.builder(
+            controller: _scrollController,
+            padding: AppSpacing.paddingXL,
+            itemCount: messages.length,
+            itemBuilder: (context, index) {
+              final message = messages[index];
+              final isMe = message.senderId == _currentUserId;
+
+              return _MessageBubble(
+                message: message,
+                isMe: isMe,
+              );
+            },
           );
         }
 
-        WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
-
-        return ListView.builder(
-          controller: _scrollController,
-          padding: AppSpacing.paddingXL,
-          itemCount: messages.length,
-          itemBuilder: (context, index) {
-            final messageData = messages[index].data() as Map<String, dynamic>;
-            final isMe = messageData['senderId'] == userId;
-            final text = messageData['text'] ?? '';
-            final timestamp = messageData['timestamp'] as Timestamp?;
-
-            return _MessageBubble(
-              text: text,
-              isMe: isMe,
-              timestamp: timestamp,
-            );
-          },
-        );
-      },
+        return const Center(
+          child: Text('Failed to load messages'),
         );
       },
     );
@@ -304,11 +395,16 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
               maxLines: null,
               textCapitalization: TextCapitalization.sentences,
+              onChanged: (value) {
+                // Simple debouncing for typing indicator
+                _handleTyping(value.isNotEmpty);
+              },
+              onSubmitted: (_) => _handleSendMessage(),
             ),
           ),
           AppSpacing.horizontalSpacing(SpacingSize.md),
           FloatingActionButton(
-            onPressed: _sendMessage,
+            onPressed: _handleSendMessage,
             backgroundColor: AppColors.primary,
             mini: true,
             child: const Icon(Icons.send, color: Colors.white),
@@ -317,35 +413,15 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
     );
   }
-
-  String _formatLastSeen(Timestamp timestamp) {
-    final now = DateTime.now();
-    final date = timestamp.toDate();
-    final difference = now.difference(date);
-
-    if (difference.inMinutes < 1) {
-      return 'just now';
-    } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes}m ago';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inDays == 1) {
-      return 'yesterday';
-    } else {
-      return '${difference.inDays}d ago';
-    }
-  }
 }
 
 class _MessageBubble extends StatelessWidget {
-  final String text;
+  final Message message;
   final bool isMe;
-  final Timestamp? timestamp;
 
   const _MessageBubble({
-    required this.text,
+    required this.message,
     required this.isMe,
-    this.timestamp,
   });
 
   @override
@@ -380,25 +456,22 @@ class _MessageBubble extends StatelessWidget {
                 ],
               ),
               child: AppText.bodyMedium(
-                text,
+                message.content,
                 color: isMe ? Colors.white : AppColors.onSurface,
               ),
             ),
-            if (timestamp != null) ...[
-              AppSpacing.verticalSpacing(SpacingSize.xs),
-              AppText.labelSmall(
-                _formatTime(timestamp!),
-                color: AppColors.onSurfaceVariant,
-              ),
-            ],
+            AppSpacing.verticalSpacing(SpacingSize.xs),
+            AppText.labelSmall(
+              _formatTime(message.timestamp),
+              color: AppColors.onSurfaceVariant,
+            ),
           ],
         ),
       ),
     );
   }
 
-  String _formatTime(Timestamp timestamp) {
-    final date = timestamp.toDate();
-    return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  String _formatTime(DateTime timestamp) {
+    return '${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}';
   }
 }

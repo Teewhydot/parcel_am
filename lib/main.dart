@@ -52,7 +52,7 @@ class MyApp extends StatelessWidget {
           child: MultiBlocProvider(
             providers: [
               BlocProvider<AuthBloc>(
-                create: (context) => AuthBloc(),
+                create: (context) => di.sl<AuthBloc>(),
               ),
               BlocProvider(
                 create: (_) => WalletBloc()..add(const WalletLoadRequested()),

@@ -150,12 +150,6 @@ class WalletBalanceCard extends StatelessWidget {
             ),
           ),
           AppSpacing.verticalSpacing(SpacingSize.sm),
-          Center(
-            child: AppText.labelSmall(
-              'Last updated: ${_formatTime(DateTime.now())}',
-              color: AppColors.onSurfaceVariant,
-            ),
-          ),
         ],
       ),
     );

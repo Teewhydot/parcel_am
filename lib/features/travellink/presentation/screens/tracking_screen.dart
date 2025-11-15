@@ -14,7 +14,6 @@ import '../../domain/models/package_model.dart';
 import '../bloc/package/package_bloc.dart';
 import '../bloc/package/package_event.dart';
 import '../bloc/package/package_state.dart';
-import '../../data/datasources/package_remote_data_source.dart';
 
 class TrackingScreen extends StatefulWidget {
   const TrackingScreen({super.key, this.packageId});
@@ -46,71 +45,66 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => PackageBloc(
-        dataSource: PackageRemoteDataSourceImpl(firestore: sl()),
-      )..add(PackageStreamStarted(widget.packageId ?? 'TLN001')),
-      child: BlocConsumer<PackageBloc, PackageState>(
-        listener: (context, state) {
-          if (state.escrowMessage != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.escrowMessage!),
-                backgroundColor: state.escrowReleaseStatus == EscrowReleaseStatus.released
-                    ? AppColors.success
-                    : state.escrowReleaseStatus == EscrowReleaseStatus.failed
-                        ? AppColors.error
-                        : AppColors.primary,
-              ),
-            );
-          }
-        },
-        builder: (context, state) {
-          return AppScaffold(
-            title: 'Package Tracking',
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () => sl<NavigationService>().goBack(),
+    return BlocConsumer<PackageBloc, PackageState>(
+      listener: (context, state) {
+        if (state.escrowMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.escrowMessage!),
+              backgroundColor: state.escrowReleaseStatus == EscrowReleaseStatus.released
+                  ? AppColors.success
+                  : state.escrowReleaseStatus == EscrowReleaseStatus.failed
+                      ? AppColors.error
+                      : AppColors.primary,
             ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.share),
-                onPressed: () {},
-              ),
-            ],
-            appBarBackgroundColor: AppColors.surface,
-            body: state.isLoading && state.package == null
-                ? const Center(child: CircularProgressIndicator())
-                : state.package != null
-                    ? Column(
-                        children: [
-                          _buildPackageHeader(state.package!),
-                          _buildEscrowStatusBanner(state.package!),
-                          TabBar(
+          );
+        }
+      },
+      builder: (context, state) {
+        return AppScaffold(
+          title: 'Package Tracking',
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => sl<NavigationService>().goBack(),
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.share),
+              onPressed: () {},
+            ),
+          ],
+          appBarBackgroundColor: AppColors.surface,
+          body: state.isLoading && state.package == null
+              ? const Center(child: CircularProgressIndicator())
+              : state.package != null
+                  ? Column(
+                      children: [
+                        _buildPackageHeader(state.package!),
+                        _buildEscrowStatusBanner(state.package!),
+                        TabBar(
+                          controller: _tabController,
+                          tabs: const [
+                            Tab(text: 'Live Map'),
+                            Tab(text: 'Timeline'),
+                            Tab(text: 'Details'),
+                          ],
+                        ),
+                        Expanded(
+                          child: TabBarView(
                             controller: _tabController,
-                            tabs: const [
-                              Tab(text: 'Live Map'),
-                              Tab(text: 'Timeline'),
-                              Tab(text: 'Details'),
+                            children: [
+                              _buildMapTab(state.package!),
+                              _buildTimelineTab(state.package!),
+                              _buildDetailsTab(state.package!, context),
                             ],
                           ),
-                          Expanded(
-                            child: TabBarView(
-                              controller: _tabController,
-                              children: [
-                                _buildMapTab(state.package!),
-                                _buildTimelineTab(state.package!),
-                                _buildDetailsTab(state.package!, context),
-                              ],
-                            ),
-                          ),
-                        ],
-                      )
-                    : const Center(child: Text('No package data')),
-            bottomNavigationBar: const BottomNavigation(currentIndex: 2),
-          );
-        },
-      ),
+                        ),
+                      ],
+                    )
+                  : const Center(child: Text('No package data')),
+          bottomNavigationBar: const BottomNavigation(currentIndex: 2),
+        );
+      },
     );
   }
 

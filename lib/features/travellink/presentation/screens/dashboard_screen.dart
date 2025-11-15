@@ -26,7 +26,8 @@ import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_data.dart';
 import '../../data/providers/theme_provider.dart';
 import '../../data/constants/verification_constants.dart';
-import '../../data/datasources/package_remote_data_source.dart';
+import '../../../package/presentation/bloc/active_packages_bloc.dart';
+import '../../../package/domain/entities/package_entity.dart';
 import '../../../../core/services/escrow_notification_service.dart';
 import '../../../../core/services/presence_service.dart';
 import '../../../../core/services/chat_notification_service.dart';
@@ -39,28 +40,28 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  StreamSubscription? _packagesSubscription;
   StreamSubscription? _notificationSubscription;
-  List<Map<String, dynamic>> _activePackages = [];
   final NotificationService _notificationService = NotificationService(firestore: sl());
   late final PresenceService _presenceService;
   late final ChatNotificationService _chatNotificationService;
+  late ActivePackagesBloc _activePackagesBloc;
 
   @override
   void initState() {
     super.initState();
-    _subscribeToActivePackages();
+    _activePackagesBloc = sl<ActivePackagesBloc>();
+    _loadActivePackages();
     _subscribeToEscrowNotifications();
     _initializePresenceAndChatNotifications();
   }
 
   @override
   void dispose() {
-    _packagesSubscription?.cancel();
     _notificationSubscription?.cancel();
     _notificationService.dispose();
     _presenceService.dispose();
     _chatNotificationService.dispose();
+    _activePackagesBloc.close();
     super.dispose();
   }
 
@@ -81,18 +82,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  void _subscribeToActivePackages() {
+  void _loadActivePackages() {
     final authState = context.read<AuthBloc>().state;
-    final userId = authState is LoadedState<AuthData> ? authState.data?.user?.uid ?? 'demo_user' : 'demo_user';
+    final userId = authState is LoadedState<AuthData> ? authState.data?.user?.uid ?? '' : '';
 
-    final dataSource = PackageRemoteDataSourceImpl(firestore: sl());
-    _packagesSubscription = dataSource.getActivePackagesStream(userId).listen((packages) {
-      if (mounted) {
-        setState(() {
-          _activePackages = packages;
-        });
-      }
-    });
+    if (userId.isNotEmpty) {
+      _activePackagesBloc.add(LoadActivePackages(userId));
+    }
   }
 
   void _subscribeToEscrowNotifications() {
@@ -192,7 +188,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   AppSpacing.verticalSpacing(SpacingSize.lg),
                   const UserStatsGrid(),
                   AppSpacing.verticalSpacing(SpacingSize.xxl),
-                  _RecentActivitySection(activePackages: _activePackages),
+                  BlocProvider.value(
+                    value: _activePackagesBloc,
+                    child: BlocBuilder<ActivePackagesBloc, ActivePackagesState>(
+                      builder: (context, state) {
+                        if (state is ActivePackagesLoaded) {
+                          return _RecentActivitySection(activePackages: state.packages);
+                        } else if (state is ActivePackagesLoading) {
+                          return const Center(child: CircularProgressIndicator());
+                        } else if (state is ActivePackagesError) {
+                          return Center(child: Text('Error: ${state.message}'));
+                        }
+                        return const _RecentActivitySection(activePackages: []);
+                      },
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -513,7 +523,7 @@ class _ActionCard extends StatelessWidget {
 }
 
 class _RecentActivitySection extends StatelessWidget {
-  final List<Map<String, dynamic>> activePackages;
+  final List<PackageEntity> activePackages;
 
   const _RecentActivitySection({required this.activePackages});
 
@@ -552,16 +562,15 @@ class _RecentActivitySection extends StatelessWidget {
                 itemCount: activePackages.length > 5 ? 5 : activePackages.length,
                 itemBuilder: (context, index) {
                   final package = activePackages[index];
-                  final paymentInfo = package['paymentInfo'] as Map<String, dynamic>?;
-                  final escrowStatus = paymentInfo != null && paymentInfo['isEscrow'] == true
-                      ? paymentInfo['escrowStatus'] ?? 'pending'
+                  final escrowStatus = package.paymentInfo != null && package.paymentInfo!.isEscrow
+                      ? package.paymentInfo!.escrowStatus ?? 'pending'
                       : null;
 
                   return _ActivityItem(
-                    title: package['title'] ?? 'Unknown Package',
-                    subtitle: '${package['origin']?['name'] ?? 'Unknown'} → ${package['destination']?['name'] ?? 'Unknown'}',
-                    status: _getStatusText(package['status'] ?? ''),
-                    statusColor: _getStatusColor(package['status'] ?? ''),
+                    title: 'Package #${package.id.substring(0, 8)}',
+                    subtitle: '${package.origin} → ${package.destination}',
+                    status: _getStatusText(package.status),
+                    statusColor: _getStatusColor(package.status),
                     icon: Icons.inventory_2_outlined,
                     hasAvatar: false,
                     avatarText: '',
@@ -569,7 +578,7 @@ class _RecentActivitySection extends StatelessWidget {
                     onTap: () {
                       sl<NavigationService>().navigateTo(
                         Routes.tracking,
-                        arguments: {'packageId': package['id']},
+                        arguments: {'packageId': package.id},
                       );
                     },
                   );

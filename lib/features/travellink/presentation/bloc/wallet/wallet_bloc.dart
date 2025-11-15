@@ -14,8 +14,8 @@ class WalletBloc extends BaseBloC<WalletEvent, BaseState<WalletData>> {
   String? _currentWalletId;
 
   WalletBloc({
-    WalletUseCase? walletUseCase,
-  })  : _walletUseCase = walletUseCase ?? WalletUseCase(),
+    required WalletUseCase walletUseCase,
+  })  : _walletUseCase = walletUseCase,
         super(const InitialState<WalletData>()) {
     on<WalletStarted>(_onStarted);
     on<WalletLoadRequested>(_onLoadRequested);

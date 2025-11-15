@@ -1,15 +1,23 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bloc_test/bloc_test.dart';
+import 'package:mockito/mockito.dart';
+import 'package:mockito/annotations.dart';
+import 'package:parcel_am/features/travellink/domain/usecases/wallet_usecase.dart';
 import 'package:parcel_am/features/travellink/presentation/bloc/wallet/wallet_bloc.dart';
 import 'package:parcel_am/features/travellink/presentation/bloc/wallet/wallet_event.dart';
 import 'package:parcel_am/features/travellink/presentation/bloc/wallet/wallet_data.dart';
 import 'package:parcel_am/core/bloc/base/base_state.dart';
 
+@GenerateMocks([WalletUseCase])
+import 'wallet_bloc_test.mocks.dart';
+
 void main() {
   late WalletBloc walletBloc;
+  late MockWalletUseCase mockWalletUseCase;
 
   setUp(() {
-    walletBloc = WalletBloc();
+    mockWalletUseCase = MockWalletUseCase();
+    walletBloc = WalletBloc(walletUseCase: mockWalletUseCase);
   });
 
   tearDown(() {

@@ -8,7 +8,7 @@ import 'dart:async' as _i5;
 import 'package:dartz/dartz.dart' as _i3;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:parcel_am/core/errors/failures.dart' as _i6;
-import 'package:parcel_am/features/travellink/data/repositories/kyc_repository_impl.dart'
+import 'package:parcel_am/features/travellink/domain/repositories/kyc_repository.dart'
     as _i2;
 import 'package:parcel_am/features/travellink/domain/usecases/kyc_usecase.dart'
     as _i4;
@@ -27,9 +27,8 @@ import 'package:parcel_am/features/travellink/domain/usecases/kyc_usecase.dart'
 // ignore_for_file: camel_case_types
 // ignore_for_file: subtype_of_sealed_class
 
-class _FakeKycRepositoryImpl_0 extends _i1.SmartFake
-    implements _i2.KycRepositoryImpl {
-  _FakeKycRepositoryImpl_0(Object parent, Invocation parentInvocation)
+class _FakeKycRepository_0 extends _i1.SmartFake implements _i2.KycRepository {
+  _FakeKycRepository_0(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
@@ -47,15 +46,15 @@ class MockKycUseCase extends _i1.Mock implements _i4.KycUseCase {
   }
 
   @override
-  _i2.KycRepositoryImpl get kycRepo =>
+  _i2.KycRepository get kycRepo =>
       (super.noSuchMethod(
             Invocation.getter(#kycRepo),
-            returnValue: _FakeKycRepositoryImpl_0(
+            returnValue: _FakeKycRepository_0(
               this,
               Invocation.getter(#kycRepo),
             ),
           )
-          as _i2.KycRepositoryImpl);
+          as _i2.KycRepository);
 
   @override
   _i5.Future<_i3.Either<_i6.Failure, void>> submitKyc({

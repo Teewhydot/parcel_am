@@ -9,8 +9,8 @@ class KycBloc extends Bloc<KycEvent, KycState> {
   StreamSubscription<String>? _kycStatusSubscription;
 
   KycBloc({
-    KycUseCase? kycUseCase,
-  })  : _kycUseCase = kycUseCase ?? KycUseCase(),
+    required KycUseCase kycUseCase,
+  })  : _kycUseCase = kycUseCase,
         super(const KycInitial()) {
     on<KycSubmitRequested>(_onSubmitRequested);
     on<KycStatusUpdated>(_onStatusUpdated);

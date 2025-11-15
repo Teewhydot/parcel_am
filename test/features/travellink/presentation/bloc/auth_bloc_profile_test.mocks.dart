@@ -3,19 +3,19 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i6;
+import 'dart:async' as _i5;
 
 import 'package:dartz/dartz.dart' as _i3;
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:parcel_am/core/errors/failures.dart' as _i8;
-import 'package:parcel_am/features/travellink/data/repositories/auth_repository_impl.dart'
-    as _i2;
+import 'package:parcel_am/core/errors/failures.dart' as _i7;
 import 'package:parcel_am/features/travellink/domain/entities/auth_token_entity.dart'
-    as _i9;
+    as _i8;
 import 'package:parcel_am/features/travellink/domain/entities/user_entity.dart'
-    as _i7;
+    as _i6;
+import 'package:parcel_am/features/travellink/domain/repositories/auth_repository.dart'
+    as _i2;
 import 'package:parcel_am/features/travellink/domain/usecases/auth_usecase.dart'
-    as _i5;
+    as _i4;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -31,9 +31,9 @@ import 'package:parcel_am/features/travellink/domain/usecases/auth_usecase.dart'
 // ignore_for_file: camel_case_types
 // ignore_for_file: subtype_of_sealed_class
 
-class _FakeAuthRepositoryImpl_0 extends _i1.SmartFake
-    implements _i2.AuthRepositoryImpl {
-  _FakeAuthRepositoryImpl_0(Object parent, Invocation parentInvocation)
+class _FakeAuthRepository_0 extends _i1.SmartFake
+    implements _i2.AuthRepository {
+  _FakeAuthRepository_0(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
@@ -45,49 +45,49 @@ class _FakeEither_1<L, R> extends _i1.SmartFake implements _i3.Either<L, R> {
 /// A class which mocks [AuthUseCase].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockAuthUseCase extends _i1.Mock implements _i5.AuthUseCase {
+class MockAuthUseCase extends _i1.Mock implements _i4.AuthUseCase {
   MockAuthUseCase() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i2.AuthRepositoryImpl get authRepo =>
+  _i2.AuthRepository get authRepo =>
       (super.noSuchMethod(
             Invocation.getter(#authRepo),
-            returnValue: _FakeAuthRepositoryImpl_0(
+            returnValue: _FakeAuthRepository_0(
               this,
               Invocation.getter(#authRepo),
             ),
           )
-          as _i2.AuthRepositoryImpl);
+          as _i2.AuthRepository);
 
   @override
-  _i6.Stream<_i7.UserEntity?> get authStateChanges =>
+  _i5.Stream<_i6.UserEntity?> get authStateChanges =>
       (super.noSuchMethod(
             Invocation.getter(#authStateChanges),
-            returnValue: _i6.Stream<_i7.UserEntity?>.empty(),
+            returnValue: _i5.Stream<_i6.UserEntity?>.empty(),
           )
-          as _i6.Stream<_i7.UserEntity?>);
+          as _i5.Stream<_i6.UserEntity?>);
 
   @override
-  _i6.Future<_i3.Either<_i8.Failure, _i7.UserEntity>> login(
+  _i5.Future<_i3.Either<_i7.Failure, _i6.UserEntity>> login(
     String? email,
     String? password,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#login, [email, password]),
             returnValue:
-                _i6.Future<_i3.Either<_i8.Failure, _i7.UserEntity>>.value(
-                  _FakeEither_1<_i8.Failure, _i7.UserEntity>(
+                _i5.Future<_i3.Either<_i7.Failure, _i6.UserEntity>>.value(
+                  _FakeEither_1<_i7.Failure, _i6.UserEntity>(
                     this,
                     Invocation.method(#login, [email, password]),
                   ),
                 ),
           )
-          as _i6.Future<_i3.Either<_i8.Failure, _i7.UserEntity>>);
+          as _i5.Future<_i3.Either<_i7.Failure, _i6.UserEntity>>);
 
   @override
-  _i6.Future<_i3.Either<_i8.Failure, _i7.UserEntity>> register({
+  _i5.Future<_i3.Either<_i7.Failure, _i6.UserEntity>> register({
     required String? email,
     required String? password,
     required String? displayName,
@@ -99,8 +99,8 @@ class MockAuthUseCase extends _i1.Mock implements _i5.AuthUseCase {
               #displayName: displayName,
             }),
             returnValue:
-                _i6.Future<_i3.Either<_i8.Failure, _i7.UserEntity>>.value(
-                  _FakeEither_1<_i8.Failure, _i7.UserEntity>(
+                _i5.Future<_i3.Either<_i7.Failure, _i6.UserEntity>>.value(
+                  _FakeEither_1<_i7.Failure, _i6.UserEntity>(
                     this,
                     Invocation.method(#register, [], {
                       #email: email,
@@ -110,116 +110,116 @@ class MockAuthUseCase extends _i1.Mock implements _i5.AuthUseCase {
                   ),
                 ),
           )
-          as _i6.Future<_i3.Either<_i8.Failure, _i7.UserEntity>>);
+          as _i5.Future<_i3.Either<_i7.Failure, _i6.UserEntity>>);
 
   @override
-  _i6.Future<_i3.Either<_i8.Failure, void>> logout() =>
+  _i5.Future<_i3.Either<_i7.Failure, void>> logout() =>
       (super.noSuchMethod(
             Invocation.method(#logout, []),
-            returnValue: _i6.Future<_i3.Either<_i8.Failure, void>>.value(
-              _FakeEither_1<_i8.Failure, void>(
+            returnValue: _i5.Future<_i3.Either<_i7.Failure, void>>.value(
+              _FakeEither_1<_i7.Failure, void>(
                 this,
                 Invocation.method(#logout, []),
               ),
             ),
           )
-          as _i6.Future<_i3.Either<_i8.Failure, void>>);
+          as _i5.Future<_i3.Either<_i7.Failure, void>>);
 
   @override
-  _i6.Future<_i3.Either<_i8.Failure, _i7.UserEntity?>> getCurrentUser() =>
+  _i5.Future<_i3.Either<_i7.Failure, _i6.UserEntity?>> getCurrentUser() =>
       (super.noSuchMethod(
             Invocation.method(#getCurrentUser, []),
             returnValue:
-                _i6.Future<_i3.Either<_i8.Failure, _i7.UserEntity?>>.value(
-                  _FakeEither_1<_i8.Failure, _i7.UserEntity?>(
+                _i5.Future<_i3.Either<_i7.Failure, _i6.UserEntity?>>.value(
+                  _FakeEither_1<_i7.Failure, _i6.UserEntity?>(
                     this,
                     Invocation.method(#getCurrentUser, []),
                   ),
                 ),
           )
-          as _i6.Future<_i3.Either<_i8.Failure, _i7.UserEntity?>>);
+          as _i5.Future<_i3.Either<_i7.Failure, _i6.UserEntity?>>);
 
   @override
-  _i6.Future<_i3.Either<_i8.Failure, bool>> hasValidSession() =>
+  _i5.Future<_i3.Either<_i7.Failure, bool>> hasValidSession() =>
       (super.noSuchMethod(
             Invocation.method(#hasValidSession, []),
-            returnValue: _i6.Future<_i3.Either<_i8.Failure, bool>>.value(
-              _FakeEither_1<_i8.Failure, bool>(
+            returnValue: _i5.Future<_i3.Either<_i7.Failure, bool>>.value(
+              _FakeEither_1<_i7.Failure, bool>(
                 this,
                 Invocation.method(#hasValidSession, []),
               ),
             ),
           )
-          as _i6.Future<_i3.Either<_i8.Failure, bool>>);
+          as _i5.Future<_i3.Either<_i7.Failure, bool>>);
 
   @override
-  _i6.Future<_i3.Either<_i8.Failure, _i9.AuthTokenEntity?>> getStoredToken() =>
+  _i5.Future<_i3.Either<_i7.Failure, _i8.AuthTokenEntity?>> getStoredToken() =>
       (super.noSuchMethod(
             Invocation.method(#getStoredToken, []),
             returnValue:
-                _i6.Future<_i3.Either<_i8.Failure, _i9.AuthTokenEntity?>>.value(
-                  _FakeEither_1<_i8.Failure, _i9.AuthTokenEntity?>(
+                _i5.Future<_i3.Either<_i7.Failure, _i8.AuthTokenEntity?>>.value(
+                  _FakeEither_1<_i7.Failure, _i8.AuthTokenEntity?>(
                     this,
                     Invocation.method(#getStoredToken, []),
                   ),
                 ),
           )
-          as _i6.Future<_i3.Either<_i8.Failure, _i9.AuthTokenEntity?>>);
+          as _i5.Future<_i3.Either<_i7.Failure, _i8.AuthTokenEntity?>>);
 
   @override
-  _i6.Future<_i3.Either<_i8.Failure, void>> storeToken(
-    _i9.AuthTokenEntity? token,
+  _i5.Future<_i3.Either<_i7.Failure, void>> storeToken(
+    _i8.AuthTokenEntity? token,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#storeToken, [token]),
-            returnValue: _i6.Future<_i3.Either<_i8.Failure, void>>.value(
-              _FakeEither_1<_i8.Failure, void>(
+            returnValue: _i5.Future<_i3.Either<_i7.Failure, void>>.value(
+              _FakeEither_1<_i7.Failure, void>(
                 this,
                 Invocation.method(#storeToken, [token]),
               ),
             ),
           )
-          as _i6.Future<_i3.Either<_i8.Failure, void>>);
+          as _i5.Future<_i3.Either<_i7.Failure, void>>);
 
   @override
-  _i6.Future<_i3.Either<_i8.Failure, void>> clearStoredData() =>
+  _i5.Future<_i3.Either<_i7.Failure, void>> clearStoredData() =>
       (super.noSuchMethod(
             Invocation.method(#clearStoredData, []),
-            returnValue: _i6.Future<_i3.Either<_i8.Failure, void>>.value(
-              _FakeEither_1<_i8.Failure, void>(
+            returnValue: _i5.Future<_i3.Either<_i7.Failure, void>>.value(
+              _FakeEither_1<_i7.Failure, void>(
                 this,
                 Invocation.method(#clearStoredData, []),
               ),
             ),
           )
-          as _i6.Future<_i3.Either<_i8.Failure, void>>);
+          as _i5.Future<_i3.Either<_i7.Failure, void>>);
 
   @override
-  _i6.Future<_i3.Either<_i8.Failure, _i7.UserEntity>> updateUserProfile(
-    _i7.UserEntity? user,
+  _i5.Future<_i3.Either<_i7.Failure, _i6.UserEntity>> updateUserProfile(
+    _i6.UserEntity? user,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#updateUserProfile, [user]),
             returnValue:
-                _i6.Future<_i3.Either<_i8.Failure, _i7.UserEntity>>.value(
-                  _FakeEither_1<_i8.Failure, _i7.UserEntity>(
+                _i5.Future<_i3.Either<_i7.Failure, _i6.UserEntity>>.value(
+                  _FakeEither_1<_i7.Failure, _i6.UserEntity>(
                     this,
                     Invocation.method(#updateUserProfile, [user]),
                   ),
                 ),
           )
-          as _i6.Future<_i3.Either<_i8.Failure, _i7.UserEntity>>);
+          as _i5.Future<_i3.Either<_i7.Failure, _i6.UserEntity>>);
 
   @override
-  _i6.Future<_i3.Either<_i8.Failure, void>> resetPassword(String? email) =>
+  _i5.Future<_i3.Either<_i7.Failure, void>> resetPassword(String? email) =>
       (super.noSuchMethod(
             Invocation.method(#resetPassword, [email]),
-            returnValue: _i6.Future<_i3.Either<_i8.Failure, void>>.value(
-              _FakeEither_1<_i8.Failure, void>(
+            returnValue: _i5.Future<_i3.Either<_i7.Failure, void>>.value(
+              _FakeEither_1<_i7.Failure, void>(
                 this,
                 Invocation.method(#resetPassword, [email]),
               ),
             ),
           )
-          as _i6.Future<_i3.Either<_i8.Failure, void>>);
+          as _i5.Future<_i3.Either<_i7.Failure, void>>);
 }
