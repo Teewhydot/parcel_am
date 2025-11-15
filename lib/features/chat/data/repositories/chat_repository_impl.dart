@@ -1,4 +1,7 @@
 import 'package:dartz/dartz.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/network/network_info.dart';
 import '../../domain/entities/message.dart';
@@ -9,13 +12,11 @@ import '../datasources/chat_remote_data_source.dart';
 import '../models/message_model.dart';
 
 class ChatRepositoryImpl implements ChatRepository {
-  final ChatRemoteDataSource remoteDataSource;
-  final NetworkInfo networkInfo;
-
-  ChatRepositoryImpl({
-    required this.remoteDataSource,
-    required this.networkInfo,
-  });
+  final remoteDataSource = ChatRemoteDataSourceImpl(
+    firestore: FirebaseFirestore.instance,
+    storage: FirebaseStorage.instance,
+  );
+  final NetworkInfo networkInfo = _NetworkInfoImpl();
 
   @override
   Stream<Either<Failure, List<Message>>> getMessagesStream(String chatId) async* {
@@ -220,4 +221,10 @@ class ChatRepositoryImpl implements ChatRepository {
   Stream<List<Chat>> watchUserChats(String userId) {
     return remoteDataSource.watchUserChats(userId);
   }
+}
+
+
+class _NetworkInfoImpl implements NetworkInfo {
+  @override
+  Future<bool> get isConnected => InternetConnectionChecker.instance.hasConnection;
 }

@@ -1,4 +1,6 @@
 import 'package:dartz/dartz.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/network/network_info.dart';
 import '../../domain/entities/package_entity.dart';
@@ -7,13 +9,10 @@ import '../datasources/package_remote_data_source.dart';
 import '../models/package_model.dart';
 
 class PackageRepositoryImpl implements PackageRepository {
-  final PackageRemoteDataSource remoteDataSource;
-  final NetworkInfo networkInfo;
-
-  PackageRepositoryImpl({
-    required this.remoteDataSource,
-    required this.networkInfo,
-  });
+  final remoteDataSource = PackageRemoteDataSourceImpl(
+    firestore: FirebaseFirestore.instance,
+  );
+  final NetworkInfo networkInfo = _NetworkInfoImpl();
 
   @override
   Stream<Either<Failure, PackageEntity>> watchPackage(String packageId) async* {
@@ -112,4 +111,10 @@ class PackageRepositoryImpl implements PackageRepository {
       return Left(ServerFailure(failureMessage: e.toString()));
     }
   }
+}
+
+
+class _NetworkInfoImpl implements NetworkInfo {
+  @override
+  Future<bool> get isConnected => InternetConnectionChecker.instance.hasConnection;
 }

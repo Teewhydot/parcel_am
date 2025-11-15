@@ -1,11 +1,9 @@
 import 'package:dartz/dartz.dart';
 import '../../../../core/errors/failures.dart';
-import '../repositories/package_repository.dart';
+import '../../data/repositories/package_repository_impl.dart';
 
 class CreateDispute {
-  final PackageRepository repository;
-
-  CreateDispute(this.repository);
+  final repository = PackageRepositoryImpl();
 
   Future<Either<Failure, String>> call({
     required String packageId,

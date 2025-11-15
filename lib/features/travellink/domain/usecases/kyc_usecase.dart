@@ -1,11 +1,9 @@
 import 'package:dartz/dartz.dart';
 import '../../../../core/errors/failures.dart';
-import '../repositories/kyc_repository.dart';
+import '../../data/repositories/kyc_repository_impl.dart';
 
 class KycUseCase {
-  final KycRepository kycRepo;
-
-  KycUseCase(this.kycRepo);
+  final kycRepo = KycRepositoryImpl();
 
   Future<Either<Failure, void>> submitKyc({
     required String userId,

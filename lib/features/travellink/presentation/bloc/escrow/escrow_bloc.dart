@@ -7,13 +7,11 @@ import 'escrow_state.dart';
 import '../../../domain/usecases/escrow_usecase.dart';
 
 class EscrowBloc extends BaseBloC<EscrowEvent, BaseState<EscrowData>> {
-  final EscrowUseCase _escrowUseCase;
+  final _escrowUseCase = EscrowUseCase();
   StreamSubscription<dynamic>? _escrowStatusSubscription;
 
-  EscrowBloc({
-    required EscrowUseCase escrowUseCase,
-  })  : _escrowUseCase = escrowUseCase,
-        super(const InitialState<EscrowData>()) {
+  EscrowBloc()
+      : super(const InitialState<EscrowData>()) {
     on<EscrowCreateRequested>(_onCreateRequested);
     on<EscrowHoldRequested>(_onHoldRequested);
     on<EscrowReleaseRequested>(_onReleaseRequested);

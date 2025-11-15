@@ -12,10 +12,7 @@ import 'core/network/network_info.dart';
 import 'core/services/navigation_service/nav_config.dart';
 import 'core/services/notification_service.dart';
 
-// Feature DI modules
-import 'features/chat/chat_di.dart';
-import 'features/package/package_di.dart';
-import 'features/travellink/auth_di.dart';
+// Feature modules no longer use DI - using direct instantiation instead
 
 import 'features/travellink/data/datasources/auth_remote_data_source.dart';
 import 'features/travellink/data/datasources/kyc_remote_data_source.dart' as travellink_kyc_ds;
@@ -79,10 +76,7 @@ Future<void> init() async {
   sl.registerLazySingleton<NetworkInfo>(() => NetworkInfoImpl(sl()));
   sl.registerLazySingleton<NavigationService>(() => GetxNavigationService());
 
-  //! Feature Modules (Organized by clean architecture)
-  AuthDI.init();
-  ChatDI.init();
-  PackageDI.init();
+  //! Feature Modules (No longer using DI modules - direct instantiation)
 
   //! Features - Auth Data Sources
   sl.registerLazySingleton<AuthRemoteDataSource>(() => FirebaseRemoteDataSourceImpl(
@@ -134,50 +128,40 @@ Future<void> init() async {
   sl.registerLazySingleton<WalletRepository>(() => travellink_wallet_repo.WalletRepositoryImpl());
 
   //! Features - Notification Repository
-  sl.registerLazySingleton<NotificationRepository>(
-    () => NotificationRepositoryImpl(
-      remoteDataSource: sl(),
-      networkInfo: sl(),
-    ),
-  );
+  sl.registerLazySingleton<NotificationRepository>(() => NotificationRepositoryImpl());
 
   //! Features - Escrow Use Cases
-  sl.registerLazySingleton<EscrowUseCase>(() => EscrowUseCase(sl()));
+  sl.registerLazySingleton<EscrowUseCase>(() => EscrowUseCase());
 
   //! Features - Parcel Use Cases
-  sl.registerLazySingleton<ParcelUseCase>(() => ParcelUseCase(sl()));
+  sl.registerLazySingleton<ParcelUseCase>(() => ParcelUseCase());
 
   //! Features - Notification Use Cases
-  sl.registerLazySingleton<NotificationUseCase>(() => NotificationUseCase(sl()));
+  sl.registerLazySingleton<NotificationUseCase>(() => NotificationUseCase());
 
   //! Features - KYC Use Cases
-  sl.registerLazySingleton<KycUseCase>(() => KycUseCase(sl()));
+  sl.registerLazySingleton<KycUseCase>(() => KycUseCase());
 
   //! Features - Wallet Use Cases
   sl.registerLazySingleton<WalletUseCase>(() => WalletUseCase());
 
   //! Features - Escrow BLoC
-  sl.registerFactory<EscrowBloc>(() => EscrowBloc(escrowUseCase: sl()));
+  sl.registerFactory<EscrowBloc>(() => EscrowBloc());
 
   //! Features - Parcel BLoC
-  sl.registerFactory<ParcelBloc>(() => ParcelBloc(parcelUseCase: sl()));
+  sl.registerFactory<ParcelBloc>(() => ParcelBloc());
 
   //! Features - Package BLoC (TravelLink tracking)
-  sl.registerFactory(() => travellink_package.PackageBloc(
-    watchPackage: sl(),
-    releaseEscrow: sl(),
-    createDispute: sl(),
-    confirmDelivery: sl(),
-  ));
+  sl.registerFactory(() => travellink_package.PackageBloc());
 
   //! Features - KYC BLoC
-  sl.registerFactory<KycBloc>(() => KycBloc(kycUseCase: sl()));
+  sl.registerFactory<KycBloc>(() => KycBloc());
 
   //! Features - Wallet BLoC
   sl.registerFactory<WalletBloc>(() => WalletBloc());
 
   //! Features - Notification BLoC
-  sl.registerFactory<NotificationBloc>(() => NotificationBloc(notificationUseCase: sl()));
+  sl.registerFactory<NotificationBloc>(() => NotificationBloc());
 
   //! Notification Service - Singleton
   sl.registerLazySingleton<NotificationService>(

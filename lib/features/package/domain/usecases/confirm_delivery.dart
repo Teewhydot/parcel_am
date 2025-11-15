@@ -1,11 +1,9 @@
 import 'package:dartz/dartz.dart';
 import '../../../../core/errors/failures.dart';
-import '../repositories/package_repository.dart';
+import '../../data/repositories/package_repository_impl.dart';
 
 class ConfirmDelivery {
-  final PackageRepository repository;
-
-  ConfirmDelivery(this.repository);
+  final repository = PackageRepositoryImpl();
 
   Future<Either<Failure, void>> call({
     required String packageId,

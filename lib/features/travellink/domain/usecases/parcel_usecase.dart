@@ -1,12 +1,10 @@
 import 'package:dartz/dartz.dart';
 import '../../../../core/errors/failures.dart';
 import '../entities/parcel_entity.dart';
-import '../repositories/parcel_repository.dart';
+import '../../data/repositories/parcel_repository_impl.dart';
 
 class ParcelUseCase {
-  final ParcelRepository repository;
-
-  ParcelUseCase(this.repository);
+  final repository = ParcelRepositoryImpl();
 
   Future<Either<Failure, ParcelEntity>> createParcel(ParcelEntity parcel) {
     return repository.createParcel(parcel);

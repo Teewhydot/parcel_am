@@ -2,12 +2,10 @@ import 'package:dartz/dartz.dart';
 import '../../../../core/errors/failures.dart';
 import '../entities/user_entity.dart';
 import '../entities/auth_token_entity.dart';
-import '../repositories/auth_repository.dart';
+import '../../data/repositories/auth_repository_impl.dart';
 
 class AuthUseCase {
-  final AuthRepository authRepo;
-
-  AuthUseCase(this.authRepo);
+  final authRepo = AuthRepositoryImpl();
 
   Future<Either<Failure, UserEntity>> login(
     String email,

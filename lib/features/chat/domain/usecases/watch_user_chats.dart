@@ -1,10 +1,8 @@
 import '../entities/chat.dart';
-import '../repositories/chat_repository.dart';
+import '../../data/repositories/chat_repository_impl.dart';
 
 class WatchUserChats {
-  final ChatRepository repository;
-
-  WatchUserChats(this.repository);
+  final repository = ChatRepositoryImpl();
 
   Stream<List<Chat>> call(String userId) {
     return repository.watchUserChats(userId);

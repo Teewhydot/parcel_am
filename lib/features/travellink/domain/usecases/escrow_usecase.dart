@@ -1,12 +1,10 @@
 import 'package:dartz/dartz.dart';
 import '../../../../core/errors/failures.dart';
 import '../entities/escrow_entity.dart';
-import '../repositories/escrow_repository.dart';
+import '../../data/repositories/escrow_repository_impl.dart';
 
 class EscrowUseCase {
-  final EscrowRepository repository;
-
-  EscrowUseCase(this.repository);
+  final repository = EscrowRepositoryImpl();
 
   Future<Either<Failure, EscrowEntity>> createEscrow({
     required String parcelId,

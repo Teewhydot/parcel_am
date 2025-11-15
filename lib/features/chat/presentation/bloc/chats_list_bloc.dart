@@ -53,10 +53,10 @@ class ChatsListError extends ChatsListState {
 
 // BLoC
 class ChatsListBloc extends Bloc<ChatsListEvent, ChatsListState> {
-  final WatchUserChats watchUserChats;
+  final watchUserChats = WatchUserChats();
   StreamSubscription? _chatsSubscription;
 
-  ChatsListBloc({required this.watchUserChats}) : super(ChatsListInitial()) {
+  ChatsListBloc() : super(ChatsListInitial()) {
     on<LoadChats>(_onLoadChats);
     on<_ChatsUpdated>(_onChatsUpdated);
     on<_ChatsError>(_onChatsError);

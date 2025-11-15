@@ -7,11 +7,11 @@ import 'chat_event.dart';
 import 'chat_state.dart';
 
 class ChatBloc extends Bloc<ChatEvent, ChatState> {
-  final ChatUseCase chatUseCase;
+  final chatUseCase = ChatUseCase();
   StreamSubscription? _messagesSubscription;
   StreamSubscription? _chatSubscription;
 
-  ChatBloc({required this.chatUseCase}) : super(ChatInitial()) {
+  ChatBloc() : super(ChatInitial()) {
     on<LoadMessages>(_onLoadMessages);
     on<LoadChat>(_onLoadChat);
     on<SendMessage>(_onSendMessage);

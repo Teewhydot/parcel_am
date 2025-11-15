@@ -3,12 +3,10 @@ import '../../../../core/errors/failures.dart';
 import '../entities/message.dart';
 import '../entities/message_type.dart';
 import '../entities/chat.dart';
-import '../repositories/chat_repository.dart';
+import '../../data/repositories/chat_repository_impl.dart';
 
 class ChatUseCase {
-  final ChatRepository repository;
-
-  ChatUseCase(this.repository);
+  final repository = ChatRepositoryImpl();
 
   Stream<Either<Failure, List<Message>>> getMessagesStream(String chatId) {
     return repository.getMessagesStream(chatId);

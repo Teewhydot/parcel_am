@@ -9,22 +9,13 @@ import 'package_event.dart';
 import 'package_state.dart';
 
 class PackageBloc extends Bloc<PackageEvent, PackageState> {
-  final WatchPackage _watchPackage;
-  final ReleaseEscrow _releaseEscrow;
-  final CreateDispute _createDispute;
-  final ConfirmDelivery _confirmDelivery;
+  final _watchPackage = WatchPackage();
+  final _releaseEscrow = ReleaseEscrow();
+  final _createDispute = CreateDispute();
+  final _confirmDelivery = ConfirmDelivery();
   StreamSubscription? _packageStreamSubscription;
 
-  PackageBloc({
-    required WatchPackage watchPackage,
-    required ReleaseEscrow releaseEscrow,
-    required CreateDispute createDispute,
-    required ConfirmDelivery confirmDelivery,
-  })  : _watchPackage = watchPackage,
-        _releaseEscrow = releaseEscrow,
-        _createDispute = createDispute,
-        _confirmDelivery = confirmDelivery,
-        super(const PackageState()) {
+  PackageBloc() : super(const PackageState()) {
     on<PackageStreamStarted>(_onPackageStreamStarted);
     on<PackageUpdated>(_onPackageUpdated);
     on<EscrowReleaseRequested>(_onEscrowReleaseRequested);

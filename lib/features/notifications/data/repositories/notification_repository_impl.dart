@@ -1,4 +1,6 @@
 import 'package:dartz/dartz.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/network/network_info.dart';
 import '../../domain/entities/notification_entity.dart';
@@ -6,13 +8,10 @@ import '../../domain/repositories/notification_repository.dart';
 import '../datasources/notification_remote_datasource.dart';
 
 class NotificationRepositoryImpl implements NotificationRepository {
-  final NotificationRemoteDataSource remoteDataSource;
-  final NetworkInfo networkInfo;
-
-  NotificationRepositoryImpl({
-    required this.remoteDataSource,
-    required this.networkInfo,
-  });
+  final remoteDataSource = NotificationRemoteDataSourceImpl(
+    firestore: FirebaseFirestore.instance,
+  );
+  final NetworkInfo networkInfo = _NetworkInfoImpl();
 
   @override
   Stream<Either<Failure, List<NotificationEntity>>> watchNotifications(
@@ -91,4 +90,10 @@ class NotificationRepositoryImpl implements NotificationRepository {
       return Left(ServerFailure(failureMessage: e.toString()));
     }
   }
+}
+
+
+class _NetworkInfoImpl implements NetworkInfo {
+  @override
+  Future<bool> get isConnected => InternetConnectionChecker.instance.hasConnection;
 }

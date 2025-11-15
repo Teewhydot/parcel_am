@@ -7,14 +7,12 @@ import 'parcel_state.dart';
 import '../../../domain/usecases/parcel_usecase.dart';
 
 class ParcelBloc extends BaseBloC<ParcelEvent, BaseState<ParcelData>> {
-  final ParcelUseCase _parcelUseCase;
+  final _parcelUseCase = ParcelUseCase();
   StreamSubscription<dynamic>? _parcelStatusSubscription;
   StreamSubscription<dynamic>? _userParcelsSubscription;
 
-  ParcelBloc({
-    required ParcelUseCase parcelUseCase,
-  })  : _parcelUseCase = parcelUseCase,
-        super(const InitialState<ParcelData>()) {
+  ParcelBloc()
+      : super(const InitialState<ParcelData>()) {
     on<ParcelCreateRequested>(_onCreateRequested);
     on<ParcelUpdateStatusRequested>(_onUpdateStatusRequested);
     on<ParcelWatchRequested>(_onWatchRequested);

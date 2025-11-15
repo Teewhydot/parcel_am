@@ -5,13 +5,11 @@ import 'kyc_event.dart';
 import 'kyc_state.dart';
 
 class KycBloc extends Bloc<KycEvent, KycState> {
-  final KycUseCase _kycUseCase;
+  final _kycUseCase = KycUseCase();
   StreamSubscription<String>? _kycStatusSubscription;
 
-  KycBloc({
-    required KycUseCase kycUseCase,
-  })  : _kycUseCase = kycUseCase,
-        super(const KycInitial()) {
+  KycBloc()
+      : super(const KycInitial()) {
     on<KycSubmitRequested>(_onSubmitRequested);
     on<KycStatusUpdated>(_onStatusUpdated);
     on<KycResubmitRequested>(_onResubmitRequested);

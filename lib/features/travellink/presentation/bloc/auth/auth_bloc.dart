@@ -10,9 +10,9 @@ import 'auth_data.dart';
 
 
 class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
-  final AuthUseCase authUseCase;
+  final authUseCase = AuthUseCase();
 
-  AuthBloc({required this.authUseCase}) : super(const InitialState<AuthData>()) {
+  AuthBloc() : super(const InitialState<AuthData>()) {
     
     on<AuthStarted>(_onAuthStarted);
     on<AuthEmailChanged>(_onEmailChanged);

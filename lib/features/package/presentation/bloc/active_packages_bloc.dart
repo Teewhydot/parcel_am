@@ -53,10 +53,10 @@ class ActivePackagesError extends ActivePackagesState {
 
 // BLoC
 class ActivePackagesBloc extends Bloc<ActivePackagesEvent, ActivePackagesState> {
-  final WatchActivePackages watchActivePackages;
+  final watchActivePackages = WatchActivePackages();
   StreamSubscription? _packagesSubscription;
 
-  ActivePackagesBloc({required this.watchActivePackages}) : super(ActivePackagesInitial()) {
+  ActivePackagesBloc() : super(ActivePackagesInitial()) {
     on<LoadActivePackages>(_onLoadActivePackages);
   }
 

@@ -1,12 +1,10 @@
 import 'package:dartz/dartz.dart';
 import '../../../../core/errors/failures.dart';
 import '../entities/package_entity.dart';
-import '../repositories/package_repository.dart';
+import '../../data/repositories/package_repository_impl.dart';
 
 class WatchActivePackages {
-  final PackageRepository repository;
-
-  WatchActivePackages(this.repository);
+  final repository = PackageRepositoryImpl();
 
   Stream<Either<Failure, List<PackageEntity>>> call(String userId) {
     return repository.watchActivePackages(userId);

@@ -1,12 +1,10 @@
 import 'package:dartz/dartz.dart';
 import '../../../../core/errors/failures.dart';
 import '../entities/notification_entity.dart';
-import '../repositories/notification_repository.dart';
+import '../../data/repositories/notification_repository_impl.dart';
 
 class NotificationUseCase {
-  final NotificationRepository repository;
-
-  NotificationUseCase(this.repository);
+  final repository = NotificationRepositoryImpl();
 
   /// Watch notifications stream for a specific user
   Stream<Either<Failure, List<NotificationEntity>>> watchNotifications(

@@ -5,10 +5,10 @@ import 'notification_event.dart';
 import 'notification_state.dart';
 
 class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
-  final NotificationUseCase notificationUseCase;
+  final notificationUseCase = NotificationUseCase();
   StreamSubscription? _notificationsSubscription;
 
-  NotificationBloc({required this.notificationUseCase})
+  NotificationBloc()
       : super(NotificationInitial()) {
     on<LoadNotifications>(_onLoadNotifications);
     on<MarkAsRead>(_onMarkAsRead);
