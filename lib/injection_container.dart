@@ -154,7 +154,7 @@ Future<void> init() async {
   sl.registerLazySingleton<KycUseCase>(() => KycUseCase(sl()));
 
   //! Features - Wallet Use Cases
-  sl.registerLazySingleton<WalletUseCase>(() => WalletUseCase(sl()));
+  sl.registerLazySingleton<WalletUseCase>(() => WalletUseCase());
 
   //! Features - Escrow BLoC
   sl.registerFactory<EscrowBloc>(() => EscrowBloc(escrowUseCase: sl()));
@@ -174,7 +174,7 @@ Future<void> init() async {
   sl.registerFactory<KycBloc>(() => KycBloc(kycUseCase: sl()));
 
   //! Features - Wallet BLoC
-  sl.registerFactory<WalletBloc>(() => WalletBloc(walletUseCase: sl()));
+  sl.registerFactory<WalletBloc>(() => WalletBloc());
 
   //! Features - Notification BLoC
   sl.registerFactory<NotificationBloc>(() => NotificationBloc(notificationUseCase: sl()));

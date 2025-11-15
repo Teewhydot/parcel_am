@@ -7,15 +7,14 @@ import 'wallet_data.dart';
 import '../../../domain/usecases/wallet_usecase.dart';
 
 class WalletBloc extends BaseBloC<WalletEvent, BaseState<WalletData>> {
-  final WalletUseCase _walletUseCase;
   Timer? _refreshTimer;
   StreamSubscription? _balanceSubscription;
   String? _currentUserId;
   String? _currentWalletId;
+  final _walletUseCase = WalletUseCase();
 
-  WalletBloc({
-    required WalletUseCase walletUseCase,
-  })  : _walletUseCase = walletUseCase,
+
+  WalletBloc()  :
         super(const InitialState<WalletData>()) {
     on<WalletStarted>(_onStarted);
     on<WalletLoadRequested>(_onLoadRequested);
