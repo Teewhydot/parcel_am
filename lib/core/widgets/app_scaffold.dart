@@ -64,13 +64,6 @@ class AppScaffold extends StatelessWidget {
   Widget _buildBody() {
     Widget bodyWidget = body ?? const SizedBox.shrink();
     
-    if (hasGradientBackground) {
-      bodyWidget = Container(
-        decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
-        child: bodyWidget,
-      );
-    }
-    
     if (safeAreaTop || safeAreaBottom) {
       bodyWidget = SafeArea(
         top: safeAreaTop,

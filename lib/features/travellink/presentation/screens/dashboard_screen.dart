@@ -160,62 +160,51 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider(
-          create: (_) => WalletBloc()..add(const WalletLoadRequested()),
-        ),
-      ],
-      child: ChangeNotifierProvider(
-        create: (_) => ThemeProvider(),
-        child: AppScaffold(
-          hasGradientBackground: true,
-          bottomNavigationBar: const BottomNavigation(currentIndex: 3),
-          body: Column(
-            children: [
-              // Header Section
-              _HeaderSection(),
-              // Main Content Area
-              Expanded(
-                child: AppContainer(
-                  variant: ContainerVariant.surface,
-                  color: AppColors.background,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(24),
-                    topRight: Radius.circular(24),
-                  ),
-                  padding: AppSpacing.paddingXL,
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // KYC Status Banner
-                        const KycStatusBanner(),
-                        AppSpacing.verticalSpacing(SpacingSize.md),
-                        // Quick Actions
-                        AppText.titleLarge(
-                          'Quick Actions',
-                              fontWeight: FontWeight.bold,
-                            ),
-                        AppSpacing.verticalSpacing(SpacingSize.lg),
-                        _QuickActionsRow(),
-                        AppSpacing.verticalSpacing(SpacingSize.xxl),
-                        // User Stats
-                        AppText.titleLarge(
-                          'Your Stats',
+    return AppScaffold(
+      hasGradientBackground: false,
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Header Section
+            _HeaderSection(),
+            // Main Content Area
+            AppContainer(
+              variant: ContainerVariant.surface,
+              color: AppColors.background,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(24),
+                topRight: Radius.circular(24),
+              ),
+              padding: AppSpacing.paddingXL,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // KYC Status Banner
+                    const KycStatusBanner(),
+                    AppSpacing.verticalSpacing(SpacingSize.md),
+                    // Quick Actions
+                    AppText.titleLarge(
+                      'Quick Actions',
                           fontWeight: FontWeight.bold,
                         ),
-                        AppSpacing.verticalSpacing(SpacingSize.lg),
-                        const UserStatsGrid(),
-                        AppSpacing.verticalSpacing(SpacingSize.xxl),
-                        _RecentActivitySection(activePackages: _activePackages),
-                      ],
+                    AppSpacing.verticalSpacing(SpacingSize.lg),
+                    _QuickActionsRow(),
+                    AppSpacing.verticalSpacing(SpacingSize.xxl),
+                    // User Stats
+                    AppText.titleLarge(
+                      'Your Stats',
+                      fontWeight: FontWeight.bold,
                     ),
-                  ),
+                    AppSpacing.verticalSpacing(SpacingSize.lg),
+                    const UserStatsGrid(),
+                    AppSpacing.verticalSpacing(SpacingSize.xxl),
+                    _RecentActivitySection(activePackages: _activePackages),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -232,78 +221,66 @@ class _HeaderSection extends StatelessWidget {
         final userName = displayName != null ? displayName.split(' ').firstOrNull ?? 'User' : 'User';
         final greeting = VerificationConstants.getTimeBasedGreeting();
 
-        return Consumer<ThemeProvider>(
-          builder: (context, themeProvider, child) {
-            return AppContainer(
-              padding: AppSpacing.paddingXL,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        return AppContainer(
+          padding: AppSpacing.paddingXL,
+          color: AppColors.background,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            AppText.headlineSmall(
-                              '$greeting, $userName!',
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                            AppSpacing.verticalSpacing(SpacingSize.xs),
-                            AppText.bodyLarge(
-                              'Ready to send or deliver today?',
-                              color: Colors.white70,
-                            ),
-                          ],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AppText.bodyLarge(
+                          '$greeting, $userName!',
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.black,
                         ),
-                      ),
-                      Row(
-                        children: [
-                          IconButton(
-                            onPressed: themeProvider.toggleTheme,
-                            icon: Icon(
-                              themeProvider.isDarkMode
-                                  ? Icons.light_mode
-                                  : Icons.dark_mode,
-                              color: Colors.white,
-                            ),
-                          ),
-                          _ChatButton(),
-                          _NotificationButton(),
-                        ],
-                      ),
-                    ],
+                        AppSpacing.verticalSpacing(SpacingSize.xs),
+                        AppText.bodyMedium(
+                          'Ready to send or deliver today?',
+                          color: Colors.black,
+                        ),
+                      ],
+                    ),
                   ),
-                  AppSpacing.verticalSpacing(SpacingSize.xl),
-                  const WalletBalanceCard(),
-                  AppSpacing.verticalSpacing(SpacingSize.md),
                   Row(
                     children: [
-                      Expanded(
-                        child: _StatCard(
-                          icon: Icons.pending_actions,
-                          title: 'Active Requests',
-                          value: '${user?.packagesSent ?? 3}',
-                          color: AppColors.primary,
-                        ),
-                      ),
-                      AppSpacing.horizontalSpacing(SpacingSize.md),
-                      Expanded(
-                        child: _StatCard(
-                          icon: Icons.check_circle_outline,
-                          title: 'Completed',
-                          value: '${user?.completedDeliveries ?? 12}',
-                          color: AppColors.secondary,
-                        ),
-                      ),
+                      _ChatButton(),
+                      _NotificationButton(),
                     ],
                   ),
                 ],
               ),
-            );
-          },
+              AppSpacing.verticalSpacing(SpacingSize.xl),
+              const WalletBalanceCard(),
+              AppSpacing.verticalSpacing(SpacingSize.md),
+              Row(
+                children: [
+                  Expanded(
+                    child: _StatCard(
+                      icon: Icons.pending_actions,
+                      title: 'Active Requests',
+                      value: '${user?.packagesSent ?? 3}',
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  AppSpacing.horizontalSpacing(SpacingSize.md),
+                  Expanded(
+                    child: _StatCard(
+                      icon: Icons.check_circle_outline,
+                      title: 'Completed',
+                      value: '${user?.completedDeliveries ?? 12}',
+                      color: AppColors.secondary,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         );
       },
     );
@@ -350,7 +327,7 @@ class _ChatButton extends StatelessWidget {
             return Stack(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.chat_outlined, color: Colors.white),
+                  icon: const Icon(Icons.chat_outlined, color: Colors.black),
                   onPressed: () {
                     sl<NavigationService>().navigateTo(Routes.chatsList);
                   },
@@ -373,7 +350,7 @@ class _ChatButton extends StatelessWidget {
                         child: Text(
                           totalUnread > 9 ? '9+' : totalUnread.toString(),
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: AppColors.black,
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                           ),
@@ -396,7 +373,7 @@ class _NotificationButton extends StatelessWidget {
     return Stack(
       children: [
         IconButton(
-          icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+          icon: const Icon(Icons.notifications_outlined, color: AppColors.black),
           onPressed: () {},
         ),
         Positioned(
