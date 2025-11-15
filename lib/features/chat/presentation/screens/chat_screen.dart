@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../core/services/notification_service.dart';
+import '../../../../injection_container.dart' as di;
 import '../../domain/entities/message.dart';
 import '../../domain/entities/message_type.dart';
 import '../bloc/chat_bloc.dart';
@@ -32,6 +35,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   final ScrollController _scrollController = ScrollController();
   String? _currentUserId;
   String? _currentUserName;
+  bool _hasRequestedPermissions = false;
 
   @override
   void initState() {
@@ -39,6 +43,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _loadCurrentUser();
     _initializeChat();
+    _requestNotificationPermissionsOnFirstLaunch();
   }
 
   void _loadCurrentUser() {
@@ -51,6 +56,73 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     context.read<ChatBloc>().add(LoadMessages(widget.chatId));
     context.read<ChatBloc>().add(LoadChat(widget.chatId));
     _updateLastSeen();
+  }
+
+  /// Request notification permissions on first app launch
+  Future<void> _requestNotificationPermissionsOnFirstLaunch() async {
+    if (_hasRequestedPermissions) return;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final hasAskedForPermissions =
+          prefs.getBool('hasAskedForNotificationPermissions') ?? false;
+
+      if (!hasAskedForPermissions) {
+        // Show explanation dialog before requesting permissions
+        if (mounted) {
+          await _showPermissionExplanationDialog();
+        }
+
+        // Request notification permissions
+        final notificationService = di.sl<NotificationService>();
+        await notificationService.requestPermissions();
+
+        // Mark as asked
+        await prefs.setBool('hasAskedForNotificationPermissions', true);
+      }
+
+      _hasRequestedPermissions = true;
+    } catch (e) {
+      // Silently fail - permissions are optional
+      debugPrint('Error requesting notification permissions: $e');
+    }
+  }
+
+  /// Show explanation dialog before requesting permissions
+  Future<void> _showPermissionExplanationDialog() async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.notifications_active, color: Colors.blue),
+              SizedBox(width: 12),
+              Text('Enable Notifications'),
+            ],
+          ),
+          content: const Text(
+            'Stay connected with your conversations! Enable notifications to receive instant alerts when you receive new messages, even when the app is closed.',
+            style: TextStyle(fontSize: 16),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Not Now'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            ElevatedButton(
+              child: const Text('Enable'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override

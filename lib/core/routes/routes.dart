@@ -15,4 +15,5 @@ class Routes {
   static const String wallet = '/wallet';
   static const String chatsList = '/chatsList';
   static const String chat = '/chat';
+  static const String notifications = '/notifications';
 }

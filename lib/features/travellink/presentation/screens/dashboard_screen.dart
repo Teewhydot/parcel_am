@@ -25,7 +25,7 @@ import '../../data/providers/auth_provider.dart';
 import '../../data/providers/theme_provider.dart';
 import '../../data/constants/verification_constants.dart';
 import '../../data/datasources/package_remote_data_source.dart';
-import '../../../../core/services/notification_service.dart';
+import '../../../../core/services/escrow_notification_service.dart';
 import '../../../../core/services/presence_service.dart';
 import '../../../../core/services/chat_notification_service.dart';
 
@@ -65,7 +65,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void _initializePresenceAndChatNotifications() {
     final authProvider = context.read<AuthProvider>();
     final userId = authProvider.user?.uid ?? '';
-    
+
     if (userId.isNotEmpty) {
       _presenceService = PresenceService(firestore: sl<FirebaseFirestore>());
       _presenceService.initialize(userId);
@@ -82,7 +82,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void _subscribeToActivePackages() {
     final authProvider = context.read<AuthProvider>();
     final userId = authProvider.user?.uid ?? 'demo_user';
-    
+
     final dataSource = PackageRemoteDataSourceImpl(firestore: sl());
     _packagesSubscription = dataSource.getActivePackagesStream(userId).listen((packages) {
       if (mounted) {
@@ -96,7 +96,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void _subscribeToEscrowNotifications() {
     final authProvider = context.read<AuthProvider>();
     final userId = authProvider.user?.uid ?? 'demo_user';
-    
+
     _notificationService.subscribeToEscrowNotifications(userId);
     _notificationSubscription = _notificationService.escrowNotifications.listen((notification) {
       if (mounted) {
@@ -235,7 +235,7 @@ class _HeaderSection extends StatelessWidget {
         final displayName = authProvider.user?.displayName;
         final userName = displayName != null ? displayName.split(' ').firstOrNull ?? 'User' : 'User';
         final greeting = VerificationConstants.getTimeBasedGreeting();
-        
+
         return AppContainer(
           padding: AppSpacing.paddingXL,
           child: Column(
@@ -268,8 +268,8 @@ class _HeaderSection extends StatelessWidget {
                           return IconButton(
                             onPressed: themeProvider.toggleTheme,
                             icon: Icon(
-                              themeProvider.isDarkMode 
-                                  ? Icons.light_mode 
+                              themeProvider.isDarkMode
+                                  ? Icons.light_mode
                                   : Icons.dark_mode,
                               color: Colors.white,
                             ),

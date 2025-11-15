@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../domain/entities/message.dart';
 import '../../domain/entities/message_type.dart';
 import '../models/message_model.dart';
@@ -68,17 +69,43 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         .collection('messages');
 
     final messageData = message.toJson();
-    
+
+    // Add message to collection
     if (message.id.isEmpty || message.id.startsWith('temp_')) {
       await messagesRef.add(messageData);
     } else {
       await messagesRef.doc(message.id).set(messageData);
     }
 
+    // Get chat data to find recipients for notifications
+    final chatDoc = await firestore.collection('chats').doc(message.chatId).get();
+    final chatData = chatDoc.data();
+
+    // Update chat document with last message and notification trigger
     await firestore.collection('chats').doc(message.chatId).update({
       'lastMessage': messageData,
       'lastMessageTime': message.timestamp,
+      // Add notification trigger data for Cloud Function
+      // This can be picked up by a Firestore trigger to send FCM notifications
+      'pendingNotification': {
+        'senderId': message.senderId,
+        'senderName': message.senderName,
+        'messagePreview': message.content.length > 100
+            ? '${message.content.substring(0, 100)}...'
+            : message.content,
+        'chatId': message.chatId,
+        'timestamp': FieldValue.serverTimestamp(),
+        'type': message.type.toString(),
+      },
     });
+
+    // Note: In a production app, a Cloud Function would listen to the
+    // 'pendingNotification' field update and send FCM notifications to
+    // all chat participants except the sender. The function would:
+    // 1. Get FCM tokens for all participants from users/{userId}/fcmTokens
+    // 2. Filter out the sender's tokens
+    // 3. Send FCM data message with chatId, senderName, and messagePreview
+    // 4. Clear the pendingNotification field after sending
   }
 
   @override
@@ -131,7 +158,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
             : 'documents';
 
     final ref = storage.ref().child('chats/$chatId/$folder/$timestamp-$fileName');
-    
+
     final uploadTask = ref.putFile(file);
 
     uploadTask.snapshotEvents.listen((snapshot) {

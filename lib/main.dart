@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:parcel_am/app/init.dart';
+import 'package:parcel_am/core/services/notification_service.dart';
+import 'package:parcel_am/injection_container.dart' as di;
 
 import 'core/routes/getx_route_module.dart';
 import 'core/routes/routes.dart';
@@ -13,7 +16,16 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
+    // Initialize Firebase and dependency injection
     await AppConfig.init();
+
+    // Register background message handler BEFORE any service initialization
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+    // Initialize NotificationService after Firebase and DI, before runApp
+    final notificationService = di.sl<NotificationService>();
+    await notificationService.initialize();
+
     runApp(const MyApp());
   } catch (e) {
     // Handle Firebase initialization errors

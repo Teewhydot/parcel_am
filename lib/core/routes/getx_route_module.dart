@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:parcel_am/core/routes/routes.dart';
 import 'package:parcel_am/features/travellink/presentation/screens/dashboard_screen.dart';
 import 'package:parcel_am/features/travellink/presentation/screens/login_screen.dart';
@@ -12,6 +13,7 @@ import 'package:parcel_am/features/travellink/presentation/screens/kyc_blocked_s
 import 'package:parcel_am/features/travellink/presentation/screens/wallet_screen.dart';
 import 'package:parcel_am/features/travellink/presentation/screens/chats_list_screen.dart';
 import 'package:parcel_am/features/travellink/presentation/screens/chat_screen.dart';
+import 'package:parcel_am/features/notifications/presentation/screens/notifications_screen.dart';
 
 import '../../features/travellink/presentation/screens/splash_screen.dart';
 import '../services/auth/auth_guard.dart';
@@ -110,7 +112,21 @@ class GetXRouteModule {
         final args = Get.arguments as Map<String, dynamic>? ?? {};
         final chatId = args['chatId'] as String? ?? '';
         final otherUserId = args['otherUserId'] as String? ?? '';
-        return ChatScreen(chatId: chatId, otherUserId: otherUserId);
+        return ChatScreen(
+          chatId: chatId,
+          otherUserId: otherUserId,
+        );
+      },
+      transition: _transition,
+      transitionDuration: _transitionDuration,
+      requiresKyc: false,
+    ),
+    AuthGuard.createProtectedRoute(
+      name: Routes.notifications,
+      page: () {
+        // Get current user ID from Firebase Auth
+        final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+        return NotificationsScreen(userId: userId);
       },
       transition: _transition,
       transitionDuration: _transitionDuration,

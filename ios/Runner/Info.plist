@@ -45,5 +45,14 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Notification permissions usage descriptions -->
+	<key>NSUserNotificationsUsageDescription</key>
+	<string>We need notification permissions to send you chat message alerts and important updates.</string>
+	<!-- Background modes for remote notifications -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+		<string>fetch</string>
+	</array>
 </dict>
 </plist>
