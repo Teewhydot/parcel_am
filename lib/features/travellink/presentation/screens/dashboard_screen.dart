@@ -163,48 +163,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return AppScaffold(
       hasGradientBackground: false,
       body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Header Section
-            _HeaderSection(),
-            // Main Content Area
-            AppContainer(
-              variant: ContainerVariant.surface,
-              color: AppColors.background,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(24),
-                topRight: Radius.circular(24),
+        child: AppContainer(
+          padding: AppSpacing.paddingXL,
+          child: Column(
+            children: [
+              // Header Section
+              _HeaderSection(),
+              // Main Content Area
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // KYC Status Banner
+                  const KycStatusBanner(),
+                  AppSpacing.verticalSpacing(SpacingSize.md),
+                  // Quick Actions
+                  AppText.titleLarge(
+                    'Quick Actions',
+                        fontWeight: FontWeight.bold,
+                      ),
+                  AppSpacing.verticalSpacing(SpacingSize.lg),
+                  _QuickActionsRow(),
+                  AppSpacing.verticalSpacing(SpacingSize.xxl),
+                  // User Stats
+                  AppText.titleLarge(
+                    'Your Stats',
+                    fontWeight: FontWeight.bold,
+                  ),
+                  AppSpacing.verticalSpacing(SpacingSize.lg),
+                  const UserStatsGrid(),
+                  AppSpacing.verticalSpacing(SpacingSize.xxl),
+                  _RecentActivitySection(activePackages: _activePackages),
+                ],
               ),
-              padding: AppSpacing.paddingXL,
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // KYC Status Banner
-                    const KycStatusBanner(),
-                    AppSpacing.verticalSpacing(SpacingSize.md),
-                    // Quick Actions
-                    AppText.titleLarge(
-                      'Quick Actions',
-                          fontWeight: FontWeight.bold,
-                        ),
-                    AppSpacing.verticalSpacing(SpacingSize.lg),
-                    _QuickActionsRow(),
-                    AppSpacing.verticalSpacing(SpacingSize.xxl),
-                    // User Stats
-                    AppText.titleLarge(
-                      'Your Stats',
-                      fontWeight: FontWeight.bold,
-                    ),
-                    AppSpacing.verticalSpacing(SpacingSize.lg),
-                    const UserStatsGrid(),
-                    AppSpacing.verticalSpacing(SpacingSize.xxl),
-                    _RecentActivitySection(activePackages: _activePackages),
-                  ],
-                ),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -222,7 +214,6 @@ class _HeaderSection extends StatelessWidget {
         final greeting = VerificationConstants.getTimeBasedGreeting();
 
         return AppContainer(
-          padding: AppSpacing.paddingXL,
           color: AppColors.background,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -258,27 +249,27 @@ class _HeaderSection extends StatelessWidget {
               AppSpacing.verticalSpacing(SpacingSize.xl),
               const WalletBalanceCard(),
               AppSpacing.verticalSpacing(SpacingSize.md),
-              Row(
-                children: [
-                  Expanded(
-                    child: _StatCard(
-                      icon: Icons.pending_actions,
-                      title: 'Active Requests',
-                      value: '${user?.packagesSent ?? 3}',
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  AppSpacing.horizontalSpacing(SpacingSize.md),
-                  Expanded(
-                    child: _StatCard(
-                      icon: Icons.check_circle_outline,
-                      title: 'Completed',
-                      value: '${user?.completedDeliveries ?? 12}',
-                      color: AppColors.secondary,
-                    ),
-                  ),
-                ],
-              ),
+              // Row(
+              //   children: [
+              //     Expanded(
+              //       child: _StatCard(
+              //         icon: Icons.pending_actions,
+              //         title: 'Active Requests',
+              //         value: '${user?.packagesSent ?? 3}',
+              //         color: AppColors.primary,
+              //       ),
+              //     ),
+              //     AppSpacing.horizontalSpacing(SpacingSize.md),
+              //     Expanded(
+              //       child: _StatCard(
+              //         icon: Icons.check_circle_outline,
+              //         title: 'Completed',
+              //         value: '${user?.completedDeliveries ?? 12}',
+              //         color: AppColors.secondary,
+              //       ),
+              //     ),
+              //   ],
+              // ),
             ],
           ),
         );
