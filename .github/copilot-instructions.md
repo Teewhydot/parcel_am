@@ -40,7 +40,7 @@ Conventions & patterns to follow
 - Routes are managed with GetX: see `lib/core/routes/getx_route_module.dart` and `lib/core/routes/routes.dart`.
 
 External integrations
-- Firebase (core, auth, app_check) — configs under `android/app` and `ios/Runner` and `firebase_options.dart`.
+- Firebase (core, auth) — configs under `android/app` and `ios/Runner` and `firebase_options.dart`.
 - Key third-party libs: `get_it`, `get`, `flutter_bloc`, `bloc`, `equatable`, `http`, `shared_preferences`, `flutter_secure_storage`, `internet_connection_checker` (see `pubspec.yaml`).
 
 When changing state persistence or lifecycle behavior

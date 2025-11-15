@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_scaffold.dart';
 import '../../../../core/widgets/app_container.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/routes/routes.dart';
+import '../../../../core/bloc/base/base_state.dart';
 import '../../../../injection_container.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
-import '../../data/providers/auth_provider.dart';
+import '../bloc/auth/auth_bloc.dart';
+import '../bloc/auth/auth_data.dart';
 import '../widgets/bottom_navigation.dart';
 
 class ChatsListScreen extends StatelessWidget {
@@ -17,10 +19,15 @@ class ChatsListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = context.watch<AuthProvider>();
-    final userId = authProvider.user?.uid ?? '';
-
-    return AppScaffold(
+    return BlocSelector<AuthBloc, BaseState<AuthData>, String>(
+      selector: (state) {
+        if (state is LoadedState<AuthData>) {
+          return state.data?.user?.uid ?? '';
+        }
+        return '';
+      },
+      builder: (context, userId) {
+        return AppScaffold(
       hasGradientBackground: true,
       bottomNavigationBar: const BottomNavigation(currentIndex: 2),
       body: Column(
@@ -84,6 +91,8 @@ class ChatsListScreen extends StatelessWidget {
           ),
         ],
       ),
+        );
+      },
     );
   }
 

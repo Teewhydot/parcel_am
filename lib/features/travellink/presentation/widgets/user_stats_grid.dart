@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_icon.dart';
-import '../../data/providers/auth_provider.dart';
+import '../../../../core/bloc/base/base_state.dart';
+import '../bloc/auth/auth_bloc.dart';
+import '../bloc/auth/auth_data.dart';
 
 class UserStatsGrid extends StatelessWidget {
   const UserStatsGrid({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AuthProvider>(
-      builder: (context, authProvider, child) {
+    return BlocBuilder<AuthBloc, BaseState<AuthData>>(
+      builder: (context, authState) {
+        final user = authState is LoadedState<AuthData> ? authState.data?.user : null;
+
         return Column(
           children: [
             Row(
@@ -21,7 +25,7 @@ class UserStatsGrid extends StatelessWidget {
                 Expanded(
                   child: UserStatCard(
                     title: 'Packages Sent',
-                    value: '${authProvider.user?.packagesSent ?? 12}',
+                    value: '${user?.packagesSent ?? 12}',
                     icon: Icons.send,
                     color: AppColors.primary,
                   ),
@@ -30,7 +34,7 @@ class UserStatsGrid extends StatelessWidget {
                 Expanded(
                   child: UserStatCard(
                     title: 'Packages Carried',
-                    value: '${authProvider.user?.completedDeliveries ?? 8}',
+                    value: '${user?.completedDeliveries ?? 8}',
                     icon: Icons.luggage,
                     color: AppColors.secondary,
                   ),
@@ -43,7 +47,7 @@ class UserStatsGrid extends StatelessWidget {
                 Expanded(
                   child: UserStatCard(
                     title: 'Total Earned',
-                    value: '₦${authProvider.user?.totalEarnings?.toInt() ?? 45000}',
+                    value: '₦${user?.totalEarnings?.toInt() ?? 45000}',
                     icon: Icons.monetization_on,
                     color: AppColors.accent,
                   ),
@@ -52,7 +56,7 @@ class UserStatsGrid extends StatelessWidget {
                 Expanded(
                   child: UserStatCard(
                     title: 'Rating',
-                    value: '${authProvider.user?.rating ?? 4.8}',
+                    value: '${user?.rating ?? 4.8}',
                     icon: Icons.star,
                     color: AppColors.accent,
                   ),

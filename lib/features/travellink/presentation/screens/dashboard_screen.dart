@@ -14,6 +14,7 @@ import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_icon.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
+import '../../../../core/bloc/base/base_state.dart';
 import '../../../../injection_container.dart';
 import '../widgets/bottom_navigation.dart';
 import '../widgets/kyc_status_widgets.dart';
@@ -21,7 +22,8 @@ import '../widgets/user_stats_grid.dart';
 import '../widgets/wallet_balance_card.dart';
 import '../bloc/wallet/wallet_bloc.dart';
 import '../bloc/wallet/wallet_event.dart';
-import '../../data/providers/auth_provider.dart';
+import '../bloc/auth/auth_bloc.dart';
+import '../bloc/auth/auth_data.dart';
 import '../../data/providers/theme_provider.dart';
 import '../../data/constants/verification_constants.dart';
 import '../../data/datasources/package_remote_data_source.dart';
@@ -63,8 +65,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _initializePresenceAndChatNotifications() {
-    final authProvider = context.read<AuthProvider>();
-    final userId = authProvider.user?.uid ?? '';
+    final authState = context.read<AuthBloc>().state;
+    final userId = authState is LoadedState<AuthData> ? authState.data?.user?.uid ?? '' : '';
 
     if (userId.isNotEmpty) {
       _presenceService = PresenceService(firestore: sl<FirebaseFirestore>());
@@ -80,8 +82,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _subscribeToActivePackages() {
-    final authProvider = context.read<AuthProvider>();
-    final userId = authProvider.user?.uid ?? 'demo_user';
+    final authState = context.read<AuthBloc>().state;
+    final userId = authState is LoadedState<AuthData> ? authState.data?.user?.uid ?? 'demo_user' : 'demo_user';
 
     final dataSource = PackageRemoteDataSourceImpl(firestore: sl());
     _packagesSubscription = dataSource.getActivePackagesStream(userId).listen((packages) {
@@ -94,8 +96,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _subscribeToEscrowNotifications() {
-    final authProvider = context.read<AuthProvider>();
-    final userId = authProvider.user?.uid ?? 'demo_user';
+    final authState = context.read<AuthBloc>().state;
+    final userId = authState is LoadedState<AuthData> ? authState.data?.user?.uid ?? 'demo_user' : 'demo_user';
 
     _notificationService.subscribeToEscrowNotifications(userId);
     _notificationSubscription = _notificationService.escrowNotifications.listen((notification) {
@@ -164,63 +166,56 @@ class _DashboardScreenState extends State<DashboardScreen> {
           create: (_) => WalletBloc()..add(const WalletLoadRequested()),
         ),
       ],
-      child: MultiProvider(
-        providers: [
-          ChangeNotifierProvider(create: (_) => AuthProvider()),
-          ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        ],
-        child: Consumer<AuthProvider>(
-          builder: (context, authProvider, child) {
-              return AppScaffold(
-              hasGradientBackground: true,
-              bottomNavigationBar: const BottomNavigation(currentIndex: 3),
-              body: Column(
-                children: [
-                  // Header Section
-                  _HeaderSection(),
-                  // Main Content Area
-                  Expanded(
-                    child: AppContainer(
-                      variant: ContainerVariant.surface,
-                      color: AppColors.background,
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(24),
-                        topRight: Radius.circular(24),
-                      ),
-                      padding: AppSpacing.paddingXL,
-                      child: SingleChildScrollView(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // KYC Status Banner
-                            const KycStatusBanner(),
-                            AppSpacing.verticalSpacing(SpacingSize.md),
-                            // Quick Actions
-                            AppText.titleLarge(
-                              'Quick Actions',
+      child: ChangeNotifierProvider(
+        create: (_) => ThemeProvider(),
+        child: AppScaffold(
+          hasGradientBackground: true,
+          bottomNavigationBar: const BottomNavigation(currentIndex: 3),
+          body: Column(
+            children: [
+              // Header Section
+              _HeaderSection(),
+              // Main Content Area
+              Expanded(
+                child: AppContainer(
+                  variant: ContainerVariant.surface,
+                  color: AppColors.background,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(24),
+                    topRight: Radius.circular(24),
+                  ),
+                  padding: AppSpacing.paddingXL,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // KYC Status Banner
+                        const KycStatusBanner(),
+                        AppSpacing.verticalSpacing(SpacingSize.md),
+                        // Quick Actions
+                        AppText.titleLarge(
+                          'Quick Actions',
                               fontWeight: FontWeight.bold,
                             ),
-                            AppSpacing.verticalSpacing(SpacingSize.lg),
-                            _QuickActionsRow(),
-                            AppSpacing.verticalSpacing(SpacingSize.xxl),
-                            // User Stats
-                            AppText.titleLarge(
-                              'Your Stats',
-                              fontWeight: FontWeight.bold,
-                            ),
-                            AppSpacing.verticalSpacing(SpacingSize.lg),
-                            const UserStatsGrid(),
-                            AppSpacing.verticalSpacing(SpacingSize.xxl),
-                            _RecentActivitySection(activePackages: _activePackages),
-                          ],
+                        AppSpacing.verticalSpacing(SpacingSize.lg),
+                        _QuickActionsRow(),
+                        AppSpacing.verticalSpacing(SpacingSize.xxl),
+                        // User Stats
+                        AppText.titleLarge(
+                          'Your Stats',
+                          fontWeight: FontWeight.bold,
                         ),
-                      ),
+                        AppSpacing.verticalSpacing(SpacingSize.lg),
+                        const UserStatsGrid(),
+                        AppSpacing.verticalSpacing(SpacingSize.xxl),
+                        _RecentActivitySection(activePackages: _activePackages),
+                      ],
                     ),
                   ),
-                ],
+                ),
               ),
-            );
-          },
+            ],
+          ),
         ),
       ),
     );
@@ -230,42 +225,43 @@ class _DashboardScreenState extends State<DashboardScreen> {
 class _HeaderSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Consumer2<AuthProvider, ThemeProvider>(
-      builder: (context, authProvider, themeProvider, child) {
-        final displayName = authProvider.user?.displayName;
+    return BlocBuilder<AuthBloc, BaseState<AuthData>>(
+      builder: (context, authState) {
+        final user = authState is LoadedState<AuthData> ? authState.data?.user : null;
+        final displayName = user?.displayName;
         final userName = displayName != null ? displayName.split(' ').firstOrNull ?? 'User' : 'User';
         final greeting = VerificationConstants.getTimeBasedGreeting();
 
-        return AppContainer(
-          padding: AppSpacing.paddingXL,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        return Consumer<ThemeProvider>(
+          builder: (context, themeProvider, child) {
+            return AppContainer(
+              padding: AppSpacing.paddingXL,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        AppText.headlineSmall(
-                          '$greeting, $userName!',
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                        AppSpacing.verticalSpacing(SpacingSize.xs),
-                        AppText.bodyLarge(
-                          'Ready to send or deliver today?',
-                          color: Colors.white70,
-                        ),
-                      ],
-                    ),
-                  ),
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Consumer<ThemeProvider>(
-                        builder: (context, themeProvider, child) {
-                          return IconButton(
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            AppText.headlineSmall(
+                              '$greeting, $userName!',
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                            AppSpacing.verticalSpacing(SpacingSize.xs),
+                            AppText.bodyLarge(
+                              'Ready to send or deliver today?',
+                              color: Colors.white70,
+                            ),
+                          ],
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          IconButton(
                             onPressed: themeProvider.toggleTheme,
                             icon: Icon(
                               themeProvider.isDarkMode
@@ -273,41 +269,41 @@ class _HeaderSection extends StatelessWidget {
                                   : Icons.dark_mode,
                               color: Colors.white,
                             ),
-                          );
-                        },
+                          ),
+                          _ChatButton(),
+                          _NotificationButton(),
+                        ],
                       ),
-                      _ChatButton(),
-                      _NotificationButton(),
+                    ],
+                  ),
+                  AppSpacing.verticalSpacing(SpacingSize.xl),
+                  const WalletBalanceCard(),
+                  AppSpacing.verticalSpacing(SpacingSize.md),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _StatCard(
+                          icon: Icons.pending_actions,
+                          title: 'Active Requests',
+                          value: '${user?.packagesSent ?? 3}',
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      AppSpacing.horizontalSpacing(SpacingSize.md),
+                      Expanded(
+                        child: _StatCard(
+                          icon: Icons.check_circle_outline,
+                          title: 'Completed',
+                          value: '${user?.completedDeliveries ?? 12}',
+                          color: AppColors.secondary,
+                        ),
+                      ),
                     ],
                   ),
                 ],
               ),
-              AppSpacing.verticalSpacing(SpacingSize.xl),
-              const WalletBalanceCard(),
-              AppSpacing.verticalSpacing(SpacingSize.md),
-              Row(
-                children: [
-                  Expanded(
-                    child: _StatCard(
-                      icon: Icons.pending_actions,
-                      title: 'Active Requests',
-                      value: '${authProvider.user?.packagesSent ?? 3}',
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  AppSpacing.horizontalSpacing(SpacingSize.md),
-                  Expanded(
-                    child: _StatCard(
-                      icon: Icons.check_circle_outline,
-                      title: 'Completed',
-                      value: '${authProvider.user?.completedDeliveries ?? 12}',
-                      color: AppColors.secondary,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
@@ -317,70 +313,77 @@ class _HeaderSection extends StatelessWidget {
 class _ChatButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final authProvider = context.watch<AuthProvider>();
-    final userId = authProvider.user?.uid ?? '';
-
-    if (userId.isEmpty) {
-      return IconButton(
-        icon: const Icon(Icons.chat_outlined, color: Colors.white),
-        onPressed: () {
-          sl<NavigationService>().navigateTo(Routes.chatsList);
-        },
-      );
-    }
-
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('chats')
-          .where('participants', arrayContains: userId)
-          .snapshots(),
-      builder: (context, snapshot) {
-        int totalUnread = 0;
-
-        if (snapshot.hasData) {
-          for (var doc in snapshot.data!.docs) {
-            final chatData = doc.data() as Map<String, dynamic>;
-            final unreadCount =
-                (chatData['unreadCount'] as Map<String, dynamic>?)?[userId] ?? 0;
-            totalUnread += unreadCount as int;
-          }
+    return BlocSelector<AuthBloc, BaseState<AuthData>, String>(
+      selector: (state) {
+        if (state is LoadedState<AuthData>) {
+          return state.data?.user?.uid ?? '';
+        }
+        return '';
+      },
+      builder: (context, userId) {
+        if (userId.isEmpty) {
+          return IconButton(
+            icon: const Icon(Icons.chat_outlined, color: Colors.white),
+            onPressed: () {
+              sl<NavigationService>().navigateTo(Routes.chatsList);
+            },
+          );
         }
 
-        return Stack(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.chat_outlined, color: Colors.white),
-              onPressed: () {
-                sl<NavigationService>().navigateTo(Routes.chatsList);
-              },
-            ),
-            if (totalUnread > 0)
-              Positioned(
-                right: 8,
-                top: 8,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: AppColors.accent,
-                    shape: BoxShape.circle,
-                  ),
-                  constraints: const BoxConstraints(
-                    minWidth: 16,
-                    minHeight: 16,
-                  ),
-                  child: Center(
-                    child: Text(
-                      totalUnread > 9 ? '9+' : totalUnread.toString(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
+        return StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('chats')
+              .where('participants', arrayContains: userId)
+              .snapshots(),
+          builder: (context, snapshot) {
+            int totalUnread = 0;
+
+            if (snapshot.hasData) {
+              for (var doc in snapshot.data!.docs) {
+                final chatData = doc.data() as Map<String, dynamic>;
+                final unreadCount =
+                    (chatData['unreadCount'] as Map<String, dynamic>?)?[userId] ?? 0;
+                totalUnread += unreadCount as int;
+              }
+            }
+
+            return Stack(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.chat_outlined, color: Colors.white),
+                  onPressed: () {
+                    sl<NavigationService>().navigateTo(Routes.chatsList);
+                  },
+                ),
+                if (totalUnread > 0)
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: AppColors.accent,
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
+                      child: Center(
+                        child: Text(
+                          totalUnread > 9 ? '9+' : totalUnread.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ),
-          ],
+              ],
+            );
+          },
         );
       },
     );

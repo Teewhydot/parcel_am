@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:provider/provider.dart';
 import 'package:parcel_am/app/init.dart';
 import 'package:parcel_am/core/services/notification_service.dart';
 import 'package:parcel_am/injection_container.dart' as di;
@@ -11,6 +12,7 @@ import 'core/routes/getx_route_module.dart';
 import 'core/routes/routes.dart';
 import 'core/theme/app_theme.dart';
 import 'features/travellink/presentation/bloc/auth/auth_bloc.dart';
+import 'features/travellink/data/providers/theme_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,18 +45,21 @@ class MyApp extends StatelessWidget {
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (context, child) {
-        return MultiBlocProvider(
-          providers: [
-            BlocProvider<AuthBloc>(
-              create: (context) => AuthBloc(),
+        return ChangeNotifierProvider(
+          create: (_) => ThemeProvider(),
+          child: MultiBlocProvider(
+            providers: [
+              BlocProvider<AuthBloc>(
+                create: (context) => AuthBloc(),
+              ),
+            ],
+            child: GetMaterialApp(
+              title: 'ParcelAm',
+              theme: AppTheme.lightTheme,
+              initialRoute: Routes.initial,
+              getPages: GetXRouteModule.routes,
+              debugShowCheckedModeBanner: false,
             ),
-          ],
-          child: GetMaterialApp(
-            title: 'ParcelAm',
-            theme: AppTheme.lightTheme,
-            initialRoute: Routes.initial,
-            getPages: GetXRouteModule.routes,
-            debugShowCheckedModeBanner: false,
           ),
         );
       },

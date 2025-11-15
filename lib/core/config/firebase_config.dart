@@ -1,13 +1,6 @@
 import 'package:flutter/foundation.dart';
 
 class FirebaseConfig {
-  // Firebase App Check configuration
-  static const Map<String, dynamic> appCheckConfig = {
-    'debug_token_enabled': kDebugMode,
-    'production_provider': 'playIntegrity', // For production builds
-    'development_provider': 'debug', // For debug builds
-  };
-
   // App-wide Firebase settings
   static const Map<String, dynamic> firebaseSettings = {
     'app_verification_disabled_for_testing': kDebugMode,

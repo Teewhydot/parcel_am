@@ -52,14 +52,19 @@ class _SplashScreenState extends State<SplashScreen>
 
   void _navigateBasedOnState(BaseState<AuthData> state) async {
     if (_hasNavigated || !mounted) return;
-    
+
     await Future.delayed(const Duration(seconds: 3));
-    
+
     if (!mounted || _hasNavigated) return;
-    
+
     _hasNavigated = true;
-    
-    if (state is LoadedState) {
+
+    // Check if user is authenticated (has data with user)
+    final isAuthenticated = state is DataState<AuthData> &&
+                            state.data != null &&
+                            state.data!.user != null;
+
+    if (isAuthenticated) {
       sl<NavigationService>().navigateAndReplace(Routes.dashboard);
     } else if (state is InitialState || state is ErrorState) {
       sl<NavigationService>().navigateAndReplace(Routes.onboarding);

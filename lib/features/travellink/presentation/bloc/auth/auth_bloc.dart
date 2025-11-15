@@ -47,10 +47,7 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
           data: const AuthData().copyWith(user: user),
           lastUpdated: DateTime.now(),
         ));
-        Logger.logSuccess('User loaded successfully.');
-        emit(SuccessState<AuthData>(
-          successMessage: 'Welcome back, ${user.displayName}!',
-        ));
+        Logger.logSuccess('User loaded successfully: ${user.displayName}');
       },
     );
   }
