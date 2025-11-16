@@ -54,7 +54,6 @@ class ActivePackagesError extends ActivePackagesState {
 // BLoC
 class ActivePackagesBloc extends Bloc<ActivePackagesEvent, ActivePackagesState> {
   final watchActivePackages = WatchActivePackages();
-  StreamSubscription? _packagesSubscription;
 
   ActivePackagesBloc() : super(ActivePackagesInitial()) {
     on<LoadActivePackages>(_onLoadActivePackages);
@@ -66,29 +65,14 @@ class ActivePackagesBloc extends Bloc<ActivePackagesEvent, ActivePackagesState> 
   ) async {
     emit(ActivePackagesLoading());
 
-    await _packagesSubscription?.cancel();
-
-    _packagesSubscription = watchActivePackages(event.userId).listen(
-      (result) {
-        result.fold(
-          (failure) {
-            if (!isClosed) {
-              emit(ActivePackagesError(failure.failureMessage));
-            }
-          },
-          (packages) {
-            if (!isClosed) {
-              emit(ActivePackagesLoaded(packages));
-            }
-          },
+    await emit.forEach<dynamic>(
+      watchActivePackages(event.userId),
+      onData: (result) {
+        return result.fold(
+          (failure) => ActivePackagesError(failure.failureMessage),
+          (packages) => ActivePackagesLoaded(packages),
         );
       },
     );
-  }
-
-  @override
-  Future<void> close() {
-    _packagesSubscription?.cancel();
-    return super.close();
   }
 }

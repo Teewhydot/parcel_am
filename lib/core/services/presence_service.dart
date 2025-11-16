@@ -40,10 +40,12 @@ class PresenceService with WidgetsBindingObserver {
     if (_currentUserId == null) return;
 
     try {
-      await _firestore.collection('users').doc(_currentUserId).update({
-        'presence.isOnline': true,
-        'presence.lastSeen': FieldValue.serverTimestamp(),
-      });
+      await _firestore.collection('users').doc(_currentUserId).set({
+        'presence': {
+          'isOnline': true,
+          'lastSeen': FieldValue.serverTimestamp(),
+        }
+      }, SetOptions(merge: true));
     } catch (e) {
       debugPrint('Error setting online status: $e');
     }
@@ -53,10 +55,12 @@ class PresenceService with WidgetsBindingObserver {
     if (_currentUserId == null) return;
 
     try {
-      await _firestore.collection('users').doc(_currentUserId).update({
-        'presence.isOnline': false,
-        'presence.lastSeen': FieldValue.serverTimestamp(),
-      });
+      await _firestore.collection('users').doc(_currentUserId).set({
+        'presence': {
+          'isOnline': false,
+          'lastSeen': FieldValue.serverTimestamp(),
+        }
+      }, SetOptions(merge: true));
     } catch (e) {
       debugPrint('Error setting offline status: $e');
     }
@@ -66,9 +70,11 @@ class PresenceService with WidgetsBindingObserver {
     if (_currentUserId == null) return;
 
     try {
-      await _firestore.collection('users').doc(_currentUserId).update({
-        'presence.lastSeen': FieldValue.serverTimestamp(),
-      });
+      await _firestore.collection('users').doc(_currentUserId).set({
+        'presence': {
+          'lastSeen': FieldValue.serverTimestamp(),
+        }
+      }, SetOptions(merge: true));
     } catch (e) {
       debugPrint('Error updating last seen: $e');
     }
@@ -77,10 +83,12 @@ class PresenceService with WidgetsBindingObserver {
   static Future<void> cleanupPresence(
       FirebaseFirestore firestore, String userId) async {
     try {
-      await firestore.collection('users').doc(userId).update({
-        'presence.isOnline': false,
-        'presence.lastSeen': FieldValue.serverTimestamp(),
-      });
+      await firestore.collection('users').doc(userId).set({
+        'presence': {
+          'isOnline': false,
+          'lastSeen': FieldValue.serverTimestamp(),
+        }
+      }, SetOptions(merge: true));
     } catch (e) {
       debugPrint('Error cleaning up presence: $e');
     }

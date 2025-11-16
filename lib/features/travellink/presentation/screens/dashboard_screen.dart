@@ -5,6 +5,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:parcel_am/core/bloc_manager/bloc_manager.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_scaffold.dart';
 import '../../../../core/widgets/app_container.dart';
@@ -185,13 +186,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<AuthBloc, BaseState<AuthData>>(
+    return BlocManager<AuthBloc, BaseState<AuthData>>(
+      
       listener: (context, authState) {
         final userId = authState is LoadedState<AuthData>
             ? authState.data?.user?.uid ?? ''
             : '';
         _requestDataForUser(userId);
       },
+      bloc: context.read<AuthBloc>(),
       child: AppScaffold(
         hasGradientBackground: false,
         body: MultiBlocProvider(
@@ -302,27 +305,7 @@ class _HeaderSection extends StatelessWidget {
               AppSpacing.verticalSpacing(SpacingSize.xl),
               const WalletBalanceCard(),
               AppSpacing.verticalSpacing(SpacingSize.md),
-              // Row(
-              //   children: [
-              //     Expanded(
-              //       child: _StatCard(
-              //         icon: Icons.pending_actions,
-              //         title: 'Active Requests',
-              //         value: '${user?.packagesSent ?? 3}',
-              //         color: AppColors.primary,
-              //       ),
-              //     ),
-              //     AppSpacing.horizontalSpacing(SpacingSize.md),
-              //     Expanded(
-              //       child: _StatCard(
-              //         icon: Icons.check_circle_outline,
-              //         title: 'Completed',
-              //         value: '${user?.completedDeliveries ?? 12}',
-              //         color: AppColors.secondary,
-              //       ),
-              //     ),
-              //   ],
-              // ),
+      
             ],
           ),
         );
@@ -490,6 +473,7 @@ class _QuickActionsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      spacing: 16,
       children: [
         Expanded(
           child: _ActionCard(
@@ -502,7 +486,6 @@ class _QuickActionsRow extends StatelessWidget {
             },
           ),
         ),
-        AppSpacing.horizontalSpacing(SpacingSize.lg),
         Expanded(
           child: _ActionCard(
             icon: Icons.account_balance_wallet_outlined,
@@ -518,18 +501,17 @@ class _QuickActionsRow extends StatelessWidget {
             },
           ),
         ),
-        AppSpacing.horizontalSpacing(SpacingSize.lg),
-        Expanded(
-          child: _ActionCard(
-            icon: Icons.search,
-            title: 'Find Requests',
-            subtitle: 'Browse packages to deliver',
-            color: AppColors.secondary,
-            onTap: () {
-              sl<NavigationService>().navigateTo(Routes.browseRequests);
-            },
-          ),
-        ),
+        // Expanded(
+        //   child: _ActionCard(
+        //     icon: Icons.search,
+        //     title: 'Find Requests',
+        //     subtitle: 'Browse packages to deliver',
+        //     color: AppColors.secondary,
+        //     onTap: () {
+        //       sl<NavigationService>().navigateTo(Routes.browseRequests);
+        //     },
+        //   ),
+        // ),
       ],
     );
   }
@@ -555,7 +537,8 @@ class _ActionCard extends StatelessWidget {
     return AppContainer(
       variant: ContainerVariant.surface,
       color: color,
-      padding: AppSpacing.paddingXL,
+      height: 170,
+      padding: AppSpacing.paddingSM,
       borderRadius: BorderRadius.circular(16),
       onTap: onTap,
       child: Column(
@@ -564,19 +547,19 @@ class _ActionCard extends StatelessWidget {
           AppIcon.filled(
             icon: icon,
             size: IconSize.medium,
-            backgroundColor: Colors.white.withValues(alpha: 0.2),
+            backgroundColor: AppColors.white.withValues(alpha: 0.3),
             color: Colors.white,
           ),
           AppSpacing.verticalSpacing(SpacingSize.md),
           AppText.titleMedium(
             title,
-            color: Colors.white,
+            color: AppColors.white,
             fontWeight: FontWeight.bold,
           ),
           AppSpacing.verticalSpacing(SpacingSize.xs),
           AppText.bodySmall(
             subtitle,
-            color: Colors.white.withValues(alpha: 0.8),
+            color: AppColors.white.withValues(alpha: 0.8),
           ),
         ],
       ),

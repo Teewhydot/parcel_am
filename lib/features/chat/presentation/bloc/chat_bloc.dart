@@ -21,6 +21,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<UpdateLastSeen>(_onUpdateLastSeen);
     on<SetReplyToMessage>(_onSetReplyToMessage);
     on<DeleteMessage>(_onDeleteMessage);
+    on<_MessagesUpdated>(_onMessagesUpdated);
+    on<_ChatUpdated>(_onChatUpdated);
   }
 
   Future<void> _onLoadMessages(
@@ -36,10 +38,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         result.fold(
           (failure) => add(const LoadMessages('')),
           (messages) {
-            if (state is MessagesLoaded) {
-              emit((state as MessagesLoaded).copyWith(messages: messages));
-            } else {
-              emit(MessagesLoaded(messages: messages));
+            if (!isClosed) {
+              add(_MessagesUpdated(messages));
             }
           },
         );
@@ -58,8 +58,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         result.fold(
           (failure) => null,
           (chat) {
-            if (state is MessagesLoaded) {
-              emit((state as MessagesLoaded).copyWith(chat: chat));
+            if (!isClosed) {
+              add(_ChatUpdated(chat));
             }
           },
         );
@@ -201,10 +201,49 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     );
   }
 
+  void _onMessagesUpdated(
+    _MessagesUpdated event,
+    Emitter<ChatState> emit,
+  ) {
+    if (state is MessagesLoaded) {
+      emit((state as MessagesLoaded).copyWith(messages: event.messages));
+    } else {
+      emit(MessagesLoaded(messages: event.messages));
+    }
+  }
+
+  void _onChatUpdated(
+    _ChatUpdated event,
+    Emitter<ChatState> emit,
+  ) {
+    if (state is MessagesLoaded) {
+      emit((state as MessagesLoaded).copyWith(chat: event.chat));
+    }
+  }
+
   @override
   Future<void> close() {
     _messagesSubscription?.cancel();
     _chatSubscription?.cancel();
     return super.close();
   }
+}
+
+// Internal events
+class _MessagesUpdated extends ChatEvent {
+  final List<Message> messages;
+
+  const _MessagesUpdated(this.messages);
+
+  @override
+  List<Object> get props => [messages];
+}
+
+class _ChatUpdated extends ChatEvent {
+  final dynamic chat;
+
+  const _ChatUpdated(this.chat);
+
+  @override
+  List<Object?> get props => [chat];
 }

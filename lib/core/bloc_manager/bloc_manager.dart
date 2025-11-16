@@ -1,227 +1,165 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'bloc_manager_config.dart';
-import 'bloc_lifecycle_observer.dart';
-import 'plugins/bloc_manager_plugin.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:loading_overlay/loading_overlay.dart';
+import 'package:parcel_am/core/bloc/base/base_state.dart';
+import 'package:parcel_am/core/bloc/utils/migration_helper.dart';
+import 'package:parcel_am/core/theme/app_colors.dart';
 
-/// A comprehensive BLoC manager that provides centralized lifecycle management,
-/// enhanced error handling, and better developer experience for TravelLink.
-class BlocManager<T extends BlocBase<S>, S> extends StatefulWidget {
-  /// Configuration for the BlocManager
-  final BlocManagerConfig config;
-  
-  /// Factory function to create the BLoC
-  final T Function(BuildContext context) create;
-  
-  /// Optional plugins to extend functionality
-  final List<BlocManagerPlugin>? plugins;
-  
-  /// Optional lifecycle observer
-  final BlocLifecycleObserver? lifecycleObserver;
-  
-  /// Whether to register the BLoC with dependency injection
-  final bool registerWithDI;
-  
-  /// Optional callback when BLoC is disposed
-  final VoidCallback? onDispose;
-  
-  /// Optional error builder for error states
-  final Widget Function(BuildContext context, Object error)? errorBuilder;
-  
-  /// The child widget
+import '../../../core/constants/app_constants.dart';
+import '../../../core/utils/app_utils.dart';
+import '../../../core/utils/logger.dart';
+
+/// A simplified version of EnhancedBlocManager that maintains core functionality
+/// without excessive configuration options
+class BlocManager<T extends BlocBase<S>, S extends BaseState>
+    extends StatelessWidget {
+  /// The BLoC instance to manage
+  final T bloc;
+
+  /// Child widget to display
   final Widget child;
-  
-  /// Optional listener for state changes
+
+  /// Custom builder for the widget tree
+  final Widget Function(BuildContext context, S state)? builder;
+
+  /// Custom listener for state changes
   final void Function(BuildContext context, S state)? listener;
-  
-  /// Whether to lazily create the BLoC
-  final bool lazy;
+
+  /// Custom error handler
+  final void Function(BuildContext context, S state)? onError;
+
+  /// Custom success handler
+  final void Function(BuildContext context, S state)? onSuccess;
+
+  /// Whether to show loading overlay during loading states
+  final bool showLoadingIndicator;
+
+  /// Whether to show success or error messages
+  final bool showResultErrorNotifications;
+  final bool showResultSuccessNotifications;
+
+  /// Custom loading widget
+  final Widget? loadingWidget;
+
+  /// Whether to enable pull-to-refresh
+  final bool enablePullToRefresh;
+
+  /// Pull-to-refresh callback
+  final Future<void> Function()? onRefresh;
 
   const BlocManager({
     super.key,
-    required this.config,
-    required this.create,
+    required this.bloc,
     required this.child,
-    this.plugins,
-    this.lifecycleObserver,
-    this.registerWithDI = false,
-    this.onDispose,
-    this.errorBuilder,
+    this.builder,
     this.listener,
-    this.lazy = false,
+    this.onError,
+    this.onSuccess,
+    this.showLoadingIndicator = true,
+    this.showResultErrorNotifications = true,
+    this.showResultSuccessNotifications = false,
+    this.loadingWidget,
+    this.enablePullToRefresh = false,
+    this.onRefresh,
   });
 
   @override
-  State<BlocManager<T, S>> createState() => _BlocManagerState<T, S>();
-}
-
-class _BlocManagerState<T extends BlocBase<S>, S> extends State<BlocManager<T, S>> {
-  late T _bloc;
-  bool _isInitialized = false;
-  Object? _error;
-
-  @override
-  void initState() {
-    super.initState();
-    if (!widget.lazy) {
-      _initializeBloc();
-    }
-  }
-
-  void _initializeBloc() {
-    try {
-      _bloc = widget.create(context);
-      _isInitialized = true;
-
-      // Register with dependency injection if requested
-      if (widget.registerWithDI) {
-        widget.config.getIt.registerSingleton<T>(_bloc);
-      }
-
-      // Notify lifecycle observer
-      widget.lifecycleObserver?.onBlocCreated(_bloc);
-
-      // Initialize plugins
-      widget.plugins?.forEach((plugin) {
-        plugin.onBlocCreated(_bloc, widget.config);
-      });
-
-      // Set up state listener for plugins
-      if (widget.plugins != null && widget.plugins!.isNotEmpty) {
-        _bloc.stream.listen((state) {
-          for (final plugin in widget.plugins!) {
-            plugin.onStateChange(_bloc, null, state);
-          }
-        });
-      }
-
-      // Enable logging if configured
-      if (widget.config.enableLogging) {
-        _bloc.stream.listen((state) {
-          debugPrint('[BlocManager] ${T.toString()} state changed to: ${state.runtimeType}');
-        });
-      }
-
-      // Performance monitoring
-      if (widget.config.enablePerformanceMonitoring) {
-        final stopwatch = Stopwatch();
-        _bloc.stream.listen((state) {
-          if (stopwatch.isRunning) {
-            debugPrint('[BlocManager] State transition took: ${stopwatch.elapsedMilliseconds}ms');
-            stopwatch.reset();
-          }
-          stopwatch.start();
-        });
-      }
-    } catch (e, stackTrace) {
-      _error = e;
-      if (widget.config.enableLogging) {
-        debugPrint('[BlocManager] Error creating BLoC: $e\n$stackTrace');
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    if (_isInitialized) {
-      // Notify lifecycle observer
-      widget.lifecycleObserver?.onBlocDisposed(_bloc);
-
-      // Notify plugins
-      widget.plugins?.forEach((plugin) {
-        plugin.onBlocDisposed(_bloc);
-      });
-
-      // Unregister from dependency injection
-      if (widget.registerWithDI && widget.config.getIt.isRegistered<T>()) {
-        widget.config.getIt.unregister<T>();
-      }
-
-      // Call custom dispose callback
-      widget.onDispose?.call();
-
-      // Close the BLoC
-      _bloc.close();
-    }
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    // Handle initialization error
-    if (_error != null && widget.errorBuilder != null) {
-      return widget.errorBuilder!(context, _error!);
-    }
-
-    // If there's an error but no error builder, throw it
-    if (_error != null) {
-      throw _error!;
-    }
-
-    // For lazy loading, use BlocProvider.create instead of value
-    if (widget.lazy && !_isInitialized) {
-      return BlocProvider<T>(
-        create: (context) {
-          _initializeBloc();
-          return _bloc;
-        },
-        child: widget.listener != null
-            ? BlocListener<T, S>(
-                listener: widget.listener!,
-                child: widget.child,
-              )
-            : widget.child,
-      );
-    }
-
-    // For eager loading or already initialized lazy loading
     return BlocProvider<T>.value(
-      value: _bloc,
-      child: widget.listener != null
-          ? BlocListener<T, S>(
-              listener: widget.listener!,
-              child: widget.child,
-            )
-          : widget.child,
+      value: bloc,
+      child: BlocConsumer<T, S>(
+        buildWhen: (previous, current) {
+          // Always rebuild for initial load, loading states, errors, and empty states
+          if (previous is InitialState ||
+              current is InitialState ||
+              current is LoadingState ||
+              current is ErrorState ||
+              current is EmptyState) {
+            return true;
+          }
+
+          // For loaded states, check if we should rebuild
+          if (current is LoadedState && previous is LoadedState) {
+            // Don't rebuild if returning cached data with same content
+            if (current.isFromCache == true && previous.data == current.data) {
+              return false;
+            }
+          }
+
+          return true;
+        },
+        builder: (context, state) {
+          // Handle custom builder if provided
+          final Widget contentWidget =
+              builder != null ? builder!(context, state) : child;
+
+          // Apply loading overlay if needed
+          if (showLoadingIndicator && state.isLoading) {
+            return LoadingOverlay(
+              isLoading: true,
+              color: AppColors.onPrimary.withValues(alpha: 0.5),
+              progressIndicator: SpinKitCircle(color: AppColors.white, size: 50.0),
+              child: contentWidget,
+            );
+          }
+
+          // Handle pull-to-refresh
+          if (enablePullToRefresh && onRefresh != null) {
+            return RefreshIndicator(
+              onRefresh: onRefresh!,
+              child: contentWidget,
+            );
+          }
+
+          return contentWidget;
+        },
+        listener: (context, state) {
+          // Handle error states
+          if (state.isError) {
+            final String errorMessage =
+                state.errorMessage ?? AppConstants.defaultErrorMessage;
+            if (showResultErrorNotifications) {
+              DFoodUtils.showSnackBar(errorMessage, AppColors.error);
+            }
+            if (onError != null) {
+              onError!(context, state);
+            }
+          }
+
+          // Handle success states
+          if (state.isSuccess) {
+            Logger.logSuccess("Success condition met in BlocManager");
+            if (onSuccess != null) {
+              onSuccess!(context, state);
+            }
+            if (showResultSuccessNotifications) {
+              DFoodUtils.showSnackBar(
+                state.successMessage ?? AppConstants.defaultSuccessMessage,
+                AppColors.success,
+              );
+            }
+          }
+          //Handle loaded state
+          if (state.isLoadedState) {
+            Logger.logSuccess("Success condition met in BlocManager");
+            if (onSuccess != null) {
+              onSuccess!(context, state);
+            }
+            if (showResultSuccessNotifications) {
+              DFoodUtils.showSnackBar(
+                state.successMessage ?? AppConstants.defaultSuccessMessage,
+                AppColors.success,
+              );
+            }
+          }
+
+          // Call custom listener if provided
+          if (listener != null) {
+            listener!(context, state);
+          }
+        },
+      ),
     );
-  }
-}
-
-/// Extension methods for BlocManager
-extension BlocManagerExtensions on BuildContext {
-  /// Get a BLoC from the nearest BlocManager
-  T getBloc<T extends BlocBase<Object?>>() {
-    try {
-      return read<T>();
-    } catch (e) {
-      throw FlutterError(
-        'BlocManager: Could not find BLoC of type $T in the widget tree.\n'
-        'Make sure you have a BlocManager<$T, State> as an ancestor widget.',
-      );
-    }
-  }
-
-  /// Watch a BLoC state from the nearest BlocManager
-  S watchBloc<T extends BlocBase<S>, S>() {
-    try {
-      return watch<T>().state;
-    } catch (e) {
-      throw FlutterError(
-        'BlocManager: Could not watch BLoC of type $T in the widget tree.\n'
-        'Make sure you have a BlocManager<$T, $S> as an ancestor widget.',
-      );
-    }
-  }
-
-  /// Select a specific part of a BLoC state
-  R selectBloc<T extends BlocBase<S>, S, R>(R Function(S state) selector) {
-    try {
-      return select<T, R>((bloc) => selector(bloc.state));
-    } catch (e) {
-      throw FlutterError(
-        'BlocManager: Could not select from BLoC of type $T in the widget tree.\n'
-        'Make sure you have a BlocManager<$T, $S> as an ancestor widget.',
-      );
-    }
   }
 }

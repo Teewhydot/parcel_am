@@ -40,11 +40,16 @@ import 'features/travellink/domain/usecases/kyc_usecase.dart';
 import 'features/travellink/domain/usecases/wallet_usecase.dart';
 import 'features/travellink/domain/usecases/get_dashboard_metrics_usecase.dart';
 
+import 'features/travellink/presentation/bloc/auth/auth_bloc.dart';
 import 'features/travellink/presentation/bloc/escrow/escrow_bloc.dart';
 import 'features/travellink/presentation/bloc/parcel/parcel_bloc.dart';
 import 'features/travellink/presentation/bloc/kyc/kyc_bloc.dart';
 import 'features/travellink/presentation/bloc/wallet/wallet_bloc.dart';
 import 'features/travellink/presentation/bloc/dashboard/dashboard_bloc.dart';
+
+import 'features/package/presentation/bloc/active_packages_bloc.dart';
+import 'features/chat/presentation/bloc/chat_bloc.dart';
+import 'features/chat/presentation/bloc/chats_list_bloc.dart';
 
 import 'features/kyc/data/datasources/kyc_remote_datasource.dart' as kyc_ds;
 
@@ -171,6 +176,9 @@ Future<void> init() async {
     () => GetDashboardMetricsUseCase(sl()),
   );
 
+  //! Features - Auth BLoC
+  sl.registerFactory<AuthBloc>(() => AuthBloc());
+
   //! Features - Escrow BLoC
   sl.registerFactory<EscrowBloc>(() => EscrowBloc());
 
@@ -193,6 +201,15 @@ Future<void> init() async {
 
   //! Features - Notification BLoC
   sl.registerFactory<NotificationBloc>(() => NotificationBloc());
+
+  //! Features - Active Packages BLoC
+  sl.registerFactory<ActivePackagesBloc>(() => ActivePackagesBloc());
+
+  //! Features - Chat BLoC
+  sl.registerFactory<ChatBloc>(() => ChatBloc());
+
+  //! Features - Chats List BLoC
+  sl.registerFactory<ChatsListBloc>(() => ChatsListBloc());
 
   //! Notification Service - Singleton
   sl.registerLazySingleton<NotificationService>(

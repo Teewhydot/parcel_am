@@ -12,6 +12,13 @@ sealed class BaseState<T> extends Equatable {
   /// Whether this state represents a loading condition
   bool get isLoading => this is LoadingState;
 
+  ///Whether this state represents an initial condition
+  bool get isInitial => this is InitialState;
+
+  
+  ///Whether this state represents an initial condition
+    bool get isLoaded => this is LoadedState;
+
   /// Whether this state represents an error condition
   bool get isError => this is ErrorState;
 
