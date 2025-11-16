@@ -53,7 +53,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _dashboardBloc = sl<DashboardBloc>();
-    _activePackagesBloc = ActivePackagesBloc();
+    _activePackagesBloc = sl<ActivePackagesBloc>();
     _loadInitialData();
     _subscribeToEscrowNotifications();
     _initializePresenceAndChatNotifications();
@@ -94,17 +94,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _requestDataForUser(userId);
   }
 
-  void _requestDataForUser(String userId) {
+  /// Requests data for the given userId.
+  /// Set [force] to true to reload data even if the userId hasn't changed (e.g., on pull-to-refresh).
+  void _requestDataForUser(String userId, {bool force = false}) {
     if (userId.isEmpty) {
       return;
     }
 
-    if (_lastActivePackagesUserId != userId) {
+    if (force || _lastActivePackagesUserId != userId) {
       _lastActivePackagesUserId = userId;
       _activePackagesBloc.add(LoadActivePackages(userId));
     }
 
-    if (_lastDashboardUserId != userId) {
+    if (force || _lastDashboardUserId != userId) {
       _lastDashboardUserId = userId;
       _dashboardBloc.add(DashboardStarted(userId));
     }

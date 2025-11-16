@@ -106,11 +106,7 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
       WalletModel? walletModel;
       try {
         walletModel = await walletRemoteDataSource.getWallet(userId);
-      } on WalletNotFoundException {
-        walletModel = null;
-      } on WalletException {
-        walletModel = null;
-      } on ServerException {
+      } catch (_) {
         walletModel = null;
       }
 
