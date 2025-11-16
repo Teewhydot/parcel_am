@@ -37,6 +37,12 @@ class EscrowRemoteDataSourceImpl implements EscrowRemoteDataSource {
           .collection('escrows')
           .doc(escrowId)
           .snapshots()
+          .handleError((error) {
+        print('❌ Firestore Error (watchEscrowStatus): $error');
+        if (error.toString().contains('index')) {
+          print('🔍 INDEX REQUIRED: Check Firebase Console for index requirements');
+        }
+      })
           .map((snapshot) {
         if (!snapshot.exists) {
           throw ServerException();
@@ -56,6 +62,15 @@ class EscrowRemoteDataSourceImpl implements EscrowRemoteDataSource {
           .where('parcelId', isEqualTo: parcelId)
           .limit(1)
           .snapshots()
+          .handleError((error) {
+        print('❌ Firestore Error (watchEscrowByParcel): $error');
+        if (error.toString().contains('index')) {
+          print('🔍 INDEX REQUIRED: Create a composite index for:');
+          print('   Collection: escrows');
+          print('   Fields: parcelId (Ascending)');
+          print('   Or visit the Firebase Console to create the index automatically.');
+        }
+      })
           .map((snapshot) {
         if (snapshot.docs.isEmpty) {
           return null;

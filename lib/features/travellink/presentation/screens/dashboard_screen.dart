@@ -227,16 +227,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       AppSpacing.verticalSpacing(SpacingSize.lg),
                       const UserStatsGrid(),
                       AppSpacing.verticalSpacing(SpacingSize.xxl),
-                      BlocBuilder<ActivePackagesBloc, ActivePackagesState>(
+                      BlocBuilder<ActivePackagesBloc, BaseState<List<PackageEntity>>>(
                         builder: (context, state) {
-                          if (state is ActivePackagesLoaded) {
-                            return _RecentActivitySection(activePackages: state.packages);
-                          }
-                          if (state is ActivePackagesLoading) {
+                          if (state.isLoading) {
                             return const Center(child: CircularProgressIndicator());
                           }
-                          if (state is ActivePackagesError) {
-                            return Center(child: Text('Error: ${state.message}'));
+                          if (state.isError) {
+                            return Center(child: Text('Error: ${state.errorMessage ?? "Unknown error"}'));
+                          }
+                          if (state.hasData && state.data != null) {
+                            return _RecentActivitySection(activePackages: state.data!);
                           }
                           return const _RecentActivitySection(activePackages: []);
                         },
@@ -338,7 +338,16 @@ class _ChatButton extends StatelessWidget {
           stream: FirebaseFirestore.instance
               .collection('chats')
               .where('participants', arrayContains: userId)
-              .snapshots(),
+              .snapshots()
+              .handleError((error) {
+            print('❌ Firestore Error (Dashboard unread count): $error');
+            if (error.toString().contains('index')) {
+              print('🔍 INDEX REQUIRED: Create a composite index for:');
+              print('   Collection: chats');
+              print('   Fields: participants (Array)');
+              print('   Or visit the Firebase Console to create the index automatically.');
+            }
+          }),
           builder: (context, snapshot) {
             int totalUnread = 0;
 

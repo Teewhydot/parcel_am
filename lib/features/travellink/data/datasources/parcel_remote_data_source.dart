@@ -28,6 +28,12 @@ class ParcelRemoteDataSourceImpl implements ParcelRemoteDataSource {
           .collection('parcels')
           .doc(parcelId)
           .snapshots()
+          .handleError((error) {
+        print('❌ Firestore Error (watchParcelStatus): $error');
+        if (error.toString().contains('index')) {
+          print('🔍 INDEX REQUIRED: Check Firebase Console for index requirements');
+        }
+      })
           .map((snapshot) {
         if (!snapshot.exists) {
           throw ServerException();
@@ -46,12 +52,23 @@ class ParcelRemoteDataSourceImpl implements ParcelRemoteDataSource {
           .collection('parcels')
           .where('sender.userId', isEqualTo: userId)
           .orderBy('createdAt', descending: true);
-      
+
       if (status != null) {
         query = query.where('status', isEqualTo: status.toJson());
       }
 
-      return query.snapshots().map((snapshot) {
+      return query.snapshots().handleError((error) {
+        print('❌ Firestore Error (watchUserParcels): $error');
+        if (error.toString().contains('index')) {
+          print('🔍 INDEX REQUIRED: Create a composite index for:');
+          print('   Collection: parcels');
+          print('   Fields: sender.userId (Ascending), createdAt (Descending)');
+          if (status != null) {
+            print('   Additional field: status (Ascending)');
+          }
+          print('   Or visit the Firebase Console to create the index automatically.');
+        }
+      }).map((snapshot) {
         return snapshot.docs
             .map((doc) => ParcelModel.fromFirestore(doc))
             .toList();

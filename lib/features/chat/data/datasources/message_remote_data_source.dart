@@ -30,6 +30,15 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
         .collection('messages')
         .orderBy('createdAt', descending: false)
         .snapshots()
+        .handleError((error) {
+      print('❌ Firestore Error (watchMessages): $error');
+      if (error.toString().contains('index')) {
+        print('🔍 INDEX REQUIRED: Create a composite index for:');
+        print('   Collection: chats/{chatId}/messages');
+        print('   Fields: createdAt (Ascending)');
+        print('   Or visit the Firebase Console to create the index automatically.');
+      }
+    })
         .map((snapshot) {
       return snapshot.docs.map((doc) => MessageModel.fromFirestore(doc)).toList();
     });

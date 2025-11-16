@@ -16,6 +16,7 @@ import 'features/travellink/data/providers/theme_provider.dart';
 import 'features/travellink/presentation/bloc/wallet/wallet_bloc.dart';
 import 'features/travellink/presentation/bloc/wallet/wallet_event.dart';
 import 'features/travellink/presentation/bloc/dashboard/dashboard_bloc.dart';
+import 'features/notifications/presentation/bloc/notification_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -60,6 +61,9 @@ class MyApp extends StatelessWidget {
               ),
               BlocProvider(
                 create: (_) => WalletBloc()..add(const WalletLoadRequested()),
+              ),
+              BlocProvider<NotificationBloc>(
+                create: (_) => di.sl<NotificationBloc>(),
               ),
             ],
             child: GetMaterialApp(

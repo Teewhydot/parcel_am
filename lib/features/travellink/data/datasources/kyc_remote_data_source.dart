@@ -75,6 +75,12 @@ class KycRemoteDataSourceImpl implements KycRemoteDataSource {
         .collection('users')
         .doc(userId)
         .snapshots()
+        .handleError((error) {
+      print('❌ Firestore Error (watchKycStatus): $error');
+      if (error.toString().contains('index')) {
+        print('🔍 INDEX REQUIRED: Check Firebase Console for index requirements');
+      }
+    })
         .map((snapshot) {
       if (!snapshot.exists) {
         return 'not_submitted';

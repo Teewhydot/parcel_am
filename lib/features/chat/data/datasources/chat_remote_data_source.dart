@@ -52,6 +52,15 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         .collection('messages')
         .orderBy('timestamp', descending: true)
         .snapshots()
+        .handleError((error) {
+      print('❌ Firestore Error (getMessagesStream): $error');
+      if (error.toString().contains('index')) {
+        print('🔍 INDEX REQUIRED: Create a composite index for:');
+        print('   Collection: chats/{chatId}/messages');
+        print('   Fields: timestamp (Descending)');
+        print('   Or visit the Firebase Console to create the index automatically.');
+      }
+    })
         .map((snapshot) {
       return snapshot.docs.map((doc) {
         final data = doc.data();
@@ -192,7 +201,12 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
 
   @override
   Stream<ChatModel> getChatStream(String chatId) {
-    return firestore.collection('chats').doc(chatId).snapshots().map((snapshot) {
+    return firestore.collection('chats').doc(chatId).snapshots().handleError((error) {
+      print('❌ Firestore Error (getChatStream): $error');
+      if (error.toString().contains('index')) {
+        print('🔍 INDEX REQUIRED: Check Firebase Console for index requirements');
+      }
+    }).map((snapshot) {
       if (!snapshot.exists) {
         throw Exception('Chat not found');
       }
@@ -272,7 +286,12 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
 
   @override
   Stream<ChatModel> watchChat(String chatId) {
-    return firestore.collection('chats').doc(chatId).snapshots().map((snapshot) {
+    return firestore.collection('chats').doc(chatId).snapshots().handleError((error) {
+      print('❌ Firestore Error (watchChat): $error');
+      if (error.toString().contains('index')) {
+        print('🔍 INDEX REQUIRED: Check Firebase Console for index requirements');
+      }
+    }).map((snapshot) {
       if (!snapshot.exists) {
         throw Exception('Chat not found');
       }
@@ -289,6 +308,15 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         .where('participantIds', arrayContains: userId)
         .orderBy('lastMessageTime', descending: true)
         .snapshots()
+        .handleError((error) {
+      print('❌ Firestore Error (watchUserChats): $error');
+      if (error.toString().contains('index')) {
+        print('🔍 INDEX REQUIRED: Create a composite index for:');
+        print('   Collection: chats');
+        print('   Fields: participantIds (Array), lastMessageTime (Descending)');
+        print('   Or visit the Firebase Console to create the index automatically.');
+      }
+    })
         .map((snapshot) {
       return snapshot.docs.map((doc) {
         final data = doc.data();

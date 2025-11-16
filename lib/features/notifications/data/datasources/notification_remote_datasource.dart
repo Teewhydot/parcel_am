@@ -33,6 +33,15 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
         .where('userId', isEqualTo: userId)
         .orderBy('timestamp', descending: true)
         .snapshots()
+        .handleError((error) {
+      print('❌ Firestore Error (watchNotifications): $error');
+      if (error.toString().contains('index')) {
+        print('🔍 INDEX REQUIRED: Create a composite index for:');
+        print('   Collection: notifications');
+        print('   Fields: userId (Ascending), timestamp (Descending)');
+        print('   Or visit the Firebase Console to create the index automatically.');
+      }
+    })
         .map((snapshot) {
       return snapshot.docs.map((doc) {
         final data = doc.data();

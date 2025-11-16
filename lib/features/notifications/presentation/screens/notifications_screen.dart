@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:get/get.dart';
+import 'package:parcel_am/core/bloc/base/base_state.dart';
+import 'package:parcel_am/core/bloc_manager/bloc_manager.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import '../../../../core/enums/notification_type.dart';
 import '../../../../core/routes/routes.dart';
@@ -50,30 +52,24 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
         ],
       ),
-      body: BlocConsumer<NotificationBloc, NotificationState>(
-        listener: (context, state) {
-          if (state is NotificationError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: AppColors.error,
-              ),
-            );
-          }
-        },
+      body: BlocManager<NotificationBloc, BaseState<NotificationData>>(
+        bloc: context.read<NotificationBloc>(),
+        showLoadingIndicator: false,
+        showResultErrorNotifications: true,
+        showResultSuccessNotifications: false,
         builder: (context, state) {
-          if (state is NotificationsLoading) {
+          if (state.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (state is NotificationError) {
+          if (state.isError) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Icon(Icons.error_outline, size: 64, color: AppColors.error),
                   const SizedBox(height: 16),
-                  Text(state.message),
+                  Text(state.errorMessage ?? 'An error occurred'),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () {
@@ -86,8 +82,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             );
           }
 
-          if (state is NotificationsLoaded) {
-            final notifications = state.notifications;
+          if (state.hasData && state.data != null) {
+            final notificationData = state.data!;
+            final notifications = notificationData.notifications;
 
             if (notifications.isEmpty) {
               return Center(
@@ -126,9 +123,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             );
           }
 
-          // NotificationInitial state
+          // Initial or empty state
           return const Center(child: Text('Loading notifications...'));
         },
+        child: Container(),
       ),
     );
   }

@@ -65,18 +65,18 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
                   topRight: Radius.circular(24),
                 ),
                 padding: AppSpacing.paddingXL,
-                child: BlocBuilder<ChatsListBloc, ChatsListState>(
+                child: BlocBuilder<ChatsListBloc, BaseState<List<Chat>>>(
                   builder: (context, state) {
-                    if (state is ChatsListLoading) {
+                    if (state.isLoading) {
                       return const Center(child: CircularProgressIndicator());
                     }
 
-                    if (state is ChatsListError) {
-                      return _buildErrorState(state.message);
+                    if (state.isError) {
+                      return _buildErrorState(state.errorMessage ?? 'An error occurred');
                     }
 
-                    if (state is ChatsListLoaded) {
-                      final chats = state.chats;
+                    if (state.hasData && state.data != null) {
+                      final chats = state.data!;
 
                       if (chats.isEmpty) {
                         return _buildEmptyState();

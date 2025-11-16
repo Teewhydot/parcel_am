@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get/get_connect/http/src/utils/utils.dart';
 import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
 import 'package:parcel_am/core/widgets/app_scaffold.dart';
 
@@ -77,6 +78,7 @@ class _SplashScreenState extends State<SplashScreen>
       bloc: context.read<AuthBloc>(),
     showResultErrorNotifications: false,
     showResultSuccessNotifications: false,
+    showLoadingIndicator: false,
       onError: (context, state) => _navigateBasedOnState(state),
       onSuccess: (context, state) => _navigateBasedOnState(state),
       child: AppScaffold(

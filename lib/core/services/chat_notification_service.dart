@@ -35,16 +35,27 @@ class ChatNotificationService {
         .collection('chats')
         .where('participants', arrayContains: _currentUserId)
         .snapshots()
-        .listen((snapshot) {
-      for (var change in snapshot.docChanges) {
-        if (change.type == DocumentChangeType.modified) {
-          final chatData = change.doc.data();
-          if (chatData != null) {
-            _handleChatUpdate(change.doc.id, chatData);
+        .listen(
+      (snapshot) {
+        for (var change in snapshot.docChanges) {
+          if (change.type == DocumentChangeType.modified) {
+            final chatData = change.doc.data();
+            if (chatData != null) {
+              _handleChatUpdate(change.doc.id, chatData);
+            }
           }
         }
-      }
-    });
+      },
+      onError: (error) {
+        print('❌ Firestore Error (ChatNotifications): $error');
+        if (error.toString().contains('index')) {
+          print('🔍 INDEX REQUIRED: Create a composite index for:');
+          print('   Collection: chats');
+          print('   Fields: participants (Array), [add other indexed fields]');
+          print('   Or visit the Firebase Console to create the index automatically.');
+        }
+      },
+    );
   }
 
   Future<void> _handleChatUpdate(

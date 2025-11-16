@@ -21,6 +21,12 @@ class PresenceRemoteDataSourceImpl implements PresenceRemoteDataSource {
         .collection('presence')
         .doc(userId)
         .snapshots()
+        .handleError((error) {
+      print('❌ Firestore Error (watchUserPresence): $error');
+      if (error.toString().contains('index')) {
+        print('🔍 INDEX REQUIRED: Check Firebase Console for index requirements');
+      }
+    })
         .map((snapshot) {
       if (!snapshot.exists) {
         return PresenceModel(

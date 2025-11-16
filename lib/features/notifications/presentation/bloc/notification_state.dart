@@ -1,49 +1,23 @@
-import 'package:equatable/equatable.dart';
+import '../../../../core/bloc/base/base_state.dart';
 import '../../domain/entities/notification_entity.dart';
 
-abstract class NotificationState extends Equatable {
-  const NotificationState();
-
-  @override
-  List<Object?> get props => [];
-}
-
-/// Initial state before loading notifications
-class NotificationInitial extends NotificationState {}
-
-/// Loading state while fetching notifications
-class NotificationsLoading extends NotificationState {}
-
-/// State when notifications are successfully loaded
-class NotificationsLoaded extends NotificationState {
+/// Data model for notification state
+class NotificationData {
   final List<NotificationEntity> notifications;
   final int unreadCount;
 
-  const NotificationsLoaded({
+  const NotificationData({
     required this.notifications,
     required this.unreadCount,
   });
 
-  @override
-  List<Object> get props => [notifications, unreadCount];
-
-  NotificationsLoaded copyWith({
+  NotificationData copyWith({
     List<NotificationEntity>? notifications,
     int? unreadCount,
   }) {
-    return NotificationsLoaded(
+    return NotificationData(
       notifications: notifications ?? this.notifications,
       unreadCount: unreadCount ?? this.unreadCount,
     );
   }
-}
-
-/// Error state when an operation fails
-class NotificationError extends NotificationState {
-  final String message;
-
-  const NotificationError(this.message);
-
-  @override
-  List<Object> get props => [message];
 }

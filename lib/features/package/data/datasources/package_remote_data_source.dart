@@ -30,6 +30,12 @@ class PackageRemoteDataSourceImpl implements PackageRemoteDataSource {
         .collection('packages')
         .doc(packageId)
         .snapshots()
+        .handleError((error) {
+      print('❌ Firestore Error (getPackageStream): $error');
+      if (error.toString().contains('index')) {
+        print('🔍 INDEX REQUIRED: Check Firebase Console for index requirements');
+      }
+    })
         .map((snapshot) {
       if (!snapshot.exists) {
         throw Exception('Package not found');
@@ -142,6 +148,15 @@ class PackageRemoteDataSourceImpl implements PackageRemoteDataSource {
         .where('senderId', isEqualTo: userId)
         .where('status', whereIn: ['pending', 'accepted', 'in_transit', 'out_for_delivery'])
         .snapshots()
+        .handleError((error) {
+      print('❌ Firestore Error (getActivePackagesStream): $error');
+      if (error.toString().contains('index')) {
+        print('🔍 INDEX REQUIRED: Create a composite index for:');
+        print('   Collection: packages');
+        print('   Fields: senderId (Ascending), status (Ascending)');
+        print('   Or visit the Firebase Console to create the index automatically.');
+      }
+    })
         .map((snapshot) {
       return snapshot.docs.map((doc) {
         return {'id': doc.id, ...doc.data()};

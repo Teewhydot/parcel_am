@@ -63,6 +63,38 @@ class BlocManager<T extends BlocBase<S>, S extends BaseState>
     this.onRefresh,
   });
 
+  /// Log Firestore-specific errors with detailed information
+  static void _logFirestoreError(String errorMessage) {
+    final lowerError = errorMessage.toLowerCase();
+
+    // Log all errors to console
+    Logger.logError('❌ Error: $errorMessage');
+
+    // Check for Firestore index errors
+    if (lowerError.contains('index') ||
+        lowerError.contains('composite') ||
+        lowerError.contains('requires an index')) {
+      print('🔍 FIRESTORE INDEX ERROR DETECTED:');
+      print('   Error: $errorMessage');
+      print('   Action Required: Create the missing index in Firebase Console');
+      print('   Visit: https://console.firebase.google.com/project/_/firestore/indexes');
+    }
+
+    // Check for permission errors
+    if (lowerError.contains('permission') || lowerError.contains('permission-denied')) {
+      print('🔒 FIRESTORE PERMISSION ERROR:');
+      print('   Error: $errorMessage');
+      print('   Check your Firestore security rules');
+    }
+
+    // Check for document not found errors
+    if (lowerError.contains('not-found') || lowerError.contains('not found')) {
+      print('📄 FIRESTORE DOCUMENT NOT FOUND:');
+      print('   Error: $errorMessage');
+      print('   The requested document does not exist');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider<T>.value(
@@ -118,6 +150,10 @@ class BlocManager<T extends BlocBase<S>, S extends BaseState>
           if (state.isError) {
             final String errorMessage =
                 state.errorMessage ?? AppConstants.defaultErrorMessage;
+
+            // Log Firestore-specific errors to console
+            _logFirestoreError(errorMessage);
+
             if (showResultErrorNotifications) {
               DFoodUtils.showSnackBar(errorMessage, AppColors.error);
             }

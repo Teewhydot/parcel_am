@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import '../../../../core/bloc/base/base_state.dart';
 import '../../domain/entities/chat.dart';
 import '../../domain/usecases/watch_user_chats.dart';
 
@@ -21,54 +22,26 @@ class LoadChats extends ChatsListEvent {
   List<Object?> get props => [userId];
 }
 
-// States
-abstract class ChatsListState extends Equatable {
-  const ChatsListState();
-
-  @override
-  List<Object?> get props => [];
-}
-
-class ChatsListInitial extends ChatsListState {}
-
-class ChatsListLoading extends ChatsListState {}
-
-class ChatsListLoaded extends ChatsListState {
-  final List<Chat> chats;
-
-  const ChatsListLoaded(this.chats);
-
-  @override
-  List<Object?> get props => [chats];
-}
-
-class ChatsListError extends ChatsListState {
-  final String message;
-
-  const ChatsListError(this.message);
-
-  @override
-  List<Object?> get props => [message];
-}
-
 // BLoC
-class ChatsListBloc extends Bloc<ChatsListEvent, ChatsListState> {
+class ChatsListBloc extends Bloc<ChatsListEvent, BaseState<List<Chat>>> {
   final watchUserChats = WatchUserChats();
 
-  ChatsListBloc() : super(ChatsListInitial()) {
+  ChatsListBloc() : super(const InitialState<List<Chat>>()) {
     on<LoadChats>(_onLoadChats);
   }
 
   Future<void> _onLoadChats(
     LoadChats event,
-    Emitter<ChatsListState> emit,
+    Emitter<BaseState<List<Chat>>> emit,
   ) async {
-    emit(ChatsListLoading());
+    emit(const LoadingState<List<Chat>>());
 
     await emit.forEach<List<Chat>>(
       watchUserChats(event.userId),
-      onData: (chats) => ChatsListLoaded(chats),
-      onError: (error, stackTrace) => ChatsListError(error.toString()),
+      onData: (chats) => LoadedState<List<Chat>>(data: chats),
+      onError: (error, stackTrace) => ErrorState<List<Chat>>(
+        errorMessage: error.toString(),
+      ),
     );
   }
 }

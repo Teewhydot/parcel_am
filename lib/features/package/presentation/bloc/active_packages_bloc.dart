@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import '../../../../core/bloc/base/base_state.dart';
 import '../../domain/entities/package_entity.dart';
 import '../../domain/usecases/watch_active_packages.dart';
 
@@ -21,56 +22,28 @@ class LoadActivePackages extends ActivePackagesEvent {
   List<Object?> get props => [userId];
 }
 
-// States
-abstract class ActivePackagesState extends Equatable {
-  const ActivePackagesState();
-
-  @override
-  List<Object?> get props => [];
-}
-
-class ActivePackagesInitial extends ActivePackagesState {}
-
-class ActivePackagesLoading extends ActivePackagesState {}
-
-class ActivePackagesLoaded extends ActivePackagesState {
-  final List<PackageEntity> packages;
-
-  const ActivePackagesLoaded(this.packages);
-
-  @override
-  List<Object?> get props => [packages];
-}
-
-class ActivePackagesError extends ActivePackagesState {
-  final String message;
-
-  const ActivePackagesError(this.message);
-
-  @override
-  List<Object?> get props => [message];
-}
-
 // BLoC
-class ActivePackagesBloc extends Bloc<ActivePackagesEvent, ActivePackagesState> {
+class ActivePackagesBloc extends Bloc<ActivePackagesEvent, BaseState<List<PackageEntity>>> {
   final watchActivePackages = WatchActivePackages();
 
-  ActivePackagesBloc() : super(ActivePackagesInitial()) {
+  ActivePackagesBloc() : super(const InitialState<List<PackageEntity>>()) {
     on<LoadActivePackages>(_onLoadActivePackages);
   }
 
   Future<void> _onLoadActivePackages(
     LoadActivePackages event,
-    Emitter<ActivePackagesState> emit,
+    Emitter<BaseState<List<PackageEntity>>> emit,
   ) async {
-    emit(ActivePackagesLoading());
+    emit(const LoadingState<List<PackageEntity>>());
 
     await emit.forEach<dynamic>(
       watchActivePackages(event.userId),
       onData: (result) {
         return result.fold(
-          (failure) => ActivePackagesError(failure.failureMessage),
-          (packages) => ActivePackagesLoaded(packages),
+          (failure) => ErrorState<List<PackageEntity>>(
+            errorMessage: failure.failureMessage,
+          ),
+          (packages) => LoadedState<List<PackageEntity>>(data: packages),
         );
       },
     );

@@ -65,6 +65,15 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
           .where('userId', isEqualTo: userId)
           .limit(1)
           .snapshots()
+          .handleError((error) {
+        print('❌ Firestore Error (watchWallet): $error');
+        if (error.toString().contains('index')) {
+          print('🔍 INDEX REQUIRED: Create a composite index for:');
+          print('   Collection: wallets');
+          print('   Fields: userId (Ascending)');
+          print('   Or visit the Firebase Console to create the index automatically.');
+        }
+      })
           .map((snapshot) {
         if (snapshot.docs.isEmpty) {
           throw const WalletNotFoundException();
