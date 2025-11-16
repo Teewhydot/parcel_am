@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/network/network_info.dart';
+import '../../../../core/services/error/error_handler.dart';
 import '../../domain/entities/message.dart';
 import '../../domain/entities/message_type.dart';
 import '../../domain/entities/chat.dart';
@@ -19,19 +20,11 @@ class ChatRepositoryImpl implements ChatRepository {
   final NetworkInfo networkInfo = _NetworkInfoImpl();
 
   @override
-  Stream<Either<Failure, List<Message>>> getMessagesStream(String chatId) async* {
-    if (!await networkInfo.isConnected) {
-      yield const Left(NetworkFailure(failureMessage: 'No internet connection'));
-      return;
-    }
-
-    try {
-      await for (final messages in remoteDataSource.getMessagesStream(chatId)) {
-        yield Right(messages);
-      }
-    } catch (e) {
-      yield Left(ServerFailure(failureMessage: e.toString()));
-    }
+  Stream<Either<Failure, List<Message>>> getMessagesStream(String chatId) {
+    return ErrorHandler.handleStream(
+      () => remoteDataSource.getMessagesStream(chatId),
+      operationName: 'getMessagesStream',
+    );
   }
 
   @override
@@ -141,19 +134,11 @@ class ChatRepositoryImpl implements ChatRepository {
   }
 
   @override
-  Stream<Either<Failure, Chat>> getChatStream(String chatId) async* {
-    if (!await networkInfo.isConnected) {
-      yield const Left(NetworkFailure(failureMessage: 'No internet connection'));
-      return;
-    }
-
-    try {
-      await for (final chat in remoteDataSource.getChatStream(chatId)) {
-        yield Right(chat);
-      }
-    } catch (e) {
-      yield Left(ServerFailure(failureMessage: e.toString()));
-    }
+  Stream<Either<Failure, Chat>> getChatStream(String chatId) {
+    return ErrorHandler.handleStream(
+      () => remoteDataSource.getChatStream(chatId),
+      operationName: 'getChatStream',
+    );
   }
 
   @override

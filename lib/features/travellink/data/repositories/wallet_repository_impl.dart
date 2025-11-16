@@ -4,6 +4,7 @@ import '../../domain/entities/wallet_entity.dart';
 import '../../domain/entities/transaction_entity.dart';
 import '../../domain/repositories/wallet_repository.dart';
 import '../../../../core/errors/failures.dart';
+import '../../../../core/services/error/error_handler.dart';
 import '../../domain/exceptions/wallet_exceptions.dart';
 import '../../domain/exceptions/custom_exceptions.dart';
 import '../datasources/wallet_remote_data_source.dart';
@@ -62,20 +63,13 @@ class WalletRepositoryImpl implements WalletRepository {
   }
 
   @override
-  Stream<Either<Failure, WalletEntity>> watchBalance(String userId) async* {
-    try {
-      await for (final walletModel in remoteDataSource.watchWallet(userId)) {
-        yield Right(walletModel.toEntity());
-      }
-    } on WalletNotFoundException catch (e) {
-      yield Left(ServerFailure(failureMessage: e.message));
-    } on WalletException catch (e) {
-      yield Left(ServerFailure(failureMessage: e.message));
-    } on ServerException {
-      yield const Left(ServerFailure(failureMessage: 'Server error occurred'));
-    } catch (e) {
-      yield Left(UnknownFailure(failureMessage: e.toString()));
-    }
+  Stream<Either<Failure, WalletEntity>> watchBalance(String userId) {
+    return ErrorHandler.handleStream(
+      () => remoteDataSource.watchWallet(userId).map((walletModel) {
+        return walletModel.toEntity();
+      }),
+      operationName: 'watchBalance',
+    );
   }
 
   @override

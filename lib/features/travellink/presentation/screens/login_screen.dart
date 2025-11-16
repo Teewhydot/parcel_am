@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:parcel_am/core/bloc/base/base_state.dart';
 import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
+import 'package:parcel_am/core/helpers/user_extensions.dart';
 import 'package:parcel_am/core/widgets/app_scaffold.dart';
 
 import '../../../../core/routes/routes.dart';

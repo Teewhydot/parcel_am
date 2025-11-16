@@ -3,6 +3,7 @@ import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/network/network_info.dart';
+import '../../../../core/services/error/error_handler.dart';
 import '../../domain/entities/package_entity.dart';
 import '../../domain/repositories/package_repository.dart';
 import '../datasources/package_remote_data_source.dart';
@@ -15,39 +16,26 @@ class PackageRepositoryImpl implements PackageRepository {
   final NetworkInfo networkInfo = _NetworkInfoImpl();
 
   @override
-  Stream<Either<Failure, PackageEntity>> watchPackage(String packageId) async* {
-    if (!await networkInfo.isConnected) {
-      yield const Left(NetworkFailure(failureMessage: 'No internet connection'));
-      return;
-    }
-
-    try {
-      await for (final packageMap in remoteDataSource.getPackageStream(packageId)) {
+  Stream<Either<Failure, PackageEntity>> watchPackage(String packageId) {
+    return ErrorHandler.handleStream(
+      () => remoteDataSource.getPackageStream(packageId).map((packageMap) {
         final packageModel = PackageModel.fromMap(packageMap);
-        yield Right(packageModel.toEntity());
-      }
-    } catch (e) {
-      yield Left(ServerFailure(failureMessage: e.toString()));
-    }
+        return packageModel.toEntity();
+      }),
+      operationName: 'watchPackage',
+    );
   }
 
   @override
-  Stream<Either<Failure, List<PackageEntity>>> watchActivePackages(String userId) async* {
-    if (!await networkInfo.isConnected) {
-      yield const Left(NetworkFailure(failureMessage: 'No internet connection'));
-      return;
-    }
-
-    try {
-      await for (final packageMaps in remoteDataSource.getActivePackagesStream(userId)) {
-        final packages = packageMaps
+  Stream<Either<Failure, List<PackageEntity>>> watchActivePackages(String userId) {
+    return ErrorHandler.handleStream(
+      () => remoteDataSource.getActivePackagesStream(userId).map((packageMaps) {
+        return packageMaps
             .map((map) => PackageModel.fromMap(map).toEntity())
             .toList();
-        yield Right(packages);
-      }
-    } catch (e) {
-      yield Left(ServerFailure(failureMessage: e.toString()));
-    }
+      }),
+      operationName: 'watchActivePackages',
+    );
   }
 
   @override

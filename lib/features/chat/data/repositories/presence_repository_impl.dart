@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/network/network_info.dart';
+import '../../../../core/services/error/error_handler.dart';
 import '../../domain/entities/presence_entity.dart';
 import '../../domain/repositories/presence_repository.dart';
 import '../datasources/presence_remote_data_source.dart';
@@ -15,19 +16,13 @@ class PresenceRepositoryImpl implements PresenceRepository {
   });
 
   @override
-  Stream<Either<Failure, PresenceEntity>> watchUserPresence(String userId) async* {
-    try {
-      if (!await networkInfo.isConnected) {
-        yield const Left(NoInternetFailure(failureMessage: 'No internet connection'));
-        return;
-      }
-
-      await for (final presence in remoteDataSource.watchUserPresence(userId)) {
-        yield Right(presence.toEntity());
-      }
-    } catch (e) {
-      yield Left(ServerFailure(failureMessage: e.toString()));
-    }
+  Stream<Either<Failure, PresenceEntity>> watchUserPresence(String userId) {
+    return ErrorHandler.handleStream(
+      () => remoteDataSource.watchUserPresence(userId).map((presence) {
+        return presence.toEntity();
+      }),
+      operationName: 'watchUserPresence',
+    );
   }
 
   @override

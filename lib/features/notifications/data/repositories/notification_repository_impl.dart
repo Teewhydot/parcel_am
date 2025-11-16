@@ -3,6 +3,7 @@ import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/network/network_info.dart';
+import '../../../../core/services/error/error_handler.dart';
 import '../../domain/entities/notification_entity.dart';
 import '../../domain/repositories/notification_repository.dart';
 import '../datasources/notification_remote_datasource.dart';
@@ -16,23 +17,16 @@ class NotificationRepositoryImpl implements NotificationRepository {
   @override
   Stream<Either<Failure, List<NotificationEntity>>> watchNotifications(
     String userId,
-  ) async* {
-    if (!await networkInfo.isConnected) {
-      yield const Left(NetworkFailure(failureMessage: 'No internet connection'));
-      return;
-    }
-
-    try {
-      await for (final notifications in remoteDataSource.watchNotifications(userId)) {
+  ) {
+    return ErrorHandler.handleStream(
+      () => remoteDataSource.watchNotifications(userId).map((notifications) {
         // Map NotificationModel to NotificationEntity
-        final entities = notifications
+        return notifications
             .map((model) => model as NotificationEntity)
             .toList();
-        yield Right(entities);
-      }
-    } catch (e) {
-      yield Left(ServerFailure(failureMessage: e.toString()));
-    }
+      }),
+      operationName: 'watchNotifications',
+    );
   }
 
   @override

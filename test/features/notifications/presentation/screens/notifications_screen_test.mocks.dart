@@ -3,18 +3,20 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i5;
+import 'dart:async' as _i7;
 
-import 'package:flutter_bloc/flutter_bloc.dart' as _i7;
+import 'package:flutter_bloc/flutter_bloc.dart' as _i9;
 import 'package:mockito/mockito.dart' as _i1;
+import 'package:mockito/src/dummies.dart' as _i6;
+import 'package:parcel_am/core/bloc/base/base_state.dart' as _i4;
 import 'package:parcel_am/features/notifications/domain/usecases/notification_usecase.dart'
     as _i2;
 import 'package:parcel_am/features/notifications/presentation/bloc/notification_bloc.dart'
-    as _i4;
-import 'package:parcel_am/features/notifications/presentation/bloc/notification_event.dart'
-    as _i6;
-import 'package:parcel_am/features/notifications/presentation/bloc/notification_state.dart'
     as _i3;
+import 'package:parcel_am/features/notifications/presentation/bloc/notification_event.dart'
+    as _i8;
+import 'package:parcel_am/features/notifications/presentation/bloc/notification_state.dart'
+    as _i5;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -36,16 +38,10 @@ class _FakeNotificationUseCase_0 extends _i1.SmartFake
     : super(parent, parentInvocation);
 }
 
-class _FakeNotificationState_1 extends _i1.SmartFake
-    implements _i3.NotificationState {
-  _FakeNotificationState_1(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
-}
-
 /// A class which mocks [NotificationBloc].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockNotificationBloc extends _i1.Mock implements _i4.NotificationBloc {
+class MockNotificationBloc extends _i1.Mock implements _i3.NotificationBloc {
   MockNotificationBloc() {
     _i1.throwOnMissingStub(this);
   }
@@ -62,23 +58,24 @@ class MockNotificationBloc extends _i1.Mock implements _i4.NotificationBloc {
           as _i2.NotificationUseCase);
 
   @override
-  _i3.NotificationState get state =>
+  _i4.BaseState<_i5.NotificationData> get state =>
       (super.noSuchMethod(
             Invocation.getter(#state),
-            returnValue: _FakeNotificationState_1(
+            returnValue: _i6.dummyValue<_i4.BaseState<_i5.NotificationData>>(
               this,
               Invocation.getter(#state),
             ),
           )
-          as _i3.NotificationState);
+          as _i4.BaseState<_i5.NotificationData>);
 
   @override
-  _i5.Stream<_i3.NotificationState> get stream =>
+  _i7.Stream<_i4.BaseState<_i5.NotificationData>> get stream =>
       (super.noSuchMethod(
             Invocation.getter(#stream),
-            returnValue: _i5.Stream<_i3.NotificationState>.empty(),
+            returnValue:
+                _i7.Stream<_i4.BaseState<_i5.NotificationData>>.empty(),
           )
-          as _i5.Stream<_i3.NotificationState>);
+          as _i7.Stream<_i4.BaseState<_i5.NotificationData>>);
 
   @override
   bool get isClosed =>
@@ -86,36 +83,36 @@ class MockNotificationBloc extends _i1.Mock implements _i4.NotificationBloc {
           as bool);
 
   @override
-  _i5.Future<void> close() =>
+  _i7.Future<void> close() =>
       (super.noSuchMethod(
             Invocation.method(#close, []),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
           )
-          as _i5.Future<void>);
+          as _i7.Future<void>);
 
   @override
-  void add(_i6.NotificationEvent? event) => super.noSuchMethod(
+  void add(_i8.NotificationEvent? event) => super.noSuchMethod(
     Invocation.method(#add, [event]),
     returnValueForMissingStub: null,
   );
 
   @override
-  void onEvent(_i6.NotificationEvent? event) => super.noSuchMethod(
+  void onEvent(_i8.NotificationEvent? event) => super.noSuchMethod(
     Invocation.method(#onEvent, [event]),
     returnValueForMissingStub: null,
   );
 
   @override
-  void emit(_i3.NotificationState? state) => super.noSuchMethod(
+  void emit(_i4.BaseState<_i5.NotificationData>? state) => super.noSuchMethod(
     Invocation.method(#emit, [state]),
     returnValueForMissingStub: null,
   );
 
   @override
-  void on<E extends _i6.NotificationEvent>(
-    _i7.EventHandler<E, _i3.NotificationState>? handler, {
-    _i7.EventTransformer<E>? transformer,
+  void on<E extends _i8.NotificationEvent>(
+    _i9.EventHandler<E, _i4.BaseState<_i5.NotificationData>>? handler, {
+    _i9.EventTransformer<E>? transformer,
   }) => super.noSuchMethod(
     Invocation.method(#on, [handler], {#transformer: transformer}),
     returnValueForMissingStub: null,
@@ -123,14 +120,15 @@ class MockNotificationBloc extends _i1.Mock implements _i4.NotificationBloc {
 
   @override
   void onTransition(
-    _i7.Transition<_i6.NotificationEvent, _i3.NotificationState>? transition,
+    _i9.Transition<_i8.NotificationEvent, _i4.BaseState<_i5.NotificationData>>?
+    transition,
   ) => super.noSuchMethod(
     Invocation.method(#onTransition, [transition]),
     returnValueForMissingStub: null,
   );
 
   @override
-  void onChange(_i7.Change<_i3.NotificationState>? change) =>
+  void onChange(_i9.Change<_i4.BaseState<_i5.NotificationData>>? change) =>
       super.noSuchMethod(
         Invocation.method(#onChange, [change]),
         returnValueForMissingStub: null,

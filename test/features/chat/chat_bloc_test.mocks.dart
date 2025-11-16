@@ -8,12 +8,12 @@ import 'dart:async' as _i5;
 import 'package:dartz/dartz.dart' as _i3;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:parcel_am/core/errors/failures.dart' as _i6;
+import 'package:parcel_am/features/chat/data/repositories/chat_repository_impl.dart'
+    as _i2;
 import 'package:parcel_am/features/chat/domain/entities/chat.dart' as _i9;
 import 'package:parcel_am/features/chat/domain/entities/message.dart' as _i7;
 import 'package:parcel_am/features/chat/domain/entities/message_type.dart'
     as _i8;
-import 'package:parcel_am/features/chat/domain/repositories/chat_repository.dart'
-    as _i2;
 import 'package:parcel_am/features/chat/domain/usecases/chat_usecase.dart'
     as _i4;
 
@@ -31,9 +31,9 @@ import 'package:parcel_am/features/chat/domain/usecases/chat_usecase.dart'
 // ignore_for_file: camel_case_types
 // ignore_for_file: subtype_of_sealed_class
 
-class _FakeChatRepository_0 extends _i1.SmartFake
-    implements _i2.ChatRepository {
-  _FakeChatRepository_0(Object parent, Invocation parentInvocation)
+class _FakeChatRepositoryImpl_0 extends _i1.SmartFake
+    implements _i2.ChatRepositoryImpl {
+  _FakeChatRepositoryImpl_0(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
@@ -51,15 +51,15 @@ class MockChatUseCase extends _i1.Mock implements _i4.ChatUseCase {
   }
 
   @override
-  _i2.ChatRepository get repository =>
+  _i2.ChatRepositoryImpl get repository =>
       (super.noSuchMethod(
             Invocation.getter(#repository),
-            returnValue: _FakeChatRepository_0(
+            returnValue: _FakeChatRepositoryImpl_0(
               this,
               Invocation.getter(#repository),
             ),
           )
-          as _i2.ChatRepository);
+          as _i2.ChatRepositoryImpl);
 
   @override
   _i5.Stream<_i3.Either<_i6.Failure, List<_i7.Message>>> getMessagesStream(

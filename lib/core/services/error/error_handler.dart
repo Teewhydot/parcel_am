@@ -1,273 +1,214 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
+import 'dart:io';
+
+import 'package:dartz/dartz.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum ErrorType {
-  authentication,
-  network,
-  validation,
-  session,
-  unknown,
-}
+import '../../errors/failures.dart';
+import '../../utils/logger.dart';
 
-class AppError {
-  final String message;
-  final ErrorType type;
-  final String? code;
-  final dynamic originalError;
-
-  const AppError({
-    required this.message,
-    required this.type,
-    this.code,
-    this.originalError,
-  });
-
-  factory AppError.fromFirebaseAuth(FirebaseAuthException error) {
-    return AppError(
-      message: _getFirebaseAuthMessage(error.code),
-      type: ErrorType.authentication,
-      code: error.code,
-      originalError: error,
-    );
-  }
-
-  factory AppError.network(String message) {
-    return AppError(
-      message: message,
-      type: ErrorType.network,
-    );
-  }
-
-  factory AppError.validation(String message) {
-    return AppError(
-      message: message,
-      type: ErrorType.validation,
-    );
-  }
-
-  factory AppError.session(String message) {
-    return AppError(
-      message: message,
-      type: ErrorType.session,
-    );
-  }
-
-  factory AppError.unknown(String message) {
-    return AppError(
-      message: message,
-      type: ErrorType.unknown,
-    );
-  }
-
-  static String _getFirebaseAuthMessage(String code) {
-    switch (code) {
-      case 'invalid-phone-number':
-        return 'Please enter a valid Nigerian phone number';
-      case 'invalid-verification-code':
-        return 'Invalid verification code. Please check and try again';
-      case 'session-expired':
-        return 'Verification session expired. Please request a new code';
-      case 'too-many-requests':
-        return 'Too many requests. Please try again later';
-      case 'network-request-failed':
-        return 'Network error. Please check your connection and try again';
-      case 'quota-exceeded':
-        return 'SMS quota exceeded. Please try again later';
-      case 'user-disabled':
-        return 'This account has been disabled. Please contact support';
-      case 'operation-not-allowed':
-        return 'This operation is not allowed. Please contact support';
-      default:
-        return 'An error occurred during authentication. Please try again';
-    }
-  }
-}
-
+/// Centralized error handler that converts exceptions to Either<Failure, T>
 class ErrorHandler {
-  static ErrorHandler? _instance;
-  static ErrorHandler get instance => _instance ??= ErrorHandler._();
-  
-  ErrorHandler._();
+  /// Handle any async operation and convert exceptions to failures
+  static Future<Either<Failure, T>> handle<T>(
+    Future<T> Function() operation, {
+    String? operationName,
+  }) async {
+    try {
+      Logger.logBasic(
+        'ErrorHandler.handle() starting${operationName != null ? " for $operationName" : ""}',
+      );
+      final result = await operation();
+      if (operationName != null) {
+        Logger.logSuccess('$operationName completed successfully');
+      }
+      return Right(result);
+    } on FirebaseAuthException catch (e) {
+      final message = _getFirebaseAuthMessage(e);
+      Logger.logError(
+        'Firebase Auth Error${operationName != null ? " in $operationName" : ""}: ${e.code} - $message',
+      );
+      return Left(AuthFailure(failureMessage: message));
+    } on FirebaseException catch (e) {
+      final message = _getFirebaseMessage(e);
+      Logger.logError(
+        'Firebase Error${operationName != null ? " in $operationName" : ""}: ${e.code} - $message',
+      );
+      return Left(ServerFailure(failureMessage: message));
+    } on SocketException catch (_) {
+      final message = 'Please check your internet connection and try again';
+      Logger.logError(
+        'Network Error${operationName != null ? " in $operationName" : ""}: No internet connection',
+      );
+      return Left(NoInternetFailure(failureMessage: message));
+    } on TimeoutException catch (_) {
+      final message = 'Request timed out. Please try again';
+      Logger.logError(
+        'Timeout Error${operationName != null ? " in $operationName" : ""}: Operation timed out',
+      );
+      return Left(TimeoutFailure(failureMessage: message));
+    } on FormatException catch (e) {
+      final message = 'Invalid data format. Please try again';
+      Logger.logError(
+        'Format Error${operationName != null ? " in $operationName" : ""}: ${e.message}',
+      );
+      return Left(UnknownFailure(failureMessage: message));
+    } catch (e, stackTrace) {
+      Logger.logError(
+        'Catch-All Error${operationName != null ? " in $operationName" : ""}: Type=${e.runtimeType}, Error=$e',
+      );
+      Logger.logError('Stack trace: ${stackTrace.toString()}');
 
-  /// Show error message to user via SnackBar
-  void showError(BuildContext context, AppError error) {
-    if (!context.mounted) return;
-
-    final color = _getErrorColor(error.type);
-    final icon = _getErrorIcon(error.type);
-
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(icon, color: Colors.white, size: 20),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                error.message,
-                style: const TextStyle(color: Colors.white),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: color,
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        duration: const Duration(seconds: 4),
-      ),
-    );
-  }
-
-  /// Show success message to user
-  void showSuccess(BuildContext context, String message) {
-    if (!context.mounted) return;
-
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle, color: Colors.white, size: 20),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                message,
-                style: const TextStyle(color: Colors.white),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        duration: const Duration(seconds: 3),
-      ),
-    );
-  }
-
-  /// Show info message to user
-  void showInfo(BuildContext context, String message) {
-    if (!context.mounted) return;
-
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.info, color: Colors.white, size: 20),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                message,
-                style: const TextStyle(color: Colors.white),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.blue,
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        duration: const Duration(seconds: 3),
-      ),
-    );
-  }
-
-  /// Show error dialog for critical errors
-  void showErrorDialog(BuildContext context, AppError error) {
-    if (!context.mounted) return;
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(_getErrorIcon(error.type), color: _getErrorColor(error.type)),
-            const SizedBox(width: 8),
-            const Text('Error'),
-          ],
-        ),
-        content: Text(error.message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Handle and convert various error types to AppError
-  AppError handleError(dynamic error) {
-    if (error is FirebaseAuthException) {
-      return AppError.fromFirebaseAuth(error);
-    } else if (error is AppError) {
-      return error;
-    } else if (error.toString().contains('network') || 
-               error.toString().contains('connection') ||
-               error.toString().contains('timeout')) {
-      return AppError.network('Network error. Please check your connection and try again');
-    } else {
-      return AppError.unknown(error.toString());
+      return Left(UnknownFailure(failureMessage: e.toString()));
     }
   }
 
-  Color _getErrorColor(ErrorType type) {
-    switch (type) {
-      case ErrorType.authentication:
-        return Colors.orange;
-      case ErrorType.network:
-        return Colors.red;
-      case ErrorType.validation:
-        return Colors.amber;
-      case ErrorType.session:
-        return Colors.purple;
-      case ErrorType.unknown:
-        return Colors.grey;
+  /// Get user-friendly Firebase Auth error messages
+  static String _getFirebaseAuthMessage(FirebaseAuthException e) {
+    switch (e.code) {
+      case 'user-not-found':
+        return 'No account found with this email address';
+      case 'invalid-credential':
+        return 'Incorrect login credentials. Please try again';
+      case 'email-already-in-use':
+        return 'An account already exists with this email';
+      case 'weak-password':
+        return 'Password is too weak. Please choose a stronger password';
+      case 'invalid-email':
+        return 'Please enter a valid email address';
+      case 'user-disabled':
+        return 'This account has been disabled. Contact support';
+      case 'too-many-requests':
+        return 'Too many attempts. Please try again later';
+      case 'operation-not-allowed':
+        return 'This operation is not allowed. Contact support';
+      case 'requires-recent-login':
+        return 'Please log in again to continue';
+      case 'email-already-verified':
+        return 'Email is already verified';
+      case 'invalid-verification-code':
+        return 'Invalid verification code. Please try again';
+      case 'invalid-verification-id':
+        return 'Verification session expired. Please try again';
+      case 'network-request-failed':
+        return 'Network error. Please check your connection';
+      default:
+        return e.message ?? 'Authentication failed. Please try again';
     }
   }
 
-  IconData _getErrorIcon(ErrorType type) {
-    switch (type) {
-      case ErrorType.authentication:
-        return Icons.security;
-      case ErrorType.network:
-        return Icons.wifi_off;
-      case ErrorType.validation:
-        return Icons.warning;
-      case ErrorType.session:
-        return Icons.access_time;
-      case ErrorType.unknown:
-        return Icons.error;
+  /// Handle stream operations and convert exceptions to Either stream
+  static Stream<Either<Failure, T>> handleStream<T>(
+    Stream<T> Function() streamOperation, {
+    String? operationName,
+  }) {
+    final controller = StreamController<Either<Failure, T>>();
+
+    try {
+      final stream = streamOperation();
+
+      stream.listen(
+        (data) {
+          if (operationName != null) {
+            Logger.logSuccess('$operationName: Data received');
+          }
+          controller.add(Right(data));
+        },
+        onError: (error, stackTrace) {
+          if (error is FirebaseAuthException) {
+            final message = _getFirebaseAuthMessage(error);
+            Logger.logError(
+              'Stream Firebase Auth Error${operationName != null ? " in $operationName" : ""}: ${error.code} - $message',
+            );
+            controller.add(Left(AuthFailure(failureMessage: message)));
+          } else if (error is FirebaseException) {
+            final message = _getFirebaseMessage(error);
+            Logger.logError(
+              'Stream Firebase Error${operationName != null ? " in $operationName" : ""}: ${error.code} - $message',
+            );
+            controller.add(Left(ServerFailure(failureMessage: message)));
+          } else if (error is SocketException) {
+            final message =
+                'Please check your internet connection and try again';
+            Logger.logError(
+              'Stream Network Error${operationName != null ? " in $operationName" : ""}: No internet connection',
+            );
+            controller.add(Left(NoInternetFailure(failureMessage: message)));
+          } else if (error is TimeoutException) {
+            final message = 'Stream timed out. Please try again';
+            Logger.logError(
+              'Stream Timeout Error${operationName != null ? " in $operationName" : ""}: Operation timed out',
+            );
+            controller.add(Left(TimeoutFailure(failureMessage: message)));
+          } else if (error is FormatException) {
+            final message = 'Invalid data format in stream';
+            Logger.logError(
+              'Stream Format Error${operationName != null ? " in $operationName" : ""}: ${error.message}',
+            );
+            controller.add(Left(UnknownFailure(failureMessage: message)));
+          } else {
+            final message = 'Stream error occurred. Please try again';
+            Logger.logError(
+              'Stream Unknown Error${operationName != null ? " in $operationName" : ""}: $error',
+            );
+            controller.add(Left(UnknownFailure(failureMessage: message)));
+          }
+        },
+        onDone: () {
+          if (operationName != null) {
+            Logger.logBasic('$operationName: Stream completed');
+          }
+          controller.close();
+        },
+        cancelOnError: false, // Continue stream even after errors
+      );
+    } catch (e) {
+      final message = 'Failed to initialize stream';
+      Logger.logError(
+        'Stream Initialization Error${operationName != null ? " in $operationName" : ""}: $e',
+      );
+      controller.add(Left(UnknownFailure(failureMessage: message)));
+      controller.close();
+    }
+
+    return controller.stream;
+  }
+
+  /// Get user-friendly Firebase error messages
+  static String _getFirebaseMessage(FirebaseException e) {
+    switch (e.code) {
+      case 'permission-denied':
+        return 'You don\'t have permission to perform this action';
+      case 'not-found':
+        return 'The requested data was not found';
+      case 'already-exists':
+        return 'This data already exists';
+      case 'resource-exhausted':
+        return 'Service temporarily unavailable. Please try again';
+      case 'failed-precondition':
+        return 'Operation cannot be completed at this time';
+      case 'aborted':
+        return 'Operation was cancelled. Please try again';
+      case 'out-of-range':
+        return 'Invalid input provided';
+      case 'unimplemented':
+        return 'This feature is not yet available';
+      case 'internal':
+        return 'Internal server error. Please try again';
+      case 'unavailable':
+        return 'Service is temporarily unavailable';
+      case 'data-loss':
+        return 'Data error occurred. Please try again';
+      case 'unauthenticated':
+        return 'Please log in to continue';
+      case 'deadline-exceeded':
+        return 'Request timed out. Please try again';
+      case 'cancelled':
+        return 'Operation was cancelled';
+      default:
+        return e.message ?? 'Server error. Please try again';
     }
   }
-}
 
-/// Extension to easily show errors from any widget
-extension ErrorHandlerExtension on BuildContext {
-  void showError(AppError error) {
-    ErrorHandler.instance.showError(this, error);
-  }
-
-  void showErrorMessage(String message) {
-    ErrorHandler.instance.showError(this, AppError.unknown(message));
-  }
-
-  void showSuccess(String message) {
-    ErrorHandler.instance.showSuccess(this, message);
-  }
-
-  void showInfo(String message) {
-    ErrorHandler.instance.showInfo(this, message);
-  }
 }

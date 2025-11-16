@@ -3,6 +3,7 @@ import 'package:get_it/get_it.dart';
 import '../../domain/entities/escrow_entity.dart';
 import '../../domain/repositories/escrow_repository.dart';
 import '../../../../core/errors/failures.dart';
+import '../../../../core/services/error/error_handler.dart';
 import '../../domain/exceptions/custom_exceptions.dart';
 import '../datasources/escrow_remote_data_source.dart';
 import '../../../../core/network/network_info.dart';
@@ -12,33 +13,23 @@ class EscrowRepositoryImpl implements EscrowRepository {
   final networkInfo = GetIt.instance<NetworkInfo>();
 
   @override
-  Stream<Either<Failure, EscrowEntity>> watchEscrowStatus(
-      String escrowId) async* {
-    try {
-      await for (final escrowModel
-          in remoteDataSource.watchEscrowStatus(escrowId)) {
-        yield Right(escrowModel.toEntity());
-      }
-    } on ServerException {
-      yield const Left(ServerFailure(failureMessage: 'Server error occurred'));
-    } catch (e) {
-      yield Left(UnknownFailure(failureMessage: e.toString()));
-    }
+  Stream<Either<Failure, EscrowEntity>> watchEscrowStatus(String escrowId) {
+    return ErrorHandler.handleStream(
+      () => remoteDataSource.watchEscrowStatus(escrowId).map((escrowModel) {
+        return escrowModel.toEntity();
+      }),
+      operationName: 'watchEscrowStatus',
+    );
   }
 
   @override
-  Stream<Either<Failure, EscrowEntity?>> watchEscrowByParcel(
-      String parcelId) async* {
-    try {
-      await for (final escrowModel
-          in remoteDataSource.watchEscrowByParcel(parcelId)) {
-        yield Right(escrowModel?.toEntity());
-      }
-    } on ServerException {
-      yield const Left(ServerFailure(failureMessage: 'Server error occurred'));
-    } catch (e) {
-      yield Left(UnknownFailure(failureMessage: e.toString()));
-    }
+  Stream<Either<Failure, EscrowEntity?>> watchEscrowByParcel(String parcelId) {
+    return ErrorHandler.handleStream(
+      () => remoteDataSource.watchEscrowByParcel(parcelId).map((escrowModel) {
+        return escrowModel?.toEntity();
+      }),
+      operationName: 'watchEscrowByParcel',
+    );
   }
 
   @override

@@ -8,10 +8,10 @@ import 'dart:async' as _i5;
 import 'package:dartz/dartz.dart' as _i3;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:parcel_am/core/errors/failures.dart' as _i6;
+import 'package:parcel_am/features/notifications/data/repositories/notification_repository_impl.dart'
+    as _i2;
 import 'package:parcel_am/features/notifications/domain/entities/notification_entity.dart'
     as _i7;
-import 'package:parcel_am/features/notifications/domain/repositories/notification_repository.dart'
-    as _i2;
 import 'package:parcel_am/features/notifications/domain/usecases/notification_usecase.dart'
     as _i4;
 
@@ -29,9 +29,9 @@ import 'package:parcel_am/features/notifications/domain/usecases/notification_us
 // ignore_for_file: camel_case_types
 // ignore_for_file: subtype_of_sealed_class
 
-class _FakeNotificationRepository_0 extends _i1.SmartFake
-    implements _i2.NotificationRepository {
-  _FakeNotificationRepository_0(Object parent, Invocation parentInvocation)
+class _FakeNotificationRepositoryImpl_0 extends _i1.SmartFake
+    implements _i2.NotificationRepositoryImpl {
+  _FakeNotificationRepositoryImpl_0(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
@@ -50,15 +50,15 @@ class MockNotificationUseCase extends _i1.Mock
   }
 
   @override
-  _i2.NotificationRepository get repository =>
+  _i2.NotificationRepositoryImpl get repository =>
       (super.noSuchMethod(
             Invocation.getter(#repository),
-            returnValue: _FakeNotificationRepository_0(
+            returnValue: _FakeNotificationRepositoryImpl_0(
               this,
               Invocation.getter(#repository),
             ),
           )
-          as _i2.NotificationRepository);
+          as _i2.NotificationRepositoryImpl);
 
   @override
   _i5.Stream<_i3.Either<_i6.Failure, List<_i7.NotificationEntity>>>

@@ -8,12 +8,12 @@ import 'dart:async' as _i5;
 import 'package:dartz/dartz.dart' as _i3;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:parcel_am/core/errors/failures.dart' as _i6;
+import 'package:parcel_am/features/travellink/data/repositories/wallet_repository_impl.dart'
+    as _i2;
 import 'package:parcel_am/features/travellink/domain/entities/transaction_entity.dart'
     as _i8;
 import 'package:parcel_am/features/travellink/domain/entities/wallet_entity.dart'
     as _i7;
-import 'package:parcel_am/features/travellink/domain/repositories/wallet_repository.dart'
-    as _i2;
 import 'package:parcel_am/features/travellink/domain/usecases/wallet_usecase.dart'
     as _i4;
 
@@ -31,9 +31,9 @@ import 'package:parcel_am/features/travellink/domain/usecases/wallet_usecase.dar
 // ignore_for_file: camel_case_types
 // ignore_for_file: subtype_of_sealed_class
 
-class _FakeWalletRepository_0 extends _i1.SmartFake
-    implements _i2.WalletRepository {
-  _FakeWalletRepository_0(Object parent, Invocation parentInvocation)
+class _FakeWalletRepositoryImpl_0 extends _i1.SmartFake
+    implements _i2.WalletRepositoryImpl {
+  _FakeWalletRepositoryImpl_0(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
@@ -51,15 +51,15 @@ class MockWalletUseCase extends _i1.Mock implements _i4.WalletUseCase {
   }
 
   @override
-  _i2.WalletRepository get walletRepo =>
+  _i2.WalletRepositoryImpl get walletRepo =>
       (super.noSuchMethod(
             Invocation.getter(#walletRepo),
-            returnValue: _FakeWalletRepository_0(
+            returnValue: _FakeWalletRepositoryImpl_0(
               this,
               Invocation.getter(#walletRepo),
             ),
           )
-          as _i2.WalletRepository);
+          as _i2.WalletRepositoryImpl);
 
   @override
   _i5.Future<_i3.Either<_i6.Failure, _i7.WalletEntity>> getWallet(

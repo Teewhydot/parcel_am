@@ -1,10 +1,11 @@
 import 'package:dartz/dartz.dart';
-import '../../../domain/failures/failures.dart';
+import '../../../../../core/errors/failures.dart';
 import '../../../domain/entities/chat/chat_entity.dart';
 import '../../../domain/entities/chat/message_entity.dart';
 import '../../../domain/entities/chat/presence_entity.dart';
 import '../../../domain/repositories/chat/chat_repository.dart';
 import '../../datasources/chat/chat_remote_data_source.dart';
+import '../../../../../core/services/error/error_handler.dart';
 
 class ChatRepositoryImpl implements ChatRepository {
   final ChatRemoteDataSource _remoteDataSource;
@@ -13,25 +14,19 @@ class ChatRepositoryImpl implements ChatRepository {
       : _remoteDataSource = remoteDataSource ?? ChatRemoteDataSourceImpl();
 
   @override
-  Stream<Either<Failure, List<ChatEntity>>> watchUserChats(String userId) async* {
-    try {
-      await for (final chats in _remoteDataSource.watchUserChats(userId)) {
-        yield Right(chats);
-      }
-    } catch (error) {
-      yield Left(ServerFailure(failureMessage: error.toString()));
-    }
+  Stream<Either<Failure, List<ChatEntity>>> watchUserChats(String userId) {
+    return ErrorHandler.handleStream(
+      () => _remoteDataSource.watchUserChats(userId),
+      operationName: 'watchUserChats',
+    );
   }
 
   @override
-  Stream<Either<Failure, List<MessageEntity>>> watchMessages(String chatId) async* {
-    try {
-      await for (final messages in _remoteDataSource.watchMessages(chatId)) {
-        yield Right(messages);
-      }
-    } catch (error) {
-      yield Left(ServerFailure(failureMessage: error.toString()));
-    }
+  Stream<Either<Failure, List<MessageEntity>>> watchMessages(String chatId) {
+    return ErrorHandler.handleStream(
+      () => _remoteDataSource.watchMessages(chatId),
+      operationName: 'watchMessages',
+    );
   }
 
   @override
@@ -88,14 +83,11 @@ class ChatRepositoryImpl implements ChatRepository {
   }
 
   @override
-  Stream<Either<Failure, PresenceEntity>> watchUserPresence(String userId) async* {
-    try {
-      await for (final presence in _remoteDataSource.watchUserPresence(userId)) {
-        yield Right(presence);
-      }
-    } catch (error) {
-      yield Left(ServerFailure(failureMessage: error.toString()));
-    }
+  Stream<Either<Failure, PresenceEntity>> watchUserPresence(String userId) {
+    return ErrorHandler.handleStream(
+      () => _remoteDataSource.watchUserPresence(userId),
+      operationName: 'watchUserPresence',
+    );
   }
 
   @override
@@ -135,13 +127,10 @@ class ChatRepositoryImpl implements ChatRepository {
   }
 
   @override
-  Stream<Either<Failure, Map<String, bool>>> watchTypingStatus(String chatId) async* {
-    try {
-      await for (final typingStatus in _remoteDataSource.watchTypingStatus(chatId)) {
-        yield Right(typingStatus);
-      }
-    } catch (error) {
-      yield Left(ServerFailure(failureMessage: error.toString()));
-    }
+  Stream<Either<Failure, Map<String, bool>>> watchTypingStatus(String chatId) {
+    return ErrorHandler.handleStream(
+      () => _remoteDataSource.watchTypingStatus(chatId),
+      operationName: 'watchTypingStatus',
+    );
   }
 }

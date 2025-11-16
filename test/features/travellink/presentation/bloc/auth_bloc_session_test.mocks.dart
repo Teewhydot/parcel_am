@@ -8,14 +8,14 @@ import 'dart:async' as _i6;
 import 'package:dartz/dartz.dart' as _i3;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:parcel_am/core/errors/failures.dart' as _i8;
+import 'package:parcel_am/features/travellink/data/repositories/auth_repository_impl.dart'
+    as _i2;
+import 'package:parcel_am/features/travellink/data/repositories/kyc_repository_impl.dart'
+    as _i4;
 import 'package:parcel_am/features/travellink/domain/entities/auth_token_entity.dart'
     as _i9;
 import 'package:parcel_am/features/travellink/domain/entities/user_entity.dart'
     as _i7;
-import 'package:parcel_am/features/travellink/domain/repositories/auth_repository.dart'
-    as _i2;
-import 'package:parcel_am/features/travellink/domain/repositories/kyc_repository.dart'
-    as _i4;
 import 'package:parcel_am/features/travellink/domain/usecases/auth_usecase.dart'
     as _i5;
 import 'package:parcel_am/features/travellink/domain/usecases/kyc_usecase.dart'
@@ -35,9 +35,9 @@ import 'package:parcel_am/features/travellink/domain/usecases/kyc_usecase.dart'
 // ignore_for_file: camel_case_types
 // ignore_for_file: subtype_of_sealed_class
 
-class _FakeAuthRepository_0 extends _i1.SmartFake
-    implements _i2.AuthRepository {
-  _FakeAuthRepository_0(Object parent, Invocation parentInvocation)
+class _FakeAuthRepositoryImpl_0 extends _i1.SmartFake
+    implements _i2.AuthRepositoryImpl {
+  _FakeAuthRepositoryImpl_0(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
@@ -46,8 +46,9 @@ class _FakeEither_1<L, R> extends _i1.SmartFake implements _i3.Either<L, R> {
     : super(parent, parentInvocation);
 }
 
-class _FakeKycRepository_2 extends _i1.SmartFake implements _i4.KycRepository {
-  _FakeKycRepository_2(Object parent, Invocation parentInvocation)
+class _FakeKycRepositoryImpl_2 extends _i1.SmartFake
+    implements _i4.KycRepositoryImpl {
+  _FakeKycRepositoryImpl_2(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
@@ -60,15 +61,15 @@ class MockAuthUseCase extends _i1.Mock implements _i5.AuthUseCase {
   }
 
   @override
-  _i2.AuthRepository get authRepo =>
+  _i2.AuthRepositoryImpl get authRepo =>
       (super.noSuchMethod(
             Invocation.getter(#authRepo),
-            returnValue: _FakeAuthRepository_0(
+            returnValue: _FakeAuthRepositoryImpl_0(
               this,
               Invocation.getter(#authRepo),
             ),
           )
-          as _i2.AuthRepository);
+          as _i2.AuthRepositoryImpl);
 
   @override
   _i6.Stream<_i7.UserEntity?> get authStateChanges =>
@@ -242,15 +243,15 @@ class MockKycUseCase extends _i1.Mock implements _i10.KycUseCase {
   }
 
   @override
-  _i4.KycRepository get kycRepo =>
+  _i4.KycRepositoryImpl get kycRepo =>
       (super.noSuchMethod(
             Invocation.getter(#kycRepo),
-            returnValue: _FakeKycRepository_2(
+            returnValue: _FakeKycRepositoryImpl_2(
               this,
               Invocation.getter(#kycRepo),
             ),
           )
-          as _i4.KycRepository);
+          as _i4.KycRepositoryImpl);
 
   @override
   _i6.Future<_i3.Either<_i8.Failure, void>> submitKyc({

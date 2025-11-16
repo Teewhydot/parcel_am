@@ -3,6 +3,7 @@ import 'package:get_it/get_it.dart';
 import '../../domain/entities/parcel_entity.dart';
 import '../../domain/repositories/parcel_repository.dart';
 import '../../../../core/errors/failures.dart';
+import '../../../../core/services/error/error_handler.dart';
 import '../../domain/exceptions/custom_exceptions.dart';
 import '../datasources/parcel_remote_data_source.dart';
 import '../models/parcel_model.dart';
@@ -13,33 +14,24 @@ class ParcelRepositoryImpl implements ParcelRepository {
   final networkInfo = GetIt.instance<NetworkInfo>();
 
   @override
-  Stream<Either<Failure, ParcelEntity>> watchParcelStatus(
-      String parcelId) async* {
-    try {
-      await for (final parcelModel
-          in remoteDataSource.watchParcelStatus(parcelId)) {
-        yield Right(parcelModel.toEntity());
-      }
-    } on ServerException {
-      yield const Left(ServerFailure(failureMessage: 'Server error occurred'));
-    } catch (e) {
-      yield Left(UnknownFailure(failureMessage: e.toString()));
-    }
+  Stream<Either<Failure, ParcelEntity>> watchParcelStatus(String parcelId) {
+    return ErrorHandler.handleStream(
+      () => remoteDataSource.watchParcelStatus(parcelId).map((parcelModel) {
+        return parcelModel.toEntity();
+      }),
+      operationName: 'watchParcelStatus',
+    );
   }
 
   @override
   Stream<Either<Failure, List<ParcelEntity>>> watchUserParcels(
-      String userId, {ParcelStatus? status}) async* {
-    try {
-      await for (final parcelModels
-          in remoteDataSource.watchUserParcels(userId, status: status)) {
-        yield Right(parcelModels.map((model) => model.toEntity()).toList());
-      }
-    } on ServerException {
-      yield const Left(ServerFailure(failureMessage: 'Server error occurred'));
-    } catch (e) {
-      yield Left(UnknownFailure(failureMessage: e.toString()));
-    }
+      String userId, {ParcelStatus? status}) {
+    return ErrorHandler.handleStream(
+      () => remoteDataSource.watchUserParcels(userId, status: status).map((parcelModels) {
+        return parcelModels.map((model) => model.toEntity()).toList();
+      }),
+      operationName: 'watchUserParcels',
+    );
   }
 
   @override

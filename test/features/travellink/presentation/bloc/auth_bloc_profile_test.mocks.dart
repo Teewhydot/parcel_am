@@ -8,12 +8,12 @@ import 'dart:async' as _i5;
 import 'package:dartz/dartz.dart' as _i3;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:parcel_am/core/errors/failures.dart' as _i7;
+import 'package:parcel_am/features/travellink/data/repositories/auth_repository_impl.dart'
+    as _i2;
 import 'package:parcel_am/features/travellink/domain/entities/auth_token_entity.dart'
     as _i8;
 import 'package:parcel_am/features/travellink/domain/entities/user_entity.dart'
     as _i6;
-import 'package:parcel_am/features/travellink/domain/repositories/auth_repository.dart'
-    as _i2;
 import 'package:parcel_am/features/travellink/domain/usecases/auth_usecase.dart'
     as _i4;
 
@@ -31,9 +31,9 @@ import 'package:parcel_am/features/travellink/domain/usecases/auth_usecase.dart'
 // ignore_for_file: camel_case_types
 // ignore_for_file: subtype_of_sealed_class
 
-class _FakeAuthRepository_0 extends _i1.SmartFake
-    implements _i2.AuthRepository {
-  _FakeAuthRepository_0(Object parent, Invocation parentInvocation)
+class _FakeAuthRepositoryImpl_0 extends _i1.SmartFake
+    implements _i2.AuthRepositoryImpl {
+  _FakeAuthRepositoryImpl_0(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
@@ -51,15 +51,15 @@ class MockAuthUseCase extends _i1.Mock implements _i4.AuthUseCase {
   }
 
   @override
-  _i2.AuthRepository get authRepo =>
+  _i2.AuthRepositoryImpl get authRepo =>
       (super.noSuchMethod(
             Invocation.getter(#authRepo),
-            returnValue: _FakeAuthRepository_0(
+            returnValue: _FakeAuthRepositoryImpl_0(
               this,
               Invocation.getter(#authRepo),
             ),
           )
-          as _i2.AuthRepository);
+          as _i2.AuthRepositoryImpl);
 
   @override
   _i5.Stream<_i6.UserEntity?> get authStateChanges =>

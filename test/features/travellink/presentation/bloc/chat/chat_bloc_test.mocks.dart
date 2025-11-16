@@ -7,10 +7,9 @@ import 'dart:async' as _i4;
 
 import 'package:dartz/dartz.dart' as _i2;
 import 'package:mockito/mockito.dart' as _i1;
+import 'package:parcel_am/core/errors/failures.dart' as _i5;
 import 'package:parcel_am/features/travellink/domain/entities/chat/chat_entity.dart'
     as _i6;
-import 'package:parcel_am/features/travellink/domain/failures/failures.dart'
-    as _i5;
 import 'package:parcel_am/features/travellink/domain/usecases/chat/chat_usecase.dart'
     as _i3;
 
