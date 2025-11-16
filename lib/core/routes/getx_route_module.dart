@@ -11,6 +11,8 @@ import 'package:parcel_am/features/travellink/presentation/screens/verification_
 import 'package:parcel_am/features/travellink/presentation/screens/browse_requests_screen.dart';
 import 'package:parcel_am/features/travellink/presentation/screens/kyc_blocked_screen.dart';
 import 'package:parcel_am/features/travellink/presentation/screens/wallet_screen.dart';
+import 'package:parcel_am/features/travellink/presentation/screens/create_parcel_screen.dart';
+import 'package:parcel_am/features/travellink/presentation/screens/profile_edit_screen.dart';
 import 'package:parcel_am/features/travellink/presentation/screens/chats_list_screen.dart';
 import 'package:parcel_am/features/travellink/presentation/screens/chat_screen.dart';
 import 'package:parcel_am/features/notifications/presentation/screens/notifications_screen.dart';
@@ -98,6 +100,20 @@ class GetXRouteModule {
       transition: _transition,
       transitionDuration: _transitionDuration,
       requiresKyc: true,
+    ),
+    AuthGuard.createProtectedRoute(
+      name: Routes.createParcel,
+      page: () => const CreateParcelScreen(),
+      transition: _transition,
+      transitionDuration: _transitionDuration,
+      requiresKyc: true,
+    ),
+    AuthGuard.createProtectedRoute(
+      name: Routes.profile,
+      page: () => const ProfileEditScreen(),
+      transition: _transition,
+      transitionDuration: _transitionDuration,
+      requiresKyc: false,
     ),
     AuthGuard.createProtectedRoute(
       name: Routes.chatsList,

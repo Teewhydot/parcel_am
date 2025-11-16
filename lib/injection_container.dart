@@ -20,26 +20,31 @@ import 'features/travellink/data/datasources/wallet_remote_data_source.dart' as 
 import 'features/travellink/presentation/bloc/package/package_bloc.dart' as travellink_package;
 import 'features/travellink/data/datasources/escrow_remote_data_source.dart';
 import 'features/travellink/data/datasources/parcel_remote_data_source.dart';
+import 'features/travellink/data/datasources/dashboard_remote_data_source.dart';
 
 import 'features/travellink/data/repositories/escrow_repository_impl.dart';
 import 'features/travellink/data/repositories/parcel_repository_impl.dart';
 import 'features/travellink/data/repositories/kyc_repository_impl.dart';
 import 'features/travellink/data/repositories/wallet_repository_impl.dart' as travellink_wallet_repo;
+import 'features/travellink/data/repositories/dashboard_repository_impl.dart';
 
 import 'features/travellink/domain/repositories/escrow_repository.dart';
 import 'features/travellink/domain/repositories/parcel_repository.dart';
 import 'features/travellink/domain/repositories/kyc_repository.dart';
 import 'features/travellink/domain/repositories/wallet_repository.dart';
+import 'features/travellink/domain/repositories/dashboard_repository.dart';
 
 import 'features/travellink/domain/usecases/escrow_usecase.dart';
 import 'features/travellink/domain/usecases/parcel_usecase.dart';
 import 'features/travellink/domain/usecases/kyc_usecase.dart';
 import 'features/travellink/domain/usecases/wallet_usecase.dart';
+import 'features/travellink/domain/usecases/get_dashboard_metrics_usecase.dart';
 
 import 'features/travellink/presentation/bloc/escrow/escrow_bloc.dart';
 import 'features/travellink/presentation/bloc/parcel/parcel_bloc.dart';
 import 'features/travellink/presentation/bloc/kyc/kyc_bloc.dart';
 import 'features/travellink/presentation/bloc/wallet/wallet_bloc.dart';
+import 'features/travellink/presentation/bloc/dashboard/dashboard_bloc.dart';
 
 import 'features/kyc/data/datasources/kyc_remote_datasource.dart' as kyc_ds;
 
@@ -110,6 +115,14 @@ Future<void> init() async {
     firestore: sl(),
   ));
 
+  //! Features - Dashboard Data Sources
+  sl.registerLazySingleton<DashboardRemoteDataSource>(
+    () => DashboardRemoteDataSourceImpl(
+      firestore: sl(),
+      walletRemoteDataSource: sl<travellink_wallet_ds.WalletRemoteDataSource>(),
+    ),
+  );
+
   //! Features - Notification Data Sources
   sl.registerLazySingleton<NotificationRemoteDataSource>(
     () => NotificationRemoteDataSourceImpl(firestore: sl()),
@@ -126,6 +139,14 @@ Future<void> init() async {
 
   //! Features - Wallet Repository (TravelLink)
   sl.registerLazySingleton<WalletRepository>(() => travellink_wallet_repo.WalletRepositoryImpl());
+
+  //! Features - Dashboard Repository
+  sl.registerLazySingleton<DashboardRepository>(
+    () => DashboardRepositoryImpl(
+      remoteDataSource: sl(),
+      networkInfo: sl(),
+    ),
+  );
 
   //! Features - Notification Repository
   sl.registerLazySingleton<NotificationRepository>(() => NotificationRepositoryImpl());
@@ -145,6 +166,11 @@ Future<void> init() async {
   //! Features - Wallet Use Cases
   sl.registerLazySingleton<WalletUseCase>(() => WalletUseCase());
 
+  //! Features - Dashboard Use Cases
+  sl.registerLazySingleton<GetDashboardMetricsUseCase>(
+    () => GetDashboardMetricsUseCase(sl()),
+  );
+
   //! Features - Escrow BLoC
   sl.registerFactory<EscrowBloc>(() => EscrowBloc());
 
@@ -159,6 +185,11 @@ Future<void> init() async {
 
   //! Features - Wallet BLoC
   sl.registerFactory<WalletBloc>(() => WalletBloc());
+
+  //! Features - Dashboard BLoC
+  sl.registerFactory<DashboardBloc>(
+    () => DashboardBloc(getDashboardMetricsUseCase: sl()),
+  );
 
   //! Features - Notification BLoC
   sl.registerFactory<NotificationBloc>(() => NotificationBloc());

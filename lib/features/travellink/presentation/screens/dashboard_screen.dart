@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:collection/collection.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_scaffold.dart';
@@ -16,19 +17,17 @@ import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../../../../injection_container.dart';
-import '../widgets/bottom_navigation.dart';
 import '../widgets/kyc_status_widgets.dart';
 import '../widgets/user_stats_grid.dart';
 import '../widgets/wallet_balance_card.dart';
-import '../bloc/wallet/wallet_bloc.dart';
-import '../bloc/wallet/wallet_event.dart';
+import '../bloc/dashboard/dashboard_bloc.dart';
+import '../bloc/dashboard/dashboard_event.dart';
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_data.dart';
-import '../../data/providers/theme_provider.dart';
 import '../../data/constants/verification_constants.dart';
 import '../../../package/presentation/bloc/active_packages_bloc.dart';
 import '../../../package/domain/entities/package_entity.dart';
-import '../../../../core/services/escrow_notification_service.dart';
+import '../../../../core/services/escrow_notification_service.dart' as escrow;
 import '../../../../core/services/presence_service.dart';
 import '../../../../core/services/chat_notification_service.dart';
 
@@ -41,16 +40,21 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   StreamSubscription? _notificationSubscription;
-  final NotificationService _notificationService = NotificationService(firestore: sl());
-  late final PresenceService _presenceService;
-  late final ChatNotificationService _chatNotificationService;
+  final escrow.NotificationService _notificationService =
+      escrow.NotificationService(firestore: sl());
+  PresenceService? _presenceService;
+  ChatNotificationService? _chatNotificationService;
   late ActivePackagesBloc _activePackagesBloc;
+  late DashboardBloc _dashboardBloc;
+  String? _lastActivePackagesUserId;
+  String? _lastDashboardUserId;
 
   @override
   void initState() {
     super.initState();
-    _activePackagesBloc = sl<ActivePackagesBloc>();
-    _loadActivePackages();
+    _dashboardBloc = sl<DashboardBloc>();
+    _activePackagesBloc = ActivePackagesBloc();
+    _loadInitialData();
     _subscribeToEscrowNotifications();
     _initializePresenceAndChatNotifications();
   }
@@ -59,8 +63,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void dispose() {
     _notificationSubscription?.cancel();
     _notificationService.dispose();
-    _presenceService.dispose();
-    _chatNotificationService.dispose();
+    _presenceService?.dispose();
+    _chatNotificationService?.dispose();
+    _dashboardBloc.close();
     _activePackagesBloc.close();
     super.dispose();
   }
@@ -70,25 +75,47 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final userId = authState is LoadedState<AuthData> ? authState.data?.user?.uid ?? '' : '';
 
     if (userId.isNotEmpty) {
-      _presenceService = PresenceService(firestore: sl<FirebaseFirestore>());
-      _presenceService.initialize(userId);
+      final presenceService = PresenceService(firestore: sl<FirebaseFirestore>());
+      presenceService.initialize(userId);
+      _presenceService = presenceService;
 
-      _chatNotificationService = ChatNotificationService(
+      final chatNotificationService = ChatNotificationService(
         firestore: sl<FirebaseFirestore>(),
         notificationsPlugin: FlutterLocalNotificationsPlugin(),
       );
-      _chatNotificationService.initialize(userId);
-      _chatNotificationService.requestPermissions();
+      chatNotificationService.initialize(userId);
+      chatNotificationService.requestPermissions();
+      _chatNotificationService = chatNotificationService;
     }
   }
 
-  void _loadActivePackages() {
-    final authState = context.read<AuthBloc>().state;
-    final userId = authState is LoadedState<AuthData> ? authState.data?.user?.uid ?? '' : '';
+  void _loadInitialData() {
+    final userId = _resolveCurrentUserId();
+    _requestDataForUser(userId);
+  }
 
-    if (userId.isNotEmpty) {
+  void _requestDataForUser(String userId) {
+    if (userId.isEmpty) {
+      return;
+    }
+
+    if (_lastActivePackagesUserId != userId) {
+      _lastActivePackagesUserId = userId;
       _activePackagesBloc.add(LoadActivePackages(userId));
     }
+
+    if (_lastDashboardUserId != userId) {
+      _lastDashboardUserId = userId;
+      _dashboardBloc.add(DashboardStarted(userId));
+    }
+  }
+
+  String _resolveCurrentUserId() {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is LoadedState<AuthData>) {
+      return authState.data?.user?.uid ?? '';
+    }
+    return '';
   }
 
   void _subscribeToEscrowNotifications() {
@@ -103,7 +130,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
-  void _showEscrowNotification(EscrowNotification notification) {
+  void _showEscrowNotification(escrow.EscrowNotification notification) {
     Color backgroundColor;
     IconData icon;
 
@@ -156,56 +183,64 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return AppScaffold(
-      hasGradientBackground: false,
-      body: SingleChildScrollView(
-        child: AppContainer(
-          padding: AppSpacing.paddingXL,
-          child: Column(
-            children: [
-              // Header Section
-              _HeaderSection(),
-              // Main Content Area
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return BlocListener<AuthBloc, BaseState<AuthData>>(
+      listener: (context, authState) {
+        final userId = authState is LoadedState<AuthData>
+            ? authState.data?.user?.uid ?? ''
+            : '';
+        _requestDataForUser(userId);
+      },
+      child: AppScaffold(
+        hasGradientBackground: false,
+        body: MultiBlocProvider(
+          providers: [
+            BlocProvider.value(value: _dashboardBloc),
+            BlocProvider.value(value: _activePackagesBloc),
+          ],
+          child: SingleChildScrollView(
+            child: AppContainer(
+              padding: AppSpacing.paddingXL,
+              child: Column(
                 children: [
-                  // KYC Status Banner
-                  const KycStatusBanner(),
-                  AppSpacing.verticalSpacing(SpacingSize.md),
-                  // Quick Actions
-                  AppText.titleLarge(
-                    'Quick Actions',
+                  _HeaderSection(),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const KycStatusBanner(),
+                      AppSpacing.verticalSpacing(SpacingSize.md),
+                      AppText.titleLarge(
+                        'Quick Actions',
                         fontWeight: FontWeight.bold,
                       ),
-                  AppSpacing.verticalSpacing(SpacingSize.lg),
-                  _QuickActionsRow(),
-                  AppSpacing.verticalSpacing(SpacingSize.xxl),
-                  // User Stats
-                  AppText.titleLarge(
-                    'Your Stats',
-                    fontWeight: FontWeight.bold,
-                  ),
-                  AppSpacing.verticalSpacing(SpacingSize.lg),
-                  const UserStatsGrid(),
-                  AppSpacing.verticalSpacing(SpacingSize.xxl),
-                  BlocProvider.value(
-                    value: _activePackagesBloc,
-                    child: BlocBuilder<ActivePackagesBloc, ActivePackagesState>(
-                      builder: (context, state) {
-                        if (state is ActivePackagesLoaded) {
-                          return _RecentActivitySection(activePackages: state.packages);
-                        } else if (state is ActivePackagesLoading) {
-                          return const Center(child: CircularProgressIndicator());
-                        } else if (state is ActivePackagesError) {
-                          return Center(child: Text('Error: ${state.message}'));
-                        }
-                        return const _RecentActivitySection(activePackages: []);
-                      },
-                    ),
+                      AppSpacing.verticalSpacing(SpacingSize.lg),
+                      _QuickActionsRow(),
+                      AppSpacing.verticalSpacing(SpacingSize.xxl),
+                      AppText.titleLarge(
+                        'Your Stats',
+                        fontWeight: FontWeight.bold,
+                      ),
+                      AppSpacing.verticalSpacing(SpacingSize.lg),
+                      const UserStatsGrid(),
+                      AppSpacing.verticalSpacing(SpacingSize.xxl),
+                      BlocBuilder<ActivePackagesBloc, ActivePackagesState>(
+                        builder: (context, state) {
+                          if (state is ActivePackagesLoaded) {
+                            return _RecentActivitySection(activePackages: state.packages);
+                          }
+                          if (state is ActivePackagesLoading) {
+                            return const Center(child: CircularProgressIndicator());
+                          }
+                          if (state is ActivePackagesError) {
+                            return Center(child: Text('Error: ${state.message}'));
+                          }
+                          return const _RecentActivitySection(activePackages: []);
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -251,6 +286,12 @@ class _HeaderSection extends StatelessWidget {
                   Row(
                     children: [
                       _ChatButton(),
+                      IconButton(
+                        icon: const Icon(Icons.person_outline, color: AppColors.black),
+                        onPressed: () {
+                          sl<NavigationService>().navigateTo(Routes.profile);
+                        },
+                      ),
                       _NotificationButton(),
                     ],
                   ),
@@ -375,7 +416,9 @@ class _NotificationButton extends StatelessWidget {
       children: [
         IconButton(
           icon: const Icon(Icons.notifications_outlined, color: AppColors.black),
-          onPressed: () {},
+          onPressed: () {
+            sl<NavigationService>().navigateTo(Routes.notifications);
+          },
         ),
         Positioned(
           right: 8,
@@ -392,6 +435,7 @@ class _NotificationButton extends StatelessWidget {
   }
 }
 
+// ignore: unused_element
 class _StatCard extends StatelessWidget {
   const _StatCard({
     required this.icon,
@@ -452,7 +496,23 @@ class _QuickActionsRow extends StatelessWidget {
             subtitle: 'Create a new delivery request',
             color: AppColors.primary,
             onTap: () {
-              // TODO: Navigate to create package
+              sl<NavigationService>().navigateTo(Routes.createParcel);
+            },
+          ),
+        ),
+        AppSpacing.horizontalSpacing(SpacingSize.lg),
+        Expanded(
+          child: _ActionCard(
+            icon: Icons.account_balance_wallet_outlined,
+            title: 'Wallet',
+            subtitle: 'View your wallet',
+            color: AppColors.info,
+            onTap: () {
+              final authState = context.read<AuthBloc>().state;
+              final userId = authState is LoadedState<AuthData>
+                  ? authState.data?.user?.uid ?? ''
+                  : '';
+              sl<NavigationService>().navigateTo(Routes.wallet, arguments: userId);
             },
           ),
         ),

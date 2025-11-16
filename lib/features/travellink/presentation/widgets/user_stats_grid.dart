@@ -1,42 +1,59 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_icon.dart';
 import '../../../../core/bloc/base/base_state.dart';
-import '../bloc/auth/auth_bloc.dart';
-import '../bloc/auth/auth_data.dart';
+import '../bloc/dashboard/dashboard_bloc.dart';
+import '../bloc/dashboard/dashboard_data.dart';
 
 class UserStatsGrid extends StatelessWidget {
   const UserStatsGrid({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AuthBloc, BaseState<AuthData>>(
-      builder: (context, authState) {
-        final user = authState is LoadedState<AuthData> ? authState.data?.user : null;
+    return BlocBuilder<DashboardBloc, BaseState<DashboardData>>(
+      builder: (context, state) {
+        final metrics = state.data?.metrics;
+        final isLoading = state is LoadingState<DashboardData> ||
+            state is AsyncLoadingState<DashboardData>;
+        final hasData = metrics != null;
 
-        return Column(
+        final totalPackagesValue = hasData
+            ? metrics.totalPackages.toString()
+            : _placeholderValue(isLoading);
+        final totalEarningsValue = hasData
+            ? _formatCurrency(metrics.totalEarnings, metrics.currency)
+            : _placeholderValue(isLoading);
+        final successRateValue = hasData
+            ? _formatSuccessRate(metrics.successRatePercent)
+            : _placeholderValue(isLoading);
+        final averageDeliveryValue = hasData
+            ? _formatAverageDelivery(metrics.averageDeliveryTime, isLoading)
+            : _placeholderValue(isLoading);
+
+        final grid = Column(
           children: [
             Row(
               children: [
                 Expanded(
                   child: UserStatCard(
-                    title: 'Packages Sent',
-                    value: '${user?.packagesSent ?? 12}',
-                    icon: Icons.send,
+                    title: 'Total Packages',
+                    value: totalPackagesValue,
+                    icon: Icons.inventory_2_outlined,
                     color: AppColors.primary,
                   ),
                 ),
                 AppSpacing.horizontalSpacing(SpacingSize.md),
                 Expanded(
                   child: UserStatCard(
-                    title: 'Packages Carried',
-                    value: '${user?.completedDeliveries ?? 8}',
-                    icon: Icons.luggage,
-                    color: AppColors.secondary,
+                    title: 'Total Earnings',
+                    value: totalEarningsValue,
+                    icon: Icons.payments_outlined,
+                    color: AppColors.accent,
                   ),
                 ),
               ],
@@ -46,27 +63,104 @@ class UserStatsGrid extends StatelessWidget {
               children: [
                 Expanded(
                   child: UserStatCard(
-                    title: 'Total Earned',
-                    value: '₦${user?.totalEarnings?.toInt() ?? 45000}',
-                    icon: Icons.monetization_on,
-                    color: AppColors.accent,
+                    title: 'Success Rate',
+                    value: successRateValue,
+                    icon: Icons.assessment_outlined,
+                    color: AppColors.secondary,
                   ),
                 ),
                 AppSpacing.horizontalSpacing(SpacingSize.md),
                 Expanded(
                   child: UserStatCard(
-                    title: 'Rating',
-                    value: '${user?.rating ?? 4.8}',
-                    icon: Icons.star,
-                    color: AppColors.accent,
+                    title: 'Avg Delivery Time',
+                    value: averageDeliveryValue,
+                    icon: Icons.timer_outlined,
+                    color: AppColors.info,
                   ),
                 ),
               ],
             ),
           ],
         );
+
+        if (state is ErrorState<DashboardData> ||
+            state is AsyncErrorState<DashboardData>) {
+          final message = state is ErrorState<DashboardData>
+              ? state.errorMessage
+              : (state as AsyncErrorState<DashboardData>).errorMessage;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              grid,
+              AppSpacing.verticalSpacing(SpacingSize.sm),
+              AppText.bodySmall(
+                message,
+                color: AppColors.error,
+              ),
+            ],
+          );
+        }
+
+        return grid;
       },
     );
+  }
+
+  String _placeholderValue(bool isLoading) => isLoading ? '...' : '--';
+
+  String _formatCurrency(double value, String currency) {
+    try {
+      final symbol = NumberFormat.simpleCurrency(name: currency).currencySymbol;
+      return NumberFormat.compactCurrency(
+        symbol: symbol,
+        decimalDigits: 0,
+      ).format(value);
+    } catch (_) {
+      return NumberFormat.compactCurrency(
+        symbol: '',
+        decimalDigits: 0,
+      ).format(value);
+    }
+  }
+
+  String _formatSuccessRate(double percent) {
+    return '${percent.clamp(0, 100).toStringAsFixed(0)}%';
+  }
+
+  String _formatAverageDelivery(Duration? duration, bool isLoading) {
+    if (duration == null) {
+      return _placeholderValue(isLoading);
+    }
+
+    if (duration.inDays >= 1) {
+      final days = duration.inDays;
+      final hours = duration.inHours.remainder(24);
+      if (hours > 0) {
+        return '${days}d ${hours}h';
+      }
+      return '${days}d';
+    }
+
+    if (duration.inHours >= 1) {
+      final hours = duration.inHours;
+      final minutes = duration.inMinutes.remainder(60);
+      if (minutes > 0) {
+        return '${hours}h ${minutes}m';
+      }
+      return '${hours}h';
+    }
+
+    final minutes = duration.inMinutes;
+    if (minutes >= 1) {
+      return '${minutes}m';
+    }
+
+    final seconds = duration.inSeconds;
+    if (seconds >= 1) {
+      return '${seconds}s';
+    }
+
+    return '<1s';
   }
 }
 
