@@ -47,3 +47,7 @@ app.*.map.json
 
 .claude
 .agent-os/
+
+
+.github/instructions/kluster-code-verify.instructions.md
+.kluster

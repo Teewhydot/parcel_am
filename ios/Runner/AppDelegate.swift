@@ -9,10 +9,8 @@ import FirebaseMessaging
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    // Configure Firebase
-    if FirebaseApp.app() == nil {
-      FirebaseApp.configure()
-    }
+    // Firebase is initialized in Flutter code (lib/app/init.dart)
+    // Do not initialize here to avoid duplicate initialization
 
     // Register for remote notifications
     if #available(iOS 10.0, *) {

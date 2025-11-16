@@ -71,4 +71,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'parcel-am.firebasestorage.app',
     iosBundleId: 'com.example.parcelAm',
   );
+
 }
