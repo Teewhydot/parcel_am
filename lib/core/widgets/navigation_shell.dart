@@ -10,6 +10,7 @@ import 'package:parcel_am/features/chat/presentation/screens/chats_list_screen.d
 import 'package:parcel_am/features/travellink/presentation/screens/wallet_screen.dart';
 import 'package:parcel_am/features/travellink/presentation/bloc/auth/auth_bloc.dart';
 import 'package:parcel_am/features/travellink/presentation/bloc/auth/auth_data.dart';
+import 'package:parcel_am/features/travellink/presentation/bloc/package/package_bloc.dart';
 
 class NavigationShell extends StatefulWidget {
   final int initialIndex;
@@ -61,7 +62,10 @@ class _NavigationShellState extends State<NavigationShell> {
     return [
       const DashboardScreen(),
       const BrowseRequestsScreen(),
-      const TrackingScreen(),
+      BlocProvider(
+        create: (_) => PackageBloc(),
+        child: const TrackingScreen(),
+      ),
       ChatsListScreen(currentUserId: userId),
       WalletScreen(userId: userId),
     ];
