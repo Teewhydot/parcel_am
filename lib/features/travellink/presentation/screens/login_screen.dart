@@ -7,7 +7,6 @@ import 'package:parcel_am/core/helpers/user_extensions.dart';
 import 'package:parcel_am/core/widgets/app_scaffold.dart';
 
 import '../../../../core/routes/routes.dart';
-import '../../../../core/services/error/error_handler.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_button.dart';
@@ -127,7 +126,7 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   void _navigateToDashboard() {
-    sl<NavigationService>().navigateAndReplace(Routes.dashboard);
+    sl<NavigationService>().navigateAndReplace(Routes.home);
   }
 
   void _showError(String message) {

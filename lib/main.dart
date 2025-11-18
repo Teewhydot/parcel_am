@@ -54,16 +54,16 @@ class MyApp extends StatelessWidget {
           child: MultiBlocProvider(
             providers: [
               BlocProvider<AuthBloc>(
-                create: (_) => di.sl<AuthBloc>(),
+                create: (_) => AuthBloc(),
               ),
               BlocProvider<DashboardBloc>(
-                create: (context) => di.sl<DashboardBloc>(),
+                create: (context) => DashboardBloc(),
               ),
               BlocProvider(
                 create: (_) => WalletBloc()..add(const WalletLoadRequested()),
               ),
               BlocProvider<NotificationBloc>(
-                create: (_) => di.sl<NotificationBloc>(),
+                create: (_) => NotificationBloc(),
               ),
             ],
             child: GetMaterialApp(

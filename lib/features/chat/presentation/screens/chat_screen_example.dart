@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../injection_container.dart' as di;
 import '../bloc/chat_bloc.dart';
 import 'chat_screen.dart';
 
@@ -22,7 +21,7 @@ class ChatScreenExample extends StatelessWidget {
               context,
               MaterialPageRoute(
                 builder: (context) => BlocProvider(
-                  create: (context) => di.sl<ChatBloc>(),
+                  create: (context) => ChatBloc(),
                   child: const ChatScreen(
                     chatId: 'chat_123',
                     otherUserId: 'user_456',
@@ -87,7 +86,7 @@ class ChatListExample extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (context) => BlocProvider(
-                    create: (context) => di.sl<ChatBloc>(),
+                    create: (context) => ChatBloc(),
                     child: ChatScreen(
                       chatId: chat['chatId'] as String,
                       otherUserId: chat['userId'] as String,

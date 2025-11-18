@@ -181,8 +181,8 @@ class KycBlockedScreen extends StatelessWidget {
 
   Widget _buildSecondaryButton(BuildContext context) {
     return AppButton(
-      onPressed: () => Get.offNamed(Routes.dashboard),
-      child: const Text('Back to Dashboard'),
+      onPressed: () => Get.offNamed(Routes.home),
+      child: const Text('Back to Home'),
     );
   }
 }

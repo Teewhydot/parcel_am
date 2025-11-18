@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/bloc/base/base_state.dart';
-import '../../../../injection_container.dart';
 import '../../../escrow/domain/entities/escrow_status.dart';
 import '../widgets/bottom_navigation.dart';
 import '../bloc/wallet/wallet_bloc.dart';
@@ -74,8 +73,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
   @override
   void initState() {
     super.initState();
-    _walletBloc = sl<WalletBloc>();
-    _escrowBloc = sl<EscrowBloc>();
+    _walletBloc = WalletBloc();
+    _escrowBloc = EscrowBloc();
     _walletBloc.add(const WalletLoadRequested());
   }
 

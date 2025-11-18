@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:get/get.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/bloc/base/base_state.dart';
-import '../../../travellink/domain/entities/chat/chat_entity.dart';
-import '../../../travellink/domain/entities/chat/chat_entity_extensions.dart';
-import '../../../travellink/presentation/bloc/chat/chat_bloc.dart';
-import '../../../travellink/presentation/bloc/chat/chat_event.dart';
-import '../../../travellink/presentation/bloc/chat/chat_data.dart';
-import '../widgets/chat_list_item.dart';
+import '../../../../core/routes/routes.dart';
+import '../../domain/entities/chat.dart';
+import '../bloc/chats_list_bloc.dart';
 
 class ChatsListScreen extends StatefulWidget {
   final String currentUserId;
@@ -23,109 +20,84 @@ class ChatsListScreen extends StatefulWidget {
 }
 
 class _ChatsListScreenState extends State<ChatsListScreen> {
-  final TextEditingController _searchController = TextEditingController();
-  bool _isSearching = false;
+  late ChatsListBloc _chatsListBloc;
 
   @override
   void initState() {
     super.initState();
-    context.read<ChatBloc>().add(ChatLoadRequested(widget.currentUserId));
+    _chatsListBloc = ChatsListBloc();
+    _chatsListBloc.add(LoadChats(widget.currentUserId));
   }
 
   @override
   void dispose() {
-    _searchController.dispose();
+    _chatsListBloc.close();
     super.dispose();
+  }
+
+  String _getOtherParticipantName(Chat chat) {
+    final otherParticipantId = chat.participantIds.firstWhere(
+      (id) => id != widget.currentUserId,
+      orElse: () => '',
+    );
+    return chat.participantNames[otherParticipantId] ?? 'Unknown';
+  }
+
+  String? _getOtherParticipantAvatar(Chat chat) {
+    final otherParticipantId = chat.participantIds.firstWhere(
+      (id) => id != widget.currentUserId,
+      orElse: () => '',
+    );
+    return chat.participantAvatars[otherParticipantId];
+  }
+
+  String _getOtherParticipantId(Chat chat) {
+    return chat.participantIds.firstWhere(
+      (id) => id != widget.currentUserId,
+      orElse: () => '',
+    );
+  }
+
+  int _getUnreadCount(Chat chat) {
+    return chat.unreadCount[widget.currentUserId] ?? 0;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: _isSearching
-            ? TextField(
-                controller: _searchController,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: 'Search chats...',
-                  border: InputBorder.none,
-                ),
-                onChanged: (value) {
-                  context.read<ChatBloc>().add(ChatFilterChanged(value));
-                },
-              )
-            : const Text('Chats'),
-        actions: [
-          IconButton(
-            icon: Icon(_isSearching ? Icons.close : Icons.search),
-            onPressed: () {
-              setState(() {
-                _isSearching = !_isSearching;
-                if (!_isSearching) {
-                  _searchController.clear();
-                  context.read<ChatBloc>().add(const ChatFilterChanged(''));
-                }
-              });
-            },
-          ),
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              if (value == 'settings') {
-                // Navigate to settings
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'settings',
-                child: Row(
-                  children: [
-                    Icon(Icons.settings, size: 20),
-                    SizedBox(width: 12),
-                    Text('Settings'),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
+        title: const Text('Chats'),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
       ),
-      body: BlocConsumer<ChatBloc, BaseState<ChatData>>(
-        listener: (context, state) {
-          if (state is AsyncErrorState<ChatData>) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.errorMessage),
-                backgroundColor: AppColors.error,
-              ),
-            );
-          }
-          if (state is AsyncLoadedState<ChatData> && state.data != null) {
-            // Chat created successfully, show message
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Chat created successfully'),
-                backgroundColor: AppColors.success,
-              ),
-            );
-          }
-        },
+      body: BlocBuilder<ChatsListBloc, BaseState<List<Chat>>>(
+        bloc: _chatsListBloc,
         builder: (context, state) {
-          if (state is LoadingState<ChatData> && state.data == null) {
+          if (state is LoadingState<List<Chat>>) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (state is AsyncErrorState<ChatData> && state.data == null) {
+          if (state is ErrorState<List<Chat>>) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Icon(Icons.error_outline, size: 64, color: AppColors.error),
                   const SizedBox(height: 16),
-                  Text(state.errorMessage),
+                  Text(
+                    'Error loading chats',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    state.errorMessage,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                    textAlign: TextAlign.center,
+                  ),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () {
-                      context.read<ChatBloc>().add(ChatLoadRequested(widget.currentUserId));
+                      _chatsListBloc.add(LoadChats(widget.currentUserId));
                     },
                     child: const Text('Retry'),
                   ),
@@ -134,221 +106,160 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
             );
           }
 
-          final data = state.data ?? const ChatData();
-          final chats = data.filteredChats;
+          if (state is LoadedState<List<Chat>>) {
+            final chats = state.data ?? [];
 
-          if (chats.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.chat_bubble_outline,
-                    size: 64,
-                    color: AppColors.onSurfaceVariant,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No chats yet',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppColors.onSurfaceVariant,
-                        ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Start a new conversation',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                  ),
-                ],
+            if (chats.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.chat_bubble_outline,
+                      size: 64,
+                      color: Colors.grey[400],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No chats yet',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            color: Colors.grey[600],
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Start a conversation with someone',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Colors.grey[500],
+                          ),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            return RefreshIndicator(
+              onRefresh: () async {
+                _chatsListBloc.add(LoadChats(widget.currentUserId));
+              },
+              child: ListView.separated(
+                itemCount: chats.length,
+                separatorBuilder: (context, index) => const Divider(height: 1),
+                itemBuilder: (context, index) {
+                  final chat = chats[index];
+                  final otherParticipantName = _getOtherParticipantName(chat);
+                  final otherParticipantAvatar = _getOtherParticipantAvatar(chat);
+                  final otherParticipantId = _getOtherParticipantId(chat);
+                  final unreadCount = _getUnreadCount(chat);
+                  final isTyping = chat.isTyping[otherParticipantId] ?? false;
+
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: AppColors.primary,
+                      backgroundImage: otherParticipantAvatar != null
+                          ? NetworkImage(otherParticipantAvatar)
+                          : null,
+                      child: otherParticipantAvatar == null
+                          ? Text(
+                              otherParticipantName.isNotEmpty
+                                  ? otherParticipantName[0].toUpperCase()
+                                  : '?',
+                              style: const TextStyle(color: Colors.white),
+                            )
+                          : null,
+                    ),
+                    title: Text(
+                      otherParticipantName,
+                      style: TextStyle(
+                        fontWeight: unreadCount > 0 ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    ),
+                    subtitle: Text(
+                      isTyping
+                          ? 'typing...'
+                          : chat.lastMessage?.content ?? 'No messages yet',
+                      style: TextStyle(
+                        color: isTyping ? AppColors.primary : Colors.grey[600],
+                        fontStyle: isTyping ? FontStyle.italic : FontStyle.normal,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        if (chat.lastMessageTime != null)
+                          Text(
+                            _formatTime(chat.lastMessageTime!),
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                            ),
+                          ),
+                        if (unreadCount > 0) ...[
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              unreadCount > 99 ? '99+' : '$unreadCount',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    onTap: () {
+                      Get.toNamed(
+                        Routes.chat,
+                        arguments: {
+                          'chatId': chat.id,
+                          'otherUserId': otherParticipantId,
+                          'otherUserName': otherParticipantName,
+                          'otherUserAvatar': otherParticipantAvatar,
+                        },
+                      );
+                    },
+                  );
+                },
               ),
             );
           }
 
-          final pinnedChats = chats.where((chat) => chat.isPinned).toList();
-          final regularChats = chats.where((chat) => !chat.isPinned).toList();
-
-          return RefreshIndicator(
-            onRefresh: () async {
-              context.read<ChatBloc>().add(ChatLoadRequested(widget.currentUserId));
-            },
-            child: ListView(
-              children: [
-                if (pinnedChats.isNotEmpty) ...[
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                    child: Text(
-                      'PINNED',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: AppColors.textSecondary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                    ),
-                  ),
-                  ...pinnedChats.map((chat) => _buildChatItem(context, chat)),
-                  const Divider(height: 1),
-                ],
-                if (regularChats.isNotEmpty) ...[
-                  if (pinnedChats.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                      child: Text(
-                        'ALL CHATS',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: AppColors.textSecondary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                      ),
-                    ),
-                  ...regularChats.map((chat) => _buildChatItem(context, chat)),
-                ],
-              ],
-            ),
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showUserSelectionDialog(context),
-        child: const Icon(Icons.add_comment),
-      ),
-    );
-  }
-
-  Widget _buildChatItem(BuildContext context, ChatEntity chat) {
-    return Slidable(
-      key: ValueKey(chat.id),
-      endActionPane: ActionPane(
-        motion: const ScrollMotion(),
-        children: [
-          SlidableAction(
-            onPressed: (context) {
-              context.read<ChatBloc>().add(
-                    ChatTogglePinRequested(chat.id),
-                  );
-            },
-            backgroundColor: AppColors.info,
-            foregroundColor: Colors.white,
-            icon: chat.isPinned ? Icons.push_pin_outlined : Icons.push_pin,
-            label: chat.isPinned ? 'Unpin' : 'Pin',
-          ),
-          SlidableAction(
-            onPressed: (context) {
-              context.read<ChatBloc>().add(
-                    ChatToggleMuteRequested(chat.id),
-                  );
-            },
-            backgroundColor: AppColors.warning,
-            foregroundColor: Colors.white,
-            icon: chat.isMuted ? Icons.notifications : Icons.notifications_off,
-            label: chat.isMuted ? 'Unmute' : 'Mute',
-          ),
-          SlidableAction(
-            onPressed: (context) {
-              _showDeleteConfirmation(context, chat);
-            },
-            backgroundColor: AppColors.error,
-            foregroundColor: Colors.white,
-            icon: Icons.delete,
-            label: 'Delete',
-          ),
-        ],
-      ),
-      child: ChatListItem(
-        chat: chat,
-        currentUserId: widget.currentUserId,
-        onTap: () {
-          final unreadCount = chat.getUnreadCount(widget.currentUserId);
-          if (unreadCount > 0) {
-            context.read<ChatBloc>().add(ChatMarkAsReadRequested(chat.id));
-          }
-          // Navigate to chat detail screen
-        },
-        onLongPress: () {
-          _showContextMenu(context, chat);
+          return const SizedBox.shrink();
         },
       ),
     );
   }
 
-  void _showDeleteConfirmation(BuildContext context, ChatEntity chat) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete Chat'),
-        content: Text('Are you sure you want to delete this chat with ${chat.participantName}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              context.read<ChatBloc>().add(ChatDeleteRequested(chat.id));
-              Navigator.pop(dialogContext);
-            },
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
+  String _formatTime(DateTime time) {
+    final now = DateTime.now();
+    final difference = now.difference(time);
+
+    if (difference.inDays == 0) {
+      return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+    } else if (difference.inDays == 1) {
+      return 'Yesterday';
+    } else if (difference.inDays < 7) {
+      return _getDayName(time.weekday);
+    } else {
+      return '${time.day}/${time.month}/${time.year}';
+    }
   }
 
-  void _showContextMenu(BuildContext context, ChatEntity chat) {
-    showModalBottomSheet(
-      context: context,
-      builder: (bottomSheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(chat.isPinned ? Icons.push_pin_outlined : Icons.push_pin),
-              title: Text(chat.isPinned ? 'Unpin' : 'Pin'),
-              onTap: () {
-                context.read<ChatBloc>().add(
-                      ChatTogglePinRequested(chat.id),
-                    );
-                Navigator.pop(bottomSheetContext);
-              },
-            ),
-            ListTile(
-              leading: Icon(chat.isMuted ? Icons.notifications : Icons.notifications_off),
-              title: Text(chat.isMuted ? 'Unmute' : 'Mute'),
-              onTap: () {
-                context.read<ChatBloc>().add(
-                      ChatToggleMuteRequested(chat.id),
-                    );
-                Navigator.pop(bottomSheetContext);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.mark_chat_read),
-              title: const Text('Mark as Read'),
-              onTap: () {
-                context.read<ChatBloc>().add(ChatMarkAsReadRequested(chat.id));
-                Navigator.pop(bottomSheetContext);
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.delete, color: AppColors.error),
-              title: const Text('Delete Chat', style: TextStyle(color: AppColors.error)),
-              onTap: () {
-                Navigator.pop(bottomSheetContext);
-                _showDeleteConfirmation(context, chat);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showUserSelectionDialog(BuildContext context) {
-    // TODO: Implement user selection dialog with proper ChatBloc integration
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('User selection not yet implemented')),
-    );
+  String _getDayName(int weekday) {
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return days[weekday - 1];
   }
 }

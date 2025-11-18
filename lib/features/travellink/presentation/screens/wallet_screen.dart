@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_spacing.dart';
-import '../../../../injection_container.dart';
 import '../bloc/wallet/wallet_bloc.dart';
 import '../bloc/wallet/wallet_event.dart';
 import '../bloc/wallet/wallet_data.dart';
@@ -19,7 +18,7 @@ class WalletScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => sl<WalletBloc>()..add(WalletStarted(userId)),
+      create: (context) => WalletBloc()..add(WalletStarted(userId)),
       child: Scaffold(
         appBar: AppBar(
           title: const Text('My Wallet'),

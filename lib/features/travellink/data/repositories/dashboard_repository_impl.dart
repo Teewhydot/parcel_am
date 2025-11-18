@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import 'package:get_it/get_it.dart';
 
 import '../../../../core/errors/failures.dart';
 import '../../../../core/network/network_info.dart';
@@ -9,9 +10,10 @@ import '../datasources/dashboard_remote_data_source.dart';
 
 class DashboardRepositoryImpl implements DashboardRepository {
   DashboardRepositoryImpl({
-    required this.remoteDataSource,
-    required this.networkInfo,
-  });
+    DashboardRemoteDataSource? remoteDataSource,
+    NetworkInfo? networkInfo,
+  })  : remoteDataSource = remoteDataSource ?? GetIt.instance<DashboardRemoteDataSource>(),
+        networkInfo = networkInfo ?? GetIt.instance<NetworkInfo>();
 
   final DashboardRemoteDataSource remoteDataSource;
   final NetworkInfo networkInfo;

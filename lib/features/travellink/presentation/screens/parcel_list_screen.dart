@@ -4,7 +4,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/bloc/base/base_state.dart';
-import '../../../../injection_container.dart';
 import '../bloc/parcel/parcel_bloc.dart';
 import '../bloc/parcel/parcel_event.dart';
 import '../bloc/parcel/parcel_state.dart';
@@ -26,7 +25,7 @@ class _ParcelListScreenState extends State<ParcelListScreen> {
   @override
   void initState() {
     super.initState();
-    _parcelBloc = sl<ParcelBloc>();
+    _parcelBloc = ParcelBloc();
     _currentUserId = FirebaseAuth.instance.currentUser?.uid;
     if (_currentUserId != null) {
       _parcelBloc.add(ParcelLoadUserParcels(_currentUserId!));

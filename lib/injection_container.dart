@@ -17,47 +17,14 @@ import 'core/services/notification_service.dart';
 import 'features/travellink/data/datasources/auth_remote_data_source.dart';
 import 'features/travellink/data/datasources/kyc_remote_data_source.dart' as travellink_kyc_ds;
 import 'features/travellink/data/datasources/wallet_remote_data_source.dart' as travellink_wallet_ds;
-import 'features/travellink/presentation/bloc/package/package_bloc.dart' as travellink_package;
 import 'features/travellink/data/datasources/escrow_remote_data_source.dart';
 import 'features/travellink/data/datasources/parcel_remote_data_source.dart';
 import 'features/travellink/data/datasources/dashboard_remote_data_source.dart';
-
-import 'features/travellink/data/repositories/escrow_repository_impl.dart';
-import 'features/travellink/data/repositories/parcel_repository_impl.dart';
-import 'features/travellink/data/repositories/kyc_repository_impl.dart';
-import 'features/travellink/data/repositories/wallet_repository_impl.dart' as travellink_wallet_repo;
-import 'features/travellink/data/repositories/dashboard_repository_impl.dart';
-
-import 'features/travellink/domain/repositories/escrow_repository.dart';
-import 'features/travellink/domain/repositories/parcel_repository.dart';
-import 'features/travellink/domain/repositories/kyc_repository.dart';
-import 'features/travellink/domain/repositories/wallet_repository.dart';
-import 'features/travellink/domain/repositories/dashboard_repository.dart';
-
-import 'features/travellink/domain/usecases/escrow_usecase.dart';
-import 'features/travellink/domain/usecases/parcel_usecase.dart';
-import 'features/travellink/domain/usecases/kyc_usecase.dart';
-import 'features/travellink/domain/usecases/wallet_usecase.dart';
-import 'features/travellink/domain/usecases/get_dashboard_metrics_usecase.dart';
-
-import 'features/travellink/presentation/bloc/auth/auth_bloc.dart';
-import 'features/travellink/presentation/bloc/escrow/escrow_bloc.dart';
-import 'features/travellink/presentation/bloc/parcel/parcel_bloc.dart';
-import 'features/travellink/presentation/bloc/kyc/kyc_bloc.dart';
-import 'features/travellink/presentation/bloc/wallet/wallet_bloc.dart';
-import 'features/travellink/presentation/bloc/dashboard/dashboard_bloc.dart';
-
-import 'features/package/presentation/bloc/active_packages_bloc.dart';
-import 'features/chat/presentation/bloc/chat_bloc.dart';
-import 'features/chat/presentation/bloc/chats_list_bloc.dart';
+import 'features/chat/data/datasources/chat_remote_data_source.dart';
 
 import 'features/kyc/data/datasources/kyc_remote_datasource.dart' as kyc_ds;
 
 import 'features/notifications/data/datasources/notification_remote_datasource.dart';
-import 'features/notifications/data/repositories/notification_repository_impl.dart';
-import 'features/notifications/domain/repositories/notification_repository.dart';
-import 'features/notifications/domain/usecases/notification_usecase.dart';
-import 'features/notifications/presentation/bloc/notification_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -133,83 +100,14 @@ Future<void> init() async {
     () => NotificationRemoteDataSourceImpl(firestore: sl()),
   );
 
-  //! Features - Escrow Repository
-  sl.registerLazySingleton<EscrowRepository>(() => EscrowRepositoryImpl());
 
-  //! Features - Parcel Repository
-  sl.registerLazySingleton<ParcelRepository>(() => ParcelRepositoryImpl());
-
-  //! Features - KYC Repository (TravelLink)
-  sl.registerLazySingleton<KycRepository>(() => KycRepositoryImpl());
-
-  //! Features - Wallet Repository (TravelLink)
-  sl.registerLazySingleton<WalletRepository>(() => travellink_wallet_repo.WalletRepositoryImpl());
-
-  //! Features - Dashboard Repository
-  sl.registerLazySingleton<DashboardRepository>(
-    () => DashboardRepositoryImpl(
-      remoteDataSource: sl(),
-      networkInfo: sl(),
+  //! Features - Chat Remote Data Source
+  sl.registerLazySingleton<ChatRemoteDataSource>(
+    () => ChatRemoteDataSourceImpl(
+      firestore: sl(),
+      storage: sl(),
     ),
   );
-
-  //! Features - Notification Repository
-  sl.registerLazySingleton<NotificationRepository>(() => NotificationRepositoryImpl());
-
-  //! Features - Escrow Use Cases
-  sl.registerLazySingleton<EscrowUseCase>(() => EscrowUseCase());
-
-  //! Features - Parcel Use Cases
-  sl.registerLazySingleton<ParcelUseCase>(() => ParcelUseCase());
-
-  //! Features - Notification Use Cases
-  sl.registerLazySingleton<NotificationUseCase>(() => NotificationUseCase());
-
-  //! Features - KYC Use Cases
-  sl.registerLazySingleton<KycUseCase>(() => KycUseCase());
-
-  //! Features - Wallet Use Cases
-  sl.registerLazySingleton<WalletUseCase>(() => WalletUseCase());
-
-  //! Features - Dashboard Use Cases
-  sl.registerLazySingleton<GetDashboardMetricsUseCase>(
-    () => GetDashboardMetricsUseCase(sl()),
-  );
-
-  //! Features - Auth BLoC
-  sl.registerFactory<AuthBloc>(() => AuthBloc());
-
-  //! Features - Escrow BLoC
-  sl.registerFactory<EscrowBloc>(() => EscrowBloc());
-
-  //! Features - Parcel BLoC
-  sl.registerFactory<ParcelBloc>(() => ParcelBloc());
-
-  //! Features - Package BLoC (TravelLink tracking)
-  sl.registerFactory(() => travellink_package.PackageBloc());
-
-  //! Features - KYC BLoC
-  sl.registerFactory<KycBloc>(() => KycBloc());
-
-  //! Features - Wallet BLoC
-  sl.registerFactory<WalletBloc>(() => WalletBloc());
-
-  //! Features - Dashboard BLoC
-  sl.registerFactory<DashboardBloc>(
-    () => DashboardBloc(getDashboardMetricsUseCase: sl()),
-  );
-
-  //! Features - Notification BLoC
-  sl.registerFactory<NotificationBloc>(() => NotificationBloc());
-
-  //! Features - Active Packages BLoC
-  sl.registerFactory<ActivePackagesBloc>(() => ActivePackagesBloc());
-
-  //! Features - Chat BLoC
-  sl.registerFactory<ChatBloc>(() => ChatBloc());
-
-  //! Features - Chats List BLoC
-  sl.registerFactory<ChatsListBloc>(() => ChatsListBloc());
 
   //! Notification Service - Singleton
   sl.registerLazySingleton<NotificationService>(

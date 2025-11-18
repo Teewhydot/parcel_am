@@ -164,7 +164,7 @@ class BlocManager<T extends BlocBase<S>, S extends BaseState>
 
           // Handle success states
           if (state.isSuccess) {
-            Logger.logSuccess("Success condition met in BlocManager");
+            Logger.logSuccess("Success condition met in BlocManager : SuccessState");
             if (onSuccess != null) {
               onSuccess!(context, state);
             }
@@ -177,7 +177,7 @@ class BlocManager<T extends BlocBase<S>, S extends BaseState>
           }
           //Handle loaded state
           if (state is LoadedState) {
-            Logger.logSuccess("Success condition met in BlocManager");
+            Logger.logSuccess("Success condition met in BlocManager : LoadedState");
             if (onSuccess != null) {
               onSuccess!(context, state);
             }

@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_spacing.dart';
-import '../../../../injection_container.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../../../escrow/domain/entities/escrow_status.dart';
 import '../bloc/parcel/parcel_bloc.dart';
@@ -59,8 +58,8 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
   @override
   void initState() {
     super.initState();
-    _parcelBloc = sl<ParcelBloc>();
-    _escrowBloc = sl<EscrowBloc>();
+    _parcelBloc = ParcelBloc();
+    _escrowBloc = EscrowBloc();
   }
 
   @override

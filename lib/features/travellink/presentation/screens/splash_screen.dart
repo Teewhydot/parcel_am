@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get/get_connect/http/src/utils/utils.dart';
 import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
 import 'package:parcel_am/core/widgets/app_scaffold.dart';
 
@@ -27,7 +26,6 @@ class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-  bool _hasNavigated = false;
 
   @override
   void initState() {
@@ -41,8 +39,9 @@ class _SplashScreenState extends State<SplashScreen>
     );
 
     _animationController.forward();
-    
-    context.read<AuthBloc>().add(const AuthStarted());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AuthBloc>().add(AuthStarted());
+    });
   }
 
   @override
@@ -51,26 +50,6 @@ class _SplashScreenState extends State<SplashScreen>
     super.dispose();
   }
 
-  void _navigateBasedOnState(BaseState<AuthData> state) async {
-    if (_hasNavigated || !mounted) return;
-
-    await Future.delayed(const Duration(seconds: 3));
-
-    if (!mounted || _hasNavigated) return;
-
-    _hasNavigated = true;
-
-    // Check if user is authenticated (has data with user)
-    final isAuthenticated = state is DataState<AuthData> &&
-                            state.data != null &&
-                            state.data!.user != null;
-
-    if (isAuthenticated) {
-      sl<NavigationService>().navigateAndReplace(Routes.dashboard);
-    } else if (state is InitialState || state is ErrorState) {
-      sl<NavigationService>().navigateAndReplace(Routes.onboarding);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -79,8 +58,8 @@ class _SplashScreenState extends State<SplashScreen>
     showResultErrorNotifications: false,
     showResultSuccessNotifications: false,
     showLoadingIndicator: false,
-      onError: (context, state) => _navigateBasedOnState(state),
-      onSuccess: (context, state) => _navigateBasedOnState(state),
+      onError: (context, state) => sl<NavigationService>().navigateAndReplace(Routes.login),
+      onSuccess: (context, state) => sl<NavigationService>().navigateAndReplace(Routes.home),
       child: AppScaffold(
         safeAreaBottom: false,
         safeAreaTop: false,

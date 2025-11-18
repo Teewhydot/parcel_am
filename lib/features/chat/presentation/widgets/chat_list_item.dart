@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import '../../../../core/theme/app_colors.dart';
-import '../../../travellink/domain/entities/chat/chat_entity.dart';
-import '../../../travellink/domain/entities/chat/chat_entity_extensions.dart';
+import '../../domain/entities/chat_entity.dart';
 
 class ChatListItem extends StatelessWidget {
   final ChatEntity chat;
@@ -20,7 +19,7 @@ class ChatListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final unreadCount = chat.getUnreadCount(currentUserId);
+    final unreadCount = chat.unreadCount;
     final participantName = chat.participantName;
     final participantAvatar = chat.participantAvatar;
 

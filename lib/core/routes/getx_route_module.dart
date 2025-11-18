@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:parcel_am/core/routes/routes.dart';
+import 'package:parcel_am/core/widgets/navigation_shell.dart';
 import 'package:parcel_am/features/travellink/presentation/screens/dashboard_screen.dart';
 import 'package:parcel_am/features/travellink/presentation/screens/login_screen.dart';
 import 'package:parcel_am/features/travellink/presentation/screens/onboarding_screen.dart';
@@ -13,8 +14,8 @@ import 'package:parcel_am/features/travellink/presentation/screens/kyc_blocked_s
 import 'package:parcel_am/features/travellink/presentation/screens/wallet_screen.dart';
 import 'package:parcel_am/features/travellink/presentation/screens/create_parcel_screen.dart';
 import 'package:parcel_am/features/travellink/presentation/screens/profile_edit_screen.dart';
-import 'package:parcel_am/features/travellink/presentation/screens/chats_list_screen.dart';
-import 'package:parcel_am/features/travellink/presentation/screens/chat_screen.dart';
+import 'package:parcel_am/features/chat/presentation/screens/chats_list_screen.dart';
+import 'package:parcel_am/features/chat/presentation/screens/chat_screen.dart';
 import 'package:parcel_am/features/notifications/presentation/screens/notifications_screen.dart';
 
 import '../../features/travellink/presentation/screens/splash_screen.dart';
@@ -48,6 +49,18 @@ class GetXRouteModule {
       page: () => const OnboardingScreen(),
       transition: _transition,
       transitionDuration: _transitionDuration,
+    ),
+    // Main navigation shell with floating bottom nav bar
+    AuthGuard.createProtectedRoute(
+      name: Routes.home,
+      page: () {
+        // Get initial tab index from route arguments
+        final initialIndex = Get.arguments as int? ?? 0;
+        return NavigationShell(initialIndex: initialIndex);
+      },
+      transition: _transition,
+      transitionDuration: _transitionDuration,
+      requiresKyc: false,
     ),
     AuthGuard.createProtectedRoute(
       name: Routes.payment,
@@ -117,7 +130,11 @@ class GetXRouteModule {
     ),
     AuthGuard.createProtectedRoute(
       name: Routes.chatsList,
-      page: () => const ChatsListScreen(),
+      page: () {
+        // Get userId from route arguments (should be passed by navigation)
+        final userId = Get.arguments as String? ?? '';
+        return ChatsListScreen(currentUserId: userId);
+      },
       transition: _transition,
       transitionDuration: _transitionDuration,
       requiresKyc: false,
@@ -128,9 +145,13 @@ class GetXRouteModule {
         final args = Get.arguments as Map<String, dynamic>? ?? {};
         final chatId = args['chatId'] as String? ?? '';
         final otherUserId = args['otherUserId'] as String? ?? '';
+        final otherUserName = args['otherUserName'] as String? ?? 'User';
+        final otherUserAvatar = args['otherUserAvatar'] as String?;
         return ChatScreen(
           chatId: chatId,
           otherUserId: otherUserId,
+          otherUserName: otherUserName,
+          otherUserAvatar: otherUserAvatar,
         );
       },
       transition: _transition,

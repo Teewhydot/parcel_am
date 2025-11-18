@@ -8,8 +8,8 @@ import 'dashboard_event.dart';
 
 class DashboardBloc extends BaseBloC<DashboardEvent, BaseState<DashboardData>> {
   DashboardBloc({
-    required GetDashboardMetricsUseCase getDashboardMetricsUseCase,
-  })  : _getDashboardMetricsUseCase = getDashboardMetricsUseCase,
+    GetDashboardMetricsUseCase? getDashboardMetricsUseCase,
+  })  : _getDashboardMetricsUseCase = getDashboardMetricsUseCase ?? GetDashboardMetricsUseCase(),
         super(const InitialState<DashboardData>()) {
     on<DashboardStarted>(_onDashboardStarted);
     on<DashboardRefreshRequested>(_onDashboardRefreshRequested);

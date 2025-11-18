@@ -53,8 +53,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    _dashboardBloc = sl<DashboardBloc>();
-    _activePackagesBloc = sl<ActivePackagesBloc>();
+    _dashboardBloc =DashboardBloc();
+    _activePackagesBloc = ActivePackagesBloc();
     _loadInitialData();
     _subscribeToEscrowNotifications();
     _initializePresenceAndChatNotifications();
