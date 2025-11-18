@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:get/get.dart';
 import 'package:parcel_am/core/bloc/base/base_state.dart';
-import 'package:parcel_am/core/bloc_manager/bloc_manager.dart';
+import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import '../../../../core/enums/notification_type.dart';
 import '../../../../core/routes/routes.dart';
