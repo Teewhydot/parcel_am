@@ -122,7 +122,6 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: const BottomNavigation(currentIndex: 4), // Browse
     );
   }
 

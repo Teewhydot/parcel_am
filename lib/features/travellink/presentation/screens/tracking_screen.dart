@@ -102,7 +102,6 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                       ],
                     )
                   : const Center(child: Text('No package data')),
-          bottomNavigationBar: const BottomNavigation(currentIndex: 2),
         );
       },
     );

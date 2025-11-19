@@ -22,11 +22,11 @@ class FloatingBottomNavBar extends StatelessWidget {
         bottom: 16,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: AppColors.black.withOpacity(0.1),
             blurRadius: 20,
             offset: const Offset(0, -2),
             spreadRadius: 0,
@@ -39,21 +39,17 @@ class FloatingBottomNavBar extends StatelessWidget {
           ),
         ],
       ),
-      child: SafeArea(
-        top: false,
-        child: Container(
-          height: 72,
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: List.generate(
-              items.length,
-              (index) => _buildNavItem(
-                context,
-                items[index],
-                index,
-                currentIndex == index,
-              ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: List.generate(
+            items.length,
+            (index) => _buildNavItem(
+              context,
+              items[index],
+              index,
+              currentIndex == index,
             ),
           ),
         ),
