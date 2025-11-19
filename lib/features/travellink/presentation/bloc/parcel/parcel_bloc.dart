@@ -4,6 +4,7 @@ import '../../../../../core/bloc/base/base_bloc.dart';
 import '../../../../../core/bloc/base/base_state.dart';
 import 'parcel_event.dart';
 import 'parcel_state.dart';
+import '../../../domain/entities/parcel_entity.dart';
 import '../../../domain/usecases/parcel_usecase.dart';
 
 class ParcelBloc extends BaseBloC<ParcelEvent, BaseState<ParcelData>> {
@@ -159,25 +160,43 @@ class ParcelBloc extends BaseBloC<ParcelEvent, BaseState<ParcelData>> {
     Emitter<BaseState<ParcelData>> emit,
   ) async {
     final currentData = state.data ?? const ParcelData();
-    emit(AsyncLoadingState<ParcelData>(data: currentData));
 
-    final result = await _parcelUseCase.getParcel(event.parcelId);
+    // Check if we already have this parcel in availableParcels (from browse screen)
+    final existingParcel = currentData.availableParcels
+        .where((p) => p.id == event.parcelId)
+        .firstOrNull;
 
-    result.fold(
-      (failure) {
-        emit(AsyncErrorState<ParcelData>(
-          errorMessage: failure.failureMessage,
-          data: currentData,
-        ));
-      },
-      (parcel) {
+    // If we already have the parcel data, show it immediately (no loading!)
+    if (existingParcel != null) {
+      final updatedData = currentData.copyWith(currentParcel: existingParcel);
+      emit(LoadedState<ParcelData>(
+        data: updatedData,
+        lastUpdated: DateTime.now(),
+      ));
+    } else if (currentData.currentParcel?.id != event.parcelId) {
+      // Only show loading if we don't have this parcel at all
+      emit(const LoadingState<ParcelData>());
+    }
+
+    // Use emit.forEach for automatic stream handling (like ChatsListBloc)
+    await emit.forEach<ParcelEntity>(
+      _parcelUseCase.watchParcelStatus(event.parcelId).asyncMap((parcelEither) async {
+        return parcelEither.fold(
+          (failure) => throw Exception(failure.failureMessage),
+          (parcel) => parcel,
+        );
+      }),
+      onData: (parcel) {
         final updatedData = currentData.copyWith(currentParcel: parcel);
-        emit(LoadedState<ParcelData>(
+        return LoadedState<ParcelData>(
           data: updatedData,
           lastUpdated: DateTime.now(),
-        ));
-
-        add(ParcelWatchRequested(parcel.id));
+        );
+      },
+      onError: (error, stackTrace) {
+        return ErrorState<ParcelData>(
+          errorMessage: error.toString(),
+        );
       },
     );
   }

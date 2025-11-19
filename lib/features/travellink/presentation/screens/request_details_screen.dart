@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../bloc/parcel/parcel_bloc.dart';
@@ -18,20 +19,13 @@ class RequestDetailsScreen extends StatefulWidget {
 }
 
 class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
-  late ParcelBloc _parcelBloc;
   bool _isAccepting = false;
 
   @override
   void initState() {
     super.initState();
-    _parcelBloc = ParcelBloc();
-    _parcelBloc.add(ParcelLoadRequested(widget.requestId));
-  }
-
-  @override
-  void dispose() {
-    _parcelBloc.close();
-    super.dispose();
+    // Use provided ParcelBloc instead of creating new one
+    context.read<ParcelBloc>().add(ParcelLoadRequested(widget.requestId));
   }
 
   Future<void> _acceptRequest(ParcelEntity parcel) async {
@@ -52,7 +46,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
       _isAccepting = true;
     });
 
-    _parcelBloc.add(ParcelAssignTravelerRequested(
+    context.read<ParcelBloc>().add(ParcelAssignTravelerRequested(
       parcelId: parcel.id,
       travelerId: currentUser.uid,
     ));
@@ -65,7 +59,6 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
         title: const Text('Request Details'),
       ),
       body: BlocConsumer<ParcelBloc, BaseState<ParcelData>>(
-        bloc: _parcelBloc,
         listener: (context, state) {
           if (state is LoadedState<ParcelData> && _isAccepting) {
             setState(() {
@@ -91,11 +84,13 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
           }
         },
         builder: (context, state) {
-          if (state is AsyncLoadingState<ParcelData> && state.data?.currentParcel == null) {
+          // Show loading only on initial load
+          if (state is LoadingState<ParcelData>) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (state is AsyncErrorState<ParcelData> && state.data?.currentParcel == null) {
+          // Show error state
+          if (state is ErrorState<ParcelData>) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -124,7 +119,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: () {
-                      _parcelBloc.add(ParcelLoadRequested(widget.requestId));
+                      context.read<ParcelBloc>().add(ParcelLoadRequested(widget.requestId));
                     },
                     child: const Text('Retry'),
                   ),
@@ -133,16 +128,20 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
             );
           }
 
-          final parcel = state.data?.currentParcel;
-          if (parcel == null) {
-            return const Center(child: Text('Parcel not found'));
+          // Show loaded data
+          if (state is LoadedState<ParcelData>) {
+            final parcel = state.data?.currentParcel;
+            if (parcel == null) {
+              return const Center(child: Text('Parcel not found'));
+            }
+            return _buildParcelDetails(parcel);
           }
 
-          return _buildParcelDetails(parcel);
+          // Fallback for any other state
+          return const SizedBox.shrink();
         },
       ),
       floatingActionButton: BlocBuilder<ParcelBloc, BaseState<ParcelData>>(
-        bloc: _parcelBloc,
         builder: (context, state) {
           final parcel = state.data?.currentParcel;
           if (parcel == null || parcel.status != ParcelStatus.created) {
@@ -173,12 +172,56 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
   }
 
   Widget _buildParcelDetails(ParcelEntity parcel) {
-    final deliveryDate = parcel.route.estimatedDeliveryDate;
+    final deliveryDateStr = parcel.route.estimatedDeliveryDate;
+    String deliveryText = 'Flexible';
+    bool isUrgent = false;
+
+    if (deliveryDateStr != null && deliveryDateStr.isNotEmpty) {
+      try {
+        final deliveryDate = DateTime.parse(deliveryDateStr);
+        final now = DateTime.now();
+        final difference = deliveryDate.difference(now);
+
+        isUrgent = difference.inHours < 48;
+
+        if (difference.inHours < 24) {
+          deliveryText = 'Today ${DateFormat('h:mm a').format(deliveryDate)}';
+        } else if (difference.inHours < 48) {
+          deliveryText = 'Tomorrow ${DateFormat('h:mm a').format(deliveryDate)}';
+        } else {
+          deliveryText = DateFormat('MMM d, h:mm a').format(deliveryDate);
+        }
+      } catch (e) {
+        deliveryText = 'Flexible';
+      }
+    }
 
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Urgent Banner
+          if (isUrgent)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              color: AppColors.error,
+              child: Row(
+                children: [
+                  const Icon(Icons.warning, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Urgent delivery needed by $deliveryText',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
           Padding(
             padding: const EdgeInsets.all(20),
@@ -381,7 +424,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                     Expanded(
                       child: _buildDetailCard(
                         'Deliver by',
-                        deliveryDate ?? 'Flexible',
+                        deliveryText,
                       ),
                     ),
                   ],

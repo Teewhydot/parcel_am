@@ -17,6 +17,7 @@ import 'features/travellink/presentation/bloc/wallet/wallet_bloc.dart';
 import 'features/travellink/presentation/bloc/wallet/wallet_event.dart';
 import 'features/travellink/presentation/bloc/dashboard/dashboard_bloc.dart';
 import 'features/notifications/presentation/bloc/notification_bloc.dart';
+import 'features/travellink/presentation/bloc/parcel/parcel_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -64,6 +65,9 @@ class MyApp extends StatelessWidget {
               ),
               BlocProvider<NotificationBloc>(
                 create: (_) => NotificationBloc(),
+              ),
+              BlocProvider<ParcelBloc>(
+                create: (_) => ParcelBloc(),
               ),
             ],
             child: GetMaterialApp(

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../bloc/parcel/parcel_bloc.dart';
 import '../bloc/parcel/parcel_event.dart';
 import '../bloc/parcel/parcel_state.dart';
 import '../../../travellink/domain/entities/parcel_entity.dart';
+import '../../data/datasources/parcel_seeder.dart';
 import 'request_details_screen.dart';
 
 class BrowseRequestsScreen extends StatefulWidget {
@@ -16,7 +19,6 @@ class BrowseRequestsScreen extends StatefulWidget {
 }
 
 class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> {
-  late ParcelBloc _parcelBloc;
   int _selectedRouteIndex = 0;
   final List<String> _routes = ['All Routes', 'Lagos', 'Abuja', 'Port Harcourt'];
   final TextEditingController _searchController = TextEditingController();
@@ -25,8 +27,8 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> {
   @override
   void initState() {
     super.initState();
-    _parcelBloc = ParcelBloc();
-    _parcelBloc.add(const ParcelWatchAvailableParcelsRequested());
+    // Use provided ParcelBloc instead of creating new one
+    context.read<ParcelBloc>().add(const ParcelWatchAvailableParcelsRequested());
     _searchController.addListener(() {
       setState(() {
         _searchQuery = _searchController.text.toLowerCase();
@@ -36,9 +38,173 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> {
 
   @override
   void dispose() {
-    _parcelBloc.close();
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _seedTestData() async {
+    try {
+      // Show loading dialog
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: Card(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Seeding test data...'),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final seeder = GetIt.instance<ParcelSeeder>();
+      final parcelIds = await seeder.seedTestParcels();
+
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Close loading dialog
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('✅ Successfully created ${parcelIds.length} test parcels!'),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Close loading dialog
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('❌ Error seeding data: $e'),
+          backgroundColor: AppColors.error,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
+  }
+
+  Future<void> _clearTestData() async {
+    try {
+      // Show confirmation dialog
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Clear Test Data'),
+          content: const Text('This will delete all parcels you created with status "created". Continue?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Clear', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed != true || !mounted) return;
+
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: Card(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Clearing test data...'),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final seeder = GetIt.instance<ParcelSeeder>();
+      await seeder.clearTestParcels();
+
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Close loading dialog
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✅ Test data cleared successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Close loading dialog
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('❌ Error clearing data: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
+  void _showDebugMenu() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Debug Menu',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 20),
+            ListTile(
+              leading: const Icon(Icons.add_circle, color: Colors.green),
+              title: const Text('Seed Test Parcels'),
+              subtitle: const Text('Create 8 test parcels in Firebase'),
+              onTap: () {
+                Navigator.pop(context);
+                _seedTestData();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete, color: Colors.red),
+              title: const Text('Clear Test Data'),
+              subtitle: const Text('Delete all test parcels you created'),
+              onTap: () {
+                Navigator.pop(context);
+                _clearTestData();
+              },
+            ),
+            const SizedBox(height: 10),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   List<ParcelEntity> _filterParcels(List<ParcelEntity> parcels) {
@@ -79,6 +245,11 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> {
       appBar: AppBar(
         title: const Text('Browse Requests'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.bug_report),
+            onPressed: _showDebugMenu,
+            tooltip: 'Debug Menu',
+          ),
           IconButton(
             icon: const Icon(Icons.tune),
             onPressed: () {
@@ -149,7 +320,6 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> {
           // Requests List with BLoC
           Expanded(
             child: BlocBuilder<ParcelBloc, BaseState<ParcelData>>(
-              bloc: _parcelBloc,
               builder: (context, state) {
                 if (state is AsyncLoadingState<ParcelData> && state.data == null) {
                   return const Center(child: CircularProgressIndicator());
@@ -184,7 +354,7 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> {
                         const SizedBox(height: 24),
                         ElevatedButton(
                           onPressed: () {
-                            _parcelBloc.add(const ParcelWatchAvailableParcelsRequested());
+                            context.read<ParcelBloc>().add(const ParcelWatchAvailableParcelsRequested());
                           },
                           child: const Text('Retry'),
                         ),
@@ -276,7 +446,7 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> {
                     Expanded(
                       child: RefreshIndicator(
                         onRefresh: () async {
-                          _parcelBloc.add(const ParcelWatchAvailableParcelsRequested());
+                          context.read<ParcelBloc>().add(const ParcelWatchAvailableParcelsRequested());
                           await Future.delayed(const Duration(seconds: 1));
                         },
                         child: ListView.builder(
@@ -300,8 +470,26 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> {
   }
 
   Widget _buildRequestCard(ParcelEntity parcel) {
-    final deliveryDate = parcel.route.estimatedDeliveryDate;
-    final deliveryText = deliveryDate ?? 'Flexible';
+    final deliveryDateStr = parcel.route.estimatedDeliveryDate;
+    String deliveryText = 'Flexible';
+
+    if (deliveryDateStr != null && deliveryDateStr.isNotEmpty) {
+      try {
+        final deliveryDate = DateTime.parse(deliveryDateStr);
+        final now = DateTime.now();
+        final difference = deliveryDate.difference(now);
+
+        if (difference.inHours < 24) {
+          deliveryText = 'Today ${DateFormat('h:mm a').format(deliveryDate)}';
+        } else if (difference.inHours < 48) {
+          deliveryText = 'Tomorrow ${DateFormat('h:mm a').format(deliveryDate)}';
+        } else {
+          deliveryText = DateFormat('MMM d, h:mm a').format(deliveryDate);
+        }
+      } catch (e) {
+        deliveryText = 'Flexible';
+      }
+    }
 
     final price = '₦${(parcel.price ?? 0.0).toStringAsFixed(0)}';
     final weight = '${parcel.weight ?? 0.0}kg';
@@ -398,11 +586,18 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> {
               ),
               const SizedBox(height: 12),
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildInfoChip(Icons.scale, 'Weight', weight),
-                  const SizedBox(width: 16),
-                  _buildInfoChip(Icons.schedule, 'Delivery', deliveryText),
-                  const Spacer(),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildInfoChip(Icons.scale, 'Weight', weight),
+                        const SizedBox(height: 8),
+                        _buildInfoChip(Icons.schedule, 'Delivery', deliveryText),
+                      ],
+                    ),
+                  ),
                   if (parcel.sender.name.isNotEmpty)
                     Row(
                       children: [
