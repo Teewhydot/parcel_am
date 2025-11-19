@@ -32,4 +32,19 @@ class ParcelUseCase {
   Future<Either<Failure, List<ParcelEntity>>> getUserParcels(String userId) {
     return repository.getUserParcels(userId);
   }
+
+  Future<Either<Failure, List<ParcelEntity>>> getAvailableParcels() {
+    return repository.getAvailableParcels();
+  }
+
+  Stream<Either<Failure, List<ParcelEntity>>> watchAvailableParcels() {
+    return repository.watchAvailableParcels();
+  }
+
+  Future<Either<Failure, ParcelEntity>> assignTraveler(
+    String parcelId,
+    String travelerId,
+  ) {
+    return repository.assignTraveler(parcelId, travelerId);
+  }
 }

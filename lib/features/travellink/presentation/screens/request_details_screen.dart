@@ -1,11 +1,62 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../widgets/bottom_navigation.dart';
+import '../../../../core/bloc/base/base_state.dart';
+import '../bloc/parcel/parcel_bloc.dart';
+import '../bloc/parcel/parcel_event.dart';
+import '../bloc/parcel/parcel_state.dart';
+import '../../../travellink/domain/entities/parcel_entity.dart';
 
-class RequestDetailsScreen extends StatelessWidget {
+class RequestDetailsScreen extends StatefulWidget {
   const RequestDetailsScreen({super.key, required this.requestId});
-  
+
   final String requestId;
+
+  @override
+  State<RequestDetailsScreen> createState() => _RequestDetailsScreenState();
+}
+
+class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
+  late ParcelBloc _parcelBloc;
+  bool _isAccepting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _parcelBloc = ParcelBloc();
+    _parcelBloc.add(ParcelLoadRequested(widget.requestId));
+  }
+
+  @override
+  void dispose() {
+    _parcelBloc.close();
+    super.dispose();
+  }
+
+  Future<void> _acceptRequest(ParcelEntity parcel) async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('You must be logged in to accept requests'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+      return;
+    }
+
+    setState(() {
+      _isAccepting = true;
+    });
+
+    _parcelBloc.add(ParcelAssignTravelerRequested(
+      parcelId: parcel.id,
+      travelerId: currentUser.uid,
+    ));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -13,234 +64,386 @@ class RequestDetailsScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Request Details'),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Urgent Banner
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              color: AppColors.error,
-              child: const Row(
+      body: BlocConsumer<ParcelBloc, BaseState<ParcelData>>(
+        bloc: _parcelBloc,
+        listener: (context, state) {
+          if (state is LoadedState<ParcelData> && _isAccepting) {
+            setState(() {
+              _isAccepting = false;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Request accepted successfully!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+            Navigator.of(context).pop();
+          } else if (state is AsyncErrorState<ParcelData> && _isAccepting) {
+            setState(() {
+              _isAccepting = false;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.errorMessage),
+                backgroundColor: AppColors.error,
+              ),
+            );
+          }
+        },
+        builder: (context, state) {
+          if (state is AsyncLoadingState<ParcelData> && state.data?.currentParcel == null) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (state is AsyncErrorState<ParcelData> && state.data?.currentParcel == null) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.warning, color: Colors.white),
-                  SizedBox(width: 8),
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: AppColors.error,
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Failed to load request details',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
                   Text(
-                    'Urgent delivery needed by Tomorrow 2:00 PM',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+                    state.errorMessage,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () {
+                      _parcelBloc.add(ParcelLoadRequested(widget.requestId));
+                    },
+                    child: const Text('Retry'),
                   ),
                 ],
               ),
+            );
+          }
+
+          final parcel = state.data?.currentParcel;
+          if (parcel == null) {
+            return const Center(child: Text('Parcel not found'));
+          }
+
+          return _buildParcelDetails(parcel);
+        },
+      ),
+      floatingActionButton: BlocBuilder<ParcelBloc, BaseState<ParcelData>>(
+        bloc: _parcelBloc,
+        builder: (context, state) {
+          final parcel = state.data?.currentParcel;
+          if (parcel == null || parcel.status != ParcelStatus.created) {
+            return const SizedBox.shrink();
+          }
+
+          return Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: ElevatedButton(
+              onPressed: _isAccepting ? null : () => _acceptRequest(parcel),
+              child: _isAccepting
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text('Accept Request'),
             ),
-            
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Package Info
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: const Icon(
-                          Icons.inventory_2_outlined,
-                          color: AppColors.primary,
-                          size: 30,
-                        ),
+          );
+        },
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+    );
+  }
+
+  Widget _buildParcelDetails(ParcelEntity parcel) {
+    final deliveryDate = parcel.route.estimatedDeliveryDate;
+
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Package Info
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Important Business Documents',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            const Text(
-                              '₦3,500',
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            const Text(
-                              'Payment via escrow',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppColors.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
+                      child: const Icon(
+                        Icons.inventory_2_outlined,
+                        color: AppColors.primary,
+                        size: 30,
                       ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 24),
-                  
-                  // Package Description
-                  const Text(
-                    'Sealed envelope containing signed contracts and legal documents for a business acquisition. Handle with extreme care - contents are confidential and time sensitive.',
-                    style: TextStyle(
-                      fontSize: 16,
-                      height: 1.5,
                     ),
-                  ),
-                  
-                  const SizedBox(height: 24),
-                  
-                  // Route Info
-                  Row(
-                    children: [
-                      Column(
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: const BoxDecoration(
+                          Text(
+                            parcel.category ?? 'Package',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '₦${(parcel.price ?? 0.0).toStringAsFixed(0)}',
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
                               color: AppColors.primary,
-                              shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.circle, color: Colors.white, size: 8),
                           ),
-                          Container(
-                            width: 2,
-                            height: 40,
-                            color: AppColors.outline,
-                          ),
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: const BoxDecoration(
-                              color: AppColors.secondary,
-                              shape: BoxShape.circle,
+                          const SizedBox(height: 4),
+                          Text(
+                            (parcel.escrowId != null && parcel.escrowId!.isNotEmpty)
+                                ? 'Payment via escrow'
+                                : 'Direct payment',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.onSurfaceVariant,
                             ),
-                            child: const Icon(Icons.flag, color: Colors.white, size: 16),
                           ),
                         ],
                       ),
-                      const SizedBox(width: 16),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 24),
+
+                // Package Description
+                Text(
+                  parcel.description ?? 'No description provided',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    height: 1.5,
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Sender Info
+                if (parcel.sender.name.isNotEmpty) ...[
+                  const Text(
+                    'Sender',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.person, size: 20, color: AppColors.primary),
+                      const SizedBox(width: 8),
+                      Text(
+                        parcel.sender.name,
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ],
+                  ),
+                  if (parcel.sender.phoneNumber.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.phone, size: 20, color: AppColors.primary),
+                        const SizedBox(width: 8),
+                        Text(
+                          parcel.sender.phoneNumber,
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+                ],
+
+                // Route Info
+                Row(
+                  children: [
+                    Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: const BoxDecoration(
+                            color: AppColors.primary,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.circle, color: Colors.white, size: 8),
+                        ),
+                        Container(
+                          width: 2,
+                          height: 40,
+                          color: AppColors.outline,
+                        ),
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: const BoxDecoration(
+                            color: AppColors.secondary,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.flag, color: Colors.white, size: 16),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'From',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.onSurfaceVariant,
+                            ),
+                          ),
+                          Text(
+                            parcel.route.origin,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          const Text(
+                            'To',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.onSurfaceVariant,
+                            ),
+                          ),
+                          Text(
+                            parcel.route.destination,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 24),
+
+                // Package Details
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildDetailCard('Weight', '${parcel.weight ?? 0.0}kg'),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildDetailCard(
+                        'Dimensions',
+                        parcel.dimensions ?? 'Not specified',
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildDetailCard(
+                        'Deliver by',
+                        deliveryDate ?? 'Flexible',
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 24),
+
+                // Receiver Info
+                const Text(
+                  'Receiver',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.person, size: 20, color: AppColors.secondary),
+                    const SizedBox(width: 8),
+                    Text(
+                      parcel.receiver.name,
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                  ],
+                ),
+                if (parcel.receiver.phoneNumber.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(Icons.phone, size: 20, color: AppColors.secondary),
+                      const SizedBox(width: 8),
+                      Text(
+                        parcel.receiver.phoneNumber,
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ],
+                  ),
+                ],
+                if (parcel.receiver.address.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.location_on, size: 20, color: AppColors.secondary),
+                      const SizedBox(width: 8),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'From',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppColors.onSurfaceVariant,
-                              ),
-                            ),
-                            const Text(
-                              'Lagos',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                            const Text(
-                              'To',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppColors.onSurfaceVariant,
-                              ),
-                            ),
-                            const Text(
-                              'Abuja',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
+                        child: Text(
+                          parcel.receiver.address,
+                          style: const TextStyle(fontSize: 14),
                         ),
                       ),
                     ],
                   ),
-                  
-                  const SizedBox(height: 24),
-                  
-                  // Package Details
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildDetailCard('Weight', '0.5kg'),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildDetailCard('Dimensions', '30cm x 20cm x 2cm'),
-                      ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 16),
-                  
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildDetailCard('Deliver by', 'Tomorrow 2:00 PM'),
-                      ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 24),
-                  
-                  // Package Photos
-                  const Text(
-                    'Package Photos',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceVariant,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Center(
-                      child: Text(
-                        'Photos will be shown here',
-                        style: TextStyle(color: AppColors.onSurfaceVariant),
-                      ),
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 100), // Space for bottom navigation
                 ],
-              ),
+
+                const SizedBox(height: 100), // Space for bottom button
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-      bottomNavigationBar: const BottomNavigation(currentIndex: 0), // Details
-      floatingActionButton: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: ElevatedButton(
-          onPressed: () {
-            // TODO: Accept request
-          },
-          child: const Text('Accept Request'),
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 

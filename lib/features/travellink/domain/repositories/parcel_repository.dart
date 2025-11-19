@@ -35,4 +35,8 @@ abstract class ParcelRepository {
   });
 
   Future<Either<Failure, List<ParcelEntity>>> getParcelsByUser(String userId);
+
+  Future<Either<Failure, List<ParcelEntity>>> getAvailableParcels();
+
+  Stream<Either<Failure, List<ParcelEntity>>> watchAvailableParcels();
 }

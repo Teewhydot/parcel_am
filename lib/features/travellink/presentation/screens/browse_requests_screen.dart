@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../widgets/bottom_navigation.dart';
+import '../../../../core/bloc/base/base_state.dart';
+import '../bloc/parcel/parcel_bloc.dart';
+import '../bloc/parcel/parcel_event.dart';
+import '../bloc/parcel/parcel_state.dart';
+import '../../../travellink/domain/entities/parcel_entity.dart';
 import 'request_details_screen.dart';
 
 class BrowseRequestsScreen extends StatefulWidget {
@@ -11,8 +16,62 @@ class BrowseRequestsScreen extends StatefulWidget {
 }
 
 class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> {
+  late ParcelBloc _parcelBloc;
   int _selectedRouteIndex = 0;
   final List<String> _routes = ['All Routes', 'Lagos', 'Abuja', 'Port Harcourt'];
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _parcelBloc = ParcelBloc();
+    _parcelBloc.add(const ParcelWatchAvailableParcelsRequested());
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.toLowerCase();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _parcelBloc.close();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<ParcelEntity> _filterParcels(List<ParcelEntity> parcels) {
+    var filtered = parcels;
+
+    // Apply route filter
+    if (_selectedRouteIndex > 0) {
+      final selectedRoute = _routes[_selectedRouteIndex];
+      filtered = filtered.where((parcel) {
+        final origin = parcel.route.origin.toLowerCase();
+        final destination = parcel.route.destination.toLowerCase();
+        final route = selectedRoute.toLowerCase();
+        return origin.contains(route) || destination.contains(route);
+      }).toList();
+    }
+
+    // Apply search filter
+    if (_searchQuery.isNotEmpty) {
+      filtered = filtered.where((parcel) {
+        final origin = parcel.route.origin.toLowerCase();
+        final destination = parcel.route.destination.toLowerCase();
+        final description = (parcel.description ?? '').toLowerCase();
+        final category = (parcel.category ?? '').toLowerCase();
+
+        return origin.contains(_searchQuery) ||
+            destination.contains(_searchQuery) ||
+            description.contains(_searchQuery) ||
+            category.contains(_searchQuery);
+      }).toList();
+    }
+
+    return filtered;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +82,7 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> {
           IconButton(
             icon: const Icon(Icons.tune),
             onPressed: () {
-              // TODO: Show filter options
+              // Future enhancement: Show filter dialog
             },
           ),
         ],
@@ -34,9 +93,18 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> {
           Padding(
             padding: const EdgeInsets.all(16),
             child: TextField(
+              controller: _searchController,
               decoration: InputDecoration(
                 hintText: 'Search by route or package type...',
                 prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                        },
+                      )
+                    : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -46,7 +114,7 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> {
               ),
             ),
           ),
-          
+
           // Route Filter Tabs
           Container(
             height: 50,
@@ -77,45 +145,151 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> {
               },
             ),
           ),
-          
-          // Available Requests Count
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                '24 requests available on your routes',
-                style: TextStyle(
-                  color: AppColors.onSurfaceVariant,
-                  fontSize: 14,
-                ),
-              ),
-            ),
-          ),
-          
-          // Requests List
+
+          // Requests List with BLoC
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: 10,
-              itemBuilder: (context, index) {
-                return _buildRequestCard(
-                  title: index == 0 ? 'Important Documents' : 'Electronics Package',
-                  description: index == 0 
-                    ? 'Legal documents for business meeting'
-                    : 'New smartphone in original packaging',
-                  from: index % 2 == 0 ? 'Lagos' : 'Port Harcourt',
-                  to: index % 2 == 0 ? 'Abuja' : 'Lagos',
-                  price: index == 0 ? '₦3,500' : '₦7,200',
-                  weight: index == 0 ? '0.5kg' : '1.2kg',
-                  delivery: index == 0 ? 'Tomorrow 2PM' : 'Dec 27',
-                  isUrgent: index == 0,
-                  rating: 4.8,
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (context) => RequestDetailsScreen(requestId: 'REQ-${index + 1}')),
-                    );
-                  },
+            child: BlocBuilder<ParcelBloc, BaseState<ParcelData>>(
+              bloc: _parcelBloc,
+              builder: (context, state) {
+                if (state is AsyncLoadingState<ParcelData> && state.data == null) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (state is AsyncErrorState<ParcelData>) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 64,
+                          color: AppColors.error,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Failed to load requests',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          state.errorMessage,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton(
+                          onPressed: () {
+                            _parcelBloc.add(const ParcelWatchAvailableParcelsRequested());
+                          },
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                final availableParcels = state.data?.availableParcels ?? [];
+                final filteredParcels = _filterParcels(availableParcels);
+
+                if (availableParcels.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.inventory_2_outlined,
+                          size: 64,
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'No requests available',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Check back later for new delivery requests',
+                          style: TextStyle(
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                if (filteredParcels.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.search_off,
+                          size: 64,
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'No matching requests',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Try adjusting your filters or search',
+                          style: TextStyle(
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return Column(
+                  children: [
+                    // Available Requests Count
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          '${filteredParcels.length} request${filteredParcels.length == 1 ? '' : 's'} available',
+                          style: TextStyle(
+                            color: AppColors.onSurfaceVariant,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    Expanded(
+                      child: RefreshIndicator(
+                        onRefresh: () async {
+                          _parcelBloc.add(const ParcelWatchAvailableParcelsRequested());
+                          await Future.delayed(const Duration(seconds: 1));
+                        },
+                        child: ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemCount: filteredParcels.length,
+                          itemBuilder: (context, index) {
+                            final parcel = filteredParcels[index];
+                            return _buildRequestCard(parcel);
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
                 );
               },
             ),
@@ -125,22 +299,23 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> {
     );
   }
 
-  Widget _buildRequestCard({
-    required String title,
-    required String description,
-    required String from,
-    required String to,
-    required String price,
-    required String weight,
-    required String delivery,
-    required double rating,
-    bool isUrgent = false,
-    VoidCallback? onTap,
-  }) {
+  Widget _buildRequestCard(ParcelEntity parcel) {
+    final deliveryDate = parcel.route.estimatedDeliveryDate;
+    final deliveryText = deliveryDate ?? 'Flexible';
+
+    final price = '₦${(parcel.price ?? 0.0).toStringAsFixed(0)}';
+    final weight = '${parcel.weight ?? 0.0}kg';
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: InkWell(
-        onTap: onTap,
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => RequestDetailsScreen(requestId: parcel.id),
+            ),
+          );
+        },
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -154,12 +329,12 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> {
                     width: 50,
                     height: 50,
                     decoration: BoxDecoration(
-                      color: isUrgent ? AppColors.error.withValues(alpha: 0.1) : AppColors.primary.withValues(alpha: 0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
-                      isUrgent ? Icons.priority_high : Icons.inventory_2_outlined,
-                      color: isUrgent ? AppColors.error : AppColors.primary,
+                      Icons.inventory_2_outlined,
+                      color: AppColors.primary,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -171,7 +346,7 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> {
                           children: [
                             Expanded(
                               child: Text(
-                                title,
+                                parcel.category ?? 'Package',
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
@@ -188,31 +363,15 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> {
                             ),
                           ],
                         ),
-                        if (isUrgent) ...[
-                          const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.error,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Text(
-                              'Urgent',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ],
                         const SizedBox(height: 8),
                         Text(
-                          description,
+                          parcel.description ?? 'No description',
                           style: const TextStyle(
                             color: AppColors.onSurfaceVariant,
                             fontSize: 14,
                           ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
@@ -224,7 +383,7 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> {
                 children: [
                   Icon(Icons.location_on, size: 16, color: AppColors.onSurfaceVariant),
                   const SizedBox(width: 4),
-                  Text(from, style: const TextStyle(fontSize: 14)),
+                  Text(parcel.route.origin, style: const TextStyle(fontSize: 14)),
                   const SizedBox(width: 8),
                   Container(
                     width: 20,
@@ -234,7 +393,7 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> {
                   const SizedBox(width: 8),
                   Icon(Icons.flag, size: 16, color: AppColors.onSurfaceVariant),
                   const SizedBox(width: 4),
-                  Text(to, style: const TextStyle(fontSize: 14)),
+                  Text(parcel.route.destination, style: const TextStyle(fontSize: 14)),
                 ],
               ),
               const SizedBox(height: 12),
@@ -242,21 +401,22 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> {
                 children: [
                   _buildInfoChip(Icons.scale, 'Weight', weight),
                   const SizedBox(width: 16),
-                  _buildInfoChip(Icons.schedule, 'Delivery', delivery),
+                  _buildInfoChip(Icons.schedule, 'Delivery', deliveryText),
                   const Spacer(),
-                  Row(
-                    children: [
-                      const Icon(Icons.star, size: 16, color: AppColors.accent),
-                      const SizedBox(width: 4),
-                      Text(
-                        rating.toString(),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
+                  if (parcel.sender.name.isNotEmpty)
+                    Row(
+                      children: [
+                        const Icon(Icons.person, size: 16, color: AppColors.accent),
+                        const SizedBox(width: 4),
+                        Text(
+                          parcel.sender.name.split(' ').first,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
                 ],
               ),
             ],

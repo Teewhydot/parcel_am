@@ -10,6 +10,7 @@ class ParcelBloc extends BaseBloC<ParcelEvent, BaseState<ParcelData>> {
   final _parcelUseCase = ParcelUseCase();
   StreamSubscription<dynamic>? _parcelStatusSubscription;
   StreamSubscription<dynamic>? _userParcelsSubscription;
+  StreamSubscription<dynamic>? _availableParcelsSubscription;
 
   ParcelBloc()
       : super(const InitialState<ParcelData>()) {
@@ -21,6 +22,9 @@ class ParcelBloc extends BaseBloC<ParcelEvent, BaseState<ParcelData>> {
     on<ParcelListUpdated>(_onListUpdated);
     on<ParcelLoadRequested>(_onLoadRequested);
     on<ParcelLoadUserParcels>(_onLoadUserParcels);
+    on<ParcelWatchAvailableParcelsRequested>(_onWatchAvailableParcelsRequested);
+    on<ParcelAvailableListUpdated>(_onAvailableListUpdated);
+    on<ParcelAssignTravelerRequested>(_onAssignTravelerRequested);
   }
 
   Future<void> _onCreateRequested(
@@ -206,10 +210,75 @@ class ParcelBloc extends BaseBloC<ParcelEvent, BaseState<ParcelData>> {
     );
   }
 
+  Future<void> _onWatchAvailableParcelsRequested(
+    ParcelWatchAvailableParcelsRequested event,
+    Emitter<BaseState<ParcelData>> emit,
+  ) async {
+    await _availableParcelsSubscription?.cancel();
+
+    _availableParcelsSubscription = _parcelUseCase
+        .watchAvailableParcels()
+        .listen(
+          (parcelsEither) {
+            parcelsEither.fold(
+              (failure) {
+              },
+              (parcels) {
+                add(ParcelAvailableListUpdated(parcels));
+              },
+            );
+          },
+          onError: (error) {
+          },
+        );
+  }
+
+  Future<void> _onAvailableListUpdated(
+    ParcelAvailableListUpdated event,
+    Emitter<BaseState<ParcelData>> emit,
+  ) async {
+    final currentData = state.data ?? const ParcelData();
+    final updatedData = currentData.copyWith(availableParcels: event.parcels);
+    emit(LoadedState<ParcelData>(
+      data: updatedData,
+      lastUpdated: DateTime.now(),
+    ));
+  }
+
+  Future<void> _onAssignTravelerRequested(
+    ParcelAssignTravelerRequested event,
+    Emitter<BaseState<ParcelData>> emit,
+  ) async {
+    final currentData = state.data ?? const ParcelData();
+    emit(AsyncLoadingState<ParcelData>(data: currentData));
+
+    final result = await _parcelUseCase.assignTraveler(
+      event.parcelId,
+      event.travelerId,
+    );
+
+    result.fold(
+      (failure) {
+        emit(AsyncErrorState<ParcelData>(
+          errorMessage: failure.failureMessage,
+          data: currentData,
+        ));
+      },
+      (parcel) {
+        final updatedData = currentData.copyWith(currentParcel: parcel);
+        emit(LoadedState<ParcelData>(
+          data: updatedData,
+          lastUpdated: DateTime.now(),
+        ));
+      },
+    );
+  }
+
   @override
   Future<void> close() {
     _parcelStatusSubscription?.cancel();
     _userParcelsSubscription?.cancel();
+    _availableParcelsSubscription?.cancel();
     return super.close();
   }
 }

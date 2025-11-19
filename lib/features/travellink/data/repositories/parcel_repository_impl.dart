@@ -170,4 +170,31 @@ class ParcelRepositoryImpl implements ParcelRepository {
       return Left(UnknownFailure(failureMessage: e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, List<ParcelEntity>>> getAvailableParcels() async {
+    try {
+      if (await networkInfo.isConnected) {
+        final parcelModels = await remoteDataSource.getAvailableParcels();
+        return Right(parcelModels.map((model) => model.toEntity()).toList());
+      } else {
+        return const Left(
+            NoInternetFailure(failureMessage: 'No internet connection'));
+      }
+    } on ServerException {
+      return const Left(ServerFailure(failureMessage: 'Server error occurred'));
+    } catch (e) {
+      return Left(UnknownFailure(failureMessage: e.toString()));
+    }
+  }
+
+  @override
+  Stream<Either<Failure, List<ParcelEntity>>> watchAvailableParcels() {
+    return ErrorHandler.handleStream(
+      () => remoteDataSource.watchAvailableParcels().map((parcelModels) {
+        return parcelModels.map((model) => model.toEntity()).toList();
+      }),
+      operationName: 'watchAvailableParcels',
+    );
+  }
 }

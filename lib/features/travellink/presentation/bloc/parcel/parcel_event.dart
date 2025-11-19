@@ -96,3 +96,29 @@ class ParcelPaymentCompleted extends ParcelEvent {
   @override
   List<Object?> get props => [parcelId, transactionId];
 }
+
+class ParcelWatchAvailableParcelsRequested extends ParcelEvent {
+  const ParcelWatchAvailableParcelsRequested();
+}
+
+class ParcelAvailableListUpdated extends ParcelEvent {
+  final List<ParcelEntity> parcels;
+
+  const ParcelAvailableListUpdated(this.parcels);
+
+  @override
+  List<Object?> get props => [parcels];
+}
+
+class ParcelAssignTravelerRequested extends ParcelEvent {
+  final String parcelId;
+  final String travelerId;
+
+  const ParcelAssignTravelerRequested({
+    required this.parcelId,
+    required this.travelerId,
+  });
+
+  @override
+  List<Object?> get props => [parcelId, travelerId];
+}

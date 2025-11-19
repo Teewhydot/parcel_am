@@ -14,6 +14,8 @@ abstract class ParcelRemoteDataSource {
   Future<ParcelModel> getParcel(String parcelId);
   Future<List<ParcelModel>> getUserParcels(String userId, {ParcelStatus? status});
   Future<List<ParcelModel>> getParcelsByUser(String userId);
+  Future<List<ParcelModel>> getAvailableParcels();
+  Stream<List<ParcelModel>> watchAvailableParcels();
 }
 
 class ParcelRemoteDataSourceImpl implements ParcelRemoteDataSource {
@@ -216,5 +218,51 @@ class ParcelRemoteDataSourceImpl implements ParcelRemoteDataSource {
   @override
   Future<List<ParcelModel>> getParcelsByUser(String userId) async {
     return getUserParcels(userId);
+  }
+
+  @override
+  Future<List<ParcelModel>> getAvailableParcels() async {
+    try {
+      final query = firestore
+          .collection('parcels')
+          .where('status', isEqualTo: ParcelStatus.created.toJson())
+          .orderBy('createdAt', descending: true);
+
+      final querySnapshot = await query.get();
+
+      return querySnapshot.docs
+          .map((doc) => ParcelModel.fromFirestore(doc))
+          .toList();
+    } on FirebaseException {
+      throw ServerException();
+    } catch (e) {
+      throw ServerException();
+    }
+  }
+
+  @override
+  Stream<List<ParcelModel>> watchAvailableParcels() {
+    try {
+      return firestore
+          .collection('parcels')
+          .where('status', isEqualTo: ParcelStatus.created.toJson())
+          .orderBy('createdAt', descending: true)
+          .snapshots()
+          .handleError((error) {
+        print('❌ Firestore Error (watchAvailableParcels): $error');
+        if (error.toString().contains('index')) {
+          print('🔍 INDEX REQUIRED: Create a composite index for:');
+          print('   Collection: parcels');
+          print('   Fields: status (Ascending), createdAt (Descending)');
+          print('   Or visit the Firebase Console to create the index automatically.');
+        }
+      }).map((snapshot) {
+        return snapshot.docs
+            .map((doc) => ParcelModel.fromFirestore(doc))
+            .toList();
+      });
+    } catch (e) {
+      throw ServerException();
+    }
   }
 }
