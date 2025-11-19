@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../domain/repositories/presence_repository.dart';
 
 class PresenceService with WidgetsBindingObserver {
-  final FirebaseFirestore _firestore;
+  final PresenceRepository _repository;
   String? _currentUserId;
 
-  PresenceService({required FirebaseFirestore firestore})
-      : _firestore = firestore;
+  PresenceService({required PresenceRepository repository})
+      : _repository = repository;
 
   void initialize(String userId) {
     _currentUserId = userId;
@@ -38,46 +39,17 @@ class PresenceService with WidgetsBindingObserver {
 
   Future<void> setOnline() async {
     if (_currentUserId == null) return;
-
-    try {
-      await _firestore.collection('users').doc(_currentUserId).set({
-        'presence': {
-          'isOnline': true,
-          'lastSeen': FieldValue.serverTimestamp(),
-        }
-      }, SetOptions(merge: true));
-    } catch (e) {
-      debugPrint('Error setting online status: $e');
-    }
+    await _repository.setOnline(_currentUserId!);
   }
 
   Future<void> setOffline() async {
     if (_currentUserId == null) return;
-
-    try {
-      await _firestore.collection('users').doc(_currentUserId).set({
-        'presence': {
-          'isOnline': false,
-          'lastSeen': FieldValue.serverTimestamp(),
-        }
-      }, SetOptions(merge: true));
-    } catch (e) {
-      debugPrint('Error setting offline status: $e');
-    }
+    await _repository.setOffline(_currentUserId!);
   }
 
   Future<void> updateLastSeen() async {
     if (_currentUserId == null) return;
-
-    try {
-      await _firestore.collection('users').doc(_currentUserId).set({
-        'presence': {
-          'lastSeen': FieldValue.serverTimestamp(),
-        }
-      }, SetOptions(merge: true));
-    } catch (e) {
-      debugPrint('Error updating last seen: $e');
-    }
+    await _repository.updateLastSeen(_currentUserId!);
   }
 
   static Future<void> cleanupPresence(

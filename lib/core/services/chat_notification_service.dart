@@ -1,17 +1,18 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import '../domain/repositories/chat_notification_repository.dart';
 
 class ChatNotificationService {
-  final FirebaseFirestore _firestore;
+  final ChatNotificationRepository _repository;
   final FlutterLocalNotificationsPlugin _notificationsPlugin;
   StreamSubscription<QuerySnapshot>? _chatSubscription;
   String? _currentUserId;
 
   ChatNotificationService({
-    required FirebaseFirestore firestore,
+    required ChatNotificationRepository repository,
     required FlutterLocalNotificationsPlugin notificationsPlugin,
-  })  : _firestore = firestore,
+  })  : _repository = repository,
         _notificationsPlugin = notificationsPlugin;
 
   Future<void> initialize(String userId) async {
@@ -31,28 +32,17 @@ class ChatNotificationService {
   void _subscribeToChats() {
     if (_currentUserId == null) return;
 
-    _chatSubscription = _firestore
-        .collection('chats')
-        .where('participants', arrayContains: _currentUserId)
-        .snapshots()
+    _chatSubscription = _repository
+        .watchUserChats(_currentUserId!)
         .listen(
       (snapshot) {
         for (var change in snapshot.docChanges) {
           if (change.type == DocumentChangeType.modified) {
-            final chatData = change.doc.data();
+            final chatData = change.doc.data() as Map<String, dynamic>?;
             if (chatData != null) {
               _handleChatUpdate(change.doc.id, chatData);
             }
           }
-        }
-      },
-      onError: (error) {
-        print('❌ Firestore Error (ChatNotifications): $error');
-        if (error.toString().contains('index')) {
-          print('🔍 INDEX REQUIRED: Create a composite index for:');
-          print('   Collection: chats');
-          print('   Fields: participants (Array), [add other indexed fields]');
-          print('   Or visit the Firebase Console to create the index automatically.');
         }
       },
     );
@@ -75,9 +65,7 @@ class ChatNotificationService {
       );
 
       if (otherUserId.isNotEmpty) {
-        final userDoc =
-            await _firestore.collection('users').doc(otherUserId).get();
-        final userData = userDoc.data();
+        final userData = await _repository.getUserData(otherUserId);
         final senderName = userData?['displayName'] ?? 'Someone';
 
         await _showNotification(

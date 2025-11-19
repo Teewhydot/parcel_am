@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+
 import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_scaffold.dart';
@@ -41,8 +41,7 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   StreamSubscription? _notificationSubscription;
-  final escrow.NotificationService _notificationService =
-      escrow.NotificationService(firestore: sl());
+  final escrow.NotificationService _notificationService = sl<escrow.NotificationService>();
   PresenceService? _presenceService;
   ChatNotificationService? _chatNotificationService;
   late ActivePackagesBloc _activePackagesBloc;
@@ -76,14 +75,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final userId = authState is LoadedState<AuthData> ? authState.data?.user?.uid ?? '' : '';
 
     if (userId.isNotEmpty) {
-      final presenceService = PresenceService(firestore: sl<FirebaseFirestore>());
+      final presenceService = sl<PresenceService>();
       presenceService.initialize(userId);
       _presenceService = presenceService;
 
-      final chatNotificationService = ChatNotificationService(
-        firestore: sl<FirebaseFirestore>(),
-        notificationsPlugin: FlutterLocalNotificationsPlugin(),
-      );
+      final chatNotificationService = sl<ChatNotificationService>();
       chatNotificationService.initialize(userId);
       chatNotificationService.requestPermissions();
       _chatNotificationService = chatNotificationService;

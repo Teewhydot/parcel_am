@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -11,6 +10,7 @@ import '../../features/notifications/data/datasources/notification_remote_dataso
 import '../../features/notifications/data/models/notification_model.dart';
 import '../routes/routes.dart';
 import 'navigation_service/nav_config.dart';
+import '../domain/repositories/notification_repository.dart';
 
 /// Top-level background message handler
 /// Must be a top-level function for Firebase Messaging background handler
@@ -86,12 +86,11 @@ Future<void> _showBackgroundNotification(RemoteMessage message) async {
 class NotificationService {
   static NotificationService? _instance;
 
-  final FirebaseMessaging firebaseMessaging;
+  final NotificationRepository repository;
   final FlutterLocalNotificationsPlugin localNotifications;
   final NotificationRemoteDataSource remoteDataSource;
   final NavigationService navigationService;
   final FirebaseAuth firebaseAuth;
-  final FirebaseFirestore firestore;
 
   bool _isInitialized = false;
   String? _currentToken;
@@ -99,30 +98,27 @@ class NotificationService {
   StreamSubscription<RemoteMessage>? _foregroundMessageSubscription;
 
   NotificationService({
-    required this.firebaseMessaging,
+    required this.repository,
     required this.localNotifications,
     required this.remoteDataSource,
     required this.navigationService,
     required this.firebaseAuth,
-    required this.firestore,
   });
 
   /// Get singleton instance
   factory NotificationService.getInstance({
-    required FirebaseMessaging firebaseMessaging,
+    required NotificationRepository repository,
     required FlutterLocalNotificationsPlugin localNotifications,
     required NotificationRemoteDataSource remoteDataSource,
     required NavigationService navigationService,
     required FirebaseAuth firebaseAuth,
-    required FirebaseFirestore firestore,
   }) {
     _instance ??= NotificationService(
-      firebaseMessaging: firebaseMessaging,
+      repository: repository,
       localNotifications: localNotifications,
       remoteDataSource: remoteDataSource,
       navigationService: navigationService,
       firebaseAuth: firebaseAuth,
-      firestore: firestore,
     );
     return _instance!;
   }
@@ -162,14 +158,14 @@ class NotificationService {
       }
 
       // Subscribe to token refresh
-      _tokenRefreshSubscription = firebaseMessaging.onTokenRefresh.listen((newToken) {
+      _tokenRefreshSubscription = repository.onTokenRefresh.listen((newToken) {
         _currentToken = newToken;
         storeToken(newToken);
       });
 
       // Subscribe to foreground messages
       _foregroundMessageSubscription =
-          FirebaseMessaging.onMessage.listen(handleForegroundMessage);
+          repository.onForegroundMessage.listen(handleForegroundMessage);
 
       _isInitialized = true;
 
@@ -240,7 +236,7 @@ class NotificationService {
   /// Get FCM token
   Future<String?> getToken() async {
     try {
-      _currentToken = await firebaseMessaging.getToken();
+      _currentToken = await repository.getFCMToken();
       if (kDebugMode) {
         print('FCM Token: $_currentToken');
       }
@@ -264,10 +260,7 @@ class NotificationService {
         return;
       }
 
-      // Update Firestore with arrayUnion to handle multi-device tokens and deduplicate
-      await firestore.collection('users').doc(userId).update({
-        'fcmTokens': FieldValue.arrayUnion([token]),
-      });
+      await repository.storeFCMToken(userId, token);
 
       if (kDebugMode) {
         print('FCM token stored for user: $userId');
@@ -479,21 +472,13 @@ class NotificationService {
   /// Request notification permissions
   Future<AuthorizationStatus> requestPermissions() async {
     try {
-      final settings = await firebaseMessaging.requestPermission(
-        alert: true,
-        announcement: false,
-        badge: true,
-        carPlay: false,
-        criticalAlert: false,
-        provisional: false,
-        sound: true,
-      );
+      final status = await repository.requestPermissions();
 
       if (kDebugMode) {
-        print('Notification permission status: ${settings.authorizationStatus}');
+        print('Notification permission status: $status');
       }
 
-      return settings.authorizationStatus;
+      return status;
     } catch (e) {
       if (kDebugMode) {
         print('Error requesting notification permissions: $e');
@@ -505,7 +490,7 @@ class NotificationService {
   /// Subscribe to FCM topic
   Future<void> subscribeToTopic(String topic) async {
     try {
-      await firebaseMessaging.subscribeToTopic(topic);
+      await repository.subscribeToTopic(topic);
       if (kDebugMode) {
         print('Subscribed to topic: $topic');
       }
@@ -519,7 +504,7 @@ class NotificationService {
   /// Unsubscribe from FCM topic
   Future<void> unsubscribeFromTopic(String topic) async {
     try {
-      await firebaseMessaging.unsubscribeFromTopic(topic);
+      await repository.unsubscribeFromTopic(topic);
       if (kDebugMode) {
         print('Unsubscribed from topic: $topic');
       }
@@ -536,13 +521,7 @@ class NotificationService {
       final userId = firebaseAuth.currentUser?.uid;
       if (userId == null) return 0;
 
-      final snapshot = await firestore
-          .collection('notifications')
-          .where('userId', isEqualTo: userId)
-          .where('isRead', isEqualTo: false)
-          .get();
-
-      return snapshot.docs.length;
+      return await repository.getUnreadNotificationCount(userId);
     } catch (e) {
       if (kDebugMode) {
         print('Error getting unread count: $e');

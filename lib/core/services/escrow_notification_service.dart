@@ -1,56 +1,28 @@
 import 'dart:async';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../domain/repositories/escrow_notification_repository.dart';
+export '../domain/repositories/escrow_notification_repository.dart';
 
 class NotificationService {
-  final FirebaseFirestore _firestore;
+  final EscrowNotificationRepository _repository;
   StreamSubscription? _escrowNotificationSubscription;
   final _notificationController = StreamController<EscrowNotification>.broadcast();
 
-  NotificationService({required FirebaseFirestore firestore})
-      : _firestore = firestore;
+  NotificationService({required EscrowNotificationRepository repository})
+      : _repository = repository;
 
   Stream<EscrowNotification> get escrowNotifications => _notificationController.stream;
 
   void subscribeToEscrowNotifications(String userId) {
     _escrowNotificationSubscription?.cancel();
 
-    _escrowNotificationSubscription = _firestore
-        .collection('packages')
-        .where('senderId', isEqualTo: userId)
-        .where('paymentInfo.isEscrow', isEqualTo: true)
-        .snapshots()
+    _escrowNotificationSubscription = _repository
+        .watchUserEscrowNotifications(userId)
         .listen(
-      (snapshot) {
-        for (var change in snapshot.docChanges) {
-          if (change.type == DocumentChangeType.modified) {
-            final data = change.doc.data();
-            if (data != null) {
-              final paymentInfo = data['paymentInfo'] as Map<String, dynamic>?;
-              if (paymentInfo != null) {
-                final escrowStatus = paymentInfo['escrowStatus'] as String?;
-                if (escrowStatus != null) {
-                  _notificationController.add(
-                    EscrowNotification(
-                      packageId: change.doc.id,
-                      packageTitle: data['title'] ?? 'Package',
-                      status: escrowStatus,
-                      timestamp: DateTime.now(),
-                    ),
-                  );
-                }
-              }
-            }
-          }
-        }
+      (notification) {
+        _notificationController.add(notification);
       },
       onError: (error) {
-        print('❌ Firestore Error (EscrowNotifications): $error');
-        if (error.toString().contains('index')) {
-          print('🔍 INDEX REQUIRED: Create a composite index for:');
-          print('   Collection: packages');
-          print('   Fields: senderId (Ascending), paymentInfo.isEscrow (Ascending)');
-          print('   Or visit the Firebase Console to create the index automatically.');
-        }
+        print('❌ Repository Error (EscrowNotifications): $error');
       },
     );
   }
@@ -65,31 +37,8 @@ class NotificationService {
   }
 }
 
-class EscrowNotification {
-  final String packageId;
-  final String packageTitle;
-  final String status;
-  final DateTime timestamp;
+// Re-export or redefine EscrowNotification if it's not in the repository file.
+// In step 210, I defined EscrowNotification in the repository file.
+// So I should probably remove it from here if it's already there, or import it.
+// Let's check the repository file content first to be sure.
 
-  EscrowNotification({
-    required this.packageId,
-    required this.packageTitle,
-    required this.status,
-    required this.timestamp,
-  });
-
-  String get message {
-    switch (status) {
-      case 'held':
-        return 'Escrow funds held for $packageTitle';
-      case 'released':
-        return 'Escrow funds released for $packageTitle';
-      case 'disputed':
-        return 'Dispute filed for $packageTitle escrow';
-      case 'cancelled':
-        return 'Escrow cancelled for $packageTitle';
-      default:
-        return 'Escrow status updated for $packageTitle';
-    }
-  }
-}

@@ -11,6 +11,20 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'core/network/network_info.dart';
 import 'core/services/navigation_service/nav_config.dart';
 import 'core/services/notification_service.dart';
+import 'core/services/escrow_notification_service.dart' as escrow;
+import 'core/domain/repositories/escrow_notification_repository.dart';
+import 'core/data/repositories/escrow_notification_repository_impl.dart';
+import 'core/domain/repositories/presence_repository.dart';
+import 'core/data/repositories/presence_repository_impl.dart';
+import 'core/services/presence_service.dart';
+import 'core/domain/repositories/chat_notification_repository.dart';
+import 'core/data/repositories/chat_notification_repository_impl.dart';
+import 'core/services/chat_notification_service.dart';
+import 'core/domain/repositories/notification_repository.dart';
+import 'core/data/repositories/notification_repository_impl.dart';
+import 'core/error/failure_mapper.dart';
+import 'core/data/error/firebase_failure_mapper.dart';
+import 'core/services/error/error_handler.dart';
 
 // Feature modules no longer use DI - using direct instantiation instead
 
@@ -50,8 +64,23 @@ Future<void> init() async {
   sl.registerLazySingleton(() => InternetConnectionChecker.instance);
 
   //! Core Services
+  // Error Handling
+  sl.registerLazySingleton<FailureMapper>(() => FirebaseFailureMapper());
+  ErrorHandler.init(sl<FailureMapper>());
+
   sl.registerLazySingleton<NetworkInfo>(() => NetworkInfoImpl(sl()));
   sl.registerLazySingleton<NavigationService>(() => GetxNavigationService());
+  
+  // Presence System
+  sl.registerLazySingleton<PresenceRepository>(() => PresenceRepositoryImpl(sl()));
+  sl.registerLazySingleton<PresenceService>(() => PresenceService(repository: sl()));
+  
+  // Chat Notification System
+  sl.registerLazySingleton<ChatNotificationRepository>(() => ChatNotificationRepositoryImpl(sl()));
+  sl.registerLazySingleton<ChatNotificationService>(() => ChatNotificationService(
+    repository: sl(),
+    notificationsPlugin: sl(),
+  ));
 
   //! Feature Modules (No longer using DI modules - direct instantiation)
 
@@ -109,15 +138,33 @@ Future<void> init() async {
     ),
   );
 
+
+
   //! Notification Service - Singleton
+  // Register Escrow Notification Repository and Service
+  sl.registerLazySingleton<EscrowNotificationRepository>(
+    () => EscrowNotificationRepositoryImpl(sl()),
+  );
+  sl.registerLazySingleton<escrow.NotificationService>(
+    () => escrow.NotificationService(repository: sl()),
+  );
+
+  // Register Notification Repository
+  sl.registerLazySingleton<NotificationRepository>(
+    () => NotificationRepositoryImpl(
+      firebaseMessaging: sl(),
+      firestore: sl(),
+    ),
+  );
+
+  // Register Notification Service
   sl.registerLazySingleton<NotificationService>(
     () => NotificationService.getInstance(
-      firebaseMessaging: sl(),
+      repository: sl(),
       localNotifications: sl(),
       remoteDataSource: sl(),
       navigationService: sl(),
       firebaseAuth: sl(),
-      firestore: sl(),
     ),
   );
 }
