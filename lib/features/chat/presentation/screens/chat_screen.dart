@@ -225,7 +225,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   }
 
   void _handleMessageTap(Message message) {
-    if (message.type == MessageType.image && message.attachmentUrl != null) {
+    if (message.type == MessageType.image && message.mediaUrl != null) {
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) => Scaffold(
@@ -237,7 +237,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
             body: Center(
               child: InteractiveViewer(
                 child: CachedNetworkImage(
-                  imageUrl: message.attachmentUrl!,
+                  imageUrl: message.mediaUrl!,
                   placeholder: (context, url) =>
                       const CircularProgressIndicator(),
                   errorWidget: (context, url, error) =>
@@ -249,8 +249,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         ),
       );
     } else if (message.type == MessageType.document &&
-        message.attachmentUrl != null) {
-      _launchURL(message.attachmentUrl!);
+        message.mediaUrl != null) {
+      _launchURL(message.mediaUrl!);
     }
   }
 
