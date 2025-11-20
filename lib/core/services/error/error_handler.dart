@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:dartz/dartz.dart';
 
-import '../../error/failure_mapper.dart';
+import '../../errors/failure_mapper.dart';
 import '../../errors/failures.dart';
 import '../../utils/logger.dart';
 

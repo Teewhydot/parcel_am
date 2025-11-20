@@ -52,3 +52,6 @@ class PhoneAuthFailure extends AuthFailure {
 class TokenExpiredFailure extends AuthFailure {
   const TokenExpiredFailure({required super.failureMessage});
 }
+class InvalidDataFailure extends Failure {
+  const InvalidDataFailure({required super.failureMessage});
+}

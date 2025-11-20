@@ -673,6 +673,7 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
                           escrowState.data?.currentEscrow?.status == EscrowStatus.error
                       ? () {
                           if (_createdParcel != null) {
+                            // Navigate to existing payment screen
                             Navigator.push(
                               context,
                               MaterialPageRoute(

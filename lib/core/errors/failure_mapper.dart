@@ -1,4 +1,4 @@
-import '../errors/failures.dart';
+import 'failures.dart';
 
 /// Interface for mapping exceptions to Failures
 abstract class FailureMapper {

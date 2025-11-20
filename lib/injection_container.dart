@@ -22,8 +22,8 @@ import 'core/data/repositories/chat_notification_repository_impl.dart';
 import 'core/services/chat_notification_service.dart';
 import 'core/domain/repositories/notification_repository.dart';
 import 'core/data/repositories/notification_repository_impl.dart';
-import 'core/error/failure_mapper.dart';
-import 'core/data/error/firebase_failure_mapper.dart';
+import 'core/errors/failure_mapper.dart';
+import 'core/errors/firebase_failure_mapper.dart';
 import 'core/services/error/error_handler.dart';
 
 // Feature modules no longer use DI - using direct instantiation instead
@@ -40,6 +40,15 @@ import 'features/chat/data/datasources/chat_remote_data_source.dart';
 import 'features/kyc/data/datasources/kyc_remote_datasource.dart' as kyc_ds;
 
 import 'features/notifications/data/datasources/notification_remote_datasource.dart';
+
+// Payment System
+import 'core/services/endpoint_service.dart';
+import 'core/services/paystack_service.dart';
+import 'features/payments/data/remote/data_sources/paystack_payment_data_source.dart';
+import 'features/payments/data/repositories/paystack_payment_repository_impl.dart';
+import 'features/payments/domain/repositories/paystack_payment_repository.dart';
+import 'features/payments/domain/use_cases/paystack_payment_usecase.dart';
+import 'features/payments/presentation/manager/paystack_bloc/paystack_payment_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -145,7 +154,30 @@ Future<void> init() async {
     ),
   );
 
+  //! Features - Payment System
+  // Core Payment Services
+  sl.registerLazySingleton<EndpointService>(() => EndpointService());
+  sl.registerLazySingleton<PaystackService>(() => PaystackService(sl()));
 
+  // Payment Data Sources
+  sl.registerLazySingleton<PaystackPaymentDataSource>(
+    () => FirebasePaystackPaymentDataSource(sl()),
+  );
+
+  // Payment Repositories
+  sl.registerLazySingleton<PaystackPaymentRepository>(
+    () => PaystackPaymentRepositoryImpl(sl()),
+  );
+
+  // Payment Use Cases
+  sl.registerLazySingleton<PaystackPaymentUseCase>(
+    () => PaystackPaymentUseCase(sl()),
+  );
+
+  // Payment BLoCs
+  sl.registerFactory<PaystackPaymentBloc>(
+    () => PaystackPaymentBloc(sl()),
+  );
 
   //! Notification Service - Singleton
   // Register Escrow Notification Repository and Service

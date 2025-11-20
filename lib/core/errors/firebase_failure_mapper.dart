@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../error/failure_mapper.dart';
-import '../../errors/failures.dart';
+import 'failure_mapper.dart';
+import 'failures.dart';
 
 class FirebaseFailureMapper implements FailureMapper {
   @override
