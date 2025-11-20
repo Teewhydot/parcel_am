@@ -34,6 +34,7 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
   final _originNameController = TextEditingController();
   final _originAddressController = TextEditingController();
   final _destNameController = TextEditingController();
+  final _destPhoneController = TextEditingController();
   final _destAddressController = TextEditingController();
 
   String _packageType = 'Documents';
@@ -72,6 +73,7 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
     _originNameController.dispose();
     _originAddressController.dispose();
     _destNameController.dispose();
+    _destPhoneController.dispose();
     _destAddressController.dispose();
     _parcelBloc.close();
     _escrowBloc.close();
@@ -114,7 +116,7 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
 
     final receiver = ReceiverDetails(
       name: _destNameController.text,
-      phoneNumber: '', // TODO: Add receiver phone field
+      phoneNumber: _destPhoneController.text,
       address: _destAddressController.text,
     );
 
@@ -435,6 +437,16 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
           ),
           AppSpacing.verticalSpacing(SpacingSize.md),
           TextField(
+            controller: _destPhoneController,
+            keyboardType: TextInputType.phone,
+            decoration: const InputDecoration(
+              labelText: 'Receiver Phone',
+              border: OutlineInputBorder(),
+              hintText: 'e.g., +234...',
+            ),
+          ),
+          AppSpacing.verticalSpacing(SpacingSize.md),
+          TextField(
             controller: _destAddressController,
             maxLines: 2,
             decoration: const InputDecoration(
@@ -522,6 +534,8 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
                           'Pickup', _originNameController.text),
                       _buildReviewItem(
                           'Delivery', _destNameController.text),
+                      _buildReviewItem(
+                          'Receiver Phone', _destPhoneController.text),
                     ],
                   ),
                 ),

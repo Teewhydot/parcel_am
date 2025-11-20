@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../domain/models/package_model.dart';
+import '../../../data/models/package_model.dart';
 import '../../../../package/domain/usecases/watch_package.dart';
 import '../../../../package/domain/usecases/release_escrow.dart';
 import '../../../../package/domain/usecases/create_dispute.dart';
@@ -42,9 +42,7 @@ class PackageBloc extends Bloc<PackageEvent, PackageState> {
           }
         },
         (packageEntity) {
-          // For now, we need to fetch the full package data from repository
-          // This is a temporary solution until we properly migrate PackageModel to entity
-          // TODO: Refactor PackageModel to be a proper domain entity
+          // Package tracking migration in progress
           if (!isClosed) {
             emit(state.copyWith(
               isLoading: false,
@@ -60,39 +58,7 @@ class PackageBloc extends Bloc<PackageEvent, PackageState> {
     PackageUpdated event,
     Emitter<PackageState> emit,
   ) {
-    final packageData = event.packageData;
-    final package = PackageModel(
-      id: packageData['id'] ?? '',
-      title: packageData['title'] ?? '',
-      description: packageData['description'] ?? '',
-      status: packageData['status'] ?? 'pending',
-      progress: (packageData['progress'] ?? 0).toDouble(),
-      origin: _parseLocationInfo(packageData['origin']),
-      destination: _parseLocationInfo(packageData['destination']),
-      currentLocation: packageData['currentLocation'] != null
-          ? _parseLocationInfo(packageData['currentLocation'])
-          : null,
-      carrier: _parseCarrierInfo(packageData['carrier']),
-      estimatedArrival: packageData['estimatedArrival'] != null
-          ? DateTime.parse(packageData['estimatedArrival'])
-          : DateTime.now(),
-      createdAt: packageData['createdAt'] != null
-          ? DateTime.parse(packageData['createdAt'])
-          : DateTime.now(),
-      packageType: packageData['packageType'] ?? '',
-      weight: (packageData['weight'] ?? 0).toDouble(),
-      price: (packageData['price'] ?? 0).toDouble(),
-      urgency: packageData['urgency'] ?? 'normal',
-      senderId: packageData['senderId'] ?? '',
-      receiverId: packageData['receiverId'],
-      trackingEvents: (packageData['trackingEvents'] as List?)
-              ?.map((e) => _parseTrackingEvent(e))
-              .toList() ??
-          [],
-      paymentInfo: packageData['paymentInfo'] != null
-          ? _parsePaymentInfo(packageData['paymentInfo'])
-          : null,
-    );
+    final package = PackageModel.fromJson(event.packageData);
 
     emit(state.copyWith(
       isLoading: false,
@@ -179,61 +145,7 @@ class PackageBloc extends Bloc<PackageEvent, PackageState> {
     );
   }
 
-  LocationInfo _parseLocationInfo(Map<String, dynamic> data) {
-    return LocationInfo(
-      name: data['name'] ?? '',
-      address: data['address'] ?? '',
-      latitude: (data['latitude'] ?? 0).toDouble(),
-      longitude: (data['longitude'] ?? 0).toDouble(),
-    );
-  }
 
-  CarrierInfo _parseCarrierInfo(Map<String, dynamic> data) {
-    return CarrierInfo(
-      id: data['id'] ?? '',
-      name: data['name'] ?? '',
-      phone: data['phone'] ?? '',
-      rating: (data['rating'] ?? 0).toDouble(),
-      photoUrl: data['photoUrl'],
-      vehicleType: data['vehicleType'] ?? '',
-      vehicleNumber: data['vehicleNumber'],
-      isVerified: data['isVerified'] ?? false,
-    );
-  }
-
-  TrackingEvent _parseTrackingEvent(Map<String, dynamic> data) {
-    return TrackingEvent(
-      id: data['id'] ?? '',
-      title: data['title'] ?? '',
-      description: data['description'] ?? '',
-      timestamp: data['timestamp'] != null
-          ? DateTime.parse(data['timestamp'])
-          : DateTime.now(),
-      location: data['location'] ?? '',
-      status: data['status'] ?? '',
-      icon: data['icon'],
-    );
-  }
-
-  PaymentInfo _parsePaymentInfo(Map<String, dynamic> data) {
-    return PaymentInfo(
-      transactionId: data['transactionId'] ?? '',
-      status: data['status'] ?? '',
-      amount: (data['amount'] ?? 0).toDouble(),
-      serviceFee: (data['serviceFee'] ?? 0).toDouble(),
-      totalAmount: (data['totalAmount'] ?? 0).toDouble(),
-      paymentMethod: data['paymentMethod'] ?? '',
-      paidAt: data['paidAt'] != null ? DateTime.parse(data['paidAt']) : null,
-      isEscrow: data['isEscrow'] ?? false,
-      escrowReleaseDate: data['escrowReleaseDate'] != null
-          ? DateTime.parse(data['escrowReleaseDate'])
-          : null,
-      escrowStatus: data['escrowStatus'] ?? 'pending',
-      escrowHeldAt: data['escrowHeldAt'] != null
-          ? DateTime.parse(data['escrowHeldAt'])
-          : null,
-    );
-  }
 
   @override
   Future<void> close() {

@@ -1,13 +1,15 @@
-class PackageModel {
+import 'package:equatable/equatable.dart';
+
+class PackageEntity extends Equatable {
   final String id;
   final String title;
   final String description;
   final String status;
   final double progress;
-  final LocationInfo origin;
-  final LocationInfo destination;
-  final LocationInfo? currentLocation;
-  final CarrierInfo carrier;
+  final LocationEntity origin;
+  final LocationEntity destination;
+  final LocationEntity? currentLocation;
+  final CarrierEntity carrier;
   final DateTime estimatedArrival;
   final DateTime createdAt;
   final String packageType;
@@ -16,10 +18,10 @@ class PackageModel {
   final String urgency;
   final String senderId;
   final String? receiverId;
-  final List<TrackingEvent> trackingEvents;
-  final PaymentInfo? paymentInfo;
+  final List<TrackingEventEntity> trackingEvents;
+  final PaymentEntity? paymentInfo;
 
-  PackageModel({
+  const PackageEntity({
     required this.id,
     required this.title,
     required this.description,
@@ -41,66 +43,48 @@ class PackageModel {
     this.paymentInfo,
   });
 
-  PackageModel copyWith({
-    String? id,
-    String? title,
-    String? description,
-    String? status,
-    double? progress,
-    LocationInfo? origin,
-    LocationInfo? destination,
-    LocationInfo? currentLocation,
-    CarrierInfo? carrier,
-    DateTime? estimatedArrival,
-    DateTime? createdAt,
-    String? packageType,
-    double? weight,
-    double? price,
-    String? urgency,
-    String? senderId,
-    String? receiverId,
-    List<TrackingEvent>? trackingEvents,
-    PaymentInfo? paymentInfo,
-  }) {
-    return PackageModel(
-      id: id ?? this.id,
-      title: title ?? this.title,
-      description: description ?? this.description,
-      status: status ?? this.status,
-      progress: progress ?? this.progress,
-      origin: origin ?? this.origin,
-      destination: destination ?? this.destination,
-      currentLocation: currentLocation ?? this.currentLocation,
-      carrier: carrier ?? this.carrier,
-      estimatedArrival: estimatedArrival ?? this.estimatedArrival,
-      createdAt: createdAt ?? this.createdAt,
-      packageType: packageType ?? this.packageType,
-      weight: weight ?? this.weight,
-      price: price ?? this.price,
-      urgency: urgency ?? this.urgency,
-      senderId: senderId ?? this.senderId,
-      receiverId: receiverId ?? this.receiverId,
-      trackingEvents: trackingEvents ?? this.trackingEvents,
-      paymentInfo: paymentInfo ?? this.paymentInfo,
-    );
-  }
+  @override
+  List<Object?> get props => [
+        id,
+        title,
+        description,
+        status,
+        progress,
+        origin,
+        destination,
+        currentLocation,
+        carrier,
+        estimatedArrival,
+        createdAt,
+        packageType,
+        weight,
+        price,
+        urgency,
+        senderId,
+        receiverId,
+        trackingEvents,
+        paymentInfo,
+      ];
 }
 
-class LocationInfo {
+class LocationEntity extends Equatable {
   final String name;
   final String address;
   final double latitude;
   final double longitude;
 
-  LocationInfo({
+  const LocationEntity({
     required this.name,
     required this.address,
     required this.latitude,
     required this.longitude,
   });
+
+  @override
+  List<Object?> get props => [name, address, latitude, longitude];
 }
 
-class CarrierInfo {
+class CarrierEntity extends Equatable {
   final String id;
   final String name;
   final String phone;
@@ -110,7 +94,7 @@ class CarrierInfo {
   final String? vehicleNumber;
   final bool isVerified;
 
-  CarrierInfo({
+  const CarrierEntity({
     required this.id,
     required this.name,
     required this.phone,
@@ -120,9 +104,21 @@ class CarrierInfo {
     this.vehicleNumber,
     required this.isVerified,
   });
+
+  @override
+  List<Object?> get props => [
+        id,
+        name,
+        phone,
+        rating,
+        photoUrl,
+        vehicleType,
+        vehicleNumber,
+        isVerified,
+      ];
 }
 
-class TrackingEvent {
+class TrackingEventEntity extends Equatable {
   final String id;
   final String title;
   final String description;
@@ -131,7 +127,7 @@ class TrackingEvent {
   final String status;
   final String? icon;
 
-  TrackingEvent({
+  const TrackingEventEntity({
     required this.id,
     required this.title,
     required this.description,
@@ -140,9 +136,20 @@ class TrackingEvent {
     required this.status,
     this.icon,
   });
+
+  @override
+  List<Object?> get props => [
+        id,
+        title,
+        description,
+        timestamp,
+        location,
+        status,
+        icon,
+      ];
 }
 
-class PaymentInfo {
+class PaymentEntity extends Equatable {
   final String transactionId;
   final String status;
   final double amount;
@@ -155,7 +162,7 @@ class PaymentInfo {
   final String escrowStatus;
   final DateTime? escrowHeldAt;
 
-  PaymentInfo({
+  const PaymentEntity({
     required this.transactionId,
     required this.status,
     required this.amount,
@@ -169,7 +176,7 @@ class PaymentInfo {
     this.escrowHeldAt,
   });
 
-  PaymentInfo copyWith({
+  PaymentEntity copyWith({
     String? transactionId,
     String? status,
     double? amount,
@@ -182,7 +189,7 @@ class PaymentInfo {
     String? escrowStatus,
     DateTime? escrowHeldAt,
   }) {
-    return PaymentInfo(
+    return PaymentEntity(
       transactionId: transactionId ?? this.transactionId,
       status: status ?? this.status,
       amount: amount ?? this.amount,
@@ -196,4 +203,19 @@ class PaymentInfo {
       escrowHeldAt: escrowHeldAt ?? this.escrowHeldAt,
     );
   }
+
+  @override
+  List<Object?> get props => [
+        transactionId,
+        status,
+        amount,
+        serviceFee,
+        totalAmount,
+        paymentMethod,
+        paidAt,
+        isEscrow,
+        escrowReleaseDate,
+        escrowStatus,
+        escrowHeldAt,
+      ];
 }

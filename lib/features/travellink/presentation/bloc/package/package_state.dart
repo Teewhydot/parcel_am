@@ -1,8 +1,8 @@
-import '../../../domain/models/package_model.dart';
+import '../../../domain/entities/package_entity.dart';
 
 class PackageState {
   final bool isLoading;
-  final PackageModel? package;
+  final PackageEntity? package;
   final String? error;
   final EscrowReleaseStatus? escrowReleaseStatus;
   final String? escrowMessage;
@@ -21,7 +21,7 @@ class PackageState {
 
   PackageState copyWith({
     bool? isLoading,
-    PackageModel? package,
+    PackageEntity? package,
     String? error,
     EscrowReleaseStatus? escrowReleaseStatus,
     String? escrowMessage,

@@ -10,7 +10,7 @@ import '../../../../core/widgets/app_card.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../injection_container.dart';
 import '../widgets/bottom_navigation.dart';
-import '../../domain/models/package_model.dart';
+import '../../domain/entities/package_entity.dart';
 import '../bloc/package/package_bloc.dart';
 import '../bloc/package/package_event.dart';
 import '../bloc/package/package_state.dart';
@@ -107,7 +107,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
     );
   }
 
-  Widget _buildPackageHeader(PackageModel package) {
+  Widget _buildPackageHeader(PackageEntity package) {
     return AppContainer(
       padding: AppSpacing.paddingLG,
       child: AppContainer(
@@ -185,7 +185,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
     );
   }
 
-  Widget _buildEscrowStatusBanner(PackageModel package) {
+  Widget _buildEscrowStatusBanner(PackageEntity package) {
     final paymentInfo = package.paymentInfo;
     if (paymentInfo == null || !paymentInfo.isEscrow) {
       return const SizedBox.shrink();
@@ -251,7 +251,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
     );
   }
 
-  Widget _buildMapTab(PackageModel package) {
+  Widget _buildMapTab(PackageEntity package) {
     return SingleChildScrollView(
       padding: AppSpacing.paddingLG,
       child: Column(
@@ -390,7 +390,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
     );
   }
 
-  Widget _buildTimelineTab(PackageModel package) {
+  Widget _buildTimelineTab(PackageEntity package) {
     return SingleChildScrollView(
       padding: AppSpacing.paddingLG,
       child: AppCard.elevated(
@@ -481,7 +481,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
     );
   }
 
-  Widget _buildDetailsTab(PackageModel package, BuildContext context) {
+  Widget _buildDetailsTab(PackageEntity package, BuildContext context) {
     return SingleChildScrollView(
       padding: AppSpacing.paddingLG,
       child: Column(

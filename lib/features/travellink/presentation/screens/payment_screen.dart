@@ -11,7 +11,7 @@ import '../bloc/wallet/wallet_data.dart';
 import '../bloc/escrow/escrow_bloc.dart';
 import '../bloc/escrow/escrow_event.dart';
 import '../bloc/escrow/escrow_state.dart';
-import '../../domain/models/package_model.dart';
+import '../../domain/entities/package_entity.dart';
 
 class PaymentScreen extends StatefulWidget {
   const PaymentScreen({super.key});
@@ -27,7 +27,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   final TextEditingController _bankNameController = TextEditingController();
   late WalletBloc _walletBloc;
   late EscrowBloc _escrowBloc;
-  PaymentInfo? _paymentInfo;
+  PaymentEntity? _paymentInfo;
 
   final List<Map<String, dynamic>> steps = [
     {'id': 'confirm', 'title': 'Confirm Order', 'icon': Icons.shield},
@@ -103,7 +103,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     final transactionId = 'TXN_${DateTime.now().millisecondsSinceEpoch}';
     final totalAmount = 3650.0;
 
-    _paymentInfo = PaymentInfo(
+    _paymentInfo = PaymentEntity(
       transactionId: transactionId,
       status: 'processing',
       amount: 3500.0,

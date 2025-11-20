@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../../injection_container.dart' as di;
 import '../../domain/entities/message.dart';
@@ -223,10 +225,45 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   }
 
   void _handleMessageTap(Message message) {
-    if (message.type == MessageType.image || message.type == MessageType.video) {
-      // TODO: Open media viewer
-    } else if (message.type == MessageType.document) {
-      // TODO: Download document
+    if (message.type == MessageType.image && message.attachmentUrl != null) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => Scaffold(
+            backgroundColor: Colors.black,
+            appBar: AppBar(
+              backgroundColor: Colors.black,
+              iconTheme: const IconThemeData(color: Colors.white),
+            ),
+            body: Center(
+              child: InteractiveViewer(
+                child: CachedNetworkImage(
+                  imageUrl: message.attachmentUrl!,
+                  placeholder: (context, url) =>
+                      const CircularProgressIndicator(),
+                  errorWidget: (context, url, error) =>
+                      const Icon(Icons.error, color: Colors.white),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    } else if (message.type == MessageType.document &&
+        message.attachmentUrl != null) {
+      _launchURL(message.attachmentUrl!);
+    }
+  }
+
+  Future<void> _launchURL(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open document')),
+        );
+      }
     }
   }
 
