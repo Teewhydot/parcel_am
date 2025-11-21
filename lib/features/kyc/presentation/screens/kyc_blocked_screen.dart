@@ -7,6 +7,8 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/routes/routes.dart';
+import '../../../../core/services/navigation_service/nav_config.dart';
+import '../../../../injection_container.dart';
 
 class KycBlockedScreen extends StatelessWidget {
   const KycBlockedScreen({super.key});
@@ -156,20 +158,20 @@ class KycBlockedScreen extends StatelessWidget {
       case KycStatus.notStarted:
       case KycStatus.incomplete:
         buttonText = 'Start Verification';
-        onPressed = () => Get.offNamed(Routes.verification);
+        onPressed = () => sl<NavigationService>().navigateAndReplace(Routes.verification);
         break;
       case KycStatus.pending:
       case KycStatus.underReview:
         buttonText = 'Check Status';
-        onPressed = () => Get.offNamed(Routes.verification);
+        onPressed = () => sl<NavigationService>().navigateAndReplace(Routes.verification);
         break;
       case KycStatus.rejected:
         buttonText = 'Resubmit Documents';
-        onPressed = () => Get.offNamed(Routes.verification);
+        onPressed = () => sl<NavigationService>().navigateAndReplace(Routes.verification);
         break;
       case KycStatus.approved:
         buttonText = 'Continue';
-        onPressed = () => Get.back();
+        onPressed = () => sl<NavigationService>().goBack();
         break;
     }
 
@@ -181,7 +183,7 @@ class KycBlockedScreen extends StatelessWidget {
 
   Widget _buildSecondaryButton(BuildContext context) {
     return AppButton(
-      onPressed: () => Get.offNamed(Routes.home),
+      onPressed: () => sl<NavigationService>().navigateAndReplace(Routes.home),
       child: const Text('Back to Home'),
     );
   }

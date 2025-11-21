@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:get/get.dart';
 import 'package:get_it/get_it.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_scaffold.dart';
@@ -12,6 +11,8 @@ import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_input.dart';
 import '../../../../core/routes/routes.dart';
+import '../../../../core/services/navigation_service/nav_config.dart';
+import '../../../../injection_container.dart';
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_event.dart';
 import '../bloc/auth/auth_data.dart';
@@ -75,7 +76,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         } else if (state is InitialState) {
           // User has been logged out, navigate to login screen
           setState(() => _isSubmitting = false);
-          Get.offAllNamed(Routes.login);
+          sl<NavigationService>().navigateAndReplaceAll(Routes.login);
         }
       },
       child: AppScaffold(

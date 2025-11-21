@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import 'package:get/get.dart';
 import 'package:parcel_am/core/bloc/base/base_state.dart';
 import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import '../../../../core/enums/notification_type.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/services/navigation_service/nav_config.dart';
+import '../../../../injection_container.dart';
 import '../../domain/entities/notification_entity.dart';
 import '../bloc/notification_bloc.dart';
 import '../bloc/notification_event.dart';
@@ -326,7 +327,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
     // Navigate to chat screen if chatId is present
     if (notification.chatId != null && notification.chatId!.isNotEmpty) {
-      Get.toNamed(
+      sl<NavigationService>().navigateTo(
         Routes.chat,
         arguments: {
           'chatId': notification.chatId,

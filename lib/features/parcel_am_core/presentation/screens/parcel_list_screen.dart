@@ -4,12 +4,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/bloc/base/base_state.dart';
+import '../../../../core/routes/routes.dart';
+import '../../../../core/services/navigation_service/nav_config.dart';
+import '../../../../injection_container.dart';
 import '../bloc/parcel/parcel_bloc.dart';
 import '../bloc/parcel/parcel_event.dart';
 import '../bloc/parcel/parcel_state.dart';
 import '../../domain/entities/parcel_entity.dart';
 import '../widgets/bottom_navigation.dart';
-import 'create_parcel_screen.dart';
 
 class ParcelListScreen extends StatefulWidget {
   const ParcelListScreen({super.key});
@@ -121,12 +123,7 @@ class _ParcelListScreenState extends State<ParcelListScreen> {
                     AppSpacing.verticalSpacing(SpacingSize.lg),
                     ElevatedButton.icon(
                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const CreateParcelScreen(),
-                          ),
-                        );
+                        sl<NavigationService>().navigateTo(Routes.createParcel);
                       },
                       icon: const Icon(Icons.add),
                       label: const Text('Create Parcel'),
@@ -161,12 +158,7 @@ class _ParcelListScreenState extends State<ParcelListScreen> {
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const CreateParcelScreen(),
-              ),
-            );
+            sl<NavigationService>().navigateTo(Routes.createParcel);
           },
           backgroundColor: AppColors.primary,
           child: const Icon(Icons.add, color: Colors.white),

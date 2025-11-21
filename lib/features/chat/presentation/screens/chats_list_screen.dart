@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get/get.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../../../../core/routes/routes.dart';
+import '../../../../core/services/navigation_service/nav_config.dart';
+import '../../../../injection_container.dart';
 import '../../domain/entities/chat.dart';
 import '../bloc/chats_list_bloc.dart';
 
@@ -221,7 +222,7 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
                       ],
                     ),
                     onTap: () {
-                      Get.toNamed(
+                      sl<NavigationService>().navigateTo(
                         Routes.chat,
                         arguments: {
                           'chatId': chat.id,

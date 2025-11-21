@@ -4,6 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/bloc/base/base_state.dart';
+import '../../../../core/routes/routes.dart';
+import '../../../../core/services/navigation_service/nav_config.dart';
+import '../../../../injection_container.dart';
 import '../../../escrow/domain/entities/escrow_status.dart';
 import '../bloc/parcel/parcel_bloc.dart';
 import '../bloc/parcel/parcel_event.dart';
@@ -12,7 +15,6 @@ import '../bloc/escrow/escrow_bloc.dart';
 import '../bloc/escrow/escrow_state.dart';
 import '../../domain/entities/parcel_entity.dart' hide RouteInformation;
 import '../../domain/entities/parcel_entity.dart' as parcel_entity;
-import 'payment_screen.dart';
 
 class CreateParcelScreen extends StatefulWidget {
   const CreateParcelScreen({super.key});
@@ -165,7 +167,18 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
               listener: (context, state) {
                 if (state is LoadedState<ParcelData> && state.data?.currentParcel != null) {
                   setState(() => _createdParcel = state.data!.currentParcel);
-                  _nextStep();
+
+                  // Show success message
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Parcel created successfully! You can pay from your wallet.'),
+                      backgroundColor: Colors.green,
+                      duration: Duration(seconds: 3),
+                    ),
+                  );
+
+                  // Navigate to dashboard, clearing navigation stack (using DI)
+                  sl<NavigationService>().navigateAndReplaceAll(Routes.dashboard);
                 } else if (state is ErrorState<ParcelData>) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -674,12 +687,7 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
                       ? () {
                           if (_createdParcel != null) {
                             // Navigate to existing payment screen
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const PaymentScreen(),
-                              ),
-                            );
+                            sl<NavigationService>().navigateTo(Routes.payment);
                           }
                         }
                       : null,
@@ -829,7 +837,24 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                   ),
-                  child: Text(_currentStep == 2 ? 'Create Parcel' : 'Next'),
+                  child: isCreating && _currentStep == 2
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            ),
+                            AppSpacing.horizontalSpacing(SpacingSize.sm),
+                            const Text('Creating...'),
+                          ],
+                        )
+                      : Text(_currentStep == 2 ? 'Create Parcel' : 'Next'),
                 ),
               ),
             ],

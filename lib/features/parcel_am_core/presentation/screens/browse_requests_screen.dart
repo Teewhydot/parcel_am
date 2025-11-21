@@ -4,12 +4,14 @@ import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/bloc/base/base_state.dart';
+import '../../../../core/routes/routes.dart';
+import '../../../../core/services/navigation_service/nav_config.dart';
+import '../../../../injection_container.dart';
 import '../bloc/parcel/parcel_bloc.dart';
 import '../bloc/parcel/parcel_event.dart';
 import '../bloc/parcel/parcel_state.dart';
 import '../../../parcel_am_core/domain/entities/parcel_entity.dart';
 import '../../data/datasources/parcel_seeder.dart';
-import 'request_details_screen.dart';
 
 class BrowseRequestsScreen extends StatefulWidget {
   const BrowseRequestsScreen({super.key});
@@ -498,10 +500,9 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       child: InkWell(
         onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => RequestDetailsScreen(requestId: parcel.id),
-            ),
+          sl<NavigationService>().navigateTo(
+            Routes.requestDetails,
+            arguments: parcel.id,
           );
         },
         borderRadius: BorderRadius.circular(16),
