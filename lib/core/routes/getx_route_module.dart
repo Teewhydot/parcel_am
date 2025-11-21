@@ -3,23 +3,23 @@ import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:parcel_am/core/routes/routes.dart';
 import 'package:parcel_am/core/widgets/navigation_shell.dart';
-import 'package:parcel_am/features/travellink/presentation/screens/dashboard_screen.dart';
-import 'package:parcel_am/features/travellink/presentation/screens/login_screen.dart';
-import 'package:parcel_am/features/travellink/presentation/screens/onboarding_screen.dart';
-import 'package:parcel_am/features/travellink/presentation/screens/payment_screen.dart';
-import 'package:parcel_am/features/travellink/presentation/screens/request_details_screen.dart';
-import 'package:parcel_am/features/travellink/presentation/screens/tracking_screen.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/screens/dashboard_screen.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/screens/login_screen.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/screens/onboarding_screen.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/screens/payment_screen.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/screens/request_details_screen.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/screens/tracking_screen.dart';
 import 'package:parcel_am/features/kyc/presentation/screens/verification_screen.dart';
-import 'package:parcel_am/features/travellink/presentation/screens/browse_requests_screen.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/screens/browse_requests_screen.dart';
 import 'package:parcel_am/features/kyc/presentation/screens/kyc_blocked_screen.dart';
-import 'package:parcel_am/features/travellink/presentation/screens/wallet_screen.dart';
-import 'package:parcel_am/features/travellink/presentation/screens/create_parcel_screen.dart';
-import 'package:parcel_am/features/travellink/presentation/screens/profile_edit_screen.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/screens/wallet_screen.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/screens/create_parcel_screen.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/screens/profile_edit_screen.dart';
 import 'package:parcel_am/features/chat/presentation/screens/chats_list_screen.dart';
 import 'package:parcel_am/features/chat/presentation/screens/chat_screen.dart';
 import 'package:parcel_am/features/notifications/presentation/screens/notifications_screen.dart';
 
-import '../../features/travellink/presentation/screens/splash_screen.dart';
+import '../../features/parcel_am_core/presentation/screens/splash_screen.dart';
 import '../services/auth/auth_guard.dart';
 
 class GetXRouteModule {

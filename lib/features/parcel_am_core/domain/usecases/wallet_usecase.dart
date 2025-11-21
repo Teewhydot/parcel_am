@@ -1,5 +1,5 @@
 import 'package:dartz/dartz.dart';
-import 'package:parcel_am/features/travellink/data/repositories/wallet_repository_impl.dart';
+import 'package:parcel_am/features/parcel_am_core/data/repositories/wallet_repository_impl.dart';
 import '../../../../core/errors/failures.dart';
 import '../entities/wallet_entity.dart';
 import '../entities/transaction_entity.dart';

@@ -3,7 +3,7 @@
 import 'dart:io';
 import 'dart:convert';
 
-/// Firebase Setup Verification Script for TravelLink
+/// Firebase Setup Verification Script for Parcel AM
 /// 
 /// This script checks your local Firebase configuration to ensure
 /// everything is set up correctly for phone authentication.
@@ -133,8 +133,8 @@ Future<bool> _checkFirebaseConfig() async {
 
 Future<bool> _checkPhoneAuthConfig() async {
   
-  final authBloc = File('lib/features/travellink/presentation/bloc/auth/auth_bloc.dart');
-  final authRepository = File('lib/features/travellink/data/repositories/auth_repository.dart');
+  final authBloc = File('lib/features/parcel_am_core/presentation/bloc/auth/auth_bloc.dart');
+  final authRepository = File('lib/features/parcel_am_core/data/repositories/auth_repository.dart');
   final sessionManager = File('lib/core/services/session/session_manager.dart');
   
   final files = [

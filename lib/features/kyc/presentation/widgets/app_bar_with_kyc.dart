@@ -3,9 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/domain/entities/kyc_status.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/bloc/base/base_state.dart';
-import '../../../travellink/domain/entities/user_entity.dart';
-import '../../../travellink/presentation/bloc/auth/auth_bloc.dart';
-import '../../../travellink/presentation/bloc/auth/auth_data.dart';
+import '../../../parcel_am_core/domain/entities/user_entity.dart';
+import '../../../parcel_am_core/presentation/bloc/auth/auth_bloc.dart';
+import '../../../parcel_am_core/presentation/bloc/auth/auth_data.dart';
 import 'kyc_status_widgets.dart';
 
 /// AppBar with integrated KYC status indicator

@@ -3,14 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:parcel_am/core/bloc/base/base_state.dart';
 import 'package:parcel_am/core/widgets/floating_bottom_nav_bar.dart';
-import 'package:parcel_am/features/travellink/presentation/screens/dashboard_screen.dart';
-import 'package:parcel_am/features/travellink/presentation/screens/browse_requests_screen.dart';
-import 'package:parcel_am/features/travellink/presentation/screens/tracking_screen.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/screens/dashboard_screen.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/screens/browse_requests_screen.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/screens/tracking_screen.dart';
 import 'package:parcel_am/features/chat/presentation/screens/chats_list_screen.dart';
-import 'package:parcel_am/features/travellink/presentation/screens/wallet_screen.dart';
-import 'package:parcel_am/features/travellink/presentation/bloc/auth/auth_bloc.dart';
-import 'package:parcel_am/features/travellink/presentation/bloc/auth/auth_data.dart';
-import 'package:parcel_am/features/travellink/presentation/bloc/package/package_bloc.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/screens/wallet_screen.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_bloc.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_data.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/bloc/package/package_bloc.dart';
 
 class NavigationShell extends StatefulWidget {
   final int initialIndex;

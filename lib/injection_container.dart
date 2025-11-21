@@ -28,12 +28,12 @@ import 'core/services/error/error_handler.dart';
 
 // Feature modules no longer use DI - using direct instantiation instead
 
-import 'features/travellink/data/datasources/auth_remote_data_source.dart';
-import 'features/travellink/data/datasources/wallet_remote_data_source.dart' as travellink_wallet_ds;
-import 'features/travellink/data/datasources/escrow_remote_data_source.dart';
-import 'features/travellink/data/datasources/parcel_remote_data_source.dart';
-import 'features/travellink/data/datasources/parcel_seeder.dart';
-import 'features/travellink/data/datasources/dashboard_remote_data_source.dart';
+import 'features/parcel_am_core/data/datasources/auth_remote_data_source.dart';
+import 'features/parcel_am_core/data/datasources/wallet_remote_data_source.dart' as parcel_am_core_wallet_ds;
+import 'features/parcel_am_core/data/datasources/escrow_remote_data_source.dart';
+import 'features/parcel_am_core/data/datasources/parcel_remote_data_source.dart';
+import 'features/parcel_am_core/data/datasources/parcel_seeder.dart';
+import 'features/parcel_am_core/data/datasources/dashboard_remote_data_source.dart';
 import 'features/chat/data/datasources/chat_remote_data_source.dart';
 
 import 'features/notifications/data/datasources/notification_remote_datasource.dart';
@@ -104,8 +104,8 @@ Future<void> init() async {
     walletDataSource: sl(),
   ));
 
-  //! Features - Wallet (TravelLink) Data Sources
-  sl.registerLazySingleton<travellink_wallet_ds.WalletRemoteDataSource>(() => travellink_wallet_ds.WalletRemoteDataSourceImpl(
+  //! Features - Wallet (Parcel AM Core) Data Sources
+  sl.registerLazySingleton<parcel_am_core_wallet_ds.WalletRemoteDataSource>(() => parcel_am_core_wallet_ds.WalletRemoteDataSourceImpl(
     firestore: sl(),
   ));
 
@@ -129,7 +129,7 @@ Future<void> init() async {
   sl.registerLazySingleton<DashboardRemoteDataSource>(
     () => DashboardRemoteDataSourceImpl(
       firestore: sl(),
-      walletRemoteDataSource: sl<travellink_wallet_ds.WalletRemoteDataSource>(),
+      walletRemoteDataSource: sl<parcel_am_core_wallet_ds.WalletRemoteDataSource>(),
     ),
   );
 

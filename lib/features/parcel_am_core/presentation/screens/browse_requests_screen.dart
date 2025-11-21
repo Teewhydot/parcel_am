@@ -7,7 +7,7 @@ import '../../../../core/bloc/base/base_state.dart';
 import '../bloc/parcel/parcel_bloc.dart';
 import '../bloc/parcel/parcel_event.dart';
 import '../bloc/parcel/parcel_state.dart';
-import '../../../travellink/domain/entities/parcel_entity.dart';
+import '../../../parcel_am_core/domain/entities/parcel_entity.dart';
 import '../../data/datasources/parcel_seeder.dart';
 import 'request_details_screen.dart';
 

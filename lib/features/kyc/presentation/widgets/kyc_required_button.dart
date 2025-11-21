@@ -4,7 +4,7 @@ import '../../../../core/domain/entities/kyc_status.dart';
 import '../../../../core/services/auth/kyc_guard.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/widgets/app_button.dart';
-import '../../../travellink/domain/entities/user_entity.dart';
+import '../../../parcel_am_core/domain/entities/user_entity.dart';
 
 /// Example widget demonstrating KYC check before action
 class KycRequiredButton extends StatelessWidget with KycCheckMixin {

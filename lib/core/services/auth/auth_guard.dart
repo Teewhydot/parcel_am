@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart' hide Transition;
 import 'package:get/get.dart';
-import '../../../features/travellink/presentation/bloc/auth/auth_bloc.dart';
-import '../../../features/travellink/presentation/bloc/auth/auth_data.dart';
+import '../../../features/parcel_am_core/presentation/bloc/auth/auth_bloc.dart';
+import '../../../features/parcel_am_core/presentation/bloc/auth/auth_data.dart';
 import '../../../core/bloc/base/base_state.dart';
-import '../../../features/travellink/domain/entities/user_entity.dart';
+import '../../../features/parcel_am_core/domain/entities/user_entity.dart';
 import '../../../core/domain/entities/kyc_status.dart';
 import '../../routes/routes.dart';
 import 'kyc_guard.dart';

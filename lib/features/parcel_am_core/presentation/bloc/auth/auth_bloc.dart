@@ -4,7 +4,7 @@ import 'package:parcel_am/core/bloc/base/base_bloc.dart';
 import 'package:parcel_am/core/bloc/base/base_state.dart';
 import 'package:parcel_am/core/domain/entities/kyc_status.dart';
 import 'package:parcel_am/core/utils/logger.dart';
-import 'package:parcel_am/features/travellink/domain/usecases/auth_usecase.dart';
+import 'package:parcel_am/features/parcel_am_core/domain/usecases/auth_usecase.dart';
 import '../../../domain/entities/user_entity.dart';
 import 'auth_event.dart';
 import 'auth_data.dart';

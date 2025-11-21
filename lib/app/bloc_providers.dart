@@ -1,11 +1,11 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:parcel_am/features/kyc/presentation/bloc/kyc_bloc.dart';
 import '../features/notifications/presentation/bloc/notification_bloc.dart';
-import '../features/travellink/presentation/bloc/auth/auth_bloc.dart';
-import '../features/travellink/presentation/bloc/dashboard/dashboard_bloc.dart';
-import '../features/travellink/presentation/bloc/parcel/parcel_bloc.dart';
-import '../features/travellink/presentation/bloc/wallet/wallet_bloc.dart';
-import '../features/travellink/presentation/bloc/wallet/wallet_event.dart';
+import '../features/parcel_am_core/presentation/bloc/auth/auth_bloc.dart';
+import '../features/parcel_am_core/presentation/bloc/dashboard/dashboard_bloc.dart';
+import '../features/parcel_am_core/presentation/bloc/parcel/parcel_bloc.dart';
+import '../features/parcel_am_core/presentation/bloc/wallet/wallet_bloc.dart';
+import '../features/parcel_am_core/presentation/bloc/wallet/wallet_event.dart';
 
 
 

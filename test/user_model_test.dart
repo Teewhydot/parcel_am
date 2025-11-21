@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:parcel_am/features/travellink/data/models/user_model.dart';
+import 'package:parcel_am/features/parcel_am_core/data/models/user_model.dart';
 
 void main() {
   group('UserModel', () {

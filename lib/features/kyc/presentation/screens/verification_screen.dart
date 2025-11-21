@@ -12,15 +12,15 @@ import '../../../../core/widgets/app_input.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../injection_container.dart';
 import '../widgets/verification_widgets.dart';
-import '../../../travellink/presentation/bloc/auth/auth_bloc.dart';
-import '../../../travellink/presentation/bloc/auth/auth_event.dart';
-import '../../../travellink/presentation/bloc/auth/auth_data.dart';
+import '../../../parcel_am_core/presentation/bloc/auth/auth_bloc.dart';
+import '../../../parcel_am_core/presentation/bloc/auth/auth_event.dart';
+import '../../../parcel_am_core/presentation/bloc/auth/auth_data.dart';
 import '../bloc/kyc_bloc.dart';
 import '../bloc/kyc_event.dart';
 import '../bloc/kyc_data.dart';
-import '../../../travellink/data/constants/verification_constants.dart';
+import '../../../parcel_am_core/data/constants/verification_constants.dart';
 import '../../domain/models/verification_model.dart';
-import '../../../travellink/domain/entities/user_entity.dart';
+import '../../../parcel_am_core/domain/entities/user_entity.dart';
 import '../../../../core/bloc/base/base_state.dart';
 
 class VerificationScreen extends StatefulWidget {
