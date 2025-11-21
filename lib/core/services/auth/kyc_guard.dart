@@ -57,12 +57,36 @@ class KycGuard with KycCheckMixin {
       return true;
     }
 
-    // Redirect to KYC blocked screen with status
+    // If verification is in progress, show toast and block access
+    if (status == KycStatus.pending || status == KycStatus.underReview) {
+      _showVerificationInProgressToast();
+      return false;
+    }
+
+    // Redirect to KYC blocked screen with status for other cases
     Get.toNamed(
       Routes.kycBlocked,
       arguments: {'status': status},
     );
     return false;
+  }
+
+  /// Show toast message when verification is in progress
+  void _showVerificationInProgressToast() {
+    Get.snackbar(
+      'Verification In Progress',
+      'Your KYC verification is currently being reviewed. Please wait for approval.',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: const Color(0xFFFF9800), // Orange color
+      colorText: Colors.white,
+      duration: const Duration(seconds: 3),
+      margin: const EdgeInsets.all(16),
+      borderRadius: 8,
+      icon: const Icon(
+        Icons.hourglass_empty,
+        color: Colors.white,
+      ),
+    );
   }
 
   /// Get KYC-aware route guard widget
@@ -118,8 +142,11 @@ class KycGuard with KycCheckMixin {
     const kycProtectedRoutes = [
       Routes.payment,
       Routes.browseRequests,
+      Routes.createParcel,
+      Routes.wallet,
+      Routes.tracking,
     ];
-    
+
     return kycProtectedRoutes.contains(routeName);
   }
 
@@ -170,7 +197,13 @@ class KycMiddleware extends GetMiddleware with KycCheckMixin {
             return null; // Allow access
           }
 
-          // Redirect to KYC blocked screen
+          // If verification is in progress, show toast and stay on current page
+          if (status == KycStatus.pending || status == KycStatus.underReview) {
+            KycGuard.instance._showVerificationInProgressToast();
+            return RouteSettings(name: Get.currentRoute); // Stay on current route
+          }
+
+          // Redirect to KYC blocked screen for other statuses
           return RouteSettings(
             name: Routes.kycBlocked,
             arguments: {'status': status},

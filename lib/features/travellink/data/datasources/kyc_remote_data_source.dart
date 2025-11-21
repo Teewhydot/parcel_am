@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
@@ -6,15 +5,19 @@ abstract class KycRemoteDataSource {
   Future<void> submitKyc({
     required String userId,
     required String fullName,
-    required String dateOfBirth,
+    required DateTime dateOfBirth,
+    required String phoneNumber,
+    required String email,
     required String address,
-    required String idType,
-    required String idNumber,
-    required String frontImagePath,
-    required String backImagePath,
-    required String selfieImagePath,
+    required String city,
+    required String country,
+    required String postalCode,
+    String? governmentIdNumber,
+    String? idType,
+    String? governmentIdUrl,
+    String? selfieWithIdUrl,
+    String? proofOfAddressUrl,
   });
-
 
   Stream<String> watchKycStatus(String userId);
 }
@@ -32,35 +35,43 @@ class KycRemoteDataSourceImpl implements KycRemoteDataSource {
   Future<void> submitKyc({
     required String userId,
     required String fullName,
-    required String dateOfBirth,
+    required DateTime dateOfBirth,
+    required String phoneNumber,
+    required String email,
     required String address,
-    required String idType,
-    required String idNumber,
-    required String frontImagePath,
-    required String backImagePath,
-    required String selfieImagePath,
+    required String city,
+    required String country,
+    required String postalCode,
+    String? governmentIdNumber,
+    String? idType,
+    String? governmentIdUrl,
+    String? selfieWithIdUrl,
+    String? proofOfAddressUrl,
   }) async {
     try {
-      final frontImageUrl = await _uploadImage(frontImagePath, '$userId/front');
-      final backImageUrl = await _uploadImage(backImagePath, '$userId/back');
-      final selfieImageUrl = await _uploadImage(selfieImagePath, '$userId/selfie');
-
       final kycData = {
         'userId': userId,
         'fullName': fullName,
-        'dateOfBirth': dateOfBirth,
+        'dateOfBirth': Timestamp.fromDate(dateOfBirth),
+        'phoneNumber': phoneNumber,
+        'email': email,
         'address': address,
+        'city': city,
+        'country': country,
+        'postalCode': postalCode,
+        'governmentIdNumber': governmentIdNumber,
         'idType': idType,
-        'idNumber': idNumber,
-        'frontImageUrl': frontImageUrl,
-        'backImageUrl': backImageUrl,
-        'selfieImageUrl': selfieImageUrl,
+        'governmentIdUrl': governmentIdUrl,
+        'selfieWithIdUrl': selfieWithIdUrl,
+        'proofOfAddressUrl': proofOfAddressUrl,
         'status': 'pending',
         'submittedAt': FieldValue.serverTimestamp(),
       };
 
+      // Save to kyc_submissions collection
       await firestore.collection('kyc_submissions').doc(userId).set(kycData);
 
+      // Update user's KYC status
       await firestore.collection('users').doc(userId).update({
         'kycStatus': 'pending',
       });
@@ -87,16 +98,5 @@ class KycRemoteDataSourceImpl implements KycRemoteDataSource {
       }
       return snapshot.data()?['kycStatus'] ?? 'not_submitted';
     });
-  }
-
-  Future<String> _uploadImage(String imagePath, String storagePath) async {
-    try {
-      final file = File(imagePath);
-      final ref = storage.ref().child('kyc/$storagePath');
-      final uploadTask = await ref.putFile(file);
-      return await uploadTask.ref.getDownloadURL();
-    } catch (e) {
-      throw Exception('Failed to upload image: $e');
-    }
   }
 }

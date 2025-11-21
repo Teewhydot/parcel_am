@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_scaffold.dart';
 import '../../../../core/widgets/app_container.dart';
@@ -13,6 +14,9 @@ import '../widgets/verification_widgets.dart';
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_event.dart';
 import '../bloc/auth/auth_data.dart';
+import '../bloc/kyc/kyc_bloc.dart';
+import '../bloc/kyc/kyc_event.dart';
+import '../bloc/kyc/kyc_data.dart';
 import '../../data/constants/verification_constants.dart';
 import '../../domain/models/verification_model.dart';
 import '../../domain/entities/user_entity.dart';
@@ -28,18 +32,21 @@ class VerificationScreen extends StatefulWidget {
 class _VerificationScreenState extends State<VerificationScreen> {
   int _currentStep = 0;
   bool _isSubmitting = false;
-  
+
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _dobController = TextEditingController();
   final _addressController = TextEditingController();
   final _cityController = TextEditingController();
   final _stateController = TextEditingController();
+  final _postalCodeController = TextEditingController();
   final _bvnController = TextEditingController();
   final _ninController = TextEditingController();
-  
+
   String _selectedGender = 'Male';
   final Map<String, DocumentUpload> _uploadedDocuments = {};
+  final Map<String, String> _uploadedDocumentUrls = {}; // documentType -> Firebase URL
 
   @override
   void initState() {
@@ -76,10 +83,12 @@ class _VerificationScreenState extends State<VerificationScreen> {
   void dispose() {
     _firstNameController.dispose();
     _lastNameController.dispose();
+    _phoneController.dispose();
     _dobController.dispose();
     _addressController.dispose();
     _cityController.dispose();
     _stateController.dispose();
+    _postalCodeController.dispose();
     _bvnController.dispose();
     _ninController.dispose();
     super.dispose();
@@ -87,18 +96,40 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<AuthBloc, BaseState<AuthData>>(
+    return BlocManager<KycBloc, BaseState<KycData>>(
+      bloc: context.read<KycBloc>(),
       listener: (context, state) {
-        if (state is ErrorState) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.errorMessage ?? 'An error occurred'),
-              backgroundColor: AppColors.error,
-            ),
-          );
+        // Handle success state (document uploaded or KYC submitted)
+        if (state.isSuccess) {
+          setState(() => _isSubmitting = false);
+
+          // If KYC was fully submitted, show success dialog
+          if (state.data?.status == 'pending') {
+            if (mounted) _showSuccessDialog();
+          }
+        }
+
+        // Handle loaded state (document uploaded)
+        if (state.isLoaded && state.data != null) {
+          final kycData = state.data!;
+          // Update local uploaded documents map
+          setState(() {
+            _uploadedDocumentUrls.addAll(kycData.uploadedDocuments);
+          });
+        }
+
+        // Handle loading state
+        if (state.isLoading) {
+          setState(() => _isSubmitting = true);
+        }
+
+        // Handle error state
+        if (state.isError) {
           setState(() => _isSubmitting = false);
         }
       },
+      showResultSuccessNotifications: true,
+      showResultErrorNotifications: true,
       child: AppScaffold(
         title: 'KYC Verification',
         appBarBackgroundColor: AppColors.background,
@@ -154,7 +185,14 @@ class _VerificationScreenState extends State<VerificationScreen> {
               ),
             ],
           ),
-          
+          AppSpacing.verticalSpacing(SpacingSize.md),
+          AppInput(
+            controller: _phoneController,
+            label: 'Phone Number *',
+            hintText: '080 6878 7087',
+            keyboardType: TextInputType.phone,
+          ),
+
           AppSpacing.verticalSpacing(SpacingSize.md),
           AppInput(
             controller: _dobController,
@@ -164,7 +202,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
             suffixIcon: const Icon(Icons.calendar_today),
             onTap: _selectDateOfBirth,
           ),
-          
+
           AppSpacing.verticalSpacing(SpacingSize.md),
           DropdownButtonFormField<String>(
             value: _selectedGender,
@@ -230,17 +268,23 @@ class _VerificationScreenState extends State<VerificationScreen> {
             description: 'Upload your NIN slip, Driver\'s License, or International Passport',
             documentKey: 'government_id',
             uploadedDocument: _uploadedDocuments['government_id'],
-            onUpload: (document) => setState(() => _uploadedDocuments['government_id'] = document),
+            onUpload: (document) {
+              setState(() => _uploadedDocuments['government_id'] = document);
+              _uploadDocumentToFirebase('government_id', document.filePath);
+            },
           ),
-          
+
           AppSpacing.verticalSpacing(SpacingSize.md),
           DocumentUploadCard(
             title: 'Selfie with ID',
-            description: 'Take a selfie holding your government ID next to your face',
+            description: 'Upload a photo holding your government ID next to your face',
             documentKey: 'selfie_with_id',
             uploadedDocument: _uploadedDocuments['selfie_with_id'],
-            onUpload: (document) => setState(() => _uploadedDocuments['selfie_with_id'] = document),
-            isCamera: true,
+            onUpload: (document) {
+              setState(() => _uploadedDocuments['selfie_with_id'] = document);
+              _uploadDocumentToFirebase('selfie_with_id', document.filePath);
+            },
+            isCamera: false,
           ),
           
           AppSpacing.verticalSpacing(SpacingSize.lg),
@@ -297,17 +341,29 @@ class _VerificationScreenState extends State<VerificationScreen> {
               ),
             ],
           ),
-          
+
+          AppSpacing.verticalSpacing(SpacingSize.md),
+          AppInput(
+            controller: _postalCodeController,
+            label: 'Postal Code *',
+            hintText: '100001',
+            keyboardType: TextInputType.number,
+            maxLength: 6,
+          ),
+
           AppSpacing.verticalSpacing(SpacingSize.lg),
           AppText.titleMedium('Address Verification Document'),
           AppSpacing.verticalSpacing(SpacingSize.md),
-          
+
           DocumentUploadCard(
             title: 'Proof of Address',
             description: 'Upload utility bill, bank statement, or tenancy agreement (dated within last 3 months)',
             documentKey: 'proof_of_address',
             uploadedDocument: _uploadedDocuments['proof_of_address'],
-            onUpload: (document) => setState(() => _uploadedDocuments['proof_of_address'] = document),
+            onUpload: (document) {
+              setState(() => _uploadedDocuments['proof_of_address'] = document);
+              _uploadDocumentToFirebase('proof_of_address', document.filePath);
+            },
           ),
           
           AppSpacing.verticalSpacing(SpacingSize.lg),
@@ -466,11 +522,24 @@ class _VerificationScreenState extends State<VerificationScreen> {
     }
   }
 
+  void _uploadDocumentToFirebase(String documentType, String filePath) {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is DataState<AuthData> && authState.data?.user != null) {
+      final userId = authState.data!.user!.uid;
+      context.read<KycBloc>().add(KycDocumentUploadRequested(
+        userId: userId,
+        documentType: documentType,
+        filePath: filePath,
+      ));
+    }
+  }
+
   bool _validateCurrentStep() {
     switch (_currentStep) {
       case 0:
-        if (_firstNameController.text.isEmpty || 
+        if (_firstNameController.text.isEmpty ||
             _lastNameController.text.isEmpty ||
+            _phoneController.text.isEmpty ||
             _dobController.text.isEmpty) {
           _showError('Please fill in all required fields');
           return false;
@@ -486,7 +555,8 @@ class _VerificationScreenState extends State<VerificationScreen> {
       case 2:
         if (_addressController.text.isEmpty ||
             _cityController.text.isEmpty ||
-            _stateController.text.isEmpty) {
+            _stateController.text.isEmpty ||
+            _postalCodeController.text.isEmpty) {
           _showError('Please fill in all address fields');
           return false;
         }
@@ -524,43 +594,54 @@ class _VerificationScreenState extends State<VerificationScreen> {
     ));
   }
 
+  DateTime _parseDateOfBirth() {
+    try {
+      // Parse date from DD/MM/YYYY format
+      final parts = _dobController.text.split('/');
+      if (parts.length == 3) {
+        final day = int.parse(parts[0]);
+        final month = int.parse(parts[1]);
+        final year = int.parse(parts[2]);
+        return DateTime(year, month, day);
+      }
+    } catch (e) {
+      // Fallback to a default date if parsing fails
+    }
+    return DateTime(1990, 1, 1);
+  }
+
   Future<void> _submitVerification() async {
     setState(() => _isSubmitting = true);
-    
+
     try {
-      final authBloc = context.read<AuthBloc>();
-      final currentState = authBloc.state;
-      
-      if (currentState is DataState<AuthData> && currentState.data?.user != null) {
-        final user = currentState.data!.user!;
-        
-        authBloc.add(AuthUserProfileUpdateRequested(
-          displayName: '${_firstNameController.text} ${_lastNameController.text}',
-          kycStatus: KycStatus.pending,
-          additionalData: {
-            ...user.additionalData,
-            'kycSubmittedAt': DateTime.now().toIso8601String(),
-            'firstName': _firstNameController.text,
-            'lastName': _lastNameController.text,
-            'dateOfBirth': _dobController.text,
-            'gender': _selectedGender,
-            'address': _addressController.text,
-            'city': _cityController.text,
-            'state': _stateController.text,
-            'nin': _ninController.text,
-            'bvn': _bvnController.text,
-            'uploadedDocuments': _uploadedDocuments.keys.toList(),
-          },
+      final authState = context.read<AuthBloc>().state;
+
+      if (authState is DataState<AuthData> && authState.data?.user != null) {
+        final user = authState.data!.user!;
+
+        // Submit KYC to Firebase through KycBloc
+        context.read<KycBloc>().add(KycFinalSubmitRequested(
+          userId: user.uid,
+          fullName: '${_firstNameController.text} ${_lastNameController.text}',
+          dateOfBirth: _parseDateOfBirth(),
+          phoneNumber: _phoneController.text,
+          email: user.email,
+          address: _addressController.text,
+          city: _cityController.text,
+          country: 'Nigeria', // Default to Nigeria, can be made dynamic later
+          postalCode: _postalCodeController.text,
+          governmentIdNumber: _ninController.text.isNotEmpty ? _ninController.text : _bvnController.text,
+          idType: _ninController.text.isNotEmpty ? 'NIN' : 'BVN',
+          governmentIdUrl: _uploadedDocumentUrls['government_id'],
+          selfieWithIdUrl: _uploadedDocumentUrls['selfie_with_id'],
+          proofOfAddressUrl: _uploadedDocumentUrls['proof_of_address'],
         ));
-        
-        if (mounted) _showSuccessDialog();
       }
     } catch (e) {
       if (mounted) {
+        setState(() => _isSubmitting = false);
         _showError('Verification submission failed: $e');
       }
-    } finally {
-      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 

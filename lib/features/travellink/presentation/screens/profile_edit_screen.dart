@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:get/get.dart';
+import 'package:get_it/get_it.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_scaffold.dart';
 import '../../../../core/widgets/app_container.dart';
@@ -9,10 +11,12 @@ import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_input.dart';
+import '../../../../core/routes/routes.dart';
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_event.dart';
 import '../bloc/auth/auth_data.dart';
 import '../../../../core/bloc/base/base_state.dart';
+import '../../../../features/file_upload/domain/use_cases/file_upload_usecase.dart';
 
 class ProfileEditScreen extends StatefulWidget {
   const ProfileEditScreen({super.key});
@@ -26,9 +30,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   final _displayNameController = TextEditingController();
   final _emailController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
-  
+  final _fileUploadUseCase = GetIt.instance<FileUploadUseCase>();
+
   XFile? _selectedImage;
   bool _isSubmitting = false;
+  bool _isUploadingImage = false;
 
   @override
   void initState() {
@@ -66,6 +72,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           _showErrorMessage(state.errorMessage ?? 'Failed to update profile');
         } else if (state is LoadedState) {
           setState(() => _isSubmitting = false);
+        } else if (state is InitialState) {
+          // User has been logged out, navigate to login screen
+          setState(() => _isSubmitting = false);
+          Get.offAllNamed(Routes.login);
         }
       },
       child: AppScaffold(
@@ -131,12 +141,58 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         onPressed: _isSubmitting ? null : _handleSave,
                         loading: _isSubmitting,
                         child: AppText.labelMedium(
-                          'Save Changes',
+                          _isUploadingImage
+                              ? 'Uploading Image...'
+                              : 'Save Changes',
                           color: Colors.white,
                         ),
                       ),
                     ),
                   ],
+                ),
+                AppSpacing.verticalSpacing(SpacingSize.xxl),
+                AppContainer(
+                  padding: AppSpacing.paddingMD,
+                  variant: ContainerVariant.outlined,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const AppText(
+                        'Account',
+                        variant: TextVariant.titleSmall,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      AppSpacing.verticalSpacing(SpacingSize.sm),
+                      AppText.bodySmall(
+                        'Signout from your account',
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                      AppSpacing.verticalSpacing(SpacingSize.md),
+                      SizedBox(
+                        width: double.infinity,
+                        child: AppButton.outline(
+                          key: const Key('signoutButton'),
+                          onPressed: _isSubmitting ? null : _handleSignout,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.logout,
+                                size: 18,
+                                color: AppColors.error,
+                              ),
+                              AppSpacing.horizontalSpacing(SpacingSize.xs),
+                              AppText.labelMedium(
+                                'Sign Out',
+                                color: AppColors.error,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -199,15 +255,112 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     }
   }
 
-  void _handleSave() {
+  Future<void> _handleSave() async {
     if (_formKey.currentState!.validate()) {
+      final authState = context.read<AuthBloc>().state;
+
+      // Get current user ID
+      String? userId;
+      if (authState is DataState<AuthData> && authState.data?.user != null) {
+        userId = authState.data!.user!.uid;
+      }
+
+      if (userId == null) {
+        _showErrorMessage('User not found');
+        return;
+      }
+
+      String? profileImageUrl;
+
+      // Upload profile image if selected
+      if (_selectedImage != null) {
+        setState(() {
+          _isUploadingImage = true;
+          _isSubmitting = true;
+        });
+
+        try {
+          final file = File(_selectedImage!.path);
+          final result = await _fileUploadUseCase.uploadFile(
+            userId: userId,
+            file: file,
+          );
+
+          result.fold(
+            (failure) {
+              setState(() {
+                _isUploadingImage = false;
+                _isSubmitting = false;
+              });
+              _showErrorMessage(failure.failureMessage);
+              return;
+            },
+            (uploadedFile) {
+              profileImageUrl = uploadedFile.url;
+              setState(() => _isUploadingImage = false);
+            },
+          );
+        } catch (e) {
+          setState(() {
+            _isUploadingImage = false;
+            _isSubmitting = false;
+          });
+          _showErrorMessage('Failed to upload image: $e');
+          return;
+        }
+      }
+
+      // Update profile
       final authBloc = context.read<AuthBloc>();
-      
       authBloc.add(AuthUserProfileUpdateRequested(
         displayName: _displayNameController.text.trim(),
         email: _emailController.text.trim(),
+        additionalData: profileImageUrl != null
+            ? {'profileImageUrl': profileImageUrl}
+            : null,
       ));
     }
+  }
+
+  Future<void> _handleSignout() async {
+    final confirmed = await _showSignoutConfirmationDialog();
+
+    if (confirmed == true) {
+      final authBloc = context.read<AuthBloc>();
+      authBloc.add(const AuthLogoutRequested());
+    }
+  }
+
+  Future<bool?> _showSignoutConfirmationDialog() {
+    return showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: AppText.titleMedium('Sign Out'),
+          content: AppText.bodyMedium(
+            'Are you sure you want to sign out of your account?',
+          ),
+          actions: [
+            AppButton.text(
+              key: const Key('cancelSignoutButton'),
+              onPressed: () => Navigator.of(context).pop(false),
+              child: AppText.labelMedium(
+                'Cancel',
+                color: AppColors.onSurface,
+              ),
+            ),
+            AppButton.primary(
+              key: const Key('confirmSignoutButton'),
+              onPressed: () => Navigator.of(context).pop(true),
+              child: AppText.labelMedium(
+                'Sign Out',
+                color: Colors.white,
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _showSuccessMessage(String message) {

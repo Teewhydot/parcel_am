@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:parcel_am/app/bloc_providers.dart';
 import 'package:provider/provider.dart';
 import 'package:parcel_am/app/init.dart';
 import 'package:parcel_am/core/services/notification_service.dart';
@@ -33,7 +34,7 @@ void main() async {
     final notificationService = di.sl<NotificationService>();
     await notificationService.initialize();
 
-    runApp(const MyApp());
+    runApp(MultiBlocProvider(providers: blocs, child: const MyApp()));
   } catch (e) {
     // Handle Firebase initialization errors
     runApp(FirebaseErrorApp(error: e.toString()));
@@ -52,31 +53,12 @@ class MyApp extends StatelessWidget {
       builder: (context, child) {
         return ChangeNotifierProvider(
           create: (_) => ThemeProvider(),
-          child: MultiBlocProvider(
-            providers: [
-              BlocProvider<AuthBloc>(
-                create: (_) => AuthBloc(),
-              ),
-              BlocProvider<DashboardBloc>(
-                create: (context) => DashboardBloc(),
-              ),
-              BlocProvider(
-                create: (_) => WalletBloc()..add(const WalletLoadRequested()),
-              ),
-              BlocProvider<NotificationBloc>(
-                create: (_) => NotificationBloc(),
-              ),
-              BlocProvider<ParcelBloc>(
-                create: (_) => ParcelBloc(),
-              ),
-            ],
-            child: GetMaterialApp(
-              title: 'ParcelAm',
-              theme: AppTheme.lightTheme,
-              initialRoute: Routes.initial,
-              getPages: GetXRouteModule.routes,
-              debugShowCheckedModeBanner: false,
-            ),
+          child: GetMaterialApp(
+            title: 'ParcelAm',
+            theme: AppTheme.lightTheme,
+            initialRoute: Routes.initial,
+            getPages: GetXRouteModule.routes,
+            debugShowCheckedModeBanner: false,
           ),
         );
       },

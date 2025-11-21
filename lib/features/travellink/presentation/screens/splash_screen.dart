@@ -40,7 +40,11 @@ class _SplashScreenState extends State<SplashScreen>
 
     _animationController.forward();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AuthBloc>().add(AuthStarted());
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) {
+          context.read<AuthBloc>().add(AuthStarted());
+        }
+      });
     });
   }
 

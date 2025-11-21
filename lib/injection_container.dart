@@ -50,6 +50,12 @@ import 'features/payments/domain/repositories/paystack_payment_repository.dart';
 import 'features/payments/domain/use_cases/paystack_payment_usecase.dart';
 import 'features/payments/presentation/manager/paystack_bloc/paystack_payment_bloc.dart';
 
+// File Upload
+import 'features/file_upload/data/remote/data_sources/file_upload.dart';
+import 'features/file_upload/data/repositories/file_upload_repository_impl.dart';
+import 'features/file_upload/domain/repositories/file_upload_repository.dart';
+import 'features/file_upload/domain/use_cases/file_upload_usecase.dart';
+
 final sl = GetIt.instance;
 
 class NetworkInfoImpl implements NetworkInfo {
@@ -177,6 +183,26 @@ Future<void> init() async {
   // Payment BLoCs
   sl.registerFactory<PaystackPaymentBloc>(
     () => PaystackPaymentBloc(sl()),
+  );
+
+  //! Features - File Upload System
+  // File Upload Data Sources
+  sl.registerLazySingleton<FileUploadDataSource>(
+    () => FirebaseFileUploadImpl(
+      firestore: sl(),
+      auth: sl(),
+      storage: sl(),
+    ),
+  );
+
+  // File Upload Repositories
+  sl.registerLazySingleton<FileUploadRepository>(
+    () => FileUploadRepositoryImpl(),
+  );
+
+  // File Upload Use Cases
+  sl.registerLazySingleton<FileUploadUseCase>(
+    () => FileUploadUseCase(),
   );
 
   //! Notification Service - Singleton

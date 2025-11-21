@@ -21,22 +21,51 @@ abstract class FileUploadDataSource {
 }
 
 class FirebaseFileUploadImpl implements FileUploadDataSource {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseStorage _storage = FirebaseStorage.instance;
+  final FirebaseFirestore _firestore;
+  final FirebaseAuth _auth;
+  final FirebaseStorage _storage;
+
+  FirebaseFileUploadImpl({
+    required FirebaseFirestore firestore,
+    required FirebaseAuth auth,
+    required FirebaseStorage storage,
+  })  : _firestore = firestore,
+        _auth = auth,
+        _storage = storage;
+
   @override
-  Future<void> deleteFile({required String fileId}) {
-    // TODO: implement deleteFile
-    throw UnimplementedError();
+  Future<void> deleteFile({required String fileId}) async {
+    try {
+      // fileId can be either a storage path or download URL
+      if (fileId.startsWith('http')) {
+        final ref = _storage.refFromURL(fileId);
+        await ref.delete();
+      } else {
+        final ref = _storage.ref().child(fileId);
+        await ref.delete();
+      }
+    } catch (e) {
+      throw Exception('Failed to delete file: $e');
+    }
   }
 
   @override
   Future<String> generateUrl({
     required String filePath,
     List<String>? transformations,
-  }) {
-    // TODO: implement generateUrl
-    throw UnimplementedError();
+  }) async {
+    try {
+      // If filePath is already a URL, return it
+      if (filePath.startsWith('http')) {
+        return filePath;
+      }
+
+      // Otherwise, get the download URL from the storage path
+      final ref = _storage.ref().child(filePath);
+      return await ref.getDownloadURL();
+    } catch (e) {
+      throw Exception('Failed to generate URL: $e');
+    }
   }
 
   @override

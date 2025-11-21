@@ -54,5 +54,12 @@
 		<string>remote-notification</string>
 		<string>fetch</string>
 	</array>
+	<!-- Camera and Photo Library permissions for KYC verification -->
+	<key>NSCameraUsageDescription</key>
+	<string>We need camera access to capture photos for identity verification during the KYC process.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>We need access to your photo library to select identity documents for KYC verification.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>We need permission to save photos to your library for KYC verification purposes.</string>
 </dict>
 </plist>

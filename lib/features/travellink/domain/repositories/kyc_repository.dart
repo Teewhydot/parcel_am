@@ -5,13 +5,18 @@ abstract class KycRepository {
   Future<Either<Failure, void>> submitKyc({
     required String userId,
     required String fullName,
-    required String dateOfBirth,
+    required DateTime dateOfBirth,
+    required String phoneNumber,
+    required String email,
     required String address,
-    required String idType,
-    required String idNumber,
-    required String frontImagePath,
-    required String backImagePath,
-    required String selfieImagePath,
+    required String city,
+    required String country,
+    required String postalCode,
+    String? governmentIdNumber,
+    String? idType,
+    String? governmentIdUrl,
+    String? selfieWithIdUrl,
+    String? proofOfAddressUrl,
   });
   Stream<String> watchKycStatus(String userId);
 }

@@ -84,6 +84,7 @@ class DocumentUploadCard extends StatefulWidget {
   final DocumentUpload? uploadedDocument;
   final Function(DocumentUpload) onUpload;
   final bool isCamera;
+  final Function(double progress)? onProgressUpdate;
 
   const DocumentUploadCard({
     super.key,
@@ -93,6 +94,7 @@ class DocumentUploadCard extends StatefulWidget {
     this.uploadedDocument,
     required this.onUpload,
     this.isCamera = false,
+    this.onProgressUpdate,
   });
 
   @override
@@ -102,20 +104,34 @@ class DocumentUploadCard extends StatefulWidget {
 class _DocumentUploadCardState extends State<DocumentUploadCard> {
   final ImagePicker _picker = ImagePicker();
   bool _isUploading = false;
+  double _uploadProgress = 0.0;
+
+  void _updateProgress(double progress) {
+    if (mounted) {
+      setState(() => _uploadProgress = progress);
+      widget.onProgressUpdate?.call(progress);
+    }
+  }
 
   Future<void> _pickDocument() async {
     try {
-      setState(() => _isUploading = true);
-      
+      setState(() {
+        _isUploading = true;
+        _uploadProgress = 0.0;
+      });
+
+      _updateProgress(0.1); // Starting file selection
+
       final XFile? pickedFile = await _picker.pickImage(
         source: widget.isCamera ? ImageSource.camera : ImageSource.gallery,
         maxWidth: 1920,
         maxHeight: 1080,
         imageQuality: 85,
       );
-      
+
       if (pickedFile != null) {
-        
+        _updateProgress(0.3); // File selected, preparing for upload
+
         // Create DocumentUpload object
         final document = DocumentUpload(
           fileName: pickedFile.name,
@@ -123,7 +139,9 @@ class _DocumentUploadCardState extends State<DocumentUploadCard> {
           uploadedAt: DateTime.now(),
           status: 'uploaded',
         );
-        
+
+        _updateProgress(1.0); // Upload complete
+
         widget.onUpload(document);
       }
     } catch (e) {
@@ -138,7 +156,10 @@ class _DocumentUploadCardState extends State<DocumentUploadCard> {
       }
     } finally {
       if (mounted) {
-        setState(() => _isUploading = false);
+        setState(() {
+          _isUploading = false;
+          _uploadProgress = 0.0;
+        });
       }
     }
   }
@@ -179,30 +200,55 @@ class _DocumentUploadCardState extends State<DocumentUploadCard> {
           ),
           AppSpacing.verticalSpacing(SpacingSize.md),
           if (!isUploaded)
-            AppButton.outline(
-              onPressed: _isUploading ? null : _pickDocument,
-              child: _isUploading
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                      ),
-                    )
-                  : Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          widget.isCamera ? Icons.camera_alt : Icons.upload_file,
-                          size: 16,
+            Column(
+              children: [
+                AppButton.outline(
+                  onPressed: _isUploading ? null : _pickDocument,
+                  child: _isUploading
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                              ),
+                            ),
+                            AppSpacing.horizontalSpacing(SpacingSize.sm),
+                            AppText.labelMedium(
+                              'Uploading ${(_uploadProgress * 100).toInt()}%',
+                            ),
+                          ],
+                        )
+                      : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              widget.isCamera ? Icons.camera_alt : Icons.upload_file,
+                              size: 16,
+                            ),
+                            AppSpacing.horizontalSpacing(SpacingSize.xs),
+                            AppText.labelMedium(
+                              widget.isCamera ? 'Take Photo' : 'Upload File',
+                            ),
+                          ],
                         ),
-                        AppSpacing.horizontalSpacing(SpacingSize.xs),
-                        AppText.labelMedium(
-                          widget.isCamera ? 'Take Photo' : 'Upload File',
-                        ),
-                      ],
+                ),
+                if (_isUploading) ...[
+                  AppSpacing.verticalSpacing(SpacingSize.sm),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: _uploadProgress,
+                      backgroundColor: AppColors.surfaceVariant,
+                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                      minHeight: 6,
                     ),
+                  ),
+                ],
+              ],
             )
           else
             AppContainer(

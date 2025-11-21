@@ -3,10 +3,11 @@ import 'package:image_picker/image_picker.dart';
 import 'package:parcel_am/core/services/permission_service/permission_service.dart';
 import 'package:file_picker/file_picker.dart';
 import '../utils/logger.dart';
+import 'firebase_storage_service.dart';
 
 enum FileUploadType { image, video, audio, document, any }
 
-/// Simple file upload service that handles all file selection logic
+/// File upload service that handles file selection and Firebase Storage uploads
 class FileUploadService {
   static final FileUploadService _instance = FileUploadService._internal();
   factory FileUploadService() => _instance;
@@ -14,6 +15,7 @@ class FileUploadService {
 
   final ImagePicker _imagePicker = ImagePicker();
   final PermissionService _permissionService = PermissionService();
+  final FirebaseStorageService _storageService = FirebaseStorageService();
 
   /// Pick image from camera
   Future<File?> pickImageFromCamera() async {
@@ -228,5 +230,109 @@ class FileUploadService {
       case FileUploadType.any:
         return FileType.any;
     }
+  }
+
+  // ============ Firebase Storage Upload Methods ============
+
+  /// Upload a file to Firebase Storage
+  ///
+  /// [file] - The file to upload
+  /// [storagePath] - The path in Firebase Storage
+  /// [onProgress] - Optional callback for upload progress (0.0 to 1.0)
+  /// [compress] - Whether to compress the image before upload
+  ///
+  /// Returns the download URL
+  Future<String> uploadFile({
+    required File file,
+    required String storagePath,
+    Function(double progress)? onProgress,
+    bool compress = true,
+  }) async {
+    return _storageService.uploadFile(
+      file: file,
+      storagePath: storagePath,
+      onProgress: onProgress,
+      compress: compress,
+    );
+  }
+
+  /// Upload a KYC document to Firebase Storage
+  ///
+  /// [file] - The document file to upload
+  /// [userId] - The user's ID
+  /// [documentType] - Type of document (government_id, selfie_with_id, proof_of_address)
+  /// [onProgress] - Optional callback for upload progress (0.0 to 1.0)
+  ///
+  /// Returns the download URL
+  Future<String> uploadKycDocument({
+    required File file,
+    required String userId,
+    required String documentType,
+    Function(double progress)? onProgress,
+  }) async {
+    return _storageService.uploadKycDocument(
+      file: file,
+      userId: userId,
+      documentType: documentType,
+      onProgress: onProgress,
+    );
+  }
+
+  /// Pick an image and upload it as a KYC document
+  ///
+  /// [userId] - The user's ID
+  /// [documentType] - Type of document (government_id, selfie_with_id, proof_of_address)
+  /// [useCamera] - Whether to use camera (true) or gallery (false)
+  /// [onProgress] - Optional callback for upload progress (0.0 to 1.0)
+  ///
+  /// Returns the download URL or null if user cancels
+  Future<String?> pickAndUploadKycDocument({
+    required String userId,
+    required String documentType,
+    bool useCamera = false,
+    Function(double progress)? onProgress,
+  }) async {
+    try {
+      // Pick the image
+      final File? pickedFile = useCamera
+          ? await pickImageFromCamera()
+          : await pickImageFromGallery();
+
+      if (pickedFile == null) {
+        return null; // User cancelled
+      }
+
+      // Validate file size (max 10MB)
+      if (!validateFile(pickedFile, maxSizeInMB: 10)) {
+        throw Exception('File size exceeds 10MB limit');
+      }
+
+      // Upload to Firebase
+      final downloadUrl = await uploadKycDocument(
+        file: pickedFile,
+        userId: userId,
+        documentType: documentType,
+        onProgress: onProgress,
+      );
+
+      return downloadUrl;
+    } catch (e) {
+      Logger.logBasic('Failed to pick and upload KYC document: $e');
+      rethrow;
+    }
+  }
+
+  /// Delete a file from Firebase Storage
+  ///
+  /// [storagePath] - The path of the file to delete
+  Future<void> deleteFile(String storagePath) async {
+    return _storageService.deleteFile(storagePath);
+  }
+
+  /// Delete a file using its download URL
+  ///
+  /// [downloadUrl] - The download URL of the file
+  Future<void> deleteFileByUrl(String downloadUrl) async {
+    return _storageService.deleteFileByUrl(downloadUrl);
   }
 }
