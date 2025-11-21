@@ -1,6 +1,9 @@
+import 'package:dartz/dartz.dart' show Either;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
+import 'package:parcel_am/core/errors/failures.dart' show Failure;
+import 'package:parcel_am/features/parcel_am_core/data/models/user_model.dart';
 import '../../../../core/domain/entities/kyc_status.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_text.dart';
@@ -121,7 +124,7 @@ class KycStatusIndicator extends StatelessWidget {
 }
 
 /// Full-width banner showing KYC status with action button
-class KycStatusBanner extends StatelessWidget {
+class KycStatusBanner extends StatefulWidget {
   final bool showOnApproved;
   final EdgeInsets? margin;
   
@@ -132,17 +135,35 @@ class KycStatusBanner extends StatelessWidget {
   });
 
   @override
+  State<KycStatusBanner> createState() => _KycStatusBannerState();
+}
+
+class _KycStatusBannerState extends State<KycStatusBanner> {
+      late Stream<Either<Failure, UserModel>> _kycStatusStream;
+
+
+@override
+  void initState() {
+    super.initState();
+     final authBloc = context.read<AuthBloc>();
+    final userId = authBloc.state is LoadedState<AuthData>
+        ? (authBloc.state as LoadedState<AuthData>).data?.user?.uid ?? ''
+        : '';
+    _kycStatusStream = context.read<AuthBloc>().watchUserData(userId);
+  }
+  @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AuthBloc, BaseState<AuthData>>(
+    return StreamBuilder<Either<Failure, UserModel>>(
+      stream: _kycStatusStream,
       builder: (context, state) {
-        if (state is! DataState<AuthData> || state.data?.user == null) {
-          return const SizedBox.shrink();
-        }
         
-        final user = state.data!.user!;
-        final status = user.kycStatus;
+        final user = state.data?.fold(
+          (failure) => null,
+          (userModel) => userModel,
+        );
+        final status = user?.kycStatus ?? KycStatus.notStarted;
         
-        if (!showOnApproved && status == KycStatus.approved) {
+        if (!widget.showOnApproved && status == KycStatus.approved) {
           return const SizedBox.shrink();
         }
         
@@ -151,7 +172,7 @@ class KycStatusBanner extends StatelessWidget {
               ? () => Get.toNamed(Routes.verification)
               : null,
           child: Container(
-            margin: margin ?? AppSpacing.paddingMD,
+            margin: widget.margin ?? AppSpacing.paddingMD,
             padding: AppSpacing.paddingMD,
             decoration: BoxDecoration(
               color: _getStatusColor(status).withOpacity(0.1),
