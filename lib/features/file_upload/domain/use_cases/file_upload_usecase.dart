@@ -28,10 +28,12 @@ class FileUploadUseCase {
   Future<Either<Failure, UploadedFileEntity>> uploadFile({
     required String userId,
     required File file,
+    required String folder,
   }) async {
     return await fileUploadRepo.uploadFile(
       userId: userId, // Replace with actual user ID retrieval logic
       file: file,
+      folder: folder,
     );
   }
 }

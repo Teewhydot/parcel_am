@@ -135,6 +135,7 @@ class KycBloc extends BaseBloC<KycEvent, BaseState<KycData>> {
       final result = await _fileUploadUseCase.uploadFile(
         file: file,
         userId: event.userId,
+        folder: 'kyc_documents/${event.documentType}',
       );
 
       result.fold(

@@ -284,6 +284,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           final result = await _fileUploadUseCase.uploadFile(
             userId: userId,
             file: file,
+            folder: 'profile_images',
           );
 
           result.fold(

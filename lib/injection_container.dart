@@ -175,11 +175,7 @@ Future<void> init() async {
   //! Features - File Upload System
   // File Upload Data Sources
   sl.registerLazySingleton<FileUploadDataSource>(
-    () => FirebaseFileUploadImpl(
-      firestore: sl(),
-      auth: sl(),
-      storage: sl(),
-    ),
+    () => ImageKitFileUploadImpl(),
   );
 
   // File Upload Repositories

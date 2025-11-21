@@ -17,12 +17,12 @@ class FileUploadRepositoryImpl implements FileUploadRepository {
     required String userId,
     required File file,
     String? fileName,
-    String? folder,
+    required String folder,
     List<String>? tags,
     Map<String, dynamic>? customMetadata,
   }) async {
     return ErrorHandler.handle(
-      () async => await remoteDataSource.uploadFile(userId: userId, file: file),
+      () async => await remoteDataSource.uploadFile(userId: userId, file: file,folderPath: folder),
       operationName: "File Upload",
     );
   }

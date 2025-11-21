@@ -10,7 +10,7 @@ abstract class FileUploadRepository {
     required String userId,
     required File file,
     String? fileName,
-    String? folder,
+    required String folder,
     List<String>? tags,
     Map<String, dynamic>? customMetadata,
   });

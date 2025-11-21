@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -12,18 +13,14 @@ import 'package:parcel_am/injection_container.dart' as di;
 import 'core/routes/getx_route_module.dart';
 import 'core/routes/routes.dart';
 import 'core/theme/app_theme.dart';
-import 'features/parcel_am_core/presentation/bloc/auth/auth_bloc.dart';
 import 'features/parcel_am_core/data/providers/theme_provider.dart';
-import 'features/parcel_am_core/presentation/bloc/wallet/wallet_bloc.dart';
-import 'features/parcel_am_core/presentation/bloc/wallet/wallet_event.dart';
-import 'features/parcel_am_core/presentation/bloc/dashboard/dashboard_bloc.dart';
-import 'features/notifications/presentation/bloc/notification_bloc.dart';
-import 'features/parcel_am_core/presentation/bloc/parcel/parcel_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+        await dotenv.load(fileName: ".env");
 
   try {
+
     // Initialize Firebase and dependency injection
     await AppConfig.init();
 
