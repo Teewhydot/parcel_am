@@ -37,8 +37,6 @@ import 'features/travellink/data/datasources/parcel_seeder.dart';
 import 'features/travellink/data/datasources/dashboard_remote_data_source.dart';
 import 'features/chat/data/datasources/chat_remote_data_source.dart';
 
-import 'features/kyc/data/datasources/kyc_remote_datasource.dart' as kyc_ds;
-
 import 'features/notifications/data/datasources/notification_remote_datasource.dart';
 
 // Payment System
@@ -114,11 +112,6 @@ Future<void> init() async {
 
   //! Features - Wallet (TravelLink) Data Sources
   sl.registerLazySingleton<travellink_wallet_ds.WalletRemoteDataSource>(() => travellink_wallet_ds.WalletRemoteDataSourceImpl(
-    firestore: sl(),
-  ));
-
-  //! Features - KYC (Standalone module) Data Sources
-  sl.registerLazySingleton<kyc_ds.KycRemoteDataSource>(() => kyc_ds.KycRemoteDataSourceImpl(
     firestore: sl(),
   ));
 
