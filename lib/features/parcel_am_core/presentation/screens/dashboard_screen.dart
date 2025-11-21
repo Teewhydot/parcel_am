@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -315,86 +314,60 @@ class _HeaderSection extends StatelessWidget {
 class _ChatButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return BlocSelector<AuthBloc, BaseState<AuthData>, String>(
-      selector: (state) {
-        if (state is LoadedState<AuthData>) {
-          return state.data?.user?.uid ?? '';
-        }
-        return '';
-      },
-      builder: (context, userId) {
-        if (userId.isEmpty) {
-          return IconButton(
-            icon: const Icon(Icons.chat_outlined, color: Colors.white),
-            onPressed: () {
-              sl<NavigationService>().navigateTo(Routes.chatsList);
-            },
-          );
-        }
+    // Get chat notification service from parent state
+    final dashboardState = context.findAncestorStateOfType<_DashboardScreenState>();
+    final chatNotificationService = dashboardState?._chatNotificationService;
 
-        return StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance
-              .collection('chats')
-              .where('participants', arrayContains: userId)
-              .snapshots()
-              .handleError((error) {
-            print('❌ Firestore Error (Dashboard unread count): $error');
-            if (error.toString().contains('index')) {
-              print('🔍 INDEX REQUIRED: Create a composite index for:');
-              print('   Collection: chats');
-              print('   Fields: participants (Array)');
-              print('   Or visit the Firebase Console to create the index automatically.');
-            }
-          }),
-          builder: (context, snapshot) {
-            int totalUnread = 0;
+    if (chatNotificationService == null) {
+      return IconButton(
+        icon: const Icon(Icons.chat_outlined, color: Colors.black),
+        onPressed: () {
+          sl<NavigationService>().navigateTo(Routes.chatsList);
+        },
+      );
+    }
 
-            if (snapshot.hasData) {
-              for (var doc in snapshot.data!.docs) {
-                final chatData = doc.data() as Map<String, dynamic>;
-                final unreadCount =
-                    (chatData['unreadCount'] as Map<String, dynamic>?)?[userId] ?? 0;
-                totalUnread += unreadCount as int;
-              }
-            }
+    return StreamBuilder<int>(
+      stream: chatNotificationService.unreadCountStream,
+      initialData: 0,
+      builder: (context, snapshot) {
+        final totalUnread = snapshot.data ?? 0;
 
-            return Stack(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.chat_outlined, color: Colors.black),
-                  onPressed: () {
-                    sl<NavigationService>().navigateTo(Routes.chatsList);
-                  },
-                ),
-                if (totalUnread > 0)
-                  Positioned(
-                    right: 8,
-                    top: 8,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: AppColors.accent,
-                        shape: BoxShape.circle,
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 16,
-                        minHeight: 16,
-                      ),
-                      child: Center(
-                        child: Text(
-                          totalUnread > 9 ? '9+' : totalUnread.toString(),
-                          style: const TextStyle(
-                            color: AppColors.black,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+        return Stack(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.chat_outlined, color: Colors.black),
+              onPressed: () {
+                sl<NavigationService>().navigateTo(Routes.chatsList);
+              },
+            ),
+            if (totalUnread > 0)
+              Positioned(
+                right: 8,
+                top: 8,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: AppColors.accent,
+                    shape: BoxShape.circle,
+                  ),
+                  constraints: const BoxConstraints(
+                    minWidth: 16,
+                    minHeight: 16,
+                  ),
+                  child: Center(
+                    child: Text(
+                      totalUnread > 9 ? '9+' : totalUnread.toString(),
+                      style: const TextStyle(
+                        color: AppColors.black,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-              ],
-            );
-          },
+                ),
+              ),
+          ],
         );
       },
     );

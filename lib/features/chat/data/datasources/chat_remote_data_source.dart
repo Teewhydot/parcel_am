@@ -1,11 +1,11 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../../domain/entities/message.dart';
 import '../../domain/entities/message_type.dart';
 import '../models/message_model.dart';
 import '../models/chat_model.dart';
+import '../../../../core/utils/logger.dart';
 
 abstract class ChatRemoteDataSource {
   Stream<List<MessageModel>> getMessagesStream(String chatId);
@@ -53,12 +53,12 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         .orderBy('timestamp', descending: true)
         .snapshots()
         .handleError((error) {
-      print('❌ Firestore Error (getMessagesStream): $error');
+      Logger.logError('Firestore Error (getMessagesStream): $error', tag: 'ChatDataSource');
       if (error.toString().contains('index')) {
-        print('🔍 INDEX REQUIRED: Create a composite index for:');
-        print('   Collection: chats/{chatId}/messages');
-        print('   Fields: timestamp (Descending)');
-        print('   Or visit the Firebase Console to create the index automatically.');
+        Logger.logError('INDEX REQUIRED: Create a composite index for:', tag: 'ChatDataSource');
+        Logger.logError('   Collection: chats/{chatId}/messages', tag: 'ChatDataSource');
+        Logger.logError('   Fields: timestamp (Descending)', tag: 'ChatDataSource');
+        Logger.logError('   Or visit the Firebase Console to create the index automatically.', tag: 'ChatDataSource');
       }
     })
         .map((snapshot) {
@@ -85,10 +85,6 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     } else {
       await messagesRef.doc(message.id).set(messageData);
     }
-
-    // Get chat data to find recipients for notifications
-    final chatDoc = await firestore.collection('chats').doc(message.chatId).get();
-    final chatData = chatDoc.data();
 
     // Update chat document with last message and notification trigger
     await firestore.collection('chats').doc(message.chatId).update({
@@ -202,9 +198,9 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   @override
   Stream<ChatModel> getChatStream(String chatId) {
     return firestore.collection('chats').doc(chatId).snapshots().handleError((error) {
-      print('❌ Firestore Error (getChatStream): $error');
+      Logger.logError('Firestore Error (getChatStream): $error', tag: 'ChatDataSource');
       if (error.toString().contains('index')) {
-        print('🔍 INDEX REQUIRED: Check Firebase Console for index requirements');
+        Logger.logError('INDEX REQUIRED: Check Firebase Console for index requirements', tag: 'ChatDataSource');
       }
     }).map((snapshot) {
       if (!snapshot.exists) {
@@ -287,9 +283,9 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   @override
   Stream<ChatModel> watchChat(String chatId) {
     return firestore.collection('chats').doc(chatId).snapshots().handleError((error) {
-      print('❌ Firestore Error (watchChat): $error');
+      Logger.logError('Firestore Error (watchChat): $error', tag: 'ChatDataSource');
       if (error.toString().contains('index')) {
-        print('🔍 INDEX REQUIRED: Check Firebase Console for index requirements');
+        Logger.logError('INDEX REQUIRED: Check Firebase Console for index requirements', tag: 'ChatDataSource');
       }
     }).map((snapshot) {
       if (!snapshot.exists) {
@@ -309,12 +305,12 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         .orderBy('lastMessageTime', descending: true)
         .snapshots()
         .handleError((error) {
-      print('❌ Firestore Error (watchUserChats): $error');
+      Logger.logError('Firestore Error (watchUserChats): $error', tag: 'ChatDataSource');
       if (error.toString().contains('index')) {
-        print('🔍 INDEX REQUIRED: Create a composite index for:');
-        print('   Collection: chats');
-        print('   Fields: participantIds (Array), lastMessageTime (Descending)');
-        print('   Or visit the Firebase Console to create the index automatically.');
+        Logger.logError('INDEX REQUIRED: Create a composite index for:', tag: 'ChatDataSource');
+        Logger.logError('   Collection: chats', tag: 'ChatDataSource');
+        Logger.logError('   Fields: participantIds (Array), lastMessageTime (Descending)', tag: 'ChatDataSource');
+        Logger.logError('   Or visit the Firebase Console to create the index automatically.', tag: 'ChatDataSource');
       }
     })
         .map((snapshot) {

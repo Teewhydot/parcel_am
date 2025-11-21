@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../../../core/utils/logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/parcel_model.dart';
 import '../../domain/entities/parcel_entity.dart';
@@ -31,9 +32,9 @@ class ParcelRemoteDataSourceImpl implements ParcelRemoteDataSource {
           .doc(parcelId)
           .snapshots()
           .handleError((error) {
-        print('❌ Firestore Error (watchParcelStatus): $error');
+        Logger.logError('Firestore Error (watchParcelStatus): $error', tag: 'ParcelRemoteDataSource');
         if (error.toString().contains('index')) {
-          print('🔍 INDEX REQUIRED: Check Firebase Console for index requirements');
+          Logger.logError('INDEX REQUIRED: Check Firebase Console for index requirements', tag: 'ParcelRemoteDataSource');
         }
       })
           .map((snapshot) {
@@ -60,15 +61,15 @@ class ParcelRemoteDataSourceImpl implements ParcelRemoteDataSource {
       }
 
       return query.snapshots().handleError((error) {
-        print('❌ Firestore Error (watchUserParcels): $error');
+        Logger.logError('Firestore Error (watchUserParcels): $error', tag: 'ParcelRemoteDataSource');
         if (error.toString().contains('index')) {
-          print('🔍 INDEX REQUIRED: Create a composite index for:');
-          print('   Collection: parcels');
-          print('   Fields: sender.userId (Ascending), createdAt (Descending)');
+          Logger.logError('INDEX REQUIRED: Create a composite index for:', tag: 'ParcelRemoteDataSource');
+          Logger.logError('   Collection: parcels', tag: 'ParcelRemoteDataSource');
+          Logger.logError('   Fields: sender.userId (Ascending), createdAt (Descending)');
           if (status != null) {
-            print('   Additional field: status (Ascending)');
+            Logger.logError('   Additional field: status (Ascending)', tag: 'ParcelRemoteDataSource');
           }
-          print('   Or visit the Firebase Console to create the index automatically.');
+          Logger.logError('   Or visit the Firebase Console to create the index automatically.', tag: 'ParcelRemoteDataSource');
         }
       }).map((snapshot) {
         return snapshot.docs
@@ -249,12 +250,12 @@ class ParcelRemoteDataSourceImpl implements ParcelRemoteDataSource {
           .orderBy('createdAt', descending: true)
           .snapshots()
           .handleError((error) {
-        print('❌ Firestore Error (watchAvailableParcels): $error');
+        Logger.logError('Firestore Error (watchAvailableParcels): $error', tag: 'ParcelRemoteDataSource');
         if (error.toString().contains('index')) {
-          print('🔍 INDEX REQUIRED: Create a composite index for:');
-          print('   Collection: parcels');
-          print('   Fields: status (Ascending), createdAt (Descending)');
-          print('   Or visit the Firebase Console to create the index automatically.');
+          Logger.logError('INDEX REQUIRED: Create a composite index for:', tag: 'ParcelRemoteDataSource');
+          Logger.logError('   Collection: parcels', tag: 'ParcelRemoteDataSource');
+          Logger.logError('   Fields: status (Ascending), createdAt (Descending)');
+          Logger.logError('   Or visit the Firebase Console to create the index automatically.', tag: 'ParcelRemoteDataSource');
         }
       }).map((snapshot) {
         return snapshot.docs

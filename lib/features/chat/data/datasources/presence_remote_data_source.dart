@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/presence_model.dart';
 import '../../domain/entities/presence_entity.dart';
+import '../../../../core/utils/logger.dart';
 
 abstract class PresenceRemoteDataSource {
   Stream<PresenceModel> watchUserPresence(String userId);
@@ -22,9 +23,9 @@ class PresenceRemoteDataSourceImpl implements PresenceRemoteDataSource {
         .doc(userId)
         .snapshots()
         .handleError((error) {
-      print('❌ Firestore Error (watchUserPresence): $error');
+      Logger.logError('Firestore Error (watchUserPresence): $error', tag: 'PresenceDataSource');
       if (error.toString().contains('index')) {
-        print('🔍 INDEX REQUIRED: Check Firebase Console for index requirements');
+        Logger.logError('INDEX REQUIRED: Check Firebase Console for index requirements', tag: 'PresenceDataSource');
       }
     })
         .map((snapshot) {

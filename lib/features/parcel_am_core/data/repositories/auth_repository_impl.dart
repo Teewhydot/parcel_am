@@ -9,7 +9,6 @@ import '../../../../core/errors/failures.dart';
 import '../../domain/exceptions/auth_exceptions.dart';
 import '../datasources/auth_remote_data_source.dart';
 import '../models/user_model.dart';
-import '../models/auth_token_model.dart';
 import '../../../../core/network/network_info.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
@@ -149,7 +148,7 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, void>> storeToken(AuthTokenEntity token) async {
     try {
-      final tokenModel = AuthTokenModel.fromEntity(token);
+      // TODO: Implement token storage
       return const Right(null);
     } on CacheException catch (e) {
       return Left(CacheFailure(failureMessage: e.message));

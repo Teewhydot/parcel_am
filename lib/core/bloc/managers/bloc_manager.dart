@@ -74,24 +74,24 @@ class BlocManager<T extends BlocBase<S>, S extends BaseState>
     if (lowerError.contains('index') ||
         lowerError.contains('composite') ||
         lowerError.contains('requires an index')) {
-      print('🔍 FIRESTORE INDEX ERROR DETECTED:');
-      print('   Error: $errorMessage');
-      print('   Action Required: Create the missing index in Firebase Console');
-      print('   Visit: https://console.firebase.google.com/project/_/firestore/indexes');
+      Logger.logError('🔍 FIRESTORE INDEX ERROR DETECTED:', tag: 'BlocManager');
+      Logger.logError('   Error: $errorMessage', tag: 'BlocManager');
+      Logger.logError('   Action Required: Create the missing index in Firebase Console', tag: 'BlocManager');
+      Logger.logError('   Visit: https://console.firebase.google.com/project/_/firestore/indexes', tag: 'BlocManager');
     }
 
     // Check for permission errors
     if (lowerError.contains('permission') || lowerError.contains('permission-denied')) {
-      print('🔒 FIRESTORE PERMISSION ERROR:');
-      print('   Error: $errorMessage');
-      print('   Check your Firestore security rules');
+      Logger.logError('🔒 FIRESTORE PERMISSION ERROR:', tag: 'BlocManager');
+      Logger.logError('   Error: $errorMessage', tag: 'BlocManager');
+      Logger.logError('   Check your Firestore security rules', tag: 'BlocManager');
     }
 
     // Check for document not found errors
     if (lowerError.contains('not-found') || lowerError.contains('not found')) {
-      print('📄 FIRESTORE DOCUMENT NOT FOUND:');
-      print('   Error: $errorMessage');
-      print('   The requested document does not exist');
+      Logger.logError('📄 FIRESTORE DOCUMENT NOT FOUND:', tag: 'BlocManager');
+      Logger.logError('   Error: $errorMessage', tag: 'BlocManager');
+      Logger.logError('   The requested document does not exist', tag: 'BlocManager');
     }
   }
 

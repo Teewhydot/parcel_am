@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../utils/logger.dart';
 
 class EnhancedLocationService {
   static final EnhancedLocationService _instance = EnhancedLocationService._internal();
@@ -39,7 +40,7 @@ class EnhancedLocationService {
              permission == LocationPermission.always;
     } catch (e) {
       if (kDebugMode) {
-        print('Error requesting location permission: $e');
+        Logger.logError('Error requesting location permission: $e');
       }
       return false;
     }
@@ -78,7 +79,7 @@ class EnhancedLocationService {
       return position;
     } catch (e) {
       if (kDebugMode) {
-        print('Error getting current position: $e');
+        Logger.logError('Error getting current position: $e');
       }
       return null;
     }
@@ -97,7 +98,7 @@ class EnhancedLocationService {
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Error getting address from coordinates: $e');
+        Logger.logError('Error getting address from coordinates: $e');
       }
     }
   }
@@ -132,7 +133,7 @@ class EnhancedLocationService {
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Error getting address from coordinates: $e');
+        Logger.logError('Error getting address from coordinates: $e');
       }
     }
     return null;

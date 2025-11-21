@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../domain/entities/parcel_entity.dart';
-import '../models/parcel_model.dart' show ParcelModel, SenderDetailsModel, ReceiverDetailsModel, RouteInformationModel;
+import 'package:parcel_am/features/parcel_am_core/domain/entities/parcel_entity.dart';
+import 'package:parcel_am/features/parcel_am_core/data/models/parcel_model.dart' show ParcelModel, SenderDetailsModel, ReceiverDetailsModel, RouteInformationModel;
 
 class ParcelSeeder {
   final FirebaseFirestore firestore;

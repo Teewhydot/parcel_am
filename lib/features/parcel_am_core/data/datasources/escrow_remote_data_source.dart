@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../../../core/utils/logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/escrow_model.dart';
 import '../../domain/exceptions/custom_exceptions.dart';
@@ -38,9 +39,9 @@ class EscrowRemoteDataSourceImpl implements EscrowRemoteDataSource {
           .doc(escrowId)
           .snapshots()
           .handleError((error) {
-        print('❌ Firestore Error (watchEscrowStatus): $error');
+        Logger.logError('Firestore Error (watchEscrowStatus): $error', tag: 'EscrowRemoteDataSource');
         if (error.toString().contains('index')) {
-          print('🔍 INDEX REQUIRED: Check Firebase Console for index requirements');
+          Logger.logError('INDEX REQUIRED: Check Firebase Console for index requirements', tag: 'EscrowRemoteDataSource');
         }
       })
           .map((snapshot) {
@@ -63,12 +64,12 @@ class EscrowRemoteDataSourceImpl implements EscrowRemoteDataSource {
           .limit(1)
           .snapshots()
           .handleError((error) {
-        print('❌ Firestore Error (watchEscrowByParcel): $error');
+        Logger.logError('Firestore Error (watchEscrowByParcel): $error', tag: 'EscrowRemoteDataSource');
         if (error.toString().contains('index')) {
-          print('🔍 INDEX REQUIRED: Create a composite index for:');
-          print('   Collection: escrows');
-          print('   Fields: parcelId (Ascending)');
-          print('   Or visit the Firebase Console to create the index automatically.');
+          Logger.logError('INDEX REQUIRED: Create a composite index for:', tag: 'EscrowRemoteDataSource');
+          Logger.logError('   Collection: escrows', tag: 'EscrowRemoteDataSource');
+          Logger.logError('   Fields: parcelId (Ascending)', tag: 'EscrowRemoteDataSource');
+          Logger.logError('   Or visit the Firebase Console to create the index automatically.', tag: 'EscrowRemoteDataSource');
         }
       })
           .map((snapshot) {

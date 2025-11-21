@@ -1,4 +1,3 @@
-import '../../../../core/bloc/base/base_state.dart';
 import '../../domain/entities/notification_entity.dart';
 
 /// Data model for notification state

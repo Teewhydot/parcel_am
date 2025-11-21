@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../bloc/parcel/parcel_bloc.dart';
 import '../bloc/parcel/parcel_event.dart';
 import '../bloc/parcel/parcel_state.dart';
+import '../bloc/auth/auth_bloc.dart';
+import '../bloc/auth/auth_data.dart';
 import '../../../parcel_am_core/domain/entities/parcel_entity.dart';
 
 class RequestDetailsScreen extends StatefulWidget {
@@ -29,8 +30,9 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
   }
 
   Future<void> _acceptRequest(ParcelEntity parcel) async {
-    final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser == null) {
+    // Get user from AuthBloc
+    final authState = context.read<AuthBloc>().state;
+    if (authState is! DataState<AuthData> || authState.data?.user == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -41,6 +43,8 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
       }
       return;
     }
+
+    final currentUser = authState.data!.user!;
 
     setState(() {
       _isAccepting = true;

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import '../../domain/repositories/notification_repository.dart';
+import '../../utils/logger.dart';
 
 class NotificationRepositoryImpl implements NotificationRepository {
   final FirebaseMessaging _firebaseMessaging;
@@ -25,7 +26,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
       });
     } catch (e) {
       // Log error or rethrow depending on error handling strategy
-      print('Error storing FCM token: $e');
+      Logger.logError('Error storing FCM token: $e', tag: 'NotificationRepository');
     }
   }
 
@@ -49,7 +50,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
           .get();
       return snapshot.docs.length;
     } catch (e) {
-      print('Error getting unread count: $e');
+      Logger.logError('Error getting unread count: $e', tag: 'NotificationRepository');
       return 0;
     }
   }

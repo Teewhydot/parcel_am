@@ -121,8 +121,6 @@ class KycBloc extends BaseBloC<KycEvent, BaseState<KycData>> {
     KycDocumentUploadRequested event,
     Emitter<BaseState<KycData>> emit,
   ) async {
-    final currentData = _getCurrentKycData();
-
     // Emit loading state with current document being uploaded
     emit(LoadingState<KycData>(
       message: 'Uploading ${event.documentType}...',

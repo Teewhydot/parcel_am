@@ -32,7 +32,6 @@ import 'features/parcel_am_core/data/datasources/auth_remote_data_source.dart';
 import 'features/parcel_am_core/data/datasources/wallet_remote_data_source.dart' as parcel_am_core_wallet_ds;
 import 'features/parcel_am_core/data/datasources/escrow_remote_data_source.dart';
 import 'features/parcel_am_core/data/datasources/parcel_remote_data_source.dart';
-import 'features/parcel_am_core/data/datasources/parcel_seeder.dart';
 import 'features/parcel_am_core/data/datasources/dashboard_remote_data_source.dart';
 import 'features/chat/data/datasources/chat_remote_data_source.dart';
 
@@ -114,12 +113,6 @@ Future<void> init() async {
   //! Features - Parcel Data Sources
   sl.registerLazySingleton<ParcelRemoteDataSource>(() => ParcelRemoteDataSourceImpl(
     firestore: sl(),
-  ));
-
-  //! Features - Parcel Seeder (for testing)
-  sl.registerLazySingleton<ParcelSeeder>(() => ParcelSeeder(
-    firestore: sl(),
-    auth: sl(),
   ));
 
   //! Features - Dashboard Data Sources

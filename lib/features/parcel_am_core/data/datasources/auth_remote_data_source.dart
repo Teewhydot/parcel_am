@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:parcel_am/features/parcel_am_core/domain/usecases/wallet_usecase.dart';
 import '../../../../core/domain/entities/kyc_status.dart';
+import '../../../../core/utils/logger.dart';
 import '../models/user_model.dart';
 import '../../domain/exceptions/auth_exceptions.dart';
 
@@ -69,7 +70,7 @@ class FirebaseRemoteDataSourceImpl implements AuthRemoteDataSource {
             await walletUseCase.createWallet(updatedUser.uid, initialBalance: 0.0);
           } catch (e) {
             // Log wallet creation error but don't fail signup
-            print('Warning: Failed to create wallet for user ${updatedUser.uid}: $e');
+            Logger.logWarning('Failed to create wallet for user ${updatedUser.uid}: $e', tag: 'AuthDataSource');
           }
       }
 

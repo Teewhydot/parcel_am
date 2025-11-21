@@ -1,6 +1,5 @@
 import 'package:equatable/equatable.dart';
 import '../../../../../core/domain/entities/kyc_status.dart';
-import '../../../domain/entities/user_entity.dart';
 
 abstract class AuthEvent extends Equatable {
   const AuthEvent();

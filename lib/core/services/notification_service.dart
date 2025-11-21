@@ -11,13 +11,14 @@ import '../../features/notifications/data/models/notification_model.dart';
 import '../routes/routes.dart';
 import 'navigation_service/nav_config.dart';
 import '../domain/repositories/notification_repository.dart';
+import '../utils/logger.dart';
 
 /// Top-level background message handler
 /// Must be a top-level function for Firebase Messaging background handler
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   if (kDebugMode) {
-    print('Background message received: ${message.messageId}');
+    Logger.logBasic('Background message received: ${message.messageId}');
   }
 
   // Display notification from background handler
@@ -131,7 +132,7 @@ class NotificationService {
   Future<void> initialize() async {
     if (_isInitialized) {
       if (kDebugMode) {
-        print('NotificationService already initialized');
+        Logger.logWarning('NotificationService already initialized', tag: 'NotificationService');
       }
       return;
     }
@@ -170,11 +171,11 @@ class NotificationService {
       _isInitialized = true;
 
       if (kDebugMode) {
-        print('NotificationService initialized successfully');
+        Logger.logSuccess('NotificationService initialized successfully', tag: 'NotificationService');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Error initializing NotificationService: $e');
+        Logger.logError('Error initializing NotificationService: $e');
       }
       rethrow;
     }
@@ -238,12 +239,12 @@ class NotificationService {
     try {
       _currentToken = await repository.getFCMToken();
       if (kDebugMode) {
-        print('FCM Token: $_currentToken');
+        Logger.logBasic('FCM Token: $_currentToken');
       }
       return _currentToken;
     } catch (e) {
       if (kDebugMode) {
-        print('Error getting FCM token: $e');
+        Logger.logError('Error getting FCM token: $e');
       }
       return null;
     }
@@ -255,7 +256,7 @@ class NotificationService {
       final userId = firebaseAuth.currentUser?.uid;
       if (userId == null) {
         if (kDebugMode) {
-          print('Cannot store token: No user logged in');
+          Logger.logWarning('Cannot store token: No user logged in', tag: 'NotificationService');
         }
         return;
       }
@@ -263,11 +264,11 @@ class NotificationService {
       await repository.storeFCMToken(userId, token);
 
       if (kDebugMode) {
-        print('FCM token stored for user: $userId');
+        Logger.logSuccess('FCM token stored for user: $userId');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Error storing FCM token: $e');
+        Logger.logError('Error storing FCM token: $e');
       }
     }
   }
@@ -277,7 +278,7 @@ class NotificationService {
   Future<void> handleForegroundMessage(RemoteMessage message) async {
     try {
       if (kDebugMode) {
-        print('Foreground message received: ${message.messageId}');
+        Logger.logBasic('Foreground message received: ${message.messageId}');
       }
 
       final userId = firebaseAuth.currentUser?.uid;
@@ -310,11 +311,11 @@ class NotificationService {
       await _updateBadgeCount();
 
       if (kDebugMode) {
-        print('Foreground notification processed and saved');
+        Logger.logSuccess('Foreground notification processed and saved', tag: 'NotificationService');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Error handling foreground message: $e');
+        Logger.logError('Error handling foreground message: $e');
       }
     }
   }
@@ -370,7 +371,7 @@ class NotificationService {
   Future<void> handleBackgroundMessage(RemoteMessage message) async {
     try {
       if (kDebugMode) {
-        print('Background message handler: ${message.messageId}');
+        Logger.logBasic('Background message handler: ${message.messageId}');
       }
 
       // Extract chat details from data payload
@@ -418,11 +419,11 @@ class NotificationService {
       );
 
       if (kDebugMode) {
-        print('Background notification displayed');
+        Logger.logSuccess('Background notification displayed', tag: 'NotificationService');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Error handling background message: $e');
+        Logger.logError('Error handling background message: $e');
       }
     }
   }
@@ -434,7 +435,7 @@ class NotificationService {
       final payload = response.payload;
       if (payload == null || payload.isEmpty) {
         if (kDebugMode) {
-          print('Notification tapped with no payload');
+          Logger.logWarning('Notification tapped with no payload', tag: 'NotificationService');
         }
         return;
       }
@@ -445,7 +446,7 @@ class NotificationService {
       final notificationId = data['notificationId'] as String?;
 
       if (kDebugMode) {
-        print('Notification tapped - chatId: $chatId, notificationId: $notificationId');
+        Logger.logBasic('Notification tapped - chatId: $chatId, notificationId: $notificationId');
       }
 
       // Mark notification as read if notificationId exists
@@ -464,7 +465,7 @@ class NotificationService {
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Error handling notification tap: $e');
+        Logger.logError('Error handling notification tap: $e');
       }
     }
   }
@@ -475,13 +476,13 @@ class NotificationService {
       final status = await repository.requestPermissions();
 
       if (kDebugMode) {
-        print('Notification permission status: $status');
+        Logger.logBasic('Notification permission status: $status');
       }
 
       return status;
     } catch (e) {
       if (kDebugMode) {
-        print('Error requesting notification permissions: $e');
+        Logger.logError('Error requesting notification permissions: $e');
       }
       return AuthorizationStatus.denied;
     }
@@ -492,11 +493,11 @@ class NotificationService {
     try {
       await repository.subscribeToTopic(topic);
       if (kDebugMode) {
-        print('Subscribed to topic: $topic');
+        Logger.logSuccess('Subscribed to topic: $topic');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Error subscribing to topic $topic: $e');
+        Logger.logError('Error subscribing to topic $topic: $e');
       }
     }
   }
@@ -506,11 +507,11 @@ class NotificationService {
     try {
       await repository.unsubscribeFromTopic(topic);
       if (kDebugMode) {
-        print('Unsubscribed from topic: $topic');
+        Logger.logSuccess('Unsubscribed from topic: $topic');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Error unsubscribing from topic $topic: $e');
+        Logger.logError('Error unsubscribing from topic $topic: $e');
       }
     }
   }
@@ -524,7 +525,7 @@ class NotificationService {
       return await repository.getUnreadNotificationCount(userId);
     } catch (e) {
       if (kDebugMode) {
-        print('Error getting unread count: $e');
+        Logger.logError('Error getting unread count: $e');
       }
       return 0;
     }
@@ -537,7 +538,7 @@ class NotificationService {
       await updateBadgeCount(unreadCount);
     } catch (e) {
       if (kDebugMode) {
-        print('Error updating badge count: $e');
+        Logger.logError('Error updating badge count: $e');
       }
     }
   }
@@ -553,16 +554,16 @@ class NotificationService {
         await AppBadgePlus.updateBadge(count);
 
         if (kDebugMode) {
-          print('Badge count updated to: $count');
+          Logger.logSuccess('Badge count updated to: $count');
         }
       } else {
         if (kDebugMode) {
-          print('App badges not supported on this device');
+          Logger.logWarning('App badges not supported on this device', tag: 'NotificationService');
         }
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Error updating badge count: $e');
+        Logger.logError('Error updating badge count: $e');
       }
     }
   }
@@ -572,11 +573,11 @@ class NotificationService {
     try {
       await AppBadgePlus.updateBadge(0);
       if (kDebugMode) {
-        print('Badge cleared');
+        Logger.logSuccess('Badge cleared', tag: 'NotificationService');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Error clearing badge: $e');
+        Logger.logError('Error clearing badge: $e');
       }
     }
   }

@@ -20,7 +20,6 @@ import '../bloc/kyc_event.dart';
 import '../bloc/kyc_data.dart';
 import '../../../parcel_am_core/data/constants/verification_constants.dart';
 import '../../domain/models/verification_model.dart';
-import '../../../parcel_am_core/domain/entities/user_entity.dart';
 import '../../../../core/bloc/base/base_state.dart';
 
 class VerificationScreen extends StatefulWidget {

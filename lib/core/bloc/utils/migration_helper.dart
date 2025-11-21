@@ -1,4 +1,5 @@
 import '../base/base_state.dart';
+import '../../utils/logger.dart';
 
 /// Helper class to assist with migration from old state classes to BaseState
 class MigrationHelper {
@@ -76,7 +77,7 @@ class MigrationHelper {
     required String newPattern,
   }) {
     // This is a documentation helper for migration patterns
-    print('Migration Pattern: $oldPattern -> $newPattern');
+    Logger.logBasic('Migration Pattern: $oldPattern -> $newPattern', tag: 'MigrationHelper');
   }
 
   /// Common migration patterns documentation

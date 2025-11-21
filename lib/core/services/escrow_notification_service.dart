@@ -1,5 +1,6 @@
 import 'dart:async';
 import '../domain/repositories/escrow_notification_repository.dart';
+import '../utils/logger.dart';
 export '../domain/repositories/escrow_notification_repository.dart';
 
 class NotificationService {
@@ -22,7 +23,7 @@ class NotificationService {
         _notificationController.add(notification);
       },
       onError: (error) {
-        print('❌ Repository Error (EscrowNotifications): $error');
+        Logger.logError('Repository Error (EscrowNotifications): $error', tag: 'EscrowNotificationService');
       },
     );
   }

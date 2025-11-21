@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../../../core/utils/logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 abstract class PackageRemoteDataSource {
@@ -31,9 +32,9 @@ class PackageRemoteDataSourceImpl implements PackageRemoteDataSource {
         .doc(packageId)
         .snapshots()
         .handleError((error) {
-      print('❌ Firestore Error (getPackageStream): $error');
+      Logger.logError('Firestore Error (getPackageStream): $error', tag: 'PackageRemoteDataSource');
       if (error.toString().contains('index')) {
-        print('🔍 INDEX REQUIRED: Check Firebase Console for index requirements');
+        Logger.logError('INDEX REQUIRED: Check Firebase Console for index requirements', tag: 'PackageRemoteDataSource');
       }
     })
         .map((snapshot) {
@@ -149,12 +150,12 @@ class PackageRemoteDataSourceImpl implements PackageRemoteDataSource {
         .where('status', whereIn: ['pending', 'accepted', 'in_transit', 'out_for_delivery'])
         .snapshots()
         .handleError((error) {
-      print('❌ Firestore Error (getActivePackagesStream): $error');
+      Logger.logError('Firestore Error (getActivePackagesStream): $error', tag: 'PackageRemoteDataSource');
       if (error.toString().contains('index')) {
-        print('🔍 INDEX REQUIRED: Create a composite index for:');
-        print('   Collection: packages');
-        print('   Fields: senderId (Ascending), status (Ascending)');
-        print('   Or visit the Firebase Console to create the index automatically.');
+        Logger.logError('INDEX REQUIRED: Create a composite index for:', tag: 'PackageRemoteDataSource');
+        Logger.logError('   Collection: packages', tag: 'PackageRemoteDataSource');
+        Logger.logError('   Fields: senderId (Ascending), status (Ascending)');
+        Logger.logError('   Or visit the Firebase Console to create the index automatically.', tag: 'PackageRemoteDataSource');
       }
     })
         .map((snapshot) {

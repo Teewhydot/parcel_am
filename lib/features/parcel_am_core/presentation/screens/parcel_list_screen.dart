@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/bloc/base/base_state.dart';
@@ -10,6 +9,8 @@ import '../../../../injection_container.dart';
 import '../bloc/parcel/parcel_bloc.dart';
 import '../bloc/parcel/parcel_event.dart';
 import '../bloc/parcel/parcel_state.dart';
+import '../bloc/auth/auth_bloc.dart';
+import '../bloc/auth/auth_data.dart';
 import '../../domain/entities/parcel_entity.dart';
 import '../widgets/bottom_navigation.dart';
 
@@ -28,8 +29,11 @@ class _ParcelListScreenState extends State<ParcelListScreen> {
   void initState() {
     super.initState();
     _parcelBloc = ParcelBloc();
-    _currentUserId = FirebaseAuth.instance.currentUser?.uid;
-    if (_currentUserId != null) {
+
+    // Get user ID from AuthBloc
+    final authState = context.read<AuthBloc>().state;
+    if (authState is DataState<AuthData> && authState.data?.user != null) {
+      _currentUserId = authState.data!.user!.uid;
       _parcelBloc.add(ParcelLoadUserParcels(_currentUserId!));
     }
   }
@@ -354,8 +358,6 @@ class _ParcelCard extends StatelessWidget {
         return Colors.red;
       case ParcelStatus.disputed:
         return Colors.amber;
-      default:
-        return AppColors.onSurfaceVariant;
     }
   }
 
@@ -373,47 +375,6 @@ class _ParcelCard extends StatelessWidget {
         return Icons.cancel;
       case ParcelStatus.disputed:
         return Icons.warning;
-      default:
-        return Icons.inventory_2;
-    }
-  }
-
-  Color _getEscrowColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'held':
-        return Colors.blue;
-      case 'released':
-        return Colors.green;
-      case 'cancelled':
-        return Colors.red;
-      default:
-        return Colors.orange;
-    }
-  }
-
-  IconData _getEscrowIcon(String status) {
-    switch (status.toLowerCase()) {
-      case 'held':
-        return Icons.lock;
-      case 'released':
-        return Icons.check_circle;
-      case 'cancelled':
-        return Icons.cancel;
-      default:
-        return Icons.hourglass_bottom;
-    }
-  }
-
-  String _getEscrowText(String status) {
-    switch (status.toLowerCase()) {
-      case 'held':
-        return 'Escrow Held';
-      case 'released':
-        return 'Escrow Released';
-      case 'cancelled':
-        return 'Escrow Cancelled';
-      default:
-        return 'Escrow Pending';
     }
   }
 }

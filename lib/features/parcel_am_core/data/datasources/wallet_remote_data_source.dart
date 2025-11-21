@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../../../core/utils/logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/wallet_model.dart';
 import '../models/transaction_model.dart';
@@ -106,12 +107,12 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
           .limit(1)
           .snapshots()
           .handleError((error) {
-        print('❌ Firestore Error (watchWallet): $error');
+        Logger.logError('Firestore Error (watchWallet): $error', tag: 'WalletRemoteDataSource');
         if (error.toString().contains('index')) {
-          print('🔍 INDEX REQUIRED: Create a composite index for:');
-          print('   Collection: wallets');
-          print('   Fields: userId (Ascending)');
-          print('   Or visit the Firebase Console to create the index automatically.');
+          Logger.logError('INDEX REQUIRED: Create a composite index for:', tag: 'WalletRemoteDataSource');
+          Logger.logError('   Collection: wallets', tag: 'WalletRemoteDataSource');
+          Logger.logError('   Fields: userId (Ascending)', tag: 'WalletRemoteDataSource');
+          Logger.logError('   Or visit the Firebase Console to create the index automatically.', tag: 'WalletRemoteDataSource');
         }
       })
           .map((snapshot) {

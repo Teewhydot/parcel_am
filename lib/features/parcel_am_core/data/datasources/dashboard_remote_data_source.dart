@@ -5,7 +5,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/parcel_entity.dart';
 import '../../domain/entities/transaction_entity.dart';
 import '../../domain/exceptions/custom_exceptions.dart';
-import '../../domain/exceptions/wallet_exceptions.dart';
 import '../models/dashboard_metrics_model.dart';
 import '../models/parcel_model.dart';
 import '../models/transaction_model.dart';

@@ -11,7 +11,6 @@ import '../bloc/parcel/parcel_bloc.dart';
 import '../bloc/parcel/parcel_event.dart';
 import '../bloc/parcel/parcel_state.dart';
 import '../../../parcel_am_core/domain/entities/parcel_entity.dart';
-import '../../data/datasources/parcel_seeder.dart';
 
 class BrowseRequestsScreen extends StatefulWidget {
   const BrowseRequestsScreen({super.key});
@@ -42,171 +41,6 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
-  }
-
-  Future<void> _seedTestData() async {
-    try {
-      // Show loading dialog
-      if (!mounted) return;
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(
-          child: Card(
-            child: Padding(
-              padding: EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('Seeding test data...'),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-
-      final seeder = GetIt.instance<ParcelSeeder>();
-      final parcelIds = await seeder.seedTestParcels();
-
-      if (!mounted) return;
-      Navigator.of(context).pop(); // Close loading dialog
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('✅ Successfully created ${parcelIds.length} test parcels!'),
-          backgroundColor: Colors.green,
-          duration: const Duration(seconds: 3),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      Navigator.of(context).pop(); // Close loading dialog
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('❌ Error seeding data: $e'),
-          backgroundColor: AppColors.error,
-          duration: const Duration(seconds: 4),
-        ),
-      );
-    }
-  }
-
-  Future<void> _clearTestData() async {
-    try {
-      // Show confirmation dialog
-      final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Clear Test Data'),
-          content: const Text('This will delete all parcels you created with status "created". Continue?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Clear', style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        ),
-      );
-
-      if (confirmed != true || !mounted) return;
-
-      // Show loading dialog
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(
-          child: Card(
-            child: Padding(
-              padding: EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('Clearing test data...'),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-
-      final seeder = GetIt.instance<ParcelSeeder>();
-      await seeder.clearTestParcels();
-
-      if (!mounted) return;
-      Navigator.of(context).pop(); // Close loading dialog
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('✅ Test data cleared successfully!'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      Navigator.of(context).pop(); // Close loading dialog
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('❌ Error clearing data: $e'),
-          backgroundColor: AppColors.error,
-        ),
-      );
-    }
-  }
-
-  void _showDebugMenu() {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Debug Menu',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 20),
-            ListTile(
-              leading: const Icon(Icons.add_circle, color: Colors.green),
-              title: const Text('Seed Test Parcels'),
-              subtitle: const Text('Create 8 test parcels in Firebase'),
-              onTap: () {
-                Navigator.pop(context);
-                _seedTestData();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.delete, color: Colors.red),
-              title: const Text('Clear Test Data'),
-              subtitle: const Text('Delete all test parcels you created'),
-              onTap: () {
-                Navigator.pop(context);
-                _clearTestData();
-              },
-            ),
-            const SizedBox(height: 10),
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   List<ParcelEntity> _filterParcels(List<ParcelEntity> parcels) {
@@ -247,11 +81,7 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> {
       appBar: AppBar(
         title: const Text('Browse Requests'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.bug_report),
-            onPressed: _showDebugMenu,
-            tooltip: 'Debug Menu',
-          ),
+        
           IconButton(
             icon: const Icon(Icons.tune),
             onPressed: () {

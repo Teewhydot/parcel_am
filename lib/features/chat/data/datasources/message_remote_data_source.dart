@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../models/message_model.dart';
 import '../../domain/entities/message.dart';
+import '../../../../core/utils/logger.dart';
 
 abstract class MessageRemoteDataSource {
   Stream<List<MessageModel>> watchMessages(String chatId);
@@ -31,12 +32,12 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
         .orderBy('createdAt', descending: false)
         .snapshots()
         .handleError((error) {
-      print('❌ Firestore Error (watchMessages): $error');
+      Logger.logError('Firestore Error (watchMessages): $error', tag: 'MessageDataSource');
       if (error.toString().contains('index')) {
-        print('🔍 INDEX REQUIRED: Create a composite index for:');
-        print('   Collection: chats/{chatId}/messages');
-        print('   Fields: createdAt (Ascending)');
-        print('   Or visit the Firebase Console to create the index automatically.');
+        Logger.logError('INDEX REQUIRED: Create a composite index for:', tag: 'MessageDataSource');
+        Logger.logError('   Collection: chats/{chatId}/messages', tag: 'MessageDataSource');
+        Logger.logError('   Fields: createdAt (Ascending)', tag: 'MessageDataSource');
+        Logger.logError('   Or visit the Firebase Console to create the index automatically.', tag: 'MessageDataSource');
       }
     })
         .map((snapshot) {

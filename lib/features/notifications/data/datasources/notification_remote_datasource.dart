@@ -1,7 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/notification_model.dart';
+import '../../../../core/utils/logger.dart';
 
-abstract class NotificationRemoteDataSource {
+abstract class NotificationRemoteDataSource{
   /// Watch notifications stream for a specific user
   Stream<List<NotificationModel>> watchNotifications(String userId);
 
@@ -34,12 +35,12 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
         .orderBy('timestamp', descending: true)
         .snapshots()
         .handleError((error) {
-      print('❌ Firestore Error (watchNotifications): $error');
+      Logger.logError('Firestore Error (watchNotifications): $error', tag: 'NotificationDataSource');
       if (error.toString().contains('index')) {
-        print('🔍 INDEX REQUIRED: Create a composite index for:');
-        print('   Collection: notifications');
-        print('   Fields: userId (Ascending), timestamp (Descending)');
-        print('   Or visit the Firebase Console to create the index automatically.');
+        Logger.logError('INDEX REQUIRED: Create a composite index for:', tag: 'NotificationDataSource');
+        Logger.logError('   Collection: notifications', tag: 'NotificationDataSource');
+        Logger.logError('   Fields: userId (Ascending), timestamp (Descending)', tag: 'NotificationDataSource');
+        Logger.logError('   Or visit the Firebase Console to create the index automatically.', tag: 'NotificationDataSource');
       }
     })
         .map((snapshot) {

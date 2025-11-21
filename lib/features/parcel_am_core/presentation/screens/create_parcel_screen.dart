@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/bloc/base/base_state.dart';
@@ -13,6 +12,8 @@ import '../bloc/parcel/parcel_event.dart';
 import '../bloc/parcel/parcel_state.dart';
 import '../bloc/escrow/escrow_bloc.dart';
 import '../bloc/escrow/escrow_state.dart';
+import '../bloc/auth/auth_bloc.dart';
+import '../bloc/auth/auth_data.dart';
 import '../../domain/entities/parcel_entity.dart' hide RouteInformation;
 import '../../domain/entities/parcel_entity.dart' as parcel_entity;
 
@@ -105,13 +106,16 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
   }
 
   void _createParcel() {
-    final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser == null) return;
+    // Get user from AuthBloc instead of Firebase directly
+    final authState = context.read<AuthBloc>().state;
+    if (authState is! DataState<AuthData> || authState.data?.user == null) return;
+
+    final currentUser = authState.data!.user!;
 
     final sender = SenderDetails(
       userId: currentUser.uid,
-      name: currentUser.displayName ?? 'Unknown',
-      phoneNumber: currentUser.phoneNumber ?? '',
+      name: currentUser.displayName,
+      phoneNumber: currentUser.additionalData['phoneNumber'] as String? ?? '',
       address: _originAddressController.text,
       email: currentUser.email,
     );

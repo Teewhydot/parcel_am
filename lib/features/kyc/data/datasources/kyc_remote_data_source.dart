@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import '../../../../core/utils/logger.dart';
 
 abstract class KycRemoteDataSource {
   Future<void> submitKyc({
@@ -82,9 +83,9 @@ class KycRemoteDataSourceImpl implements KycRemoteDataSource {
         .doc(userId)
         .snapshots()
         .handleError((error) {
-      print('❌ Firestore Error (watchKycStatus): $error');
+      Logger.logError('Firestore Error (watchKycStatus): $error', tag: 'KycDataSource');
       if (error.toString().contains('index')) {
-        print('🔍 INDEX REQUIRED: Check Firebase Console for index requirements');
+        Logger.logError('INDEX REQUIRED: Check Firebase Console for index requirements', tag: 'KycDataSource');
       }
     })
         .map((snapshot) {

@@ -9,6 +9,9 @@ class ChatNotificationService {
   StreamSubscription<QuerySnapshot>? _chatSubscription;
   String? _currentUserId;
 
+  final _unreadCountController = StreamController<int>.broadcast();
+  Stream<int> get unreadCountStream => _unreadCountController.stream;
+
   ChatNotificationService({
     required ChatNotificationRepository repository,
     required FlutterLocalNotificationsPlugin notificationsPlugin,
@@ -36,6 +39,17 @@ class ChatNotificationService {
         .watchUserChats(_currentUserId!)
         .listen(
       (snapshot) {
+        // Calculate total unread count
+        int totalUnread = 0;
+        for (var doc in snapshot.docs) {
+          final chatData = doc.data() as Map<String, dynamic>;
+          final unreadCount =
+              (chatData['unreadCount'] as Map<String, dynamic>?)?[_currentUserId] ?? 0;
+          totalUnread += unreadCount as int;
+        }
+        _unreadCountController.add(totalUnread);
+
+        // Handle chat updates for notifications
         for (var change in snapshot.docChanges) {
           if (change.type == DocumentChangeType.modified) {
             final chatData = change.doc.data() as Map<String, dynamic>?;
@@ -113,6 +127,7 @@ class ChatNotificationService {
 
   void dispose() {
     _chatSubscription?.cancel();
+    _unreadCountController.close();
   }
 
   Future<void> requestPermissions() async {
