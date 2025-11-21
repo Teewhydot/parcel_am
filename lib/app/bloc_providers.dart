@@ -5,7 +5,6 @@ import '../features/parcel_am_core/presentation/bloc/auth/auth_bloc.dart';
 import '../features/parcel_am_core/presentation/bloc/dashboard/dashboard_bloc.dart';
 import '../features/parcel_am_core/presentation/bloc/parcel/parcel_bloc.dart';
 import '../features/parcel_am_core/presentation/bloc/wallet/wallet_bloc.dart';
-import '../features/parcel_am_core/presentation/bloc/wallet/wallet_event.dart';
 
 
 
@@ -17,7 +16,7 @@ final List<BlocProvider> blocs = [
     create: (context) => DashboardBloc(),
   ),
   BlocProvider<WalletBloc>(
-    create: (_) => WalletBloc()..add(const WalletLoadRequested()),
+    create: (_) => WalletBloc(),
   ),
   BlocProvider<NotificationBloc>(
     create: (_) => NotificationBloc(),

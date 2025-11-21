@@ -32,22 +32,36 @@ class WalletBloc extends BaseBloC<WalletEvent, BaseState<WalletData>> {
     _currentUserId = event.userId;
     emit(const LoadingState<WalletData>());
 
-    // First, get the wallet to store the wallet ID
+    // Try to get the wallet, create if it doesn't exist
     final walletResult = await _walletUseCase.getWallet(event.userId);
-    walletResult.fold(
-      (failure) {
-        // Handle error silently or emit error state if needed
+    await walletResult.fold(
+      (failure) async {
+        // If wallet not found, create it
+        if (failure.failureMessage.contains('not found')) {
+          final createResult = await _walletUseCase.createWallet(event.userId);
+          createResult.fold(
+            (createFailure) {
+              // Failed to create wallet
+              emit(ErrorState<WalletData>(errorMessage: createFailure.failureMessage));
+            },
+            (wallet) {
+              _currentWalletId = wallet.id;
+            },
+          );
+        }
       },
-      (wallet) {
+      (wallet) async {
         _currentWalletId = wallet.id;
       },
     );
 
+    // Set up stream subscription for real-time updates
     await _balanceSubscription?.cancel();
     _balanceSubscription = _walletUseCase.watchBalance(event.userId).listen(
       (walletEither) {
         walletEither.fold(
           (failure) {
+            // Stream error - show zero balance
             add(const WalletBalanceUpdated(
               availableBalance: 0.0,
               pendingBalance: 0.0,
@@ -69,20 +83,6 @@ class WalletBloc extends BaseBloC<WalletEvent, BaseState<WalletData>> {
         ));
       },
     );
-
-    _startPeriodicRefresh();
-  }
-
-  void _startPeriodicRefresh() {
-    _refreshTimer?.cancel();
-    _refreshTimer = Timer.periodic(
-      const Duration(seconds: 30),
-      (_) {
-        if (_currentUserId != null) {
-          add(WalletRefreshRequested(_currentUserId!));
-        }
-      },
-    );
   }
 
   Future<void> _onLoadRequested(
@@ -98,8 +98,16 @@ class WalletBloc extends BaseBloC<WalletEvent, BaseState<WalletData>> {
     Emitter<BaseState<WalletData>> emit,
   ) async {
     final currentData = state.data;
-    emit(AsyncLoadingState<WalletData>(data: currentData, isRefreshing: true));
-    await _fetchWalletData(emit);
+    if (currentData != null) {
+      emit(AsyncLoadingState<WalletData>(data: currentData, isRefreshing: true));
+      // The stream subscription will automatically update with latest data
+      // Just emit the current data back after a brief delay
+      await Future.delayed(const Duration(milliseconds: 500));
+      emit(LoadedState<WalletData>(
+        data: currentData,
+        lastUpdated: DateTime.now(),
+      ));
+    }
   }
 
   Future<void> _onBalanceUpdated(

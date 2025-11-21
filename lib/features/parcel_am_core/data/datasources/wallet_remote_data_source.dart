@@ -59,7 +59,7 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
         'availableBalance': initialBalance,
         'heldBalance': 0.0,
         'totalBalance': initialBalance,
-        'currency': 'USD',
+        'currency': 'NGN',
         'lastUpdated': FieldValue.serverTimestamp(),
       };
 

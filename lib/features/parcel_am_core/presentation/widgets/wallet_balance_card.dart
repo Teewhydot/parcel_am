@@ -12,14 +12,43 @@ import '../bloc/wallet/wallet_data.dart';
 import '../bloc/wallet/wallet_event.dart';
 import '../bloc/auth/auth_bloc.dart';
 
-class WalletBalanceCard extends StatelessWidget {
+class WalletBalanceCard extends StatefulWidget {
   const WalletBalanceCard({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Get userId from AuthBloc
+  State<WalletBalanceCard> createState() => _WalletBalanceCardState();
+}
+
+class _WalletBalanceCardState extends State<WalletBalanceCard> {
+  bool _initialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeWallet();
+    });
+  }
+
+  void _initializeWallet() {
+    if (_initialized) return;
+
     final authState = context.read<AuthBloc>().state;
-    final userId = authState.data?.user?.uid ?? '';
+    final userId = authState.data?.user?.uid;
+
+    if (userId != null && userId.isNotEmpty) {
+      final walletState = context.read<WalletBloc>().state;
+      // Only initialize if wallet is in initial state
+      if (walletState.isInitial) {
+        _initialized = true;
+        context.read<WalletBloc>().add(WalletStarted(userId));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final userId = context.read<AuthBloc>().state.data?.user?.uid ?? '';
 
     return BlocBuilder<WalletBloc, BaseState<WalletData>>(
       builder: (context, state) {
@@ -28,7 +57,7 @@ class WalletBalanceCard extends StatelessWidget {
         } else if (state.hasData) {
           return _buildBalanceCard(context, state.data!, userId);
         } else if (state.isError) {
-          return _buildErrorCard(context, state.errorMessage ?? 'Error loading wallet');
+          return _buildErrorCard(context, state.errorMessage ?? 'Error loading wallet', userId);
         }
         return _buildLoadingCard();
       },
@@ -155,7 +184,7 @@ class WalletBalanceCard extends StatelessWidget {
     );
   }
 
-  Widget _buildErrorCard(BuildContext context, String message) {
+  Widget _buildErrorCard(BuildContext context, String message, String userId) {
     return AppCard.elevated(
       padding: AppSpacing.paddingXL,
       child: Column(
@@ -186,17 +215,13 @@ class WalletBalanceCard extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
                 AppSpacing.verticalSpacing(SpacingSize.sm),
-                Builder(
-                  builder: (context) {
-                    final authState = context.read<AuthBloc>().state;
-                    final userId = authState.data?.user?.uid ?? '';
-                    return TextButton(
-                      onPressed: () {
-                        context.read<WalletBloc>().add(WalletRefreshRequested(userId));
-                      },
-                      child: const Text('Retry'),
-                    );
+                TextButton(
+                  onPressed: () {
+                    if (userId.isNotEmpty) {
+                      context.read<WalletBloc>().add(WalletStarted(userId));
+                    }
                   },
+                  child: const Text('Retry'),
                 ),
               ],
             ),
