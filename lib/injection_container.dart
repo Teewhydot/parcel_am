@@ -29,7 +29,6 @@ import 'core/services/error/error_handler.dart';
 // Feature modules no longer use DI - using direct instantiation instead
 
 import 'features/travellink/data/datasources/auth_remote_data_source.dart';
-import 'features/travellink/data/datasources/kyc_remote_data_source.dart' as travellink_kyc_ds;
 import 'features/travellink/data/datasources/wallet_remote_data_source.dart' as travellink_wallet_ds;
 import 'features/travellink/data/datasources/escrow_remote_data_source.dart';
 import 'features/travellink/data/datasources/parcel_remote_data_source.dart';
@@ -102,12 +101,7 @@ Future<void> init() async {
   sl.registerLazySingleton<AuthRemoteDataSource>(() => FirebaseRemoteDataSourceImpl(
     firebaseAuth: sl(),
     firestore: sl(),
-  ));
-
-  //! Features - KYC (TravelLink) Data Sources
-  sl.registerLazySingleton<travellink_kyc_ds.KycRemoteDataSource>(() => travellink_kyc_ds.KycRemoteDataSourceImpl(
-    firestore: sl(),
-    storage: sl(),
+    walletDataSource: sl(),
   ));
 
   //! Features - Wallet (TravelLink) Data Sources

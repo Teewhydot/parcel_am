@@ -229,18 +229,31 @@ class WalletBloc extends BaseBloC<WalletEvent, BaseState<WalletData>> {
 
   Future<void> _fetchWalletData(Emitter<BaseState<WalletData>> emit) async {
     try {
-      await Future.delayed(const Duration(milliseconds: 500));
+      if (_currentUserId == null) {
+        emit(const ErrorState<WalletData>(errorMessage: 'User ID not set'));
+        return;
+      }
 
-      final walletData = const WalletData(
-        availableBalance: 50000.0,
-        pendingBalance: 0.0,
-        wallet: WalletInfo(recentTransactions: []),
+      final walletResult = await _walletUseCase.getWallet(_currentUserId!);
+
+      walletResult.fold(
+        (failure) {
+          emit(ErrorState<WalletData>(errorMessage: failure.failureMessage));
+        },
+        (wallet) {
+          _currentWalletId = wallet.id;
+          final walletData = WalletData(
+            availableBalance: wallet.availableBalance,
+            pendingBalance: wallet.heldBalance,
+            wallet: const WalletInfo(recentTransactions: []),
+          );
+
+          emit(LoadedState<WalletData>(
+            data: walletData,
+            lastUpdated: DateTime.now(),
+          ));
+        },
       );
-
-      emit(LoadedState<WalletData>(
-        data: walletData,
-        lastUpdated: DateTime.now(),
-      ));
     } catch (e) {
       emit(ErrorState<WalletData>(errorMessage: e.toString()));
     }

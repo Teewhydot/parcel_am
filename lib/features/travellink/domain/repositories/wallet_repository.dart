@@ -4,6 +4,11 @@ import '../entities/transaction_entity.dart';
 import '../../../../core/errors/failures.dart';
 
 abstract class WalletRepository {
+  Future<Either<Failure, WalletEntity>> createWallet(
+    String userId, {
+    double initialBalance,
+  });
+
   Future<Either<Failure, WalletEntity>> getWallet(String userId);
 
   Future<Either<Failure, WalletEntity>> updateBalance(

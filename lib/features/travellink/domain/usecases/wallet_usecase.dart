@@ -3,10 +3,17 @@ import 'package:parcel_am/features/travellink/data/repositories/wallet_repositor
 import '../../../../core/errors/failures.dart';
 import '../entities/wallet_entity.dart';
 import '../entities/transaction_entity.dart';
-import '../repositories/wallet_repository.dart';
 
 class WalletUseCase {
   final walletRepo  = WalletRepositoryImpl();
+
+  Future<Either<Failure, WalletEntity>> createWallet(
+    String userId, {
+    double initialBalance = 0.0,
+  }) {
+    return walletRepo.createWallet(userId, initialBalance: initialBalance);
+  }
+
   Future<Either<Failure, WalletEntity>> getWallet(String userId) {
     return walletRepo.getWallet(userId);
   }

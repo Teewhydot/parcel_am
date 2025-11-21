@@ -4,8 +4,8 @@ import 'package:bloc/bloc.dart';
 import 'package:get_it/get_it.dart';
 import '../../../../../core/bloc/base/base_bloc.dart';
 import '../../../../../core/bloc/base/base_state.dart';
-import '../../../../file_upload/domain/use_cases/file_upload_usecase.dart';
-import '../../../domain/usecases/kyc_usecase.dart';
+import '../../../file_upload/domain/use_cases/file_upload_usecase.dart';
+import '../../domain/usecases/kyc_usecase.dart';
 import 'kyc_event.dart';
 import 'kyc_data.dart';
 

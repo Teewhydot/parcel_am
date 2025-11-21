@@ -18,7 +18,7 @@ import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../../../../injection_container.dart';
-import '../widgets/kyc_status_widgets.dart';
+import '../../../kyc/presentation/widgets/kyc_status_widgets.dart';
 import '../widgets/user_stats_grid.dart';
 import '../widgets/wallet_balance_card.dart';
 import '../bloc/dashboard/dashboard_bloc.dart';

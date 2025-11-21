@@ -7,6 +7,7 @@ import '../../domain/exceptions/wallet_exceptions.dart';
 import '../../domain/exceptions/custom_exceptions.dart';
 
 abstract class WalletRemoteDataSource {
+  Future<WalletModel> createWallet(String userId, {double initialBalance = 0.0});
   Future<WalletModel> getWallet(String userId);
   Stream<WalletModel> watchWallet(String userId);
   Future<WalletModel> updateBalance(String walletId, double amount);
@@ -34,6 +35,45 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
   final FirebaseFirestore firestore;
 
   WalletRemoteDataSourceImpl({required this.firestore});
+
+  @override
+  Future<WalletModel> createWallet(String userId, {double initialBalance = 0.0}) async {
+    try {
+      // Check if wallet already exists
+      final existingWalletQuery = await firestore
+          .collection('wallets')
+          .where('userId', isEqualTo: userId)
+          .limit(1)
+          .get();
+
+      if (existingWalletQuery.docs.isNotEmpty) {
+        // Wallet already exists, return it
+        return WalletModel.fromFirestore(existingWalletQuery.docs.first);
+      }
+
+      // Create new wallet
+      final walletRef = firestore.collection('wallets').doc();
+      final walletData = {
+        'id': walletRef.id,
+        'userId': userId,
+        'availableBalance': initialBalance,
+        'heldBalance': 0.0,
+        'totalBalance': initialBalance,
+        'currency': 'USD',
+        'lastUpdated': FieldValue.serverTimestamp(),
+      };
+
+      await walletRef.set(walletData);
+
+      final createdDoc = await walletRef.get();
+      return WalletModel.fromFirestore(createdDoc);
+    } on FirebaseException {
+      throw ServerException();
+    } catch (e) {
+      if (e is WalletException) rethrow;
+      throw ServerException();
+    }
+  }
 
   @override
   Future<WalletModel> getWallet(String userId) async {

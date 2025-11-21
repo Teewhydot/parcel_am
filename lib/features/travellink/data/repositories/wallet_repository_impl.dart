@@ -15,6 +15,31 @@ class WalletRepositoryImpl implements WalletRepository {
   final networkInfo = GetIt.instance<NetworkInfo>();
 
   @override
+  Future<Either<Failure, WalletEntity>> createWallet(
+    String userId, {
+    double initialBalance = 0.0,
+  }) async {
+    try {
+      if (await networkInfo.isConnected) {
+        final walletModel = await remoteDataSource.createWallet(
+          userId,
+          initialBalance: initialBalance,
+        );
+        return Right(walletModel.toEntity());
+      } else {
+        return const Left(
+            NoInternetFailure(failureMessage: 'No internet connection'));
+      }
+    } on WalletException catch (e) {
+      return Left(ServerFailure(failureMessage: e.message));
+    } on ServerException {
+      return const Left(ServerFailure(failureMessage: 'Server error occurred'));
+    } catch (e) {
+      return Left(UnknownFailure(failureMessage: e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, WalletEntity>> getWallet(String userId) async {
     try {
       if (await networkInfo.isConnected) {

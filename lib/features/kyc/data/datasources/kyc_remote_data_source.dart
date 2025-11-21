@@ -23,13 +23,8 @@ abstract class KycRemoteDataSource {
 }
 
 class KycRemoteDataSourceImpl implements KycRemoteDataSource {
-  final FirebaseFirestore firestore;
-  final FirebaseStorage storage;
-
-  KycRemoteDataSourceImpl({
-    required this.firestore,
-    required this.storage,
-  });
+  final firestore = FirebaseFirestore.instance;
+  final storage = FirebaseStorage.instance;
 
   @override
   Future<void> submitKyc({

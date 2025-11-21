@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
+import '../../../../core/domain/entities/kyc_status.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_scaffold.dart';
 import '../../../../core/widgets/app_container.dart';
@@ -11,15 +12,15 @@ import '../../../../core/widgets/app_input.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../injection_container.dart';
 import '../widgets/verification_widgets.dart';
-import '../bloc/auth/auth_bloc.dart';
-import '../bloc/auth/auth_event.dart';
-import '../bloc/auth/auth_data.dart';
-import '../bloc/kyc/kyc_bloc.dart';
-import '../bloc/kyc/kyc_event.dart';
-import '../bloc/kyc/kyc_data.dart';
-import '../../data/constants/verification_constants.dart';
+import '../../../travellink/presentation/bloc/auth/auth_bloc.dart';
+import '../../../travellink/presentation/bloc/auth/auth_event.dart';
+import '../../../travellink/presentation/bloc/auth/auth_data.dart';
+import '../bloc/kyc_bloc.dart';
+import '../bloc/kyc_event.dart';
+import '../bloc/kyc_data.dart';
+import '../../../travellink/data/constants/verification_constants.dart';
 import '../../domain/models/verification_model.dart';
-import '../../domain/entities/user_entity.dart';
+import '../../../travellink/domain/entities/user_entity.dart';
 import '../../../../core/bloc/base/base_state.dart';
 
 class VerificationScreen extends StatefulWidget {

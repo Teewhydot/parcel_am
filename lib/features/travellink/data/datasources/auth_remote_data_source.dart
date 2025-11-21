@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../../core/domain/entities/kyc_status.dart';
 import '../models/user_model.dart';
 import '../../domain/entities/user_entity.dart';
 import '../../domain/exceptions/auth_exceptions.dart';
+import 'wallet_remote_data_source.dart';
 
 abstract class AuthRemoteDataSource {
   Future<UserModel> signInWithEmailAndPassword(String email, String password);
@@ -19,10 +21,12 @@ abstract class AuthRemoteDataSource {
 class FirebaseRemoteDataSourceImpl implements AuthRemoteDataSource {
   final FirebaseAuth firebaseAuth;
   final FirebaseFirestore? firestore;
+  final WalletRemoteDataSource? walletDataSource;
 
   FirebaseRemoteDataSourceImpl({
     required this.firebaseAuth,
     this.firestore,
+    this.walletDataSource,
   });
 
   @override
@@ -44,7 +48,7 @@ class FirebaseRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   @override
   Future<UserModel> signUpWithEmailAndPassword(String email, String password, String displayName) async {
-  
+
       final credential = await firebaseAuth.createUserWithEmailAndPassword(
         email: email,
         password: password,
@@ -67,10 +71,20 @@ class FirebaseRemoteDataSourceImpl implements AuthRemoteDataSource {
           'kycStatus': 'not_submitted',
           'createdAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
+
+        // Create wallet for new user with initial balance of 0
+        if (walletDataSource != null) {
+          try {
+            await walletDataSource!.createWallet(updatedUser.uid, initialBalance: 0.0);
+          } catch (e) {
+            // Log wallet creation error but don't fail signup
+            print('Warning: Failed to create wallet for user ${updatedUser.uid}: $e');
+          }
+        }
       }
 
       return await _mapFirebaseUserToModelWithKyc(updatedUser!);
-   
+
   }
 
   @override

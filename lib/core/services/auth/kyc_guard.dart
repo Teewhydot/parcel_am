@@ -5,6 +5,7 @@ import '../../../features/travellink/presentation/bloc/auth/auth_bloc.dart';
 import '../../../features/travellink/presentation/bloc/auth/auth_data.dart';
 import '../../../features/travellink/domain/entities/user_entity.dart';
 import '../../../core/bloc/base/base_state.dart';
+import '../../../core/domain/entities/kyc_status.dart';
 import '../../routes/routes.dart';
 
 /// Mixin to provide KYC checking capabilities to any class

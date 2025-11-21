@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../core/domain/entities/kyc_status.dart';
 import '../../../../core/services/auth/kyc_guard.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/widgets/app_button.dart';

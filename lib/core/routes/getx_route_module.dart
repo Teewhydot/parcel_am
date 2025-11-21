@@ -9,9 +9,9 @@ import 'package:parcel_am/features/travellink/presentation/screens/onboarding_sc
 import 'package:parcel_am/features/travellink/presentation/screens/payment_screen.dart';
 import 'package:parcel_am/features/travellink/presentation/screens/request_details_screen.dart';
 import 'package:parcel_am/features/travellink/presentation/screens/tracking_screen.dart';
-import 'package:parcel_am/features/travellink/presentation/screens/verification_screen.dart';
+import 'package:parcel_am/features/kyc/presentation/screens/verification_screen.dart';
 import 'package:parcel_am/features/travellink/presentation/screens/browse_requests_screen.dart';
-import 'package:parcel_am/features/travellink/presentation/screens/kyc_blocked_screen.dart';
+import 'package:parcel_am/features/kyc/presentation/screens/kyc_blocked_screen.dart';
 import 'package:parcel_am/features/travellink/presentation/screens/wallet_screen.dart';
 import 'package:parcel_am/features/travellink/presentation/screens/create_parcel_screen.dart';
 import 'package:parcel_am/features/travellink/presentation/screens/profile_edit_screen.dart';
