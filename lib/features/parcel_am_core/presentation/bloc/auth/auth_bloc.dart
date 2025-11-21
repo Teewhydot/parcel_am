@@ -8,7 +8,6 @@ import 'package:parcel_am/core/errors/failures.dart';
 import 'package:parcel_am/core/utils/logger.dart';
 import 'package:parcel_am/features/parcel_am_core/data/models/user_model.dart';
 import 'package:parcel_am/features/parcel_am_core/domain/usecases/auth_usecase.dart';
-import '../../../domain/entities/user_entity.dart';
 import 'auth_event.dart';
 import 'auth_data.dart';
 

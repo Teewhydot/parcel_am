@@ -9,7 +9,6 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/routes/routes.dart';
-import '../../../parcel_am_core/domain/entities/user_entity.dart';
 import '../../../parcel_am_core/presentation/bloc/auth/auth_bloc.dart';
 import '../../../parcel_am_core/presentation/bloc/auth/auth_data.dart';
 import '../../../../core/bloc/base/base_state.dart';

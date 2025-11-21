@@ -185,31 +185,4 @@ class FirebaseRemoteDataSourceImpl implements AuthRemoteDataSource {
       kycStatus: KycStatus.fromString(data['kycStatus'] ?? 'not_submitted'),
     );
   }
-
-  AuthException _mapFirebaseAuthException(FirebaseAuthException e) {
-    switch (e.code) {
-      case 'user-not-found':
-        return const UserNotFoundException();
-      case 'wrong-password':
-        return const InvalidCredentialsException();
-      case 'invalid-email':
-        return const InvalidEmailException();
-      case 'user-disabled':
-        return const AuthException('User account has been disabled');
-      case 'too-many-requests':
-        return const AuthException('Too many requests. Please try again later');
-      case 'email-already-in-use':
-        return const EmailAlreadyInUseException();
-      case 'weak-password':
-        return const WeakPasswordException();
-      case 'invalid-verification-code':
-        return const InvalidVerificationCodeException();
-      case 'invalid-phone-number':
-        return const InvalidPhoneNumberException();
-      case 'session-expired':
-        return const TokenExpiredException();
-      default:
-        return AuthException(e.message ?? 'Authentication failed');
-    }
-  }
 }
