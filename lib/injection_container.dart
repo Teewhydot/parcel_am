@@ -99,9 +99,6 @@ Future<void> init() async {
 
   //! Features - Auth Data Sources
   sl.registerLazySingleton<AuthRemoteDataSource>(() => FirebaseRemoteDataSourceImpl(
-    firebaseAuth: sl(),
-    firestore: sl(),
-    walletDataSource: sl(),
   ));
 
   //! Features - Wallet (Parcel AM Core) Data Sources

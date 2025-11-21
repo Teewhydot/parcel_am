@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import 'package:parcel_am/features/parcel_am_core/data/models/user_model.dart';
 import '../../../../core/errors/failures.dart';
 import '../entities/user_entity.dart';
 import '../entities/auth_token_entity.dart';
@@ -12,6 +13,11 @@ class AuthUseCase {
     String password,
   ) {
     return authRepo.signInWithEmailAndPassword(email, password);
+  }
+  Stream<Either<Failure, UserModel>> watchKycStatus(
+    String userId,
+  ) {
+    return authRepo.watchKycStatus(userId);
   }
 
   Future<Either<Failure, UserEntity>> register({

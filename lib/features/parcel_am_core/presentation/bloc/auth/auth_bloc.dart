@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'package:bloc/bloc.dart';
+import 'package:dartz/dartz.dart';
 import 'package:parcel_am/core/bloc/base/base_bloc.dart';
 import 'package:parcel_am/core/bloc/base/base_state.dart';
 import 'package:parcel_am/core/domain/entities/kyc_status.dart';
+import 'package:parcel_am/core/errors/failures.dart';
 import 'package:parcel_am/core/utils/logger.dart';
+import 'package:parcel_am/features/parcel_am_core/data/models/user_model.dart';
 import 'package:parcel_am/features/parcel_am_core/domain/usecases/auth_usecase.dart';
 import '../../../domain/entities/user_entity.dart';
 import 'auth_event.dart';
@@ -24,6 +27,17 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
     on<AuthUserProfileUpdateRequested>(_onUserProfileUpdateRequested);
     on<AuthPasswordResetRequested>(_onPasswordResetRequested);
     on<AuthKycStatusUpdated>(_onKycStatusUpdated);
+  }
+
+
+  Stream<Either<Failure, UserModel>> watchUserData(
+    String userId,
+  ) async* {
+    try {
+      yield* authUseCase.watchKycStatus(userId);
+    } catch (e, stackTrace) {
+      handleException(Exception(e.toString()), stackTrace);
+    }
   }
 
   Future<void> _onAuthStarted(AuthStarted event, Emitter<BaseState<AuthData>> emit) async {

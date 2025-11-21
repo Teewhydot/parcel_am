@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:dartz/dartz.dart';
 import 'package:get_it/get_it.dart';
+import 'package:parcel_am/core/services/error/error_handler.dart';
 import '../../domain/entities/user_entity.dart';
 import '../../domain/entities/auth_token_entity.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -36,6 +37,16 @@ class AuthRepositoryImpl implements AuthRepository {
     } catch (e) {
       return Left(UnknownFailure(failureMessage: e.toString()));
     }
+  }
+
+@override
+  Stream<Either<Failure, UserModel>> watchKycStatus(
+    String userId,
+  ) {
+    return ErrorHandler.handleStream(
+      () => remoteDataSource.watchKycStatus(userId),
+      operationName: 'watchKycStatus',
+    );
   }
 
   @override
