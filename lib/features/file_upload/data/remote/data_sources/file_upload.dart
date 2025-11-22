@@ -113,17 +113,22 @@ class FirebaseFileUploadImpl implements FileUploadDataSource {
 
 class ImageKitFileUploadImpl implements FileUploadDataSource {
   final baseUrl = "https://ik.imagekit.io/szxwvslzo/";
+  final _firestore = FirebaseFirestore.instance;
   @override
   Future<UploadedFileEntity> uploadFile({
     required String userId,
     required File file,
     required String folderPath,
-  }) {
+  }) async {
     return ImageKit.io(
     file,
     folder: folderPath, // (Optional)
     privateKey: Env.imageKitPrivateKey!, // (Keep Confidential)
-  ).then((String url) {
+  ).then((String url)async{
+      await _firestore.collection('users').doc(userId).update({
+          'profileImageUrl': url,
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
       return UploadedFileEntity(url: url, uploadedAt: DateTime.now());
   });
   }

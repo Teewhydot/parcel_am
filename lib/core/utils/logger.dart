@@ -1,21 +1,40 @@
 import 'package:flutter/foundation.dart';
+import 'package:ansicolor/ansicolor.dart';
 
 enum ColorLogger {
-  black("30"),
-  red("31"),
-  green("32"),
-  yellow("33"),
-  blue("34"),
-  magenta("35"),
-  cyan("36"),
-  white("37");
+  black,
+  red,
+  green,
+  yellow,
+  blue,
+  magenta,
+  cyan,
+  white;
 
-  final String code;
-  const ColorLogger(this.code);
+  AnsiPen get _pen {
+    switch (this) {
+      case ColorLogger.black:
+        return AnsiPen()..black();
+      case ColorLogger.red:
+        return AnsiPen()..red();
+      case ColorLogger.green:
+        return AnsiPen()..green();
+      case ColorLogger.yellow:
+        return AnsiPen()..yellow();
+      case ColorLogger.blue:
+        return AnsiPen()..blue();
+      case ColorLogger.magenta:
+        return AnsiPen()..magenta();
+      case ColorLogger.cyan:
+        return AnsiPen()..cyan();
+      case ColorLogger.white:
+        return AnsiPen()..white();
+    }
+  }
 
   void log(dynamic text) {
     if (kDebugMode) {
-      print('\x1B[${code}m$text\x1B[0m');
+      print(_pen(text));
     }
   }
 }

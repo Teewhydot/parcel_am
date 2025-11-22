@@ -32,7 +32,7 @@ abstract class AuthRepository {
 
   Stream<UserEntity?> get authStateChanges;
 
-  Future<Either<Failure, UserEntity>> updateUserProfile(UserEntity user);
+  Future<Either<Failure, void>> updateUserProfile(UserEntity user);
 
   Future<Either<Failure, void>> resetPassword(String email);
 }

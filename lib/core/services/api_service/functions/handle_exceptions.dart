@@ -2,8 +2,8 @@ import 'dart:io';
 
 import 'package:dartz/dartz.dart';
 
+import '../../../errors/failures.dart';
 import '../../../../features/parcel_am_core/domain/exceptions/custom_exceptions.dart';
-import '../../../../features/parcel_am_core/domain/failures/failures.dart';
 
 Future<Either<Failure, T>> runAndHandleExceptions<T>(
   Future<T> Function() function,

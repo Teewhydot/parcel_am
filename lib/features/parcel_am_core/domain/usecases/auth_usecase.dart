@@ -54,7 +54,7 @@ class AuthUseCase {
 
   Stream<UserEntity?> get authStateChanges => authRepo.authStateChanges;
 
-  Future<Either<Failure, UserEntity>> updateUserProfile(UserEntity user) {
+  Future<Either<Failure, void>> updateUserProfile(UserEntity user) {
     return authRepo.updateUserProfile(user);
   }
 

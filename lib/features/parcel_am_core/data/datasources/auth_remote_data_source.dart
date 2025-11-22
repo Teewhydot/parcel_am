@@ -9,11 +9,15 @@ import '../../domain/exceptions/auth_exceptions.dart';
 
 abstract class AuthRemoteDataSource {
   Future<UserModel> signInWithEmailAndPassword(String email, String password);
-  Future<UserModel> signUpWithEmailAndPassword(String email, String password, String displayName);
+  Future<UserModel> signUpWithEmailAndPassword(
+    String email,
+    String password,
+    String displayName,
+  );
   Future<void> signOut();
   Future<UserModel?> getCurrentUser();
   Stream<UserModel?> get authStateChanges;
-  Future<UserModel> updateUserProfile(UserModel user);
+  Future<void> updateUserProfile(UserModel user);
   Future<void> resetPassword(String email);
   Stream<UserModel> watchUserDetails(String userId);
 }
@@ -21,76 +25,79 @@ abstract class AuthRemoteDataSource {
 class FirebaseRemoteDataSourceImpl implements AuthRemoteDataSource {
   final firebaseAuth = FirebaseAuth.instance;
   final firestore = FirebaseFirestore.instance;
-  final walletUseCase = WalletUseCase();  
+  final walletUseCase = WalletUseCase();
   @override
-  Future<UserModel> signInWithEmailAndPassword(String email, String password) async {
-    
-      final credential = await firebaseAuth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      
-      final user = credential.user;
-      if (user == null) {
-        throw const UserNotFoundException();
-      }
+  Future<UserModel> signInWithEmailAndPassword(
+    String email,
+    String password,
+  ) async {
+    final credential = await firebaseAuth.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
 
-      return await _mapFirebaseUserToModelWithKyc(user);
-   
+    final user = credential.user;
+    if (user == null) {
+      throw const UserNotFoundException();
+    }
+
+    return await _mapFirebaseUserToModelWithKyc(user);
   }
 
   @override
-  Future<UserModel> signUpWithEmailAndPassword(String email, String password, String displayName) async {
+  Future<UserModel> signUpWithEmailAndPassword(
+    String email,
+    String password,
+    String displayName,
+  ) async {
+    final credential = await firebaseAuth.createUserWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
 
-      final credential = await firebaseAuth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+    final user = credential.user;
+    if (user == null) {
+      throw const ServerException('Failed to create user');
+    }
 
-      final user = credential.user;
-      if (user == null) {
-        throw const ServerException('Failed to create user');
+    await user.updateDisplayName(displayName);
+    await user.reload();
+    final updatedUser = firebaseAuth.currentUser;
+
+    if (updatedUser != null) {
+      await firestore.collection('users').doc(updatedUser.uid).set({
+        'uid': updatedUser.uid,
+        'displayName': displayName,
+        'email': email,
+        'kycStatus': 'not_submitted',
+        'createdAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      // Create wallet for new user with initial balance of 0
+      try {
+        await walletUseCase.createWallet(updatedUser.uid, initialBalance: 0.0);
+      } catch (e) {
+        // Log wallet creation error but don't fail signup
+        Logger.logWarning(
+          'Failed to create wallet for user ${updatedUser.uid}: $e',
+          tag: 'AuthDataSource',
+        );
       }
+    }
 
-      await user.updateDisplayName(displayName);
-      await user.reload();
-      final updatedUser = firebaseAuth.currentUser;
-
-      if (updatedUser != null) {
-        await firestore.collection('users').doc(updatedUser.uid).set({
-          'uid': updatedUser.uid,
-          'displayName': displayName,
-          'email': email,
-          'kycStatus': 'not_submitted',
-          'createdAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
-
-        // Create wallet for new user with initial balance of 0
-          try {
-            await walletUseCase.createWallet(updatedUser.uid, initialBalance: 0.0);
-          } catch (e) {
-            // Log wallet creation error but don't fail signup
-            Logger.logWarning('Failed to create wallet for user ${updatedUser.uid}: $e', tag: 'AuthDataSource');
-          }
-      }
-
-      return await _mapFirebaseUserToModelWithKyc(updatedUser!);
-
+    return await _mapFirebaseUserToModelWithKyc(updatedUser!);
   }
 
   @override
   Future<void> signOut() async {
-    
-      await firebaseAuth.signOut();
-    
+    await firebaseAuth.signOut();
   }
 
   @override
   Future<UserModel?> getCurrentUser() async {
-  
-      final user = firebaseAuth.currentUser;
-      if (user == null) return null;
-     return await _mapFirebaseUserToModelWithKyc(user);
+    final user = firebaseAuth.currentUser;
+    if (user == null) return null;
+    return await _mapFirebaseUserToModelWithKyc(user);
   }
 
   @override
@@ -102,26 +109,23 @@ class FirebaseRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
-  Future<UserModel> updateUserProfile(UserModel user) async {
-  
-      final firebaseUser = firebaseAuth.currentUser;
-      if (firebaseUser == null) {
-        throw const UserNotFoundException();
-      }
+  Future<void> updateUserProfile(UserModel user) async {
+    final firebaseUser = firebaseAuth.currentUser;
+    if (firebaseUser == null) {
+      throw const UserNotFoundException();
+    }
 
-      await firebaseUser.updateDisplayName(user.displayName);
-      await firebaseUser.reload();
-      
-      final updatedUser = firebaseAuth.currentUser;
-      return await _mapFirebaseUserToModelWithKyc(updatedUser!);
-  
+    await firebaseUser.updateDisplayName(user.displayName);
+    await firestore.collection('users').doc(firebaseUser.uid).update({
+      'displayName': user.displayName,
+      'additionalData': user.additionalData,
+    });
+    await firebaseUser.reload();
   }
 
   @override
   Future<void> resetPassword(String email) async {
-  
-      await firebaseAuth.sendPasswordResetEmail(email: email);
-   
+    await firebaseAuth.sendPasswordResetEmail(email: email);
   }
 
   UserModel _mapFirebaseUserToModel(User user) {
@@ -140,10 +144,10 @@ class FirebaseRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<UserModel> _mapFirebaseUserToModelWithKyc(User user) async {
     String kycStatusString = 'not_submitted';
 
-     final userDoc = await firestore.collection('users').doc(user.uid).get();
-        if (userDoc.exists) {
-          kycStatusString = userDoc.data()?['kycStatus'] ?? 'not_submitted';
-        }
+    final userDoc = await firestore.collection('users').doc(user.uid).get();
+    if (userDoc.exists) {
+      kycStatusString = userDoc.data()?['kycStatus'] ?? 'not_submitted';
+    }
 
     return UserModel(
       uid: user.uid,
@@ -175,10 +179,12 @@ class FirebaseRemoteDataSourceImpl implements AuthRemoteDataSource {
       displayName: data['displayName'] ?? 'User',
       email: data['email'] ?? '',
       isVerified: firebaseAuth.currentUser?.emailVerified ?? false,
-      verificationStatus: (firebaseAuth.currentUser?.emailVerified ?? false) ? 'verified' : 'pending',
+      verificationStatus: (firebaseAuth.currentUser?.emailVerified ?? false)
+          ? 'verified'
+          : 'pending',
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       additionalData: {},
-      profilePhotoUrl: data['profilePhotoUrl'],
+      profilePhotoUrl: data['profileImageUrl'],
       kycStatus: KycStatus.fromString(data['kycStatus'] ?? 'not_submitted'),
     );
   }

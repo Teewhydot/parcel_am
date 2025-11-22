@@ -38,8 +38,8 @@ class FileUploadService {
   /// Pick image from gallery
   Future<File?> pickImageFromGallery({bool allowMultiple = false}) async {
     try {
-      final hasPermission = await _permissionService.requestStoragePermission();
-      if (!hasPermission) throw Exception('Storage permission denied');
+      // final hasPermission = await _permissionService.requestStoragePermission();
+      // if (!hasPermission) throw Exception('Storage permission denied');
 
       if (allowMultiple) {
         final List<XFile> pickedFiles = await _imagePicker.pickMultiImage(

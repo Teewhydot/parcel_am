@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../../../../core/domain/entities/kyc_status.dart';
+import 'package:parcel_am/core/domain/entities/kyc_status.dart';
 
 abstract class AuthEvent extends Equatable {
   const AuthEvent();
@@ -72,19 +72,17 @@ class AuthRestoreStateRequested extends AuthEvent {
 
 class AuthUserProfileUpdateRequested extends AuthEvent {
   final String displayName;
-  final String? email;
   final KycStatus? kycStatus;
   final Map<String, dynamic>? additionalData;
 
   const AuthUserProfileUpdateRequested({
     required this.displayName,
-    this.email,
-    this.kycStatus,
+     this.kycStatus,
     this.additionalData,
   });
 
   @override
-  List<Object?> get props => [displayName, email, kycStatus, additionalData];
+  List<Object?> get props => [displayName, kycStatus, additionalData];
 }
 
 class AuthPasswordResetRequested extends AuthEvent {

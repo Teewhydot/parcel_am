@@ -11,12 +11,10 @@ import 'package:parcel_am/features/parcel_am_core/domain/usecases/auth_usecase.d
 import 'auth_event.dart';
 import 'auth_data.dart';
 
-
 class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
   final authUseCase = AuthUseCase();
 
   AuthBloc() : super(const InitialState<AuthData>()) {
-    
     on<AuthStarted>(_onAuthStarted);
     on<AuthEmailChanged>(_onEmailChanged);
     on<AuthPasswordChanged>(_onPasswordChanged);
@@ -28,10 +26,7 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
     on<AuthKycStatusUpdated>(_onKycStatusUpdated);
   }
 
-
-  Stream<Either<Failure, UserModel>> watchUserData(
-    String userId,
-  ) async* {
+  Stream<Either<Failure, UserModel>> watchUserData(String userId) async* {
     try {
       yield* authUseCase.watchKycStatus(userId);
     } catch (e, stackTrace) {
@@ -39,111 +34,143 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
     }
   }
 
-  Future<void> _onAuthStarted(AuthStarted event, Emitter<BaseState<AuthData>> emit) async {
+  Future<void> _onAuthStarted(
+    AuthStarted event,
+    Emitter<BaseState<AuthData>> emit,
+  ) async {
     emit(const LoadingState<AuthData>(message: 'Checking current user...'));
-    
+
     final result = await authUseCase.getCurrentUser();
-    
+
     await result.fold(
       (failure) async {
         emit(const InitialState<AuthData>());
       },
       (user) async {
         if (user == null) {
-          emit(const ErrorState<AuthData>(
-            errorMessage: 'No user is currently signed in.',
-            errorCode: 'no_user',
-          ));
+          emit(
+            const ErrorState<AuthData>(
+              errorMessage: 'No user is currently signed in.',
+              errorCode: 'no_user',
+            ),
+          );
           Logger.logError('No current user found.');
           return;
         }
-        emit(LoadedState<AuthData>(
-          data: const AuthData().copyWith(user: user),
-          lastUpdated: DateTime.now(),
-        ));
+        emit(
+          LoadedState<AuthData>(
+            data: const AuthData().copyWith(user: user),
+            lastUpdated: DateTime.now(),
+          ),
+        );
         Logger.logSuccess('User loaded successfully: ${user.displayName}');
       },
     );
   }
 
-  void _onEmailChanged(AuthEmailChanged event, Emitter<BaseState<AuthData>> emit) {
-    final currentData = _getCurrentAuthData();
-    emit(LoadedState<AuthData>(
-      data: currentData.copyWith(email: event.email),
-      lastUpdated: DateTime.now(),
-    ));
+  void _onEmailChanged(
+    AuthEmailChanged event,
+    Emitter<BaseState<AuthData>> emit,
+  ) {
+    final currentData = state.data ?? const AuthData();
+    emit(
+      LoadedState<AuthData>(
+        data: currentData.copyWith(email: event.email),
+        lastUpdated: DateTime.now(),
+      ),
+    );
   }
 
-  void _onPasswordChanged(AuthPasswordChanged event, Emitter<BaseState<AuthData>> emit) {
-    final currentData = _getCurrentAuthData();
-    emit(LoadedState<AuthData>(
-      data: currentData.copyWith(password: event.password),
-      lastUpdated: DateTime.now(),
-    ));
+  void _onPasswordChanged(
+    AuthPasswordChanged event,
+    Emitter<BaseState<AuthData>> emit,
+  ) {
+    final currentData = state.data ?? const AuthData();
+    emit(
+      LoadedState<AuthData>(
+        data: currentData.copyWith(password: event.password),
+        lastUpdated: DateTime.now(),
+      ),
+    );
   }
 
-  Future<void> _onLoginRequested(AuthLoginRequested event, Emitter<BaseState<AuthData>> emit) async {
+  Future<void> _onLoginRequested(
+    AuthLoginRequested event,
+    Emitter<BaseState<AuthData>> emit,
+  ) async {
     emit(const LoadingState<AuthData>(message: 'Logging in...'));
-    
-    final result = await authUseCase.login(event.email,event.password);
-    
+
+    final result = await authUseCase.login(event.email, event.password);
+
     result.fold(
       (failure) {
-        emit(ErrorState<AuthData>(
-          errorMessage: failure.failureMessage,
-          errorCode: 'login_failed',
-        ));
+        emit(
+          ErrorState<AuthData>(
+            errorMessage: failure.failureMessage,
+            errorCode: 'login_failed',
+          ),
+        );
       },
       (user) {
-        emit(SuccessState<AuthData>(
-          successMessage: 'Login successful!',
-        ));
-        emit(LoadedState<AuthData>(
-          data: const AuthData().copyWith(
-            user: user,
-            email: event.email,
+        emit(SuccessState<AuthData>(successMessage: 'Login successful!'));
+        emit(
+          LoadedState<AuthData>(
+            data: const AuthData().copyWith(user: user, email: event.email),
+            lastUpdated: DateTime.now(),
           ),
-          lastUpdated: DateTime.now(),
-        ));
+        );
       },
     );
   }
 
-  Future<void> _onRegisterRequested(AuthRegisterRequested event, Emitter<BaseState<AuthData>> emit) async {
+  Future<void> _onRegisterRequested(
+    AuthRegisterRequested event,
+    Emitter<BaseState<AuthData>> emit,
+  ) async {
     emit(const LoadingState<AuthData>(message: 'Creating account...'));
-    
-    final result = await authUseCase.register(email: event.email, password: event.password, displayName: event.displayName);
-    
+
+    final result = await authUseCase.register(
+      email: event.email,
+      password: event.password,
+      displayName: event.displayName,
+    );
+
     result.fold(
       (failure) {
-        emit(ErrorState<AuthData>(
-          errorMessage: failure.failureMessage,
-          errorCode: 'register_failed',
-        ));
+        emit(
+          ErrorState<AuthData>(
+            errorMessage: failure.failureMessage,
+            errorCode: 'register_failed',
+          ),
+        );
       },
       (user) {
-        emit(LoadedState<AuthData>(
-          data: const AuthData().copyWith(
-            user: user,
-            email: event.email,
+        emit(
+          LoadedState<AuthData>(
+            data: const AuthData().copyWith(user: user, email: event.email),
+            lastUpdated: DateTime.now(),
           ),
-          lastUpdated: DateTime.now(),
-        ));
+        );
       },
     );
   }
 
-  Future<void> _onLogoutRequested(AuthLogoutRequested event, Emitter<BaseState<AuthData>> emit) async {
+  Future<void> _onLogoutRequested(
+    AuthLogoutRequested event,
+    Emitter<BaseState<AuthData>> emit,
+  ) async {
     emit(const LoadingState<AuthData>(message: 'Logging out...'));
-        
+
     final result = await authUseCase.logout();
-    
+
     result.fold(
       (failure) {
-        emit(ErrorState<AuthData>(
-          errorMessage: failure.failureMessage,
-          errorCode: 'logout_failed',
-        ));
+        emit(
+          ErrorState<AuthData>(
+            errorMessage: failure.failureMessage,
+            errorCode: 'logout_failed',
+          ),
+        );
       },
       (_) {
         emit(const InitialState<AuthData>());
@@ -151,70 +178,81 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
     );
   }
 
-  Future<void> _onUserProfileUpdateRequested(AuthUserProfileUpdateRequested event, Emitter<BaseState<AuthData>> emit) async {
-    final currentData = _getCurrentAuthData();
+  Future<void> _onUserProfileUpdateRequested(
+    AuthUserProfileUpdateRequested event,
+    Emitter<BaseState<AuthData>> emit,
+  ) async {
+    final currentData = state.data ?? const AuthData();
     if (currentData.user == null) return;
 
     emit(const LoadingState<AuthData>(message: 'Updating profile...'));
 
-    final updatedAdditionalData = event.additionalData != null
-        ? {...currentData.user!.additionalData, ...event.additionalData!}
-        : currentData.user!.additionalData;
-
     final updatedUser = currentData.user!.copyWith(
       displayName: event.displayName,
-      email: event.email ?? currentData.user!.email,
-      kycStatus: event.kycStatus ?? currentData.user!.kycStatus,
-      additionalData: updatedAdditionalData,
     );
-
-    emit(LoadedState<AuthData>(
-      data: currentData.copyWith(user: updatedUser),
-      lastUpdated: DateTime.now(),
-    ));
+    final result = await authUseCase.updateUserProfile(updatedUser);
+    result.fold(
+      (failure) {
+        emit(
+          ErrorState<AuthData>(
+            errorMessage: failure.failureMessage,
+            errorCode: 'profile_update_failed',
+          ),
+        );
+      },
+      (user) {
+        emit(
+          SuccessState<AuthData>(
+            successMessage: 'Profile updated successfully!',
+          ),
+        );
+      },
+    );
   }
 
-  Future<void> _onPasswordResetRequested(AuthPasswordResetRequested event, Emitter<BaseState<AuthData>> emit) async {
+  Future<void> _onPasswordResetRequested(
+    AuthPasswordResetRequested event,
+    Emitter<BaseState<AuthData>> emit,
+  ) async {
     emit(const LoadingState<AuthData>(message: 'Sending reset email...'));
 
     final result = await authUseCase.resetPassword(event.email);
 
     result.fold(
       (failure) {
-        emit(ErrorState<AuthData>(
-          errorMessage: failure.failureMessage,
-          errorCode: 'password_reset_failed',
-        ));
+        emit(
+          ErrorState<AuthData>(
+            errorMessage: failure.failureMessage,
+            errorCode: 'password_reset_failed',
+          ),
+        );
       },
       (_) {
-        emit(const SuccessState<AuthData>(
-          successMessage: 'Password reset email sent! Check your inbox.',
-        ));
+        emit(
+          const SuccessState<AuthData>(
+            successMessage: 'Password reset email sent! Check your inbox.',
+          ),
+        );
       },
     );
   }
 
-  Future<void> _onKycStatusUpdated(AuthKycStatusUpdated event, Emitter<BaseState<AuthData>> emit) async {
-    final currentData = _getCurrentAuthData();
+  Future<void> _onKycStatusUpdated(
+    AuthKycStatusUpdated event,
+    Emitter<BaseState<AuthData>> emit,
+  ) async {
+    final currentData = state.data ?? const AuthData();
     if (currentData.user == null) return;
 
     final updatedUser = currentData.user!.copyWith(
       kycStatus: KycStatus.fromString(event.kycStatus),
     );
 
-    emit(LoadedState<AuthData>(
-      data: currentData.copyWith(user: updatedUser),
-      lastUpdated: DateTime.now(),
-    ));
+    emit(
+      LoadedState<AuthData>(
+        data: currentData.copyWith(user: updatedUser),
+        lastUpdated: DateTime.now(),
+      ),
+    );
   }
-
-
-
-  AuthData _getCurrentAuthData() {
-    if (state is DataState<AuthData> && (state as DataState<AuthData>).data != null) {
-      return (state as DataState<AuthData>).data!;
-    }
-    return const AuthData();
-  }
-
 }

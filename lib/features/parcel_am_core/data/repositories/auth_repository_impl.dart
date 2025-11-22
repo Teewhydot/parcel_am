@@ -18,24 +18,13 @@ class AuthRepositoryImpl implements AuthRepository {
     String email,
     String password,
   ) async {
-    try {
-     final userModel = await remoteDataSource.signInWithEmailAndPassword(email, password);
-        return Right(userModel.toEntity());
-    } on AuthException catch (e) {
-      return Left(AuthFailure(failureMessage: e.message));
-    } on ServerException catch (e) {
-      return Left(ServerFailure(failureMessage: e.message));
-    } on CacheException catch (e) {
-      return Left(CacheFailure(failureMessage: e.message));
-    } catch (e) {
-      return Left(UnknownFailure(failureMessage: e.toString()));
-    }
+    return ErrorHandler.handle<UserEntity>(
+      () => remoteDataSource.signInWithEmailAndPassword(email, password),
+    );
   }
 
-@override
-  Stream<Either<Failure, UserModel>> watchUserData(
-    String userId,
-  ) {
+  @override
+  Stream<Either<Failure, UserModel>> watchUserData(String userId) {
     return ErrorHandler.handleStream(
       () => remoteDataSource.watchUserDetails(userId),
       operationName: 'watchUserStatus',
@@ -48,85 +37,37 @@ class AuthRepositoryImpl implements AuthRepository {
     String password,
     String displayName,
   ) async {
-    try {
-     final userModel = await remoteDataSource.signUpWithEmailAndPassword(email, password, displayName);
-        return Right(userModel.toEntity());
-    } on AuthException catch (e) {
-      return Left(AuthFailure(failureMessage: e.message));
-    } on ServerException catch (e) {
-      return Left(ServerFailure(failureMessage: e.message));
-    } on CacheException catch (e) {
-      return Left(CacheFailure(failureMessage: e.message));
-    } catch (e) {
-      return Left(UnknownFailure(failureMessage: e.toString()));
-    }
+    return ErrorHandler.handle<UserEntity>(
+      () => remoteDataSource.signUpWithEmailAndPassword(
+        email,
+        password,
+        displayName,
+      ),
+    );
   }
 
   @override
   Future<Either<Failure, void>> signOut() async {
-    try {
-      await Future.wait([
-        remoteDataSource.signOut(),
-      ]);
-      return const Right(null);
-    } on AuthException catch (e) {
-      return Left(AuthFailure(failureMessage: e.message));
-    } on ServerException catch (e) {
-      return Left(ServerFailure(failureMessage: e.message));
-    } on CacheException catch (e) {
-      return Left(CacheFailure(failureMessage: e.message));
-    } catch (e) {
-      return Left(UnknownFailure(failureMessage: e.toString()));
-    }
+    return ErrorHandler.handle(() => remoteDataSource.signOut());
   }
 
   @override
   Future<Either<Failure, UserEntity?>> getCurrentUser() async {
-    try {
-      final user = await remoteDataSource.getCurrentUser();
-      
-      if (user == null) {
-        return const Right(null);
-      }
-    
-      return Right(user.toEntity());
-    } on AuthException catch (e) {
-      return Left(AuthFailure(failureMessage: e.message));
-    } on ServerException catch (e) {
-      return Left(ServerFailure(failureMessage: e.message));
-    } on CacheException catch (e) {
-      return Left(CacheFailure(failureMessage: e.message));
-    } catch (e) {
-      return Left(UnknownFailure(failureMessage: e.toString()));
-    }
+    return ErrorHandler.handle<UserEntity?>(
+      () => remoteDataSource.getCurrentUser(),
+    );
   }
 
   @override
   Future<Either<Failure, bool>> hasValidSession() async {
-    try {
-      final user = await remoteDataSource.getCurrentUser();
-      
-      if (user == null) {
-        return const Right(false);
-      }
-      
-      
-      return const Right(true);
-    } on AuthException catch (e) {
-      return Left(AuthFailure(failureMessage: e.message));
-    } on ServerException catch (e) {
-      return Left(ServerFailure(failureMessage: e.message));
-    } on CacheException catch (e) {
-      return Left(CacheFailure(failureMessage: e.message));
-    } catch (e) {
-      return Left(UnknownFailure(failureMessage: e.toString()));
-    }
+    return ErrorHandler.handle<bool>(
+      () => remoteDataSource.getCurrentUser().then((user) => user != null),
+    );
   }
 
   @override
   Future<Either<Failure, AuthTokenEntity?>> getStoredToken() async {
     try {
-    
       return const Right(null);
     } on CacheException catch (e) {
       return Left(CacheFailure(failureMessage: e.message));
@@ -149,13 +90,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<Either<Failure, void>> clearStoredData() async {
-    try {
-      return const Right(null);
-    } on CacheException catch (e) {
-      return Left(CacheFailure(failureMessage: e.message));
-    } catch (e) {
-      return Left(UnknownFailure(failureMessage: e.toString()));
-    }
+    return ErrorHandler.handle(() => remoteDataSource.signOut());
   }
 
   @override
@@ -169,33 +104,14 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, UserEntity>> updateUserProfile(UserEntity user) async {
-    try {
-    final userModel = UserModel.fromEntity(user);
-        final updatedUserModel = await remoteDataSource.updateUserProfile(userModel);
-        return Right(updatedUserModel.toEntity());
-    } on AuthException catch (e) {
-      return Left(AuthFailure(failureMessage: e.message));
-    } on ServerException catch (e) {
-      return Left(ServerFailure(failureMessage: e.message));
-    } on CacheException catch (e) {
-      return Left(CacheFailure(failureMessage: e.message));
-    } catch (e) {
-      return Left(UnknownFailure(failureMessage: e.toString()));
-    }
+  Future<Either<Failure, void>> updateUserProfile(UserEntity user) async {
+    return ErrorHandler.handle(
+      () => remoteDataSource.updateUserProfile(UserModel.fromEntity(user)),
+    );
   }
 
   @override
   Future<Either<Failure, void>> resetPassword(String email) async {
-    try {
-       await remoteDataSource.resetPassword(email);
-          return const Right(null);
-    } on AuthException catch (e) {
-      return Left(AuthFailure(failureMessage: e.message));
-    } on ServerException catch (e) {
-      return Left(ServerFailure(failureMessage: e.message));
-    } catch (e) {
-      return Left(UnknownFailure(failureMessage: e.toString()));
-    }
+    return ErrorHandler.handle(() => remoteDataSource.resetPassword(email));
   }
 }
