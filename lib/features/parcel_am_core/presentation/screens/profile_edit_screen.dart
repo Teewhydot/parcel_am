@@ -5,7 +5,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
 import 'package:parcel_am/core/helpers/user_extensions.dart';
 import 'package:parcel_am/core/services/file_upload_service.dart';
+import 'package:parcel_am/core/services/navigation_service/nav_config.dart';
 import 'package:parcel_am/features/parcel_am_core/data/models/user_model.dart';
+import 'package:parcel_am/injection_container.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_scaffold.dart';
@@ -58,6 +60,12 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   Widget build(BuildContext context) {
     return BlocManager<AuthBloc, BaseState<AuthData>>(
       bloc: context.read<AuthBloc>(),
+      listener: (context, state) {
+        // Only navigate on SuccessState, not LoadedState
+        if (state is LoadedState<AuthData>) {
+          sl<NavigationService>().goBack();
+        }
+      },
       child: AppScaffold(
         title: 'Edit Profile',
         appBarBackgroundColor: AppColors.background,
@@ -132,7 +140,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                               if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text('Session expired. Please refresh the app.'),
+                                    content: Text(
+                                      'Session expired. Please refresh the app.',
+                                    ),
                                     backgroundColor: Colors.red,
                                   ),
                                 );
@@ -247,7 +257,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 radius: 50,
                 backgroundImage: CachedNetworkImageProvider(profileImageUrl!),
               );
-            } else if (asyncSnapshot.connectionState == ConnectionState.waiting) {
+            } else if (asyncSnapshot.connectionState ==
+                ConnectionState.waiting) {
               imageWidget = const CircularProgressIndicator.adaptive();
             } else {
               imageWidget = const CircleAvatar(

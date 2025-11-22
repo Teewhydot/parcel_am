@@ -29,38 +29,8 @@ class ChatNotificationService {
     );
 
     await _notificationsPlugin.initialize(initSettings);
-    _subscribeToChats();
   }
 
-  void _subscribeToChats() {
-    if (_currentUserId == null) return;
-
-    _chatSubscription = _repository
-        .watchUserChats(_currentUserId!)
-        .listen(
-      (snapshot) {
-        // Calculate total unread count
-        int totalUnread = 0;
-        for (var doc in snapshot.docs) {
-          final chatData = doc.data() as Map<String, dynamic>;
-          final unreadCount =
-              (chatData['unreadCount'] as Map<String, dynamic>?)?[_currentUserId] ?? 0;
-          totalUnread += unreadCount as int;
-        }
-        _unreadCountController.add(totalUnread);
-
-        // Handle chat updates for notifications
-        for (var change in snapshot.docChanges) {
-          if (change.type == DocumentChangeType.modified) {
-            final chatData = change.doc.data() as Map<String, dynamic>?;
-            if (chatData != null) {
-              _handleChatUpdate(change.doc.id, chatData);
-            }
-          }
-        }
-      },
-    );
-  }
 
   Future<void> _handleChatUpdate(
       String chatId, Map<String, dynamic> chatData) async {

@@ -200,10 +200,11 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
           ),
         );
       },
-      (user) {
+      (_) {
         emit(
-          SuccessState<AuthData>(
-            successMessage: 'Profile updated successfully!',
+          LoadedState<AuthData>(
+            data: currentData.copyWith(user: updatedUser),
+            lastUpdated: DateTime.now(),
           ),
         );
       },
