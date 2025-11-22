@@ -3,7 +3,6 @@ import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../../../../core/errors/failures.dart';
-import '../../../../core/network/network_info.dart';
 import '../../../../core/services/error/error_handler.dart';
 import '../../domain/entities/message.dart';
 import '../../domain/entities/message_type.dart';
@@ -17,7 +16,6 @@ class ChatRepositoryImpl implements ChatRepository {
     firestore: FirebaseFirestore.instance,
     storage: FirebaseStorage.instance,
   );
-  final NetworkInfo networkInfo = _NetworkInfoImpl();
 
   @override
   Stream<Either<Failure, List<Message>>> getMessagesStream(String chatId) {
@@ -29,7 +27,7 @@ class ChatRepositoryImpl implements ChatRepository {
 
   @override
   Future<Either<Failure, void>> sendMessage(Message message) async {
-    if (!await networkInfo.isConnected) {
+    if (!await InternetConnectionChecker.instance.hasConnection) {
       return const Left(NetworkFailure(failureMessage: 'No internet connection'));
     }
 
@@ -47,7 +45,7 @@ class ChatRepositoryImpl implements ChatRepository {
     String messageId,
     MessageStatus status,
   ) async {
-    if (!await networkInfo.isConnected) {
+    if (!await InternetConnectionChecker.instance.hasConnection) {
       return const Left(NetworkFailure(failureMessage: 'No internet connection'));
     }
 
@@ -65,7 +63,7 @@ class ChatRepositoryImpl implements ChatRepository {
     String messageId,
     String userId,
   ) async {
-    if (!await networkInfo.isConnected) {
+    if (!await InternetConnectionChecker.instance.hasConnection) {
       return const Left(NetworkFailure(failureMessage: 'No internet connection'));
     }
 
@@ -84,7 +82,7 @@ class ChatRepositoryImpl implements ChatRepository {
     MessageType type,
     Function(double) onProgress,
   ) async {
-    if (!await networkInfo.isConnected) {
+    if (!await InternetConnectionChecker.instance.hasConnection) {
       return const Left(NetworkFailure(failureMessage: 'No internet connection'));
     }
 
@@ -107,7 +105,7 @@ class ChatRepositoryImpl implements ChatRepository {
     String userId,
     bool isTyping,
   ) async {
-    if (!await networkInfo.isConnected) {
+    if (!await InternetConnectionChecker.instance.hasConnection) {
       return const Left(NetworkFailure(failureMessage: 'No internet connection'));
     }
 
@@ -121,7 +119,7 @@ class ChatRepositoryImpl implements ChatRepository {
 
   @override
   Future<Either<Failure, void>> updateLastSeen(String chatId, String userId) async {
-    if (!await networkInfo.isConnected) {
+    if (!await InternetConnectionChecker.instance.hasConnection) {
       return const Left(NetworkFailure(failureMessage: 'No internet connection'));
     }
 
@@ -143,7 +141,7 @@ class ChatRepositoryImpl implements ChatRepository {
 
   @override
   Future<Either<Failure, void>> deleteMessage(String messageId) async {
-    if (!await networkInfo.isConnected) {
+    if (!await InternetConnectionChecker.instance.hasConnection) {
       return const Left(NetworkFailure(failureMessage: 'No internet connection'));
     }
 
@@ -157,7 +155,7 @@ class ChatRepositoryImpl implements ChatRepository {
 
   @override
   Future<Either<Failure, Chat>> createChat(List<String> participantIds) async {
-    if (!await networkInfo.isConnected) {
+    if (!await InternetConnectionChecker.instance.hasConnection) {
       return const Left(NetworkFailure(failureMessage: 'No internet connection'));
     }
 
@@ -171,7 +169,7 @@ class ChatRepositoryImpl implements ChatRepository {
 
   @override
   Future<Either<Failure, Chat>> getChat(String chatId) async {
-    if (!await networkInfo.isConnected) {
+    if (!await InternetConnectionChecker.instance.hasConnection) {
       return const Left(NetworkFailure(failureMessage: 'No internet connection'));
     }
 
@@ -185,7 +183,7 @@ class ChatRepositoryImpl implements ChatRepository {
 
   @override
   Future<Either<Failure, List<Chat>>> getUserChats(String userId) async {
-    if (!await networkInfo.isConnected) {
+    if (!await InternetConnectionChecker.instance.hasConnection) {
       return const Left(NetworkFailure(failureMessage: 'No internet connection'));
     }
 
@@ -206,10 +204,4 @@ class ChatRepositoryImpl implements ChatRepository {
   Stream<List<Chat>> watchUserChats(String userId) {
     return remoteDataSource.watchUserChats(userId);
   }
-}
-
-
-class _NetworkInfoImpl implements NetworkInfo {
-  @override
-  Future<bool> get isConnected => InternetConnectionChecker.instance.hasConnection;
 }

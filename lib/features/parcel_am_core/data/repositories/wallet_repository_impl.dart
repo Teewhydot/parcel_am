@@ -8,11 +8,9 @@ import '../../../../core/services/error/error_handler.dart';
 import '../../domain/exceptions/wallet_exceptions.dart';
 import '../../domain/exceptions/custom_exceptions.dart';
 import '../datasources/wallet_remote_data_source.dart';
-import '../../../../core/network/network_info.dart';
 
 class WalletRepositoryImpl implements WalletRepository {
   final remoteDataSource = GetIt.instance<WalletRemoteDataSource>();
-  final networkInfo = GetIt.instance<NetworkInfo>();
 
   @override
   Future<Either<Failure, WalletEntity>> createWallet(
@@ -20,16 +18,11 @@ class WalletRepositoryImpl implements WalletRepository {
     double initialBalance = 0.0,
   }) async {
     try {
-      if (await networkInfo.isConnected) {
-        final walletModel = await remoteDataSource.createWallet(
+     final walletModel = await remoteDataSource.createWallet(
           userId,
           initialBalance: initialBalance,
         );
         return Right(walletModel.toEntity());
-      } else {
-        return const Left(
-            NoInternetFailure(failureMessage: 'No internet connection'));
-      }
     } on WalletException catch (e) {
       return Left(ServerFailure(failureMessage: e.message));
     } on ServerException {
@@ -42,13 +35,8 @@ class WalletRepositoryImpl implements WalletRepository {
   @override
   Future<Either<Failure, WalletEntity>> getWallet(String userId) async {
     try {
-      if (await networkInfo.isConnected) {
-        final walletModel = await remoteDataSource.getWallet(userId);
+      final walletModel = await remoteDataSource.getWallet(userId);
         return Right(walletModel.toEntity());
-      } else {
-        return const Left(
-            NoInternetFailure(failureMessage: 'No internet connection'));
-      }
     } on WalletNotFoundException catch (e) {
       return Left(ServerFailure(failureMessage: e.message));
     } on WalletException catch (e) {
@@ -66,14 +54,9 @@ class WalletRepositoryImpl implements WalletRepository {
     double amount,
   ) async {
     try {
-      if (await networkInfo.isConnected) {
-        final walletModel =
+     final walletModel =
             await remoteDataSource.updateBalance(walletId, amount);
         return Right(walletModel.toEntity());
-      } else {
-        return const Left(
-            NoInternetFailure(failureMessage: 'No internet connection'));
-      }
     } on InsufficientBalanceException catch (e) {
       return Left(ValidationFailure(failureMessage: e.message));
     } on WalletNotFoundException catch (e) {
@@ -104,17 +87,12 @@ class WalletRepositoryImpl implements WalletRepository {
     String referenceId,
   ) async {
     try {
-      if (await networkInfo.isConnected) {
-        final walletModel = await remoteDataSource.holdBalance(
-          walletId,
-          amount,
-          referenceId,
-        );
-        return Right(walletModel.toEntity());
-      } else {
-        return const Left(
-            NoInternetFailure(failureMessage: 'No internet connection'));
-      }
+      final walletModel = await remoteDataSource.holdBalance(
+        walletId,
+        amount,
+        referenceId,
+      );
+      return Right(walletModel.toEntity());
     } on InsufficientBalanceException catch (e) {
       return Left(ValidationFailure(failureMessage: e.message));
     } on InvalidAmountException catch (e) {
@@ -139,17 +117,12 @@ class WalletRepositoryImpl implements WalletRepository {
     String referenceId,
   ) async {
     try {
-      if (await networkInfo.isConnected) {
-        final walletModel = await remoteDataSource.releaseBalance(
+     final walletModel = await remoteDataSource.releaseBalance(
           walletId,
           amount,
           referenceId,
         );
         return Right(walletModel.toEntity());
-      } else {
-        return const Left(
-            NoInternetFailure(failureMessage: 'No internet connection'));
-      }
     } on InvalidAmountException catch (e) {
       return Left(ValidationFailure(failureMessage: e.message));
     } on WalletNotFoundException catch (e) {
@@ -174,8 +147,7 @@ class WalletRepositoryImpl implements WalletRepository {
     String? referenceId,
   ) async {
     try {
-      if (await networkInfo.isConnected) {
-        final wallet = await remoteDataSource.getWallet(walletId);
+     final wallet = await remoteDataSource.getWallet(walletId);
         final transactionModel = await remoteDataSource.recordTransaction(
           walletId,
           wallet.userId,
@@ -185,10 +157,6 @@ class WalletRepositoryImpl implements WalletRepository {
           referenceId,
         );
         return Right(transactionModel.toEntity());
-      } else {
-        return const Left(
-            NoInternetFailure(failureMessage: 'No internet connection'));
-      }
     } on InvalidAmountException catch (e) {
       return Left(ValidationFailure(failureMessage: e.message));
     } on TransactionFailedException catch (e) {

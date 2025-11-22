@@ -154,7 +154,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 if (state is ErrorState<WalletData>) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(state.errorMessage ?? 'An error occurred'),
+                      content: Text(state.errorMessage),
                       backgroundColor: Colors.red,
                     ),
                   );

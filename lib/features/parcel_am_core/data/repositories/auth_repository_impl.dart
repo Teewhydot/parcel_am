@@ -9,11 +9,9 @@ import '../../../../core/errors/failures.dart';
 import '../../domain/exceptions/auth_exceptions.dart';
 import '../datasources/auth_remote_data_source.dart';
 import '../models/user_model.dart';
-import '../../../../core/network/network_info.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final remoteDataSource = GetIt.instance<AuthRemoteDataSource>();
-  final networkInfo = GetIt.instance<NetworkInfo>();
 
   @override
   Future<Either<Failure, UserEntity>> signInWithEmailAndPassword(
@@ -21,12 +19,8 @@ class AuthRepositoryImpl implements AuthRepository {
     String password,
   ) async {
     try {
-      if (await networkInfo.isConnected) {
-        final userModel = await remoteDataSource.signInWithEmailAndPassword(email, password);
+     final userModel = await remoteDataSource.signInWithEmailAndPassword(email, password);
         return Right(userModel.toEntity());
-      } else {
-        return const Left(NoInternetFailure(failureMessage: 'No internet connection'));
-      }
     } on AuthException catch (e) {
       return Left(AuthFailure(failureMessage: e.message));
     } on ServerException catch (e) {
@@ -39,12 +33,12 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
 @override
-  Stream<Either<Failure, UserModel>> watchKycStatus(
+  Stream<Either<Failure, UserModel>> watchUserData(
     String userId,
   ) {
     return ErrorHandler.handleStream(
-      () => remoteDataSource.watchKycStatus(userId),
-      operationName: 'watchKycStatus',
+      () => remoteDataSource.watchUserDetails(userId),
+      operationName: 'watchUserStatus',
     );
   }
 
@@ -55,12 +49,8 @@ class AuthRepositoryImpl implements AuthRepository {
     String displayName,
   ) async {
     try {
-      if (await networkInfo.isConnected) {
-        final userModel = await remoteDataSource.signUpWithEmailAndPassword(email, password, displayName);
+     final userModel = await remoteDataSource.signUpWithEmailAndPassword(email, password, displayName);
         return Right(userModel.toEntity());
-      } else {
-        return const Left(NoInternetFailure(failureMessage: 'No internet connection'));
-      }
     } on AuthException catch (e) {
       return Left(AuthFailure(failureMessage: e.message));
     } on ServerException catch (e) {
@@ -181,13 +171,9 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, UserEntity>> updateUserProfile(UserEntity user) async {
     try {
-      if (await networkInfo.isConnected) {
-        final userModel = UserModel.fromEntity(user);
+    final userModel = UserModel.fromEntity(user);
         final updatedUserModel = await remoteDataSource.updateUserProfile(userModel);
         return Right(updatedUserModel.toEntity());
-      } else {
-        return const Left(NoInternetFailure(failureMessage: 'No internet connection'));
-      }
     } on AuthException catch (e) {
       return Left(AuthFailure(failureMessage: e.message));
     } on ServerException catch (e) {
@@ -202,12 +188,8 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, void>> resetPassword(String email) async {
     try {
-      if (await networkInfo.isConnected) {
-        await remoteDataSource.resetPassword(email);
-        return const Right(null);
-      } else {
-        return const Left(NoInternetFailure(failureMessage: 'No internet connection'));
-      }
+       await remoteDataSource.resetPassword(email);
+          return const Right(null);
     } on AuthException catch (e) {
       return Left(AuthFailure(failureMessage: e.message));
     } on ServerException catch (e) {

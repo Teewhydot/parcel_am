@@ -2,7 +2,6 @@ import 'package:dartz/dartz.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/errors/failures.dart';
-import '../../../../core/network/network_info.dart';
 import '../../../../core/services/error/error_handler.dart';
 import '../../domain/entities/package_entity.dart';
 import '../../domain/repositories/package_repository.dart';
@@ -13,7 +12,6 @@ class PackageRepositoryImpl implements PackageRepository {
   final remoteDataSource = PackageRemoteDataSourceImpl(
     firestore: FirebaseFirestore.instance,
   );
-  final NetworkInfo networkInfo = _NetworkInfoImpl();
 
   @override
   Stream<Either<Failure, PackageEntity>> watchPackage(String packageId) {
@@ -43,7 +41,7 @@ class PackageRepositoryImpl implements PackageRepository {
     required String packageId,
     required String transactionId,
   }) async {
-    if (!await networkInfo.isConnected) {
+    if (!await InternetConnectionChecker.instance.hasConnection) {
       return const Left(NetworkFailure(failureMessage: 'No internet connection'));
     }
 
@@ -64,7 +62,7 @@ class PackageRepositoryImpl implements PackageRepository {
     required String transactionId,
     required String reason,
   }) async {
-    if (!await networkInfo.isConnected) {
+    if (!await InternetConnectionChecker.instance.hasConnection) {
       return const Left(NetworkFailure(failureMessage: 'No internet connection'));
     }
 
@@ -85,7 +83,7 @@ class PackageRepositoryImpl implements PackageRepository {
     required String packageId,
     required String confirmationCode,
   }) async {
-    if (!await networkInfo.isConnected) {
+    if (!await InternetConnectionChecker.instance.hasConnection) {
       return const Left(NetworkFailure(failureMessage: 'No internet connection'));
     }
 
@@ -99,10 +97,4 @@ class PackageRepositoryImpl implements PackageRepository {
       return Left(ServerFailure(failureMessage: e.toString()));
     }
   }
-}
-
-
-class _NetworkInfoImpl implements NetworkInfo {
-  @override
-  Future<bool> get isConnected => InternetConnectionChecker.instance.hasConnection;
 }

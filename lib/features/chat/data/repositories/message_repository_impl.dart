@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
 import '../../../../core/errors/failures.dart';
-import '../../../../core/network/network_info.dart';
 import '../../domain/entities/message_entity.dart';
 import '../../domain/entities/message_type.dart';
 import '../../domain/entities/presence_entity.dart';
@@ -13,12 +13,10 @@ import '../models/message_model.dart';
 class MessageRepositoryImpl implements MessageRepository {
   final MessageRemoteDataSource remoteDataSource;
   final PresenceRemoteDataSource presenceDataSource;
-  final NetworkInfo networkInfo;
 
   MessageRepositoryImpl({
     required this.remoteDataSource,
     required this.presenceDataSource,
-    required this.networkInfo,
   });
 
   @override
@@ -31,7 +29,7 @@ class MessageRepositoryImpl implements MessageRepository {
     Map<String, dynamic>? metadata,
   ) async {
     try {
-      if (!await networkInfo.isConnected) {
+      if (!await InternetConnectionChecker.instance.hasConnection) {
         return const Left(NoInternetFailure(failureMessage: 'No internet connection'));
       }
 
@@ -66,7 +64,7 @@ class MessageRepositoryImpl implements MessageRepository {
     String? startAfterMessageId,
   }) async {
     try {
-      if (!await networkInfo.isConnected) {
+      if (!await InternetConnectionChecker.instance.hasConnection) {
         return const Left(NoInternetFailure(failureMessage: 'No internet connection'));
       }
 
@@ -92,7 +90,7 @@ class MessageRepositoryImpl implements MessageRepository {
     String messageId,
   ) async {
     try {
-      if (!await networkInfo.isConnected) {
+      if (!await InternetConnectionChecker.instance.hasConnection) {
         return const Left(NoInternetFailure(failureMessage: 'No internet connection'));
       }
 
@@ -110,7 +108,7 @@ class MessageRepositoryImpl implements MessageRepository {
   @override
   Future<Either<Failure, void>> deleteMessage(String messageId) async {
     try {
-      if (!await networkInfo.isConnected) {
+      if (!await InternetConnectionChecker.instance.hasConnection) {
         return const Left(NoInternetFailure(failureMessage: 'No internet connection'));
       }
 
@@ -135,7 +133,7 @@ class MessageRepositoryImpl implements MessageRepository {
     String? typingInChatId,
   ) async {
     try {
-      if (!await networkInfo.isConnected) {
+      if (!await InternetConnectionChecker.instance.hasConnection) {
         return const Left(NoInternetFailure(failureMessage: 'No internet connection'));
       }
 

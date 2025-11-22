@@ -2,7 +2,6 @@ import 'package:dartz/dartz.dart';
 import 'package:get_it/get_it.dart';
 
 import '../../../../core/errors/failures.dart';
-import '../../../../core/network/network_info.dart';
 import '../../domain/entities/dashboard_metrics_entity.dart';
 import '../../domain/repositories/dashboard_repository.dart';
 import '../../domain/exceptions/custom_exceptions.dart';
@@ -11,22 +10,14 @@ import '../datasources/dashboard_remote_data_source.dart';
 class DashboardRepositoryImpl implements DashboardRepository {
   DashboardRepositoryImpl({
     DashboardRemoteDataSource? remoteDataSource,
-    NetworkInfo? networkInfo,
-  })  : remoteDataSource = remoteDataSource ?? GetIt.instance<DashboardRemoteDataSource>(),
-        networkInfo = networkInfo ?? GetIt.instance<NetworkInfo>();
-
+  })  : remoteDataSource = remoteDataSource ?? GetIt.instance<DashboardRemoteDataSource>();
   final DashboardRemoteDataSource remoteDataSource;
-  final NetworkInfo networkInfo;
 
   @override
   Future<Either<Failure, DashboardMetrics>> getDashboardMetrics(
     String userId,
   ) async {
-    if (!await networkInfo.isConnected) {
-      return const Left(
-        NoInternetFailure(failureMessage: 'No internet connection'),
-      );
-    }
+
 
     try {
       final metrics = await remoteDataSource.fetchDashboardMetrics(userId);

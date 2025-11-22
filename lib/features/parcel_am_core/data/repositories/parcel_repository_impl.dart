@@ -7,11 +7,9 @@ import '../../../../core/services/error/error_handler.dart';
 import '../../domain/exceptions/custom_exceptions.dart';
 import '../datasources/parcel_remote_data_source.dart';
 import '../models/parcel_model.dart';
-import '../../../../core/network/network_info.dart';
 
 class ParcelRepositoryImpl implements ParcelRepository {
   final remoteDataSource = GetIt.instance<ParcelRemoteDataSource>();
-  final networkInfo = GetIt.instance<NetworkInfo>();
 
   @override
   Stream<Either<Failure, ParcelEntity>> watchParcelStatus(String parcelId) {
@@ -38,14 +36,9 @@ class ParcelRepositoryImpl implements ParcelRepository {
   Future<Either<Failure, ParcelEntity>> createParcel(
       ParcelEntity parcel) async {
     try {
-      if (await networkInfo.isConnected) {
-        final parcelModel = ParcelModel.fromEntity(parcel);
+     final parcelModel = ParcelModel.fromEntity(parcel);
         final createdModel = await remoteDataSource.createParcel(parcelModel);
         return Right(createdModel.toEntity());
-      } else {
-        return const Left(
-            NoInternetFailure(failureMessage: 'No internet connection'));
-      }
     } on ServerException {
       return const Left(ServerFailure(failureMessage: 'Server error occurred'));
     } catch (e) {
@@ -59,14 +52,9 @@ class ParcelRepositoryImpl implements ParcelRepository {
     Map<String, dynamic> data,
   ) async {
     try {
-      if (await networkInfo.isConnected) {
-        final parcelModel =
+     final parcelModel =
             await remoteDataSource.updateParcel(parcelId, data);
         return Right(parcelModel.toEntity());
-      } else {
-        return const Left(
-            NoInternetFailure(failureMessage: 'No internet connection'));
-      }
     } on ServerException {
       return const Left(ServerFailure(failureMessage: 'Server error occurred'));
     } catch (e) {
@@ -80,14 +68,9 @@ class ParcelRepositoryImpl implements ParcelRepository {
     ParcelStatus status,
   ) async {
     try {
-      if (await networkInfo.isConnected) {
-        final parcelModel =
-            await remoteDataSource.updateParcelStatus(parcelId, status);
-        return Right(parcelModel.toEntity());
-      } else {
-        return const Left(
-            NoInternetFailure(failureMessage: 'No internet connection'));
-      }
+      final parcelModel =
+          await remoteDataSource.updateParcelStatus(parcelId, status);
+      return Right(parcelModel.toEntity());
     } on ServerException {
       return const Left(ServerFailure(failureMessage: 'Server error occurred'));
     } catch (e) {
@@ -101,14 +84,9 @@ class ParcelRepositoryImpl implements ParcelRepository {
     String travelerId,
   ) async {
     try {
-      if (await networkInfo.isConnected) {
-        final parcelModel =
+     final parcelModel =
             await remoteDataSource.assignTraveler(parcelId, travelerId);
         return Right(parcelModel.toEntity());
-      } else {
-        return const Left(
-            NoInternetFailure(failureMessage: 'No internet connection'));
-      }
     } on ServerException {
       return const Left(ServerFailure(failureMessage: 'Server error occurred'));
     } catch (e) {
@@ -119,13 +97,8 @@ class ParcelRepositoryImpl implements ParcelRepository {
   @override
   Future<Either<Failure, ParcelEntity>> getParcel(String parcelId) async {
     try {
-      if (await networkInfo.isConnected) {
-        final parcelModel = await remoteDataSource.getParcel(parcelId);
+      final parcelModel = await remoteDataSource.getParcel(parcelId);
         return Right(parcelModel.toEntity());
-      } else {
-        return const Left(
-            NoInternetFailure(failureMessage: 'No internet connection'));
-      }
     } on ServerException {
       return const Left(ServerFailure(failureMessage: 'Server error occurred'));
     } catch (e) {
@@ -139,13 +112,8 @@ class ParcelRepositoryImpl implements ParcelRepository {
     ParcelStatus? status,
   }) async {
     try {
-      if (await networkInfo.isConnected) {
-        final parcelModels = await remoteDataSource.getUserParcels(userId, status: status);
+     final parcelModels = await remoteDataSource.getUserParcels(userId, status: status);
         return Right(parcelModels.map((model) => model.toEntity()).toList());
-      } else {
-        return const Left(
-            NoInternetFailure(failureMessage: 'No internet connection'));
-      }
     } on ServerException {
       return const Left(ServerFailure(failureMessage: 'Server error occurred'));
     } catch (e) {
@@ -157,13 +125,8 @@ class ParcelRepositoryImpl implements ParcelRepository {
   Future<Either<Failure, List<ParcelEntity>>> getParcelsByUser(
       String userId) async {
     try {
-      if (await networkInfo.isConnected) {
-        final parcelModels = await remoteDataSource.getParcelsByUser(userId);
+      final parcelModels = await remoteDataSource.getParcelsByUser(userId);
         return Right(parcelModels.map((model) => model.toEntity()).toList());
-      } else {
-        return const Left(
-            NoInternetFailure(failureMessage: 'No internet connection'));
-      }
     } on ServerException {
       return const Left(ServerFailure(failureMessage: 'Server error occurred'));
     } catch (e) {
@@ -174,13 +137,8 @@ class ParcelRepositoryImpl implements ParcelRepository {
   @override
   Future<Either<Failure, List<ParcelEntity>>> getAvailableParcels() async {
     try {
-      if (await networkInfo.isConnected) {
-        final parcelModels = await remoteDataSource.getAvailableParcels();
+    final parcelModels = await remoteDataSource.getAvailableParcels();
         return Right(parcelModels.map((model) => model.toEntity()).toList());
-      } else {
-        return const Left(
-            NoInternetFailure(failureMessage: 'No internet connection'));
-      }
     } on ServerException {
       return const Left(ServerFailure(failureMessage: 'Server error occurred'));
     } catch (e) {

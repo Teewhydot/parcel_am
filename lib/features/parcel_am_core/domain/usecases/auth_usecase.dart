@@ -17,7 +17,7 @@ class AuthUseCase {
   Stream<Either<Failure, UserModel>> watchKycStatus(
     String userId,
   ) {
-    return authRepo.watchKycStatus(userId);
+    return authRepo.watchUserData(userId);
   }
 
   Future<Either<Failure, UserEntity>> register({

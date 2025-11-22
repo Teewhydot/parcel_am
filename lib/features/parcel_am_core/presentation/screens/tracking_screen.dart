@@ -9,7 +9,6 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../injection_container.dart';
-import '../widgets/bottom_navigation.dart';
 import '../../domain/entities/package_entity.dart';
 import '../bloc/package/package_bloc.dart';
 import '../bloc/package/package_event.dart';

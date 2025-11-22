@@ -8,7 +8,6 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-import 'core/network/network_info.dart';
 import 'core/services/navigation_service/nav_config.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/escrow_notification_service.dart' as escrow;
@@ -54,15 +53,6 @@ import 'features/file_upload/domain/use_cases/file_upload_usecase.dart';
 
 final sl = GetIt.instance;
 
-class NetworkInfoImpl implements NetworkInfo {
-  final InternetConnectionChecker connectionChecker;
-
-  NetworkInfoImpl(this.connectionChecker);
-
-  @override
-  Future<bool> get isConnected => connectionChecker.hasConnection;
-}
-
 Future<void> init() async {
   //! External Services (Must be registered first)
   final sharedPreferences = await SharedPreferences.getInstance();
@@ -80,7 +70,6 @@ Future<void> init() async {
   sl.registerLazySingleton<FailureMapper>(() => FirebaseFailureMapper());
   ErrorHandler.init(sl<FailureMapper>());
 
-  sl.registerLazySingleton<NetworkInfo>(() => NetworkInfoImpl(sl()));
   sl.registerLazySingleton<NavigationService>(() => GetxNavigationService());
   
   // Presence System

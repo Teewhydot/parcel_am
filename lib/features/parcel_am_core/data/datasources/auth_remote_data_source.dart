@@ -15,7 +15,7 @@ abstract class AuthRemoteDataSource {
   Stream<UserModel?> get authStateChanges;
   Future<UserModel> updateUserProfile(UserModel user);
   Future<void> resetPassword(String email);
-  Stream<UserModel> watchKycStatus(String userId);
+  Stream<UserModel> watchUserDetails(String userId);
 }
 
 class FirebaseRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -140,14 +140,10 @@ class FirebaseRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<UserModel> _mapFirebaseUserToModelWithKyc(User user) async {
     String kycStatusString = 'not_submitted';
 
-    if (firestore != null) {
-    
-        final userDoc = await firestore!.collection('users').doc(user.uid).get();
+     final userDoc = await firestore.collection('users').doc(user.uid).get();
         if (userDoc.exists) {
           kycStatusString = userDoc.data()?['kycStatus'] ?? 'not_submitted';
         }
-     
-    }
 
     return UserModel(
       uid: user.uid,
@@ -163,7 +159,7 @@ class FirebaseRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
-  Stream<UserModel> watchKycStatus(String userId) {
+  Stream<UserModel> watchUserDetails(String userId) {
     return firestore
         .collection('users')
         .doc(userId)

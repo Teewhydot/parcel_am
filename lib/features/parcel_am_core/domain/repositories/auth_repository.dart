@@ -14,7 +14,7 @@ abstract class AuthRepository {
     String password,
     String displayName,
   );
-  Stream<Either<Failure, UserEntity>> watchKycStatus(
+  Stream<Either<Failure, UserEntity>> watchUserData(
     String userId,
   );
 

@@ -1,7 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:get_it/get_it.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
 import '../../../../core/errors/failures.dart';
-import '../../../../core/network/network_info.dart';
 import '../../../../core/services/error/error_handler.dart';
 import '../../domain/entities/notification_entity.dart';
 import '../../domain/repositories/notification_repository.dart';
@@ -9,7 +9,6 @@ import '../datasources/notification_remote_datasource.dart';
 
 class NotificationRepositoryImpl implements NotificationRepository {
   final remoteDataSource = GetIt.instance<NotificationRemoteDataSource>();
-  final networkInfo = GetIt.instance<NetworkInfo>();
 
   @override
   Stream<Either<Failure, List<NotificationEntity>>> watchNotifications(
@@ -28,7 +27,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
 
   @override
   Future<Either<Failure, void>> markAsRead(String notificationId) async {
-    if (!await networkInfo.isConnected) {
+    if (!await InternetConnectionChecker.instance.hasConnection) {
       return const Left(NetworkFailure(failureMessage: 'No internet connection'));
     }
 
@@ -42,7 +41,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
 
   @override
   Future<Either<Failure, void>> markAllAsRead(String userId) async {
-    if (!await networkInfo.isConnected) {
+    if (!await InternetConnectionChecker.instance.hasConnection) {
       return const Left(NetworkFailure(failureMessage: 'No internet connection'));
     }
 
@@ -56,7 +55,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
 
   @override
   Future<Either<Failure, void>> deleteNotification(String notificationId) async {
-    if (!await networkInfo.isConnected) {
+    if (!await InternetConnectionChecker.instance.hasConnection) {
       return const Left(NetworkFailure(failureMessage: 'No internet connection'));
     }
 
@@ -70,7 +69,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
 
   @override
   Future<Either<Failure, void>> clearAll(String userId) async {
-    if (!await networkInfo.isConnected) {
+    if (!await InternetConnectionChecker.instance.hasConnection) {
       return const Left(NetworkFailure(failureMessage: 'No internet connection'));
     }
 

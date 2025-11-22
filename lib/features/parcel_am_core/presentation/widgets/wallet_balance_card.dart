@@ -238,20 +238,6 @@ class _WalletBalanceCardState extends State<WalletBalanceCard> {
         );
   }
 
-  String _formatTime(DateTime time) {
-    final now = DateTime.now();
-    final difference = now.difference(time);
-
-    if (difference.inSeconds < 60) {
-      return 'Just now';
-    } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes}m ago';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours}h ago';
-    } else {
-      return '${time.hour}:${time.minute.toString().padLeft(2, '0')}';
-    }
-  }
 }
 
 class _BalanceItem extends StatelessWidget {

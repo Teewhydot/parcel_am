@@ -11,6 +11,7 @@ import '../../utils/logger.dart';
 class ErrorHandler {
   static FailureMapper? _mapper;
 
+
   /// Initialize the ErrorHandler with a specific mapper
   static void init(FailureMapper mapper) {
     _mapper = mapper;
@@ -25,6 +26,7 @@ class ErrorHandler {
       Logger.logBasic(
         'ErrorHandler.handle() starting${operationName != null ? " for $operationName" : ""}',
       );
+  
       final result = await operation();
       if (operationName != null) {
         Logger.logSuccess('$operationName completed successfully');
