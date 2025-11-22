@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:parcel_am/core/helpers/user_extensions.dart';
+import 'package:parcel_am/core/services/file_upload_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_container.dart';
@@ -28,7 +30,7 @@ class ProgressIndicatorWidget extends StatelessWidget {
             children: List.generate(steps.length, (index) {
               final isActive = index <= currentStep;
               final isCompleted = index < currentStep;
-              
+
               return Expanded(
                 child: Row(
                   children: [
@@ -36,15 +38,17 @@ class ProgressIndicatorWidget extends StatelessWidget {
                       width: 32,
                       height: 32,
                       variant: ContainerVariant.filled,
-                      color: isActive 
-                          ? AppColors.primary 
+                      color: isActive
+                          ? AppColors.primary
                           : AppColors.surfaceVariant,
                       borderRadius: BorderRadius.circular(16),
                       alignment: Alignment.center,
                       child: Icon(
                         isCompleted ? Icons.check : steps[index].icon,
                         size: 16,
-                        color: isActive ? Colors.white : AppColors.onSurfaceVariant,
+                        color: isActive
+                            ? Colors.white
+                            : AppColors.onSurfaceVariant,
                       ),
                     ),
                     if (index < steps.length - 1)
@@ -52,8 +56,8 @@ class ProgressIndicatorWidget extends StatelessWidget {
                         child: AppContainer(
                           height: 2,
                           variant: ContainerVariant.filled,
-                          color: index < currentStep 
-                              ? AppColors.primary 
+                          color: index < currentStep
+                              ? AppColors.primary
                               : AppColors.surfaceVariant,
                         ),
                       ),
@@ -102,63 +106,42 @@ class DocumentUploadCard extends StatefulWidget {
 }
 
 class _DocumentUploadCardState extends State<DocumentUploadCard> {
-  final ImagePicker _picker = ImagePicker();
+  final fileUploadService = FileUploadService();
   bool _isUploading = false;
-  double _uploadProgress = 0.0;
-
-  void _updateProgress(double progress) {
-    if (mounted) {
-      setState(() => _uploadProgress = progress);
-      widget.onProgressUpdate?.call(progress);
-    }
-  }
 
   Future<void> _pickDocument() async {
     try {
       setState(() {
         _isUploading = true;
-        _uploadProgress = 0.0;
       });
-
-      _updateProgress(0.1); // Starting file selection
-
-      final XFile? pickedFile = await _picker.pickImage(
-        source: widget.isCamera ? ImageSource.camera : ImageSource.gallery,
-        maxWidth: 1920,
-        maxHeight: 1080,
-        imageQuality: 85,
+      final result = await fileUploadService.pickImageFromGallery(
+        allowMultiple: false,
       );
 
-      if (pickedFile != null) {
-        _updateProgress(0.3); // File selected, preparing for upload
-
+      if (result != null) {
         // Create DocumentUpload object
         final document = DocumentUpload(
-          fileName: pickedFile.name,
-          filePath: pickedFile.path,
+          file: result,
+          fileName: result.path.split('/').last,
+          filePath: result.path,
           uploadedAt: DateTime.now(),
           status: 'uploaded',
         );
-
-        _updateProgress(1.0); // Upload complete
 
         widget.onUpload(document);
       }
     } catch (e) {
       // Handle error
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error picking file: $e'),
-            backgroundColor: AppColors.error,
-          ),
+        context.showSnackbar(
+          message: 'Failed to pick document: $e',
+          color: AppColors.error,
         );
       }
     } finally {
       if (mounted) {
         setState(() {
           _isUploading = false;
-          _uploadProgress = 0.0;
         });
       }
     }
@@ -167,7 +150,7 @@ class _DocumentUploadCardState extends State<DocumentUploadCard> {
   @override
   Widget build(BuildContext context) {
     final isUploaded = widget.uploadedDocument != null;
-    
+
     return AppCard.outlined(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -213,12 +196,10 @@ class _DocumentUploadCardState extends State<DocumentUploadCard> {
                               height: 16,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  AppColors.primary,
+                                ),
                               ),
-                            ),
-                            AppSpacing.horizontalSpacing(SpacingSize.sm),
-                            AppText.labelMedium(
-                              'Uploading ${(_uploadProgress * 100).toInt()}%',
                             ),
                           ],
                         )
@@ -226,7 +207,9 @@ class _DocumentUploadCardState extends State<DocumentUploadCard> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              widget.isCamera ? Icons.camera_alt : Icons.upload_file,
+                              widget.isCamera
+                                  ? Icons.camera_alt
+                                  : Icons.upload_file,
                               size: 16,
                             ),
                             AppSpacing.horizontalSpacing(SpacingSize.xs),
@@ -236,18 +219,6 @@ class _DocumentUploadCardState extends State<DocumentUploadCard> {
                           ],
                         ),
                 ),
-                if (_isUploading) ...[
-                  AppSpacing.verticalSpacing(SpacingSize.sm),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: _uploadProgress,
-                      backgroundColor: AppColors.surfaceVariant,
-                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
-                      minHeight: 6,
-                    ),
-                  ),
-                ],
               ],
             )
           else
@@ -310,11 +281,7 @@ class InfoCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            icon,
-            color: color,
-            size: 20,
-          ),
+          Icon(icon, color: color, size: 20),
           AppSpacing.horizontalSpacing(SpacingSize.sm),
           Expanded(
             child: Column(
@@ -327,10 +294,7 @@ class InfoCard extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                 ),
                 AppSpacing.verticalSpacing(SpacingSize.xs),
-                AppText.bodySmall(
-                  content,
-                  color: AppColors.onSurfaceVariant,
-                ),
+                AppText.bodySmall(content, color: AppColors.onSurfaceVariant),
               ],
             ),
           ),
@@ -366,11 +330,7 @@ class TipsCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                icon,
-                color: color,
-                size: 20,
-              ),
+              Icon(icon, color: color, size: 20),
               AppSpacing.horizontalSpacing(SpacingSize.sm),
               AppText(
                 title,
@@ -381,24 +341,23 @@ class TipsCard extends StatelessWidget {
             ],
           ),
           AppSpacing.verticalSpacing(SpacingSize.sm),
-          ...tips.map((tip) => Padding(
-            padding: const EdgeInsets.only(bottom: 4),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AppText.bodySmall(
-                  '• ',
-                  color: AppColors.onSurfaceVariant,
-                ),
-                Expanded(
-                  child: AppText.bodySmall(
-                    tip,
-                    color: AppColors.onSurfaceVariant,
+          ...tips.map(
+            (tip) => Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AppText.bodySmall('• ', color: AppColors.onSurfaceVariant),
+                  Expanded(
+                    child: AppText.bodySmall(
+                      tip,
+                      color: AppColors.onSurfaceVariant,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          )),
+          ),
         ],
       ),
     );
@@ -409,11 +368,7 @@ class ReviewRow extends StatelessWidget {
   final String label;
   final String value;
 
-  const ReviewRow({
-    super.key,
-    required this.label,
-    required this.value,
-  });
+  const ReviewRow({super.key, required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -424,10 +379,7 @@ class ReviewRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 120,
-            child: AppText.bodySmall(
-              label,
-              color: AppColors.onSurfaceVariant,
-            ),
+            child: AppText.bodySmall(label, color: AppColors.onSurfaceVariant),
           ),
           Expanded(
             child: AppText.bodyMedium(

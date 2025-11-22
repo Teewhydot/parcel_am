@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
+import 'package:parcel_am/core/helpers/user_extensions.dart';
+import 'package:parcel_am/features/file_upload/domain/use_cases/file_upload_usecase.dart';
 import '../../../../core/domain/entities/kyc_status.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_scaffold.dart';
@@ -46,38 +48,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
   String _selectedGender = 'Male';
   final Map<String, DocumentUpload> _uploadedDocuments = {};
-  final Map<String, String> _uploadedDocumentUrls = {}; // documentType -> Firebase URL
-
-  @override
-  void initState() {
-    super.initState();
-    _loadExistingData();
-  }
-
-  void _loadExistingData() {
-    final authState = context.read<AuthBloc>().state;
-    if (authState is DataState<AuthData> && authState.data?.user != null) {
-      final user = authState.data!.user!;
-      final additionalData = user.additionalData;
-      
-      _firstNameController.text = additionalData['firstName'] ?? '';
-      _lastNameController.text = additionalData['lastName'] ?? '';
-      _dobController.text = additionalData['dateOfBirth'] ?? '';
-      _selectedGender = additionalData['gender'] ?? 'Male';
-      _addressController.text = additionalData['address'] ?? '';
-      _cityController.text = additionalData['city'] ?? '';
-      _stateController.text = additionalData['state'] ?? '';
-      _ninController.text = additionalData['nin'] ?? '';
-      _bvnController.text = additionalData['bvn'] ?? '';
-      
-      if (user.kycStatus == KycStatus.incomplete) {
-        final savedStep = additionalData['kycCurrentStep'] as int?;
-        if (savedStep != null && savedStep < VerificationStep.steps.length) {
-          _currentStep = savedStep;
-        }
-      }
-    }
-  }
+  final Map<String, String> _uploadedDocumentUrls = {};
 
   @override
   void dispose() {
@@ -98,6 +69,10 @@ class _VerificationScreenState extends State<VerificationScreen> {
   Widget build(BuildContext context) {
     return BlocManager<KycBloc, BaseState<KycData>>(
       bloc: context.read<KycBloc>(),
+      showLoadingIndicator: false,
+      showResultSuccessNotifications: false,
+      showResultErrorNotifications: false,
+
       listener: (context, state) {
         // Handle success state (document uploaded or KYC submitted)
         if (state.isSuccess) {
@@ -128,8 +103,6 @@ class _VerificationScreenState extends State<VerificationScreen> {
           setState(() => _isSubmitting = false);
         }
       },
-      showResultSuccessNotifications: true,
-      showResultErrorNotifications: true,
       child: AppScaffold(
         title: 'KYC Verification',
         appBarBackgroundColor: AppColors.background,
@@ -149,11 +122,16 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
   Widget _buildStepContent() {
     switch (_currentStep) {
-      case 0: return _buildPersonalInfoStep();
-      case 1: return _buildIdentityVerificationStep();
-      case 2: return _buildAddressVerificationStep();
-      case 3: return _buildReviewStep();
-      default: return Container();
+      case 0:
+        return _buildPersonalInfoStep();
+      case 1:
+        return _buildIdentityVerificationStep();
+      case 2:
+        return _buildAddressVerificationStep();
+      case 3:
+        return _buildReviewStep();
+      default:
+        return Container();
     }
   }
 
@@ -165,7 +143,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
         children: [
           AppText.titleMedium('Tell us about yourself'),
           AppSpacing.verticalSpacing(SpacingSize.lg),
-          
+
           Row(
             children: [
               Expanded(
@@ -215,11 +193,11 @@ class _VerificationScreenState extends State<VerificationScreen> {
             }).toList(),
             onChanged: (value) => setState(() => _selectedGender = value!),
           ),
-          
+
           AppSpacing.verticalSpacing(SpacingSize.lg),
           AppText.titleMedium('Government IDs'),
           AppSpacing.verticalSpacing(SpacingSize.md),
-          
+
           AppInput(
             controller: _ninController,
             label: 'NIN (National Identity Number)',
@@ -227,7 +205,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
             keyboardType: TextInputType.number,
             maxLength: 11,
           ),
-          
+
           AppSpacing.verticalSpacing(SpacingSize.md),
           AppInput(
             controller: _bvnController,
@@ -236,7 +214,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
             keyboardType: TextInputType.number,
             maxLength: 11,
           ),
-          
+
           AppSpacing.verticalSpacing(SpacingSize.lg),
           const InfoCard(
             title: 'Privacy Notice',
@@ -250,6 +228,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
   }
 
   Widget _buildIdentityVerificationStep() {
+    final fileUploadUseCase = FileUploadUseCase();
     return SingleChildScrollView(
       padding: AppSpacing.paddingXL,
       child: Column(
@@ -262,31 +241,41 @@ class _VerificationScreenState extends State<VerificationScreen> {
             color: AppColors.onSurfaceVariant,
           ),
           AppSpacing.verticalSpacing(SpacingSize.lg),
-          
+
           DocumentUploadCard(
             title: 'Government ID',
-            description: 'Upload your NIN slip, Driver\'s License, or International Passport',
+            description:
+                'Upload your NIN slip, Driver\'s License, or International Passport',
             documentKey: 'government_id',
             uploadedDocument: _uploadedDocuments['government_id'],
             onUpload: (document) {
               setState(() => _uploadedDocuments['government_id'] = document);
-              _uploadDocumentToFirebase('government_id', document.filePath);
+              fileUploadUseCase.uploadFile(
+                userId: context.currentUserId!,
+                file: document.file,
+                folder: 'government_id',
+              );
             },
           ),
 
           AppSpacing.verticalSpacing(SpacingSize.md),
           DocumentUploadCard(
             title: 'Selfie with ID',
-            description: 'Upload a photo holding your government ID next to your face',
+            description:
+                'Upload a photo holding your government ID next to your face',
             documentKey: 'selfie_with_id',
             uploadedDocument: _uploadedDocuments['selfie_with_id'],
             onUpload: (document) {
               setState(() => _uploadedDocuments['selfie_with_id'] = document);
-              _uploadDocumentToFirebase('selfie_with_id', document.filePath);
+              fileUploadUseCase.uploadFile(
+                userId: context.currentUserId!,
+                file: document.file,
+                folder: 'selfie_with_id',
+              );
             },
             isCamera: false,
           ),
-          
+
           AppSpacing.verticalSpacing(SpacingSize.lg),
           const TipsCard(
             title: 'Tips for better photos',
@@ -300,6 +289,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
   }
 
   Widget _buildAddressVerificationStep() {
+    final fileUploadUseCase = FileUploadUseCase();
     return SingleChildScrollView(
       padding: AppSpacing.paddingXL,
       child: Column(
@@ -307,14 +297,14 @@ class _VerificationScreenState extends State<VerificationScreen> {
         children: [
           AppText.titleMedium('Address Information'),
           AppSpacing.verticalSpacing(SpacingSize.lg),
-          
+
           AppInput(
             controller: _addressController,
             label: 'Street Address *',
             hintText: '123 Main Street, Victoria Island',
             maxLines: 2,
           ),
-          
+
           AppSpacing.verticalSpacing(SpacingSize.md),
           Row(
             children: [
@@ -328,7 +318,9 @@ class _VerificationScreenState extends State<VerificationScreen> {
               AppSpacing.horizontalSpacing(SpacingSize.md),
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: _stateController.text.isNotEmpty ? _stateController.text : null,
+                  value: _stateController.text.isNotEmpty
+                      ? _stateController.text
+                      : null,
                   decoration: const InputDecoration(
                     labelText: 'State *',
                     border: OutlineInputBorder(),
@@ -357,15 +349,19 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
           DocumentUploadCard(
             title: 'Proof of Address',
-            description: 'Upload utility bill, bank statement, or tenancy agreement (dated within last 3 months)',
+            description:
+                'Upload utility bill, bank statement, or tenancy agreement (dated within last 3 months)',
             documentKey: 'proof_of_address',
             uploadedDocument: _uploadedDocuments['proof_of_address'],
             onUpload: (document) {
               setState(() => _uploadedDocuments['proof_of_address'] = document);
-              _uploadDocumentToFirebase('proof_of_address', document.filePath);
-            },
+              fileUploadUseCase.uploadFile(
+                userId: context.currentUserId!,
+                file: document.file,
+                folder: 'proof_of_address',
+              );},
           ),
-          
+
           AppSpacing.verticalSpacing(SpacingSize.lg),
           const TipsCard(
             title: 'Accepted Documents',
@@ -391,14 +387,14 @@ class _VerificationScreenState extends State<VerificationScreen> {
             color: AppColors.onSurfaceVariant,
           ),
           AppSpacing.verticalSpacing(SpacingSize.lg),
-          
+
           _buildPersonalInfoSummary(),
           AppSpacing.verticalSpacing(SpacingSize.md),
           _buildAddressSummary(),
           AppSpacing.verticalSpacing(SpacingSize.md),
           _buildDocumentsSummary(),
           AppSpacing.verticalSpacing(SpacingSize.lg),
-          
+
           const InfoCard(
             title: 'Verification Process',
             content: VerificationConstants.verificationProcessInfo,
@@ -419,11 +415,24 @@ class _VerificationScreenState extends State<VerificationScreen> {
         children: [
           AppText.titleMedium('Personal Information'),
           AppSpacing.verticalSpacing(SpacingSize.md),
-          ReviewRow(label: 'Full Name', value: '${_firstNameController.text} ${_lastNameController.text}'),
+          ReviewRow(
+            label: 'Full Name',
+            value: '${_firstNameController.text} ${_lastNameController.text}',
+          ),
           ReviewRow(label: 'Date of Birth', value: _dobController.text),
           ReviewRow(label: 'Gender', value: _selectedGender),
-          ReviewRow(label: 'NIN', value: _ninController.text.isNotEmpty ? _ninController.text : 'Not provided'),
-          ReviewRow(label: 'BVN', value: _bvnController.text.isNotEmpty ? _bvnController.text : 'Not provided'),
+          ReviewRow(
+            label: 'NIN',
+            value: _ninController.text.isNotEmpty
+                ? _ninController.text
+                : 'Not provided',
+          ),
+          ReviewRow(
+            label: 'BVN',
+            value: _bvnController.text.isNotEmpty
+                ? _bvnController.text
+                : 'Not provided',
+          ),
         ],
       ),
     );
@@ -455,9 +464,18 @@ class _VerificationScreenState extends State<VerificationScreen> {
         children: [
           AppText.titleMedium('Uploaded Documents'),
           AppSpacing.verticalSpacing(SpacingSize.md),
-          DocumentReviewRow(title: 'Government ID', isUploaded: _uploadedDocuments['government_id'] != null),
-          DocumentReviewRow(title: 'Selfie with ID', isUploaded: _uploadedDocuments['selfie_with_id'] != null),
-          DocumentReviewRow(title: 'Proof of Address', isUploaded: _uploadedDocuments['proof_of_address'] != null),
+          DocumentReviewRow(
+            title: 'Government ID',
+            isUploaded: _uploadedDocuments['government_id'] != null,
+          ),
+          DocumentReviewRow(
+            title: 'Selfie with ID',
+            isUploaded: _uploadedDocuments['selfie_with_id'] != null,
+          ),
+          DocumentReviewRow(
+            title: 'Proof of Address',
+            isUploaded: _uploadedDocuments['proof_of_address'] != null,
+          ),
         ],
       ),
     );
@@ -483,7 +501,9 @@ class _VerificationScreenState extends State<VerificationScreen> {
               onPressed: _isSubmitting ? null : _goToNextStep,
               loading: _isSubmitting,
               child: AppText.labelMedium(
-                _currentStep == VerificationStep.steps.length - 1 ? 'Submit' : 'Next',
+                _currentStep == VerificationStep.steps.length - 1
+                    ? 'Submit'
+                    : 'Next',
                 color: Colors.white,
               ),
             ),
@@ -507,7 +527,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
   void _goToNextStep() async {
     if (!_validateCurrentStep()) return;
-    
+
     if (_currentStep < VerificationStep.steps.length - 1) {
       setState(() => _currentStep++);
       _saveProgress();
@@ -526,11 +546,13 @@ class _VerificationScreenState extends State<VerificationScreen> {
     final authState = context.read<AuthBloc>().state;
     if (authState is DataState<AuthData> && authState.data?.user != null) {
       final userId = authState.data!.user!.uid;
-      context.read<KycBloc>().add(KycDocumentUploadRequested(
-        userId: userId,
-        documentType: documentType,
-        filePath: filePath,
-      ));
+      context.read<KycBloc>().add(
+        KycDocumentUploadRequested(
+          userId: userId,
+          documentType: documentType,
+          filePath: filePath,
+        ),
+      );
     }
   }
 
@@ -568,30 +590,33 @@ class _VerificationScreenState extends State<VerificationScreen> {
   void _saveProgress() {
     final authBloc = context.read<AuthBloc>();
     final currentState = authBloc.state;
-    
+
     Map<String, dynamic> additionalData = {};
-    if (currentState is DataState<AuthData> && currentState.data?.user != null) {
+    if (currentState is DataState<AuthData> &&
+        currentState.data?.user != null) {
       additionalData = Map.from(currentState.data!.user!.additionalData);
     }
-    
-    authBloc.add(AuthUserProfileUpdateRequested(
-      displayName: '${_firstNameController.text} ${_lastNameController.text}',
-      kycStatus: KycStatus.incomplete,
-      additionalData: {
-        ...additionalData,
-        'kycCurrentStep': _currentStep,
-        'firstName': _firstNameController.text,
-        'lastName': _lastNameController.text,
-        'dateOfBirth': _dobController.text,
-        'gender': _selectedGender,
-        'address': _addressController.text,
-        'city': _cityController.text,
-        'state': _stateController.text,
-        'nin': _ninController.text,
-        'bvn': _bvnController.text,
-        'uploadedDocuments': _uploadedDocuments.keys.toList(),
-      },
-    ));
+
+    authBloc.add(
+      AuthUserProfileUpdateRequested(
+        displayName: '${_firstNameController.text} ${_lastNameController.text}',
+        kycStatus: KycStatus.incomplete,
+        additionalData: {
+          ...additionalData,
+          'kycCurrentStep': _currentStep,
+          'firstName': _firstNameController.text,
+          'lastName': _lastNameController.text,
+          'dateOfBirth': _dobController.text,
+          'gender': _selectedGender,
+          'address': _addressController.text,
+          'city': _cityController.text,
+          'state': _stateController.text,
+          'nin': _ninController.text,
+          'bvn': _bvnController.text,
+          'uploadedDocuments': _uploadedDocuments.keys.toList(),
+        },
+      ),
+    );
   }
 
   DateTime _parseDateOfBirth() {
@@ -620,22 +645,27 @@ class _VerificationScreenState extends State<VerificationScreen> {
         final user = authState.data!.user!;
 
         // Submit KYC to Firebase through KycBloc
-        context.read<KycBloc>().add(KycFinalSubmitRequested(
-          userId: user.uid,
-          fullName: '${_firstNameController.text} ${_lastNameController.text}',
-          dateOfBirth: _parseDateOfBirth(),
-          phoneNumber: _phoneController.text,
-          email: user.email,
-          address: _addressController.text,
-          city: _cityController.text,
-          country: 'Nigeria', // Default to Nigeria, can be made dynamic later
-          postalCode: _postalCodeController.text,
-          governmentIdNumber: _ninController.text.isNotEmpty ? _ninController.text : _bvnController.text,
-          idType: _ninController.text.isNotEmpty ? 'NIN' : 'BVN',
-          governmentIdUrl: _uploadedDocumentUrls['government_id'],
-          selfieWithIdUrl: _uploadedDocumentUrls['selfie_with_id'],
-          proofOfAddressUrl: _uploadedDocumentUrls['proof_of_address'],
-        ));
+        context.read<KycBloc>().add(
+          KycFinalSubmitRequested(
+            userId: user.uid,
+            fullName:
+                '${_firstNameController.text} ${_lastNameController.text}',
+            dateOfBirth: _parseDateOfBirth(),
+            phoneNumber: _phoneController.text,
+            email: user.email,
+            address: _addressController.text,
+            city: _cityController.text,
+            country: 'Nigeria', // Default to Nigeria, can be made dynamic later
+            postalCode: _postalCodeController.text,
+            governmentIdNumber: _ninController.text.isNotEmpty
+                ? _ninController.text
+                : _bvnController.text,
+            idType: _ninController.text.isNotEmpty ? 'NIN' : 'BVN',
+            governmentIdUrl: _uploadedDocumentUrls['government_id'],
+            selfieWithIdUrl: _uploadedDocumentUrls['selfie_with_id'],
+            proofOfAddressUrl: _uploadedDocumentUrls['proof_of_address'],
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -647,10 +677,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.error,
-      ),
+      SnackBar(content: Text(message), backgroundColor: AppColors.error),
     );
   }
 
@@ -663,11 +690,21 @@ class _VerificationScreenState extends State<VerificationScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.check_circle, size: 64, color: AppColors.success),
+              const Icon(
+                Icons.check_circle,
+                size: 64,
+                color: AppColors.success,
+              ),
               AppSpacing.verticalSpacing(SpacingSize.md),
-              AppText.titleMedium('Verification Submitted!', textAlign: TextAlign.center),
+              AppText.titleMedium(
+                'Verification Submitted!',
+                textAlign: TextAlign.center,
+              ),
               AppSpacing.verticalSpacing(SpacingSize.xs),
-              AppText.bodyMedium(VerificationConstants.successMessage, textAlign: TextAlign.center),
+              AppText.bodyMedium(
+                VerificationConstants.successMessage,
+                textAlign: TextAlign.center,
+              ),
             ],
           ),
           actions: [

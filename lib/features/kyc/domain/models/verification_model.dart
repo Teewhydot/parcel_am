@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 class VerificationModel {
   final String userId;
@@ -149,6 +152,7 @@ class AddressInfo {
 }
 
 class DocumentUpload {
+  final File file;
   final String fileName;
   final String filePath;
   final String? fileUrl;
@@ -156,6 +160,7 @@ class DocumentUpload {
   final String status;
 
   DocumentUpload({
+    required this.file,
     required this.fileName,
     required this.filePath,
     this.fileUrl,
