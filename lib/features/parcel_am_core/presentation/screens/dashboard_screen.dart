@@ -516,17 +516,7 @@ class _QuickActionsRow extends StatelessWidget {
             ),
           ),
         ),
-        // Expanded(
-        //   child: _ActionCard(
-        //     icon: Icons.search,
-        //     title: 'Find Requests',
-        //     subtitle: 'Browse packages to deliver',
-        //     color: AppColors.secondary,
-        //     onTap: () {
-        //       sl<NavigationService>().navigateTo(Routes.browseRequests);
-        //     },
-        //   ),
-        // ),
+    
       ],
     );
   }

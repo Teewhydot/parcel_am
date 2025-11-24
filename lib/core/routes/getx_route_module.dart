@@ -72,13 +72,20 @@ class GetXRouteModule {
     ),
     AuthGuard.createProtectedRoute(
       name: Routes.requestDetails,
-      page: () => const RequestDetailsScreen(requestId: ""),
+      page: () {
+        final requestId = Get.arguments as String? ?? "";
+        return RequestDetailsScreen(requestId: requestId);
+      },
       transition: _transition,
       transitionDuration: _transitionDuration,
     ),
     AuthGuard.createProtectedRoute(
       name: Routes.tracking,
-      page: () => const TrackingScreen(packageId: "packageId"),
+      page: () {
+        final args = Get.arguments as Map<String, dynamic>? ?? {};
+        final packageId = args['packageId'] as String? ?? "";
+        return TrackingScreen(packageId: packageId);
+      },
       transition: _transition,
       transitionDuration: _transitionDuration,
       requiresKyc: true,
