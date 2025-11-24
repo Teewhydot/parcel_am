@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
+import 'package:parcel_am/core/services/auth/kyc_guard.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_scaffold.dart';
 import '../../../../core/widgets/app_container.dart';
@@ -38,10 +39,10 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  
   StreamSubscription? _notificationSubscription;
 
-  final escrow.NotificationService _notificationService = sl<escrow.NotificationService>();
+  final escrow.NotificationService _notificationService =
+      sl<escrow.NotificationService>();
   PresenceService? _presenceService;
   ChatNotificationService? _chatNotificationService;
   late ActivePackagesBloc _activePackagesBloc;
@@ -52,7 +53,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-  
+
     _dashboardBloc = DashboardBloc();
     _activePackagesBloc = ActivePackagesBloc();
     _loadInitialData();
@@ -73,7 +74,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void _initializePresenceAndChatNotifications() {
     final authState = context.read<AuthBloc>().state;
-    final userId = authState is LoadedState<AuthData> ? authState.data?.user?.uid ?? '' : '';
+    final userId = authState is LoadedState<AuthData>
+        ? authState.data?.user?.uid ?? ''
+        : '';
 
     if (userId.isNotEmpty) {
       final presenceService = sl<PresenceService>();
@@ -120,14 +123,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void _subscribeToEscrowNotifications() {
     final authState = context.read<AuthBloc>().state;
-    final userId = authState is LoadedState<AuthData> ? authState.data?.user?.uid ?? 'demo_user' : 'demo_user';
+    final userId = authState is LoadedState<AuthData>
+        ? authState.data?.user?.uid ?? 'demo_user'
+        : 'demo_user';
 
     _notificationService.subscribeToEscrowNotifications(userId);
-    _notificationSubscription = _notificationService.escrowNotifications.listen((notification) {
-      if (mounted) {
-        _showEscrowNotification(notification);
-      }
-    });
+    _notificationSubscription = _notificationService.escrowNotifications.listen(
+      (notification) {
+        if (mounted) {
+          _showEscrowNotification(notification);
+        }
+      },
+    );
   }
 
   void _showEscrowNotification(escrow.EscrowNotification notification) {
@@ -184,7 +191,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return BlocManager<AuthBloc, BaseState<AuthData>>(
-      
       listener: (context, authState) {
         final userId = authState is LoadedState<AuthData>
             ? authState.data?.user?.uid ?? ''
@@ -224,18 +230,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       AppSpacing.verticalSpacing(SpacingSize.lg),
                       const UserStatsGrid(),
                       AppSpacing.verticalSpacing(SpacingSize.xxl),
-                      BlocBuilder<ActivePackagesBloc, BaseState<List<PackageEntity>>>(
+                      BlocBuilder<
+                        ActivePackagesBloc,
+                        BaseState<List<PackageEntity>>
+                      >(
                         builder: (context, state) {
                           if (state.isLoading) {
-                            return const Center(child: CircularProgressIndicator());
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
                           }
                           if (state.isError) {
-                            return Center(child: Text('Error: ${state.errorMessage ?? "Unknown error"}'));
+                            return Center(
+                              child: Text(
+                                'Error: ${state.errorMessage ?? "Unknown error"}',
+                              ),
+                            );
                           }
                           if (state.hasData && state.data != null) {
-                            return _RecentActivitySection(activePackages: state.data!);
+                            return _RecentActivitySection(
+                              activePackages: state.data!,
+                            );
                           }
-                          return const _RecentActivitySection(activePackages: []);
+                          return const _RecentActivitySection(
+                            activePackages: [],
+                          );
                         },
                       ),
                     ],
@@ -255,9 +274,13 @@ class _HeaderSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AuthBloc, BaseState<AuthData>>(
       builder: (context, authState) {
-        final user = authState is LoadedState<AuthData> ? authState.data?.user : null;
+        final user = authState is LoadedState<AuthData>
+            ? authState.data?.user
+            : null;
         final displayName = user?.displayName;
-        final userName = displayName != null ? displayName.split(' ').firstOrNull ?? 'User' : 'User';
+        final userName = displayName != null
+            ? displayName.split(' ').firstOrNull ?? 'User'
+            : 'User';
         final greeting = VerificationConstants.getTimeBasedGreeting();
 
         return AppContainer(
@@ -289,7 +312,10 @@ class _HeaderSection extends StatelessWidget {
                     children: [
                       _ChatButton(),
                       IconButton(
-                        icon: const Icon(Icons.person_outline, color: AppColors.black),
+                        icon: const Icon(
+                          Icons.person_outline,
+                          color: AppColors.black,
+                        ),
                         onPressed: () {
                           sl<NavigationService>().navigateTo(Routes.profile);
                         },
@@ -302,7 +328,6 @@ class _HeaderSection extends StatelessWidget {
               AppSpacing.verticalSpacing(SpacingSize.xl),
               const WalletBalanceCard(),
               AppSpacing.verticalSpacing(SpacingSize.md),
-      
             ],
           ),
         );
@@ -315,7 +340,8 @@ class _ChatButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Get chat notification service from parent state
-    final dashboardState = context.findAncestorStateOfType<_DashboardScreenState>();
+    final dashboardState = context
+        .findAncestorStateOfType<_DashboardScreenState>();
     final chatNotificationService = dashboardState?._chatNotificationService;
 
     if (chatNotificationService == null) {
@@ -380,7 +406,10 @@ class _NotificationButton extends StatelessWidget {
     return Stack(
       children: [
         IconButton(
-          icon: const Icon(Icons.notifications_outlined, color: AppColors.black),
+          icon: const Icon(
+            Icons.notifications_outlined,
+            color: AppColors.black,
+          ),
           onPressed: () {
             sl<NavigationService>().navigateTo(Routes.notifications);
           },
@@ -456,29 +485,35 @@ class _QuickActionsRow extends StatelessWidget {
       spacing: 16,
       children: [
         Expanded(
-          child: _ActionCard(
-            icon: Icons.add,
-            title: 'Send Package',
-            subtitle: 'Create a new delivery request',
-            color: AppColors.primary,
-            onTap: () {
-              sl<NavigationService>().navigateTo(Routes.createParcel);
-            },
+          child: KycGestureDetector(
+            onTap: () =>
+                sl<NavigationService>().navigateTo(Routes.createParcel),
+            child: _ActionCard(
+              icon: Icons.add,
+              title: 'Send Package',
+              subtitle: 'Create a new delivery request',
+              color: AppColors.primary,
+            ),
           ),
         ),
         Expanded(
-          child: _ActionCard(
-            icon: Icons.account_balance_wallet_outlined,
-            title: 'Wallet',
-            subtitle: 'View your wallet',
-            color: AppColors.info,
+          child: KycGestureDetector(
             onTap: () {
               final authState = context.read<AuthBloc>().state;
               final userId = authState is LoadedState<AuthData>
                   ? authState.data?.user?.uid ?? ''
                   : '';
-              sl<NavigationService>().navigateTo(Routes.wallet, arguments: userId);
+              sl<NavigationService>().navigateTo(
+                Routes.wallet,
+                arguments: userId,
+              );
             },
+            child: _ActionCard(
+              icon: Icons.account_balance_wallet_outlined,
+              title: 'Wallet',
+              subtitle: 'View your wallet',
+              color: AppColors.info,
+            ),
           ),
         ),
         // Expanded(
@@ -503,14 +538,14 @@ class _ActionCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.color,
-    required this.onTap,
+    this.onTap,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
   final Color color;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -559,10 +594,7 @@ class _RecentActivitySection extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            AppText.titleLarge(
-              'Active Parcels',
-              fontWeight: FontWeight.bold,
-            ),
+            AppText.titleLarge('Active Parcels', fontWeight: FontWeight.bold),
             AppButton.text(
               onPressed: () {},
               child: AppText.labelMedium('View All'),
@@ -575,19 +607,30 @@ class _RecentActivitySection extends StatelessWidget {
                 padding: AppSpacing.paddingXL,
                 child: Column(
                   children: [
-                    const Icon(Icons.inbox_outlined, size: 48, color: AppColors.onSurfaceVariant),
+                    const Icon(
+                      Icons.inbox_outlined,
+                      size: 48,
+                      color: AppColors.onSurfaceVariant,
+                    ),
                     AppSpacing.verticalSpacing(SpacingSize.md),
-                    AppText.bodyMedium('No active parcels', color: AppColors.onSurfaceVariant),
+                    AppText.bodyMedium(
+                      'No active parcels',
+                      color: AppColors.onSurfaceVariant,
+                    ),
                   ],
                 ),
               )
             : ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: activePackages.length > 5 ? 5 : activePackages.length,
+                itemCount: activePackages.length > 5
+                    ? 5
+                    : activePackages.length,
                 itemBuilder: (context, index) {
                   final package = activePackages[index];
-                  final escrowStatus = package.paymentInfo != null && package.paymentInfo!.isEscrow
+                  final escrowStatus =
+                      package.paymentInfo != null &&
+                          package.paymentInfo!.isEscrow
                       ? package.paymentInfo!.escrowStatus ?? 'pending'
                       : null;
 
@@ -738,10 +781,7 @@ class _ActivityItem extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    AppText.titleMedium(
-                      title,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    AppText.titleMedium(title, fontWeight: FontWeight.w600),
                     AppText.bodySmall(
                       subtitle,
                       color: AppColors.onSurfaceVariant,
@@ -766,7 +806,9 @@ class _ActivityItem extends StatelessWidget {
             AppSpacing.verticalSpacing(SpacingSize.sm),
             AppContainer(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              color: _getEscrowStatusColor(escrowStatus!).withValues(alpha: 0.1),
+              color: _getEscrowStatusColor(
+                escrowStatus!,
+              ).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
               child: Row(
                 mainAxisSize: MainAxisSize.min,

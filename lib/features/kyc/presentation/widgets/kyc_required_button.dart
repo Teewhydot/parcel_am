@@ -6,7 +6,7 @@ import '../../../../core/routes/routes.dart';
 import '../../../../core/widgets/app_button.dart';
 
 /// Reactive button that automatically updates based on realtime KYC status changes
-class KycRequiredButton extends StatelessWidget with KycCheckMixin {
+class KycRequiredButton extends StatelessWidget {
   final String text;
   final VoidCallback onPressed;
   final bool allowPending;
@@ -22,7 +22,7 @@ class KycRequiredButton extends StatelessWidget with KycCheckMixin {
   Widget build(BuildContext context) {
     // Use StreamBuilder to reactively update button based on KYC status changes
     return StreamBuilder<KycStatus>(
-      stream: watchKycStatus(context),
+      stream: context.watchKycStatus,
       builder: (context, snapshot) {
         // Show loading state while waiting for status
         if (!snapshot.hasData) {

@@ -31,7 +31,11 @@ class AuthGuard {
     
     // Check KYC if required
     if (requireKyc) {
-      return _kycGuard.checkKycAccess(context, allowPending: allowPendingKyc);
+      final status = _kycGuard.getStatus(context);
+      if (!status.isVerified) {
+        _kycGuard.showKycBlockedSnackbar();
+        return false;
+      }
     }
     
     return true;
@@ -65,12 +69,25 @@ class AuthGuard {
         
         // Check KYC if required
         if (requireKyc) {
-          return _kycGuard.protectedRoute(
-            context: context,
-            child: child,
-            allowPending: allowPendingKyc,
-            loadingWidget: loadingWidget,
-            blockedWidget: unauthenticatedWidget,
+          return StreamBuilder(
+            stream: _kycGuard.watchStatus(context),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return loadingWidget ?? const _DefaultLoadingWidget();
+              }
+
+              final status = snapshot.data!;
+              if (status.isVerified) {
+                return child;
+              }
+
+              // Not verified - redirect to blocked screen
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _kycGuard.showKycBlockedSnackbar();
+              });
+
+              return unauthenticatedWidget ?? const _DefaultUnauthenticatedWidget();
+            },
           );
         }
         
@@ -96,6 +113,7 @@ class AuthGuard {
   }
 
   /// Create protected GetPage with authentication middleware
+  /// Note: KYC protection should be done at widget level using KycProtectedWidget
   static GetPage createProtectedRoute({
     required String name,
     required Widget Function() page,
@@ -108,10 +126,9 @@ class AuthGuard {
   }) {
     final allMiddlewares = <GetMiddleware>[
       AuthMiddleware(),
-      if (requiresKyc) KycMiddleware(),
       ...?middlewares,
     ];
-    
+
     return GetPage(
       name: name,
       page: page,

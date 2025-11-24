@@ -26,14 +26,11 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
     on<AuthKycStatusUpdated>(_onKycStatusUpdated);
   }
 
-  Stream<Either<Failure, UserModel>> watchUserData(String userId) async* {
-    try {
-      yield* authUseCase.watchKycStatus(userId);
-    } catch (e, stackTrace) {
-      handleException(Exception(e.toString()), stackTrace);
-    }
-  }
 
+  /// Watch user data stream for realtime updates
+  Stream<Either<Failure, UserModel>> watchUserData(String userId) async* {
+    yield* authUseCase.watchKycStatus(userId);
+  }
   Future<void> _onAuthStarted(
     AuthStarted event,
     Emitter<BaseState<AuthData>> emit,
