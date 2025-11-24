@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import '../../../features/parcel_am_core/presentation/bloc/auth/auth_bloc.dart';
 import '../../../features/parcel_am_core/presentation/bloc/auth/auth_data.dart';
 import '../../../core/bloc/base/base_state.dart';
-import '../../../core/domain/entities/kyc_status.dart';
 import '../../routes/routes.dart';
 import 'kyc_guard.dart';
 
@@ -144,42 +143,6 @@ class AuthMiddleware extends GetMiddleware {
           }
         } catch (e) {
           return const RouteSettings(name: Routes.login);
-        }
-      }
-    }
-    
-    return null;
-  }
-}
-
-/// GetX Middleware for KYC-protected routes
-class KycMiddleware extends GetMiddleware {
-  @override
-  RouteSettings? redirect(String? route) {
-    if (route == null) return null;
-    
-    final kycGuard = KycGuard.instance;
-    
-    if (kycGuard.requiresKyc(route)) {
-      if (Get.context != null) {
-        try {
-          final authState = Get.context!.read<AuthBloc>().state;
-          
-          if (authState is DataState<AuthData> && authState.data?.user != null) {
-            final user = authState.data!.user!;
-            
-            if (!user.kycStatus.isVerified) {
-              if (user.kycStatus == KycStatus.notStarted || 
-                  user.kycStatus == KycStatus.incomplete ||
-                  user.kycStatus == KycStatus.rejected) {
-                return const RouteSettings(name: Routes.verification);
-              } else {
-                return const RouteSettings(name: Routes.dashboard);
-              }
-            }
-          }
-        } catch (e) {
-          return const RouteSettings(name: Routes.dashboard);
         }
       }
     }

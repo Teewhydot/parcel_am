@@ -306,32 +306,24 @@ class _VerificationScreenState extends State<VerificationScreen> {
           ),
 
           AppSpacing.verticalSpacing(SpacingSize.md),
-          Row(
-            children: [
-              Expanded(
-                child: AppInput(
-                  controller: _cityController,
-                  label: 'City *',
-                  hintText: 'Lagos',
-                ),
-              ),
-              AppSpacing.horizontalSpacing(SpacingSize.md),
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  value: _stateController.text.isNotEmpty
-                      ? _stateController.text
-                      : null,
-                  decoration: const InputDecoration(
-                    labelText: 'State *',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: VerificationConstants.nigerianStates.map((state) {
-                    return DropdownMenuItem(value: state, child: Text(state));
-                  }).toList(),
-                  onChanged: (value) => _stateController.text = value!,
-                ),
-              ),
-            ],
+          AppInput(
+            controller: _cityController,
+            label: 'City *',
+            hintText: 'Lagos',
+          ),
+          AppSpacing.verticalSpacing(SpacingSize.md),
+          DropdownButtonFormField<String>(
+            value: _stateController.text.isNotEmpty
+                ? _stateController.text
+                : null,
+            decoration: const InputDecoration(
+              labelText: 'State *',
+              border: OutlineInputBorder(),
+            ),
+            items: VerificationConstants.nigerianStates.map((state) {
+              return DropdownMenuItem(value: state, child: Text(state));
+            }).toList(),
+            onChanged: (value) => _stateController.text = value!,
           ),
 
           AppSpacing.verticalSpacing(SpacingSize.md),
@@ -359,7 +351,8 @@ class _VerificationScreenState extends State<VerificationScreen> {
                 userId: context.currentUserId!,
                 file: document.file,
                 folder: 'proof_of_address',
-              );},
+              );
+            },
           ),
 
           AppSpacing.verticalSpacing(SpacingSize.lg),
