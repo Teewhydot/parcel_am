@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/widgets/app_scaffold.dart';
 import '../../../../core/widgets/app_container.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_spacing.dart';
@@ -13,6 +12,7 @@ import '../../domain/entities/package_entity.dart';
 import '../bloc/package/package_bloc.dart';
 import '../bloc/package/package_event.dart';
 import '../bloc/package/package_state.dart';
+import '../../../../core/helpers/user_extensions.dart';
 
 class TrackingScreen extends StatefulWidget {
   const TrackingScreen({super.key, this.packageId});
@@ -47,68 +47,106 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
     return BlocConsumer<PackageBloc, PackageState>(
       listener: (context, state) {
         if (state.escrowMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.escrowMessage!),
-              backgroundColor: state.escrowReleaseStatus == EscrowReleaseStatus.released
-                  ? AppColors.success
-                  : state.escrowReleaseStatus == EscrowReleaseStatus.failed
-                      ? AppColors.error
-                      : AppColors.primary,
-            ),
+          context.showSnackbar(
+            message: state.escrowMessage!,
+            color: state.escrowReleaseStatus == EscrowReleaseStatus.released
+                ? AppColors.success
+                : state.escrowReleaseStatus == EscrowReleaseStatus.failed
+                    ? AppColors.error
+                    : AppColors.primary,
           );
         }
       },
       builder: (context, state) {
-        return AppScaffold(
-          title: 'Package Tracking',
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => sl<NavigationService>().goBack(),
-          ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.share),
-              onPressed: () {},
+        return Scaffold(
+          appBar: AppBar(
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => sl<NavigationService>().goBack(),
             ),
-          ],
-          appBarBackgroundColor: AppColors.surface,
-          body: state.isLoading && state.package == null
-              ? const Center(child: CircularProgressIndicator())
-              : state.package != null
-                  ? Column(
-                      children: [
-                        _buildPackageHeader(state.package!),
-                        _buildEscrowStatusBanner(state.package!),
-                        TabBar(
-                          controller: _tabController,
-                          tabs: const [
-                            Tab(text: 'Live Map'),
-                            Tab(text: 'Timeline'),
-                            Tab(text: 'Details'),
-                          ],
+            title: state.package != null
+                ? Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                        Expanded(
-                          child: TabBarView(
-                            controller: _tabController,
-                            children: [
-                              _buildMapTab(state.package!),
-                              _buildTimelineTab(state.package!),
-                              _buildDetailsTab(state.package!, context),
-                            ],
-                          ),
-                        ),
-                      ],
-                    )
-                  : Container(
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [AppColors.primary, AppColors.secondary],
+                        child: const Icon(
+                          Icons.inventory_2_outlined,
+                          color: AppColors.primary,
+                          size: 24,
                         ),
                       ),
-                      child: Center(
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Package #${state.package!.id.substring(0, 8)}',
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                            Text(
+                              _getStatusText(state.package!.status),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: _getStatusColor(state.package!.status),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  )
+                : const Text('Package Tracking'),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.share),
+                onPressed: () {},
+              ),
+            ],
+          ),
+          body: Container(
+            decoration: state.package == null
+                ? const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [AppColors.primary, AppColors.secondary],
+                    ),
+                  )
+                : null,
+            child: state.isLoading && state.package == null
+                ? const Center(child: CircularProgressIndicator(color: Colors.white))
+                : state.package != null
+                    ? Column(
+                        children: [
+                          _buildPackageHeader(state.package!),
+                          _buildEscrowStatusBanner(state.package!),
+                          TabBar(
+                            controller: _tabController,
+                            tabs: const [
+                              Tab(text: 'Live Map'),
+                              Tab(text: 'Timeline'),
+                              Tab(text: 'Details'),
+                            ],
+                          ),
+                          Expanded(
+                            child: TabBarView(
+                              controller: _tabController,
+                              children: [
+                                _buildMapTab(state.package!),
+                                _buildTimelineTab(state.package!),
+                                _buildDetailsTab(state.package!, context),
+                              ],
+                            ),
+                          ),
+                        ],
+                      )
+                    : Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -136,7 +174,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                           ],
                         ),
                       ),
-                    ),
+          ),
         );
       },
     );

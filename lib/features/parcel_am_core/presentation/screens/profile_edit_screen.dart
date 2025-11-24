@@ -138,13 +138,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                             // Safety check: ensure bloc is not closed
                             if (authBloc.isClosed) {
                               if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Session expired. Please refresh the app.',
-                                    ),
-                                    backgroundColor: Colors.red,
-                                  ),
+                                context.showSnackbar(
+                                  message: 'Session expired. Please refresh the app.',
+                                  color: AppColors.error,
                                 );
                               }
                               return;
@@ -157,11 +153,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                             );
                           } catch (e) {
                             if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Error: ${e.toString()}'),
-                                  backgroundColor: Colors.red,
-                                ),
+                              context.showSnackbar(
+                                message: 'Error: ${e.toString()}',
+                                color: AppColors.error,
                               );
                             }
                           }

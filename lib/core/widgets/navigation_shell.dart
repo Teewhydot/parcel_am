@@ -11,6 +11,7 @@ import 'package:parcel_am/features/parcel_am_core/presentation/screens/wallet_sc
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_bloc.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_data.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/package/package_bloc.dart';
+import 'package:parcel_am/core/helpers/user_extensions.dart';
 
 class NavigationShell extends StatefulWidget {
   final int initialIndex;
@@ -97,12 +98,9 @@ class _NavigationShellState extends State<NavigationShell> {
         now.difference(_lastBackPressed!) > backPressDuration) {
       _lastBackPressed = now;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Press back again to exit'),
-          duration: Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-        ),
+      context.showSnackbar(
+        message: 'Press back again to exit',
+        duration: 2,
       );
 
       return false;

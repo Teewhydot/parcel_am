@@ -9,6 +9,7 @@ import '../bloc/parcel/parcel_state.dart';
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_data.dart';
 import '../../../parcel_am_core/domain/entities/parcel_entity.dart';
+import '../../../../core/helpers/user_extensions.dart';
 
 class RequestDetailsScreen extends StatefulWidget {
   const RequestDetailsScreen({super.key, required this.requestId});
@@ -34,11 +35,9 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
     final authState = context.read<AuthBloc>().state;
     if (authState is! DataState<AuthData> || authState.data?.user == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('You must be logged in to accept requests'),
-            backgroundColor: AppColors.error,
-          ),
+        context.showSnackbar(
+          message: 'You must be logged in to accept requests',
+          color: AppColors.error,
         );
       }
       return;
@@ -68,22 +67,18 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
             setState(() {
               _isAccepting = false;
             });
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Request accepted successfully!'),
-                backgroundColor: Colors.green,
-              ),
+            context.showSnackbar(
+              message: 'Request accepted successfully!',
+              color: AppColors.success,
             );
             Navigator.of(context).pop();
           } else if (state is AsyncErrorState<ParcelData> && _isAccepting) {
             setState(() {
               _isAccepting = false;
             });
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.errorMessage),
-                backgroundColor: AppColors.error,
-              ),
+            context.showSnackbar(
+              message: state.errorMessage,
+              color: AppColors.error,
             );
           }
         },

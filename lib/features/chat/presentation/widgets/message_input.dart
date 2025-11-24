@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../domain/entities/message.dart';
 import '../../domain/entities/message_type.dart';
+import '../../../../core/helpers/user_extensions.dart';
 
 class MessageInput extends StatefulWidget {
   final Function(String) onSend;
@@ -69,8 +70,8 @@ class _MessageInputState extends State<MessageInput> {
         widget.onSendMedia(image.path, MessageType.image);
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to pick image: $e')),
+      context.showSnackbar(
+        message: 'Failed to pick image: $e',
       );
     }
   }
@@ -86,8 +87,8 @@ class _MessageInputState extends State<MessageInput> {
         widget.onSendMedia(video.path, MessageType.video);
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to pick video: $e')),
+      context.showSnackbar(
+        message: 'Failed to pick video: $e',
       );
     }
   }

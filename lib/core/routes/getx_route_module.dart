@@ -17,6 +17,7 @@ import 'package:parcel_am/features/parcel_am_core/presentation/screens/profile_e
 import 'package:parcel_am/features/chat/presentation/screens/chats_list_screen.dart';
 import 'package:parcel_am/features/chat/presentation/screens/chat_screen.dart';
 import 'package:parcel_am/features/notifications/presentation/screens/notifications_screen.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/screens/settings_screen.dart';
 
 import '../../features/parcel_am_core/presentation/screens/splash_screen.dart';
 import '../services/auth/auth_guard.dart';
@@ -172,6 +173,13 @@ class GetXRouteModule {
         final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
         return NotificationsScreen(userId: userId);
       },
+      transition: _transition,
+      transitionDuration: _transitionDuration,
+      requiresKyc: false,
+    ),
+    AuthGuard.createProtectedRoute(
+      name: Routes.settings,
+      page: () => const SettingsScreen(),
       transition: _transition,
       transitionDuration: _transitionDuration,
       requiresKyc: false,

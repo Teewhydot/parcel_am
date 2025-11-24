@@ -14,6 +14,7 @@ import '../bloc/chat_state.dart';
 import '../widgets/message_bubble.dart';
 import '../widgets/message_input.dart';
 import '../widgets/typing_indicator.dart';
+import '../../../../core/helpers/user_extensions.dart';
 
 class ChatScreen extends StatefulWidget {
   final String chatId;
@@ -260,8 +261,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open document')),
+        context.showSnackbar(
+          message: 'Could not open document',
         );
       }
     }
@@ -392,8 +393,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       body: BlocConsumer<ChatBloc, ChatState>(
         listener: (context, state) {
           if (state is ChatError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message)),
+            context.showSnackbar(
+              message: state.message,
             );
           } else if (state is MessageSent) {
             _scrollToBottom();

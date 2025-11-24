@@ -6,6 +6,8 @@ import '../../../../core/bloc/base/base_state.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../injection_container.dart';
+import '../../../../core/domain/entities/kyc_status.dart';
+import '../../../../core/helpers/user_extensions.dart';
 import '../../../escrow/domain/entities/escrow_status.dart';
 import '../bloc/parcel/parcel_bloc.dart';
 import '../bloc/parcel/parcel_event.dart';
@@ -103,6 +105,65 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
         curve: Curves.easeInOut,
       );
     }
+  }
+
+  bool _validateParcelCreation() {
+    // Get user from AuthBloc
+    final authState = context.read<AuthBloc>().state;
+    if (authState is! DataState<AuthData> || authState.data?.user == null) {
+      context.showSnackbar(
+        message: 'User not authenticated',
+        color: AppColors.error,
+      );
+      return false;
+    }
+
+    final currentUser = authState.data!.user!;
+
+    // Check KYC status
+    if (currentUser.kycStatus != KycStatus.approved) {
+      context.showSnackbar(
+        message: 'Please complete KYC verification before creating a parcel',
+        color: AppColors.error,
+        duration: 4,
+      );
+      // Navigate to KYC screen
+      sl<NavigationService>().navigateTo(Routes.verification);
+      return false;
+    }
+
+    // Calculate total amount (parcel price + service fee)
+    final parcelPrice = double.tryParse(_priceController.text) ?? 0.0;
+    const serviceFee = 150.0;
+    final totalAmount = parcelPrice + serviceFee;
+
+    // Check balance
+    final userBalance = currentUser.availableBalance ?? 0.0;
+    if (userBalance < totalAmount) {
+      // Show snackbar with manual SnackBar to include action button
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Insufficient balance. You need ₦${totalAmount.toStringAsFixed(2)} but have ₦${userBalance.toStringAsFixed(2)}',
+          ),
+          backgroundColor: AppColors.error,
+          duration: const Duration(seconds: 4),
+          action: SnackBarAction(
+            label: 'Add Funds',
+            textColor: Colors.white,
+            onPressed: () {
+              sl<NavigationService>().navigateTo(
+                Routes.wallet,
+                arguments: currentUser.uid,
+              );
+            },
+          ),
+        ),
+      );
+      return false;
+    }
+
+    return true;
   }
 
   void _createParcel() {
@@ -832,7 +893,10 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
                       ? null
                       : () {
                           if (_currentStep == 2) {
-                            _createParcel();
+                            // Validate before creating parcel
+                            if (_validateParcelCreation()) {
+                              _createParcel();
+                            }
                           } else {
                             _nextStep();
                           }

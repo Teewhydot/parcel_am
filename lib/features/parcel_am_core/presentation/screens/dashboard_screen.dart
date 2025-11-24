@@ -163,6 +163,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         icon = Icons.info;
     }
 
+    // Note: For snackbars with actions, we keep the original implementation
+    // as context.showSnackbar() doesn't support action buttons
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -310,7 +312,15 @@ class _HeaderSection extends StatelessWidget {
                   ),
                   Row(
                     children: [
-                      _ChatButton(),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.settings_outlined,
+                          color: AppColors.black,
+                        ),
+                        onPressed: () {
+                          sl<NavigationService>().navigateTo(Routes.settings);
+                        },
+                      ),
                       IconButton(
                         icon: const Icon(
                           Icons.person_outline,
@@ -330,70 +340,6 @@ class _HeaderSection extends StatelessWidget {
               AppSpacing.verticalSpacing(SpacingSize.md),
             ],
           ),
-        );
-      },
-    );
-  }
-}
-
-class _ChatButton extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    // Get chat notification service from parent state
-    final dashboardState = context
-        .findAncestorStateOfType<_DashboardScreenState>();
-    final chatNotificationService = dashboardState?._chatNotificationService;
-
-    if (chatNotificationService == null) {
-      return IconButton(
-        icon: const Icon(Icons.chat_outlined, color: Colors.black),
-        onPressed: () {
-          sl<NavigationService>().navigateTo(Routes.chatsList);
-        },
-      );
-    }
-
-    return StreamBuilder<int>(
-      stream: chatNotificationService.unreadCountStream,
-      initialData: 0,
-      builder: (context, snapshot) {
-        final totalUnread = snapshot.data ?? 0;
-
-        return Stack(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.chat_outlined, color: Colors.black),
-              onPressed: () {
-                sl<NavigationService>().navigateTo(Routes.chatsList);
-              },
-            ),
-            if (totalUnread > 0)
-              Positioned(
-                right: 8,
-                top: 8,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: AppColors.accent,
-                    shape: BoxShape.circle,
-                  ),
-                  constraints: const BoxConstraints(
-                    minWidth: 16,
-                    minHeight: 16,
-                  ),
-                  child: Center(
-                    child: Text(
-                      totalUnread > 9 ? '9+' : totalUnread.toString(),
-                      style: const TextStyle(
-                        color: AppColors.black,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-          ],
         );
       },
     );
@@ -528,14 +474,12 @@ class _ActionCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.color,
-    this.onTap,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
   final Color color;
-  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -545,7 +489,6 @@ class _ActionCard extends StatelessWidget {
       height: 170,
       padding: AppSpacing.paddingSM,
       borderRadius: BorderRadius.circular(16),
-      onTap: onTap,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

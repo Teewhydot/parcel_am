@@ -669,8 +669,9 @@ class _VerificationScreenState extends State<VerificationScreen> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: AppColors.error),
+    context.showSnackbar(
+      message: message,
+      color: AppColors.error,
     );
   }
 

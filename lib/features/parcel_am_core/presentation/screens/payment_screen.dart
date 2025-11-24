@@ -12,6 +12,7 @@ import '../bloc/escrow/escrow_bloc.dart';
 import '../bloc/escrow/escrow_event.dart';
 import '../bloc/escrow/escrow_state.dart';
 import '../../domain/entities/package_entity.dart';
+import '../../../../core/helpers/user_extensions.dart';
 
 class PaymentScreen extends StatefulWidget {
   const PaymentScreen({super.key});
@@ -152,11 +153,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
             BlocListener<WalletBloc, BaseState<WalletData>>(
               listener: (context, state) {
                 if (state is ErrorState<WalletData>) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(state.errorMessage),
-                      backgroundColor: Colors.red,
-                    ),
+                  context.showSnackbar(
+                    message: state.errorMessage,
+                    color: AppColors.error,
                   );
                 }
               },
@@ -170,11 +169,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     _paymentInfo = _paymentInfo?.copyWith(escrowStatus: 'held');
                   });
                 } else if (state is ErrorState<EscrowData>) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(state.errorMessage),
-                      backgroundColor: Colors.red,
-                    ),
+                  context.showSnackbar(
+                    message: state.errorMessage,
+                    color: AppColors.error,
                   );
                 }
               },

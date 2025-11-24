@@ -134,11 +134,9 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   void _showSuccess(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green,
-      ),
+    context.showSnackbar(
+      message: message,
+      color: AppColors.success,
     );
   }
 

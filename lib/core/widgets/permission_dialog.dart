@@ -5,6 +5,8 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../services/permission_service/permission_service.dart';
 import '../utils/logger.dart';
+import '../helpers/user_extensions.dart';
+import '../theme/app_colors.dart';
 
 /// A reusable dialog to request various app permissions
 class PermissionDialog extends StatelessWidget {
@@ -102,14 +104,9 @@ class PermissionDialog extends StatelessWidget {
                       onGranted();
                     } else if (isMandatory) {
                       // If permission is mandatory but denied, show a message
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'This permission is required to use this feature.',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          backgroundColor: Colors.red,
-                        ),
+                      context.showSnackbar(
+                        message: 'This permission is required to use this feature.',
+                        color: AppColors.error,
                       );
                     } else {
                       Navigator.pop(context, false);

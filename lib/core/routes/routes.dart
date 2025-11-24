@@ -19,4 +19,5 @@ class Routes {
   static const String chatsList = '/chatsList';
   static const String chat = '/chat';
   static const String notifications = '/notifications';
+  static const String settings = '/settings';
 }

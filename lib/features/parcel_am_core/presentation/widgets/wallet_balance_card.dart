@@ -101,30 +101,17 @@ class _WalletBalanceCardState extends State<WalletBalanceCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  AppIcon.filled(
-                    icon: Icons.account_balance_wallet,
-                    size: IconSize.small,
-                    backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                    color: AppColors.primary,
-                  ),
-                  AppSpacing.horizontalSpacing(SpacingSize.sm),
-                  AppText.titleMedium(
-                    'Wallet Balance',
-                    fontWeight: FontWeight.w600,
-                  ),
-                ],
+              AppIcon.filled(
+                icon: Icons.account_balance_wallet,
+                size: IconSize.small,
+                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                color: AppColors.primary,
               ),
-              IconButton(
-                icon: const Icon(Icons.refresh, size: 20),
-                onPressed: () {
-                  context.read<WalletBloc>().add(WalletRefreshRequested(userId));
-                },
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
+              AppSpacing.horizontalSpacing(SpacingSize.sm),
+              AppText.titleMedium(
+                'Wallet Balance',
+                fontWeight: FontWeight.w600,
               ),
             ],
           ),
