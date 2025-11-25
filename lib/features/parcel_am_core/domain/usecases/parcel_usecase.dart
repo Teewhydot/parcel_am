@@ -29,6 +29,22 @@ class ParcelUseCase {
     return repository.watchUserParcels(userId);
   }
 
+  /// Watches parcels where the given user is the assigned traveler/courier.
+  ///
+  /// This stream provides real-time updates for parcels that the user has
+  /// accepted for delivery. The parcels are filtered by travelerId matching
+  /// the provided userId.
+  ///
+  /// Returns a stream of Either<Failure, List<ParcelEntity>>
+  /// - Left: Failure if there's an error fetching or watching the parcels
+  /// - Right: List of ParcelEntity where the user is the traveler
+  ///
+  /// Note: This method will be fully implemented in Task Group 2.4.
+  /// For now, it's a stub that delegates to the repository method.
+  Stream<Either<Failure, List<ParcelEntity>>> watchUserAcceptedParcels(String userId) {
+    return repository.watchUserAcceptedParcels(userId);
+  }
+
   Future<Either<Failure, List<ParcelEntity>>> getUserParcels(String userId) {
     return repository.getUserParcels(userId);
   }

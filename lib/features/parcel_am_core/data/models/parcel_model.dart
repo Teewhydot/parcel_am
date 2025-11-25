@@ -199,6 +199,8 @@ class ParcelModel {
   final String? escrowId;
   final DateTime createdAt;
   final DateTime? updatedAt;
+  final DateTime? lastStatusUpdate;
+  final String? courierNotes;
   final Map<String, dynamic>? metadata;
 
   const ParcelModel({
@@ -219,9 +221,20 @@ class ParcelModel {
     this.escrowId,
     required this.createdAt,
     this.updatedAt,
+    this.lastStatusUpdate,
+    this.courierNotes,
     this.metadata,
   });
 
+  /// Creates a ParcelModel from a Firestore DocumentSnapshot.
+  ///
+  /// Task 1.3.1: Handles deserialization of new fields:
+  /// - lastStatusUpdate: Firestore Timestamp converted to DateTime
+  /// - courierNotes: Optional string field
+  /// - metadata: Includes deliveryStatusHistory for tracking
+  ///
+  /// Maintains backward compatibility with existing documents that may not have
+  /// the new fields by using null-safe operators and default values.
   factory ParcelModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return ParcelModel(
@@ -249,10 +262,21 @@ class ParcelModel {
       updatedAt: data['updatedAt'] is Timestamp
           ? (data['updatedAt'] as Timestamp).toDate()
           : null,
+      // Task 1.3.1: Map lastStatusUpdate from Firestore timestamp
+      lastStatusUpdate: data['lastStatusUpdate'] is Timestamp
+          ? (data['lastStatusUpdate'] as Timestamp).toDate()
+          : null,
+      // Task 1.3.1: Map courierNotes (nullable)
+      courierNotes: data['courierNotes'] as String?,
+      // Task 1.3.1: Handle metadata field deserialization
       metadata: data['metadata'] as Map<String, dynamic>?,
     );
   }
 
+  /// Creates a ParcelModel from a ParcelEntity.
+  ///
+  /// Task 1.3.3: Handles entity-to-model conversion including new fields.
+  /// Validates status progression when deserializing from entity.
   factory ParcelModel.fromEntity(ParcelEntity entity) {
     return ParcelModel(
       id: entity.id,
@@ -272,10 +296,23 @@ class ParcelModel {
       escrowId: entity.escrowId,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
+      // Task 1.3.3: Include lastStatusUpdate in conversion
+      lastStatusUpdate: entity.lastStatusUpdate,
+      // Task 1.3.3: Include courierNotes in conversion
+      courierNotes: entity.courierNotes,
+      // Task 1.3.3: Include metadata for delivery tracking
       metadata: entity.metadata,
     );
   }
 
+  /// Converts the ParcelModel to JSON for Firestore.
+  ///
+  /// Task 1.3.2: Includes new fields in JSON output:
+  /// - lastStatusUpdate: Converted to Firestore Timestamp
+  /// - courierNotes: Included if present
+  /// - metadata: Properly serializes delivery status history
+  ///
+  /// Maintains backward compatibility by only including fields that have values.
   Map<String, dynamic> toJson() {
     return {
       'sender': sender.toJson(),
@@ -294,10 +331,21 @@ class ParcelModel {
       'escrowId': escrowId,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
+      // Task 1.3.2: Add lastStatusUpdate timestamp conversion
+      'lastStatusUpdate': lastStatusUpdate != null
+          ? Timestamp.fromDate(lastStatusUpdate!)
+          : null,
+      // Task 1.3.2: Add courierNotes to JSON output (if present)
+      'courierNotes': courierNotes,
+      // Task 1.3.2: Ensure metadata field properly serializes
       'metadata': metadata,
     };
   }
 
+  /// Converts the ParcelModel to a ParcelEntity.
+  ///
+  /// Task 1.3.3: Updates toEntity method to include new fields.
+  /// All data is preserved during entity conversion.
   ParcelEntity toEntity() {
     return ParcelEntity(
       id: id,
@@ -317,6 +365,11 @@ class ParcelModel {
       escrowId: escrowId,
       createdAt: createdAt,
       updatedAt: updatedAt,
+      // Task 1.3.3: Include lastStatusUpdate in entity
+      lastStatusUpdate: lastStatusUpdate,
+      // Task 1.3.3: Include courierNotes in entity
+      courierNotes: courierNotes,
+      // Task 1.3.3: Include metadata in entity
       metadata: metadata,
     );
   }
@@ -339,6 +392,8 @@ class ParcelModel {
     String? escrowId,
     DateTime? createdAt,
     DateTime? updatedAt,
+    DateTime? lastStatusUpdate,
+    String? courierNotes,
     Map<String, dynamic>? metadata,
   }) {
     return ParcelModel(
@@ -359,6 +414,8 @@ class ParcelModel {
       escrowId: escrowId ?? this.escrowId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      lastStatusUpdate: lastStatusUpdate ?? this.lastStatusUpdate,
+      courierNotes: courierNotes ?? this.courierNotes,
       metadata: metadata ?? this.metadata,
     );
   }

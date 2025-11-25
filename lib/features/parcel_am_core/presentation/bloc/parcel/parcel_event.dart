@@ -122,3 +122,29 @@ class ParcelAssignTravelerRequested extends ParcelEvent {
   @override
   List<Object?> get props => [parcelId, travelerId];
 }
+
+/// Event to request watching parcels where the current user is the traveler.
+/// This is used for the "My Deliveries" tab to show real-time updates of
+/// parcels that the user has accepted for delivery.
+class ParcelWatchAcceptedParcelsRequested extends ParcelEvent {
+  /// The ID of the user who is the traveler (courier)
+  final String userId;
+
+  const ParcelWatchAcceptedParcelsRequested(this.userId);
+
+  @override
+  List<Object?> get props => [userId];
+}
+
+/// Event emitted when the list of accepted parcels is updated from the stream.
+/// This event is triggered by Firestore real-time updates and provides the
+/// updated list of parcels where the user is the assigned traveler.
+class ParcelAcceptedListUpdated extends ParcelEvent {
+  /// The updated list of parcels where the user is the traveler
+  final List<ParcelEntity> acceptedParcels;
+
+  const ParcelAcceptedListUpdated(this.acceptedParcels);
+
+  @override
+  List<Object?> get props => [acceptedParcels];
+}

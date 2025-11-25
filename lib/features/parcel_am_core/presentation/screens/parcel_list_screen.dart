@@ -358,6 +358,8 @@ class _ParcelCard extends StatelessWidget {
         return Colors.red;
       case ParcelStatus.disputed:
         return Colors.amber;
+      default:
+        return Colors.grey;
     }
   }
 
@@ -375,6 +377,8 @@ class _ParcelCard extends StatelessWidget {
         return Icons.cancel;
       case ParcelStatus.disputed:
         return Icons.warning;
+      default:
+        return Icons.all_inbox;
     }
   }
 }

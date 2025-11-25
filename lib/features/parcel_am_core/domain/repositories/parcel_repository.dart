@@ -10,6 +10,20 @@ abstract class ParcelRepository {
     ParcelStatus? status,
   });
 
+  /// Watches parcels where the current user is the traveler (courier).
+  /// Returns a stream of parcels filtered by travelerId and ordered by
+  /// lastStatusUpdate in descending order (most recent first).
+  ///
+  /// This stream provides real-time updates for the "My Deliveries" tab,
+  /// showing all parcels that the courier has accepted for delivery.
+  ///
+  /// Query filters: where travelerId equals userId
+  /// Ordering: by lastStatusUpdate descending
+  /// Requires composite index: (travelerId, lastStatusUpdate)
+  Stream<Either<Failure, List<ParcelEntity>>> watchUserAcceptedParcels(
+    String userId,
+  );
+
   Future<Either<Failure, ParcelEntity>> createParcel(ParcelEntity parcel);
 
   Future<Either<Failure, ParcelEntity>> getParcel(String parcelId);

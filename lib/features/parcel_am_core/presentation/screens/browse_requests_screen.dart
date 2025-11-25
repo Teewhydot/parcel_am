@@ -11,6 +11,8 @@ import '../bloc/parcel/parcel_bloc.dart';
 import '../bloc/parcel/parcel_event.dart';
 import '../bloc/parcel/parcel_state.dart';
 import '../../../parcel_am_core/domain/entities/parcel_entity.dart';
+import '../bloc/auth/auth_bloc.dart';
+import '../widgets/my_deliveries_tab.dart';
 
 class BrowseRequestsScreen extends StatefulWidget {
   const BrowseRequestsScreen({super.key});
@@ -19,7 +21,8 @@ class BrowseRequestsScreen extends StatefulWidget {
   State<BrowseRequestsScreen> createState() => _BrowseRequestsScreenState();
 }
 
-class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> {
+class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> with TickerProviderStateMixin {
+  late TabController _tabController;
   int _selectedRouteIndex = 0;
   final List<String> _routes = ['All Routes', 'Lagos', 'Abuja', 'Port Harcourt'];
   final TextEditingController _searchController = TextEditingController();
@@ -28,8 +31,19 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> {
   @override
   void initState() {
     super.initState();
-    // Use provided ParcelBloc instead of creating new one
+    // Initialize TabController with 2 tabs
+    _tabController = TabController(length: 2, vsync: this);
+
+    // Initialize available parcels stream
     context.read<ParcelBloc>().add(const ParcelWatchAvailableParcelsRequested());
+
+    // Initialize accepted parcels stream with current userId
+    final authState = context.read<AuthBloc>().state;
+    final userId = authState.data?.user?.uid;
+    if (userId != null) {
+      context.read<ParcelBloc>().add(ParcelWatchAcceptedParcelsRequested(userId));
+    }
+
     _searchController.addListener(() {
       setState(() {
         _searchQuery = _searchController.text.toLowerCase();
@@ -39,6 +53,7 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> {
 
   @override
   void dispose() {
+    _tabController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -81,7 +96,6 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> {
       appBar: AppBar(
         title: const Text('Browse Requests'),
         actions: [
-        
           IconButton(
             icon: const Icon(Icons.tune),
             onPressed: () {
@@ -89,226 +103,246 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> {
             },
           ),
         ],
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(text: 'Available'),
+            Tab(text: 'My Deliveries'),
+          ],
+        ),
       ),
-      body: Column(
+      body: TabBarView(
+        controller: _tabController,
         children: [
-          // Search Bar
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search by route or package type...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                        },
-                      )
-                    : null,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                filled: true,
-                fillColor: AppColors.surfaceVariant,
+          // First tab: Available requests (existing functionality)
+          _buildAvailableRequestsTab(),
+          // Second tab: My Deliveries (placeholder for now)
+          const MyDeliveriesTab(),
+        ],
+      ),
+    );
+  }
+
+  /// Build the Available Requests tab with existing functionality
+  Widget _buildAvailableRequestsTab() {
+    return Column(
+      children: [
+        // Search Bar
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Search by route or package type...',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: _searchQuery.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        _searchController.clear();
+                      },
+                    )
+                  : null,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
               ),
+              filled: true,
+              fillColor: AppColors.surfaceVariant,
             ),
           ),
+        ),
 
-          // Route Filter Tabs
-          Container(
-            height: 50,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: _routes.length,
-              itemBuilder: (context, index) {
-                final isSelected = _selectedRouteIndex == index;
-                return GestureDetector(
-                  onTap: () => setState(() => _selectedRouteIndex = index),
-                  child: Container(
-                    margin: const EdgeInsets.only(right: 12),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: isSelected ? AppColors.primary : AppColors.surfaceVariant,
-                      borderRadius: BorderRadius.circular(25),
+        // Route Filter Tabs
+        Container(
+          height: 50,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: _routes.length,
+            itemBuilder: (context, index) {
+              final isSelected = _selectedRouteIndex == index;
+              return GestureDetector(
+                onTap: () => setState(() => _selectedRouteIndex = index),
+                child: Container(
+                  margin: const EdgeInsets.only(right: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: isSelected ? AppColors.primary : AppColors.surfaceVariant,
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                  child: Text(
+                    _routes[index],
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : AppColors.onSurface,
+                      fontWeight: FontWeight.w500,
                     ),
-                    child: Text(
-                      _routes[index],
-                      style: TextStyle(
-                        color: isSelected ? Colors.white : AppColors.onSurface,
-                        fontWeight: FontWeight.w500,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+
+        // Requests List with BLoC
+        Expanded(
+          child: BlocBuilder<ParcelBloc, BaseState<ParcelData>>(
+            builder: (context, state) {
+              if (state is AsyncLoadingState<ParcelData> && state.data == null) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (state is AsyncErrorState<ParcelData>) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 64,
+                        color: AppColors.error,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Failed to load requests',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        state.errorMessage,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: () {
+                          context.read<ParcelBloc>().add(const ParcelWatchAvailableParcelsRequested());
+                        },
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              final availableParcels = state.data?.availableParcels ?? [];
+              final filteredParcels = _filterParcels(availableParcels);
+
+              if (availableParcels.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.inventory_2_outlined,
+                        size: 64,
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'No requests available',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Check back later for new delivery requests',
+                        style: TextStyle(
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              if (filteredParcels.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.search_off,
+                        size: 64,
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'No matching requests',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Try adjusting your filters or search',
+                        style: TextStyle(
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return Column(
+                children: [
+                  // Available Requests Count
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        '${filteredParcels.length} request${filteredParcels.length == 1 ? '' : 's'} available',
+                        style: TextStyle(
+                          color: AppColors.onSurfaceVariant,
+                          fontSize: 14,
+                        ),
                       ),
                     ),
                   ),
-                );
-              },
-            ),
-          ),
 
-          // Requests List with BLoC
-          Expanded(
-            child: BlocBuilder<ParcelBloc, BaseState<ParcelData>>(
-              builder: (context, state) {
-                if (state is AsyncLoadingState<ParcelData> && state.data == null) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (state is AsyncErrorState<ParcelData>) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          size: 64,
-                          color: AppColors.error,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Failed to load requests',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          state.errorMessage,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: AppColors.onSurfaceVariant,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        ElevatedButton(
-                          onPressed: () {
-                            context.read<ParcelBloc>().add(const ParcelWatchAvailableParcelsRequested());
-                          },
-                          child: const Text('Retry'),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                final availableParcels = state.data?.availableParcels ?? [];
-                final filteredParcels = _filterParcels(availableParcels);
-
-                if (availableParcels.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.inventory_2_outlined,
-                          size: 64,
-                          color: AppColors.onSurfaceVariant,
-                        ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'No requests available',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Check back later for new delivery requests',
-                          style: TextStyle(
-                            color: AppColors.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                if (filteredParcels.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.search_off,
-                          size: 64,
-                          color: AppColors.onSurfaceVariant,
-                        ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'No matching requests',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Try adjusting your filters or search',
-                          style: TextStyle(
-                            color: AppColors.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                return Column(
-                  children: [
-                    // Available Requests Count
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          '${filteredParcels.length} request${filteredParcels.length == 1 ? '' : 's'} available',
-                          style: TextStyle(
-                            color: AppColors.onSurfaceVariant,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    Expanded(
-                      child: RefreshIndicator(
-                        onRefresh: () async {
-                          context.read<ParcelBloc>().add(const ParcelWatchAvailableParcelsRequested());
-                          await Future.delayed(const Duration(seconds: 1));
-                        },
-                        child: AnimationLimiter(
-                          child: ListView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            itemCount: filteredParcels.length,
-                            itemBuilder: (context, index) {
-                              final parcel = filteredParcels[index];
-                              return AnimationConfiguration.staggeredList(
-                                position: index,
-                                duration: const Duration(milliseconds: 375),
-                                child: SlideAnimation(
-                                  verticalOffset: 50.0,
-                                  child: FadeInAnimation(
-                                    child: _buildRequestCard(parcel),
-                                  ),
+                  Expanded(
+                    child: RefreshIndicator(
+                      onRefresh: () async {
+                        context.read<ParcelBloc>().add(const ParcelWatchAvailableParcelsRequested());
+                        await Future.delayed(const Duration(seconds: 1));
+                      },
+                      child: AnimationLimiter(
+                        child: ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemCount: filteredParcels.length,
+                          itemBuilder: (context, index) {
+                            final parcel = filteredParcels[index];
+                            return AnimationConfiguration.staggeredList(
+                              position: index,
+                              duration: const Duration(milliseconds: 375),
+                              child: SlideAnimation(
+                                verticalOffset: 50.0,
+                                child: FadeInAnimation(
+                                  child: _buildRequestCard(parcel),
                                 ),
-                              );
-                            },
-                          ),
+                              ),
+                            );
+                          },
                         ),
                       ),
                     ),
-                  ],
-                );
-              },
-            ),
+                  ),
+                ],
+              );
+            },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 

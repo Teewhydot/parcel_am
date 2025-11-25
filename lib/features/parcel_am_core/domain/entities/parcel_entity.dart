@@ -1,9 +1,12 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter/material.dart';
 
 enum ParcelStatus {
   created,
   paid,
+  pickedUp,
   inTransit,
+  arrived,
   delivered,
   cancelled,
   disputed;
@@ -14,8 +17,12 @@ enum ParcelStatus {
         return 'Created';
       case ParcelStatus.paid:
         return 'Paid';
+      case ParcelStatus.pickedUp:
+        return 'Picked Up';
       case ParcelStatus.inTransit:
         return 'In Transit';
+      case ParcelStatus.arrived:
+        return 'Arrived';
       case ParcelStatus.delivered:
         return 'Delivered';
       case ParcelStatus.cancelled:
@@ -31,8 +38,12 @@ enum ParcelStatus {
         return 'created';
       case ParcelStatus.paid:
         return 'paid';
+      case ParcelStatus.pickedUp:
+        return 'picked_up';
       case ParcelStatus.inTransit:
         return 'in_transit';
+      case ParcelStatus.arrived:
+        return 'arrived';
       case ParcelStatus.delivered:
         return 'delivered';
       case ParcelStatus.cancelled:
@@ -48,9 +59,14 @@ enum ParcelStatus {
         return ParcelStatus.created;
       case 'paid':
         return ParcelStatus.paid;
+      case 'picked_up':
+      case 'pickedup':
+        return ParcelStatus.pickedUp;
       case 'in_transit':
       case 'intransit':
         return ParcelStatus.inTransit;
+      case 'arrived':
+        return ParcelStatus.arrived;
       case 'delivered':
         return ParcelStatus.delivered;
       case 'cancelled':
@@ -62,10 +78,79 @@ enum ParcelStatus {
     }
   }
 
-  bool get isActive => this == ParcelStatus.paid || this == ParcelStatus.inTransit;
+  /// Returns true if this status is considered active (in-progress delivery).
+  /// Active statuses: paid, pickedUp, inTransit, arrived
+  bool get isActive =>
+      this == ParcelStatus.paid ||
+      this == ParcelStatus.pickedUp ||
+      this == ParcelStatus.inTransit ||
+      this == ParcelStatus.arrived;
+
   bool get isCompleted => this == ParcelStatus.delivered;
   bool get isCancelled => this == ParcelStatus.cancelled;
   bool get isDisputed => this == ParcelStatus.disputed;
+
+  /// Returns true if the status can progress to the next valid status.
+  /// Returns false for terminal statuses: delivered, cancelled, disputed
+  bool get canProgressToNextStatus {
+    switch (this) {
+      case ParcelStatus.paid:
+      case ParcelStatus.pickedUp:
+      case ParcelStatus.inTransit:
+      case ParcelStatus.arrived:
+        return true;
+      case ParcelStatus.created:
+      case ParcelStatus.delivered:
+      case ParcelStatus.cancelled:
+      case ParcelStatus.disputed:
+        return false;
+    }
+  }
+
+  /// Returns the next valid status in the delivery progression flow.
+  /// Returns null if there is no valid next status (terminal state).
+  ///
+  /// Status progression flow: paid -> pickedUp -> inTransit -> arrived -> delivered
+  ParcelStatus? get nextDeliveryStatus {
+    switch (this) {
+      case ParcelStatus.paid:
+        return ParcelStatus.pickedUp;
+      case ParcelStatus.pickedUp:
+        return ParcelStatus.inTransit;
+      case ParcelStatus.inTransit:
+        return ParcelStatus.arrived;
+      case ParcelStatus.arrived:
+        return ParcelStatus.delivered;
+      case ParcelStatus.created:
+      case ParcelStatus.delivered:
+      case ParcelStatus.cancelled:
+      case ParcelStatus.disputed:
+        return null;
+    }
+  }
+
+  /// Returns the color associated with this status for visual indicators.
+  /// Used for status badges, chips, and other UI elements.
+  Color get statusColor {
+    switch (this) {
+      case ParcelStatus.created:
+        return Colors.grey;
+      case ParcelStatus.paid:
+        return Colors.blue;
+      case ParcelStatus.pickedUp:
+        return Colors.orange;
+      case ParcelStatus.inTransit:
+        return Colors.purple;
+      case ParcelStatus.arrived:
+        return Colors.teal;
+      case ParcelStatus.delivered:
+        return Colors.green;
+      case ParcelStatus.cancelled:
+        return Colors.red;
+      case ParcelStatus.disputed:
+        return Colors.amber;
+    }
+  }
 }
 
 enum ParcelType {
@@ -199,6 +284,16 @@ class RouteInformation extends Equatable {
       ];
 }
 
+/// Represents a parcel delivery request in the system.
+///
+/// Metadata map structure for delivery tracking:
+/// - deliveryStatusHistory: Map of status to ISO timestamp
+///   Example: {"paid": "2025-11-25T10:30:00Z", "picked_up": "2025-11-25T12:00:00Z"}
+/// - courierNotes: String (optional delivery notes from courier)
+/// - lastStatusUpdate: String (ISO timestamp of the most recent status change)
+///
+/// The metadata field is designed for backward compatibility and flexible extension
+/// without requiring schema migrations.
 class ParcelEntity extends Equatable {
   final String id;
   final SenderDetails sender;
@@ -217,6 +312,17 @@ class ParcelEntity extends Equatable {
   final String? escrowId;
   final DateTime createdAt;
   final DateTime? updatedAt;
+
+  /// Timestamp of the most recent status update.
+  /// Used for sorting deliveries by recent activity.
+  final DateTime? lastStatusUpdate;
+
+  /// Optional notes from the courier about the delivery.
+  /// Can include pickup/delivery instructions, issues encountered, etc.
+  final String? courierNotes;
+
+  /// Flexible metadata field for delivery tracking and future extensions.
+  /// See class documentation for structure details.
   final Map<String, dynamic>? metadata;
 
   const ParcelEntity({
@@ -237,6 +343,8 @@ class ParcelEntity extends Equatable {
     this.escrowId,
     required this.createdAt,
     this.updatedAt,
+    this.lastStatusUpdate,
+    this.courierNotes,
     this.metadata,
   });
 
@@ -258,6 +366,8 @@ class ParcelEntity extends Equatable {
     String? escrowId,
     DateTime? createdAt,
     DateTime? updatedAt,
+    DateTime? lastStatusUpdate,
+    String? courierNotes,
     Map<String, dynamic>? metadata,
   }) {
     return ParcelEntity(
@@ -278,8 +388,111 @@ class ParcelEntity extends Equatable {
       escrowId: escrowId ?? this.escrowId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      lastStatusUpdate: lastStatusUpdate ?? this.lastStatusUpdate,
+      courierNotes: courierNotes ?? this.courierNotes,
       metadata: metadata ?? this.metadata,
     );
+  }
+
+  /// Returns the delivery status history as a map of status to timestamp.
+  /// Parses the metadata field to extract status change timestamps.
+  ///
+  /// Returns an empty map if metadata is null or doesn't contain history.
+  Map<String, DateTime> get deliveryStatusHistory {
+    if (metadata == null || metadata!['deliveryStatusHistory'] == null) {
+      return {};
+    }
+
+    final historyMap = metadata!['deliveryStatusHistory'] as Map<String, dynamic>;
+    final result = <String, DateTime>{};
+
+    historyMap.forEach((key, value) {
+      if (value is String) {
+        try {
+          result[key] = DateTime.parse(value);
+        } catch (e) {
+          // Skip invalid timestamps
+        }
+      }
+    });
+
+    return result;
+  }
+
+  /// Returns the timestamp when a specific status was reached.
+  /// Returns null if the status was never reached or timestamp is unavailable.
+  ///
+  /// Example:
+  /// ```dart
+  /// final pickedUpTime = parcel.getStatusTimestamp(ParcelStatus.pickedUp);
+  /// ```
+  DateTime? getStatusTimestamp(ParcelStatus status) {
+    final history = deliveryStatusHistory;
+    final statusKey = status.toJson();
+    return history[statusKey];
+  }
+
+  /// Returns an ordered list of statuses that have been completed.
+  /// Ordered by the standard progression flow, not by timestamp.
+  ///
+  /// Example: [ParcelStatus.paid, ParcelStatus.pickedUp, ParcelStatus.inTransit]
+  List<ParcelStatus> get statusHistory {
+    final history = deliveryStatusHistory;
+    final allStatuses = [
+      ParcelStatus.paid,
+      ParcelStatus.pickedUp,
+      ParcelStatus.inTransit,
+      ParcelStatus.arrived,
+      ParcelStatus.delivered,
+    ];
+
+    return allStatuses.where((status) {
+      return history.containsKey(status.toJson());
+    }).toList();
+  }
+
+  /// Checks if the current user is the traveler/courier for this delivery.
+  /// Returns true if the provided userId matches the travelerId.
+  ///
+  /// Note: Requires passing the current user ID as a parameter since
+  /// the entity should not depend on global auth state.
+  bool isMyDelivery(String currentUserId) {
+    return travelerId != null && travelerId == currentUserId;
+  }
+
+  /// Returns true if the delivery is urgent (within 48 hours).
+  /// Based on the estimated delivery date in route information.
+  bool get hasUrgentDelivery {
+    if (route.estimatedDeliveryDate == null) {
+      return false;
+    }
+
+    try {
+      final estimatedDate = DateTime.parse(route.estimatedDeliveryDate!);
+      final now = DateTime.now();
+      final difference = estimatedDate.difference(now);
+
+      return difference.inHours <= 48 && difference.inHours >= 0;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Calculates the time remaining until estimated delivery.
+  /// Returns null if no estimated delivery date is available.
+  /// Returns negative duration if delivery date has passed.
+  Duration? get timeUntilDelivery {
+    if (route.estimatedDeliveryDate == null) {
+      return null;
+    }
+
+    try {
+      final estimatedDate = DateTime.parse(route.estimatedDeliveryDate!);
+      final now = DateTime.now();
+      return estimatedDate.difference(now);
+    } catch (e) {
+      return null;
+    }
   }
 
   @override
@@ -301,6 +514,8 @@ class ParcelEntity extends Equatable {
         escrowId,
         createdAt,
         updatedAt,
+        lastStatusUpdate,
+        courierNotes,
         metadata,
       ];
 }

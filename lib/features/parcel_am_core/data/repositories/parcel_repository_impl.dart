@@ -33,6 +33,17 @@ class ParcelRepositoryImpl implements ParcelRepository {
   }
 
   @override
+  Stream<Either<Failure, List<ParcelEntity>>> watchUserAcceptedParcels(
+      String userId) {
+    return ErrorHandler.handleStream(
+      () => remoteDataSource.watchUserAcceptedParcels(userId).map((parcelModels) {
+        return parcelModels.map((model) => model.toEntity()).toList();
+      }),
+      operationName: 'watchUserAcceptedParcels',
+    );
+  }
+
+  @override
   Future<Either<Failure, ParcelEntity>> createParcel(
       ParcelEntity parcel) async {
     try {

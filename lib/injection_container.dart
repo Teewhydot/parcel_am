@@ -10,6 +10,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import 'core/services/navigation_service/nav_config.dart';
 import 'core/services/notification_service.dart';
+import 'core/services/connectivity_service.dart';
+import 'core/services/offline_queue_service.dart';
 import 'core/services/escrow_notification_service.dart' as escrow;
 import 'core/domain/repositories/escrow_notification_repository.dart';
 import 'core/data/repositories/escrow_notification_repository_impl.dart';
@@ -71,11 +73,19 @@ Future<void> init() async {
   ErrorHandler.init(sl<FailureMapper>());
 
   sl.registerLazySingleton<NavigationService>(() => GetxNavigationService());
-  
+
+  // Connectivity and Offline Queue Services (Task Group 4.2.1)
+  sl.registerLazySingleton<ConnectivityService>(
+    () => ConnectivityService(connectionChecker: sl()),
+  );
+  sl.registerLazySingleton<OfflineQueueService>(
+    () => OfflineQueueService(sl()),
+  );
+
   // Presence System
   sl.registerLazySingleton<PresenceRepository>(() => PresenceRepositoryImpl(sl()));
   sl.registerLazySingleton<PresenceService>(() => PresenceService(repository: sl()));
-  
+
   // Chat Notification System
   sl.registerLazySingleton<ChatNotificationRepository>(() => ChatNotificationRepositoryImpl(sl()));
   sl.registerLazySingleton<ChatNotificationService>(() => ChatNotificationService(

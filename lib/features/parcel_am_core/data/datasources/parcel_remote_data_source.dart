@@ -8,6 +8,7 @@ import '../../domain/exceptions/custom_exceptions.dart';
 abstract class ParcelRemoteDataSource {
   Stream<ParcelModel> watchParcelStatus(String parcelId);
   Stream<List<ParcelModel>> watchUserParcels(String userId, {ParcelStatus? status});
+  Stream<List<ParcelModel>> watchUserAcceptedParcels(String userId);
   Future<ParcelModel> createParcel(ParcelModel parcel);
   Future<ParcelModel> updateParcel(String parcelId, Map<String, dynamic> data);
   Future<ParcelModel> updateParcelStatus(String parcelId, ParcelStatus status);
@@ -82,6 +83,32 @@ class ParcelRemoteDataSourceImpl implements ParcelRemoteDataSource {
   }
 
   @override
+  Stream<List<ParcelModel>> watchUserAcceptedParcels(String userId) {
+    try {
+      return firestore
+          .collection('parcels')
+          .where('travelerId', isEqualTo: userId)
+          .orderBy('lastStatusUpdate', descending: true)
+          .snapshots()
+          .handleError((error) {
+        Logger.logError('Firestore Error (watchUserAcceptedParcels): $error', tag: 'ParcelRemoteDataSource');
+        if (error.toString().contains('index')) {
+          Logger.logError('INDEX REQUIRED: Create a composite index for:', tag: 'ParcelRemoteDataSource');
+          Logger.logError('   Collection: parcels', tag: 'ParcelRemoteDataSource');
+          Logger.logError('   Fields: travelerId (Ascending), lastStatusUpdate (Descending)', tag: 'ParcelRemoteDataSource');
+          Logger.logError('   Or visit the Firebase Console to create the index automatically.', tag: 'ParcelRemoteDataSource');
+        }
+      }).map((snapshot) {
+        return snapshot.docs
+            .map((doc) => ParcelModel.fromFirestore(doc))
+            .toList();
+      });
+    } catch (e) {
+      throw ServerException();
+    }
+  }
+
+  @override
   Future<ParcelModel> createParcel(ParcelModel parcel) async {
     try {
       final parcelRef = firestore.collection('parcels').doc();
@@ -130,18 +157,33 @@ class ParcelRemoteDataSourceImpl implements ParcelRemoteDataSource {
     try {
       final docRef = firestore.collection('parcels').doc(parcelId);
 
-      final updateData = {
-        'status': status.toJson(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      };
+      // Use Firestore transaction for atomic updates
+      return await firestore.runTransaction((transaction) async {
+        final snapshot = await transaction.get(docRef);
 
-      await docRef.update(updateData);
+        if (!snapshot.exists) {
+          throw ServerException();
+        }
 
-      final updatedDoc = await docRef.get();
-      if (!updatedDoc.exists) {
-        throw ServerException();
-      }
-      return ParcelModel.fromFirestore(updatedDoc);
+        final statusKey = status.toJson();
+        final timestamp = FieldValue.serverTimestamp();
+
+        final updateData = {
+          'status': statusKey,
+          'updatedAt': timestamp,
+          'lastStatusUpdate': timestamp,
+          'metadata.deliveryStatusHistory.$statusKey': timestamp,
+        };
+
+        transaction.update(docRef, updateData);
+
+        // Fetch updated document after transaction
+        final updatedDoc = await docRef.get();
+        if (!updatedDoc.exists) {
+          throw ServerException();
+        }
+        return ParcelModel.fromFirestore(updatedDoc);
+      });
     } on FirebaseException {
       throw ServerException();
     } catch (e) {
@@ -199,7 +241,7 @@ class ParcelRemoteDataSourceImpl implements ParcelRemoteDataSource {
           .collection('parcels')
           .where('sender.userId', isEqualTo: userId)
           .orderBy('createdAt', descending: true);
-      
+
       if (status != null) {
         query = query.where('status', isEqualTo: status.toJson());
       }
