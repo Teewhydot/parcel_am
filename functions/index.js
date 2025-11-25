@@ -48,13 +48,11 @@ const gmailPassword = ENVIRONMENT.GMAIL_PASSWORD;
 
 // Log startup information
 console.log('='.repeat(50));
-console.log('Food Delivery App Firebase Functions - Modular Version');
+console.log('ParcelAm App Firebase Functions - Modular Version');
 console.log('='.repeat(50));
-console.log('Contact Configuration:');
-console.log('- Support Email:', SUPPORT_EMAIL);
-console.log('- Support Phone:', SUPPORT_PHONE);
 console.log(`Using project ID: ${PROJECT_ID}`);
-console.log('='.repeat(50));
+
+
 
 // ========================================================================
 // Paystack Transaction Creation Function (Food Orders)
@@ -119,25 +117,11 @@ exports.createPaystackTransaction = onRequest(
           email,
           reference,
           transactionType,
-          bookingDetails,
+          fundingDetails,
           amount,
           currentTimestamp,
           executionId
         );
-
-        // Send creation email (optional - can be enabled later)
-        // await emailService.sendCreationEmail(
-        //   transactionType, bookingDetails, reference, userName, amount, email, executionId
-        // );
-
-        // Send creation notification (optional - can be enabled later)
-        // const notificationData = notificationService.generateNotificationData(
-        //   transactionType, bookingDetails, reference, amount, false
-        // );
-        // await notificationService.sendNotificationToUser(
-        //   userId, config.notificationTitle.creation, notificationBody, notificationData, executionId
-        // );
-
         logger.success(`Transaction created successfully: ${reference}`, executionId);
 
         res.status(200).json({
