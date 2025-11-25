@@ -3,6 +3,7 @@ enum NotificationType {
   systemAlert,
   announcement,
   reminder,
+  parcelRequestAccepted,
 }
 
 extension NotificationTypeExtension on NotificationType {
@@ -16,6 +17,8 @@ extension NotificationTypeExtension on NotificationType {
         return 'announcement';
       case NotificationType.reminder:
         return 'reminder';
+      case NotificationType.parcelRequestAccepted:
+        return 'parcel_request_accepted';
     }
   }
 
@@ -29,6 +32,8 @@ extension NotificationTypeExtension on NotificationType {
         return NotificationType.announcement;
       case 'reminder':
         return NotificationType.reminder;
+      case 'parcel_request_accepted':
+        return NotificationType.parcelRequestAccepted;
       default:
         return NotificationType.chatMessage;
     }

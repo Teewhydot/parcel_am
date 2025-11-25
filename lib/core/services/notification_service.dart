@@ -44,12 +44,23 @@ Future<void> _showBackgroundNotification(RemoteMessage message) async {
 
   final title = notification?.title ?? data['title'] as String? ?? '';
   final body = notification?.body ?? data['body'] as String? ?? '';
-  final chatId = data['chatId'] as String?;
 
-  const androidDetails = AndroidNotificationDetails(
-    'chat_messages',
-    'Chat Messages',
-    channelDescription: 'Notifications for new chat messages',
+  // Detect notification type from data payload
+  final type = data['type'] as String?;
+  final chatId = data['chatId'] as String?;
+  final parcelId = data['parcelId'] as String?;
+  final travelerId = data['travelerId'] as String?;
+  final travelerName = data['travelerName'] as String?;
+
+  // Use appropriate channel based on notification type
+  final isParcelNotification = type == 'parcel_request_accepted';
+
+  final androidDetails = AndroidNotificationDetails(
+    isParcelNotification ? 'parcel_updates' : 'chat_messages',
+    isParcelNotification ? 'Parcel Updates' : 'Chat Messages',
+    channelDescription: isParcelNotification
+        ? 'Notifications for parcel request updates'
+        : 'Notifications for new chat messages',
     importance: Importance.high,
     priority: Priority.high,
     showWhen: true,
@@ -63,13 +74,18 @@ Future<void> _showBackgroundNotification(RemoteMessage message) async {
     presentSound: true,
   );
 
-  const notificationDetails = NotificationDetails(
+  final notificationDetails = NotificationDetails(
     android: androidDetails,
     iOS: iosDetails,
   );
 
+  // Create payload with appropriate fields
   final payload = jsonEncode({
-    'chatId': chatId,
+    if (chatId != null) 'chatId': chatId,
+    if (parcelId != null) 'parcelId': parcelId,
+    if (travelerId != null) 'travelerId': travelerId,
+    if (travelerName != null) 'travelerName': travelerName,
+    if (type != null) 'type': type,
     'messageId': message.messageId,
   });
 
@@ -204,7 +220,8 @@ class NotificationService {
   Future<void> _configureAndroidChannels() async {
     if (!Platform.isAndroid) return;
 
-    const androidChannel = AndroidNotificationChannel(
+    // Chat messages channel
+    const chatChannel = AndroidNotificationChannel(
       'chat_messages',
       'Chat Messages',
       description: 'Notifications for new chat messages',
@@ -214,10 +231,23 @@ class NotificationService {
       showBadge: true,
     );
 
-    await localNotifications
+    // Parcel updates channel
+    const parcelChannel = AndroidNotificationChannel(
+      'parcel_updates',
+      'Parcel Updates',
+      description: 'Notifications for parcel request updates',
+      importance: Importance.high,
+      playSound: true,
+      enableVibration: true,
+      showBadge: true,
+    );
+
+    final androidPlugin = localNotifications
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(androidChannel);
+            AndroidFlutterLocalNotificationsPlugin>();
+
+    await androidPlugin?.createNotificationChannel(chatChannel);
+    await androidPlugin?.createNotificationChannel(parcelChannel);
   }
 
   /// Configure iOS/Darwin notification settings
@@ -290,7 +320,11 @@ class NotificationService {
 
       final title = notification?.title ?? data['title'] as String? ?? '';
       final body = notification?.body ?? data['body'] as String? ?? '';
+      final type = data['type'] as String?;
       final chatId = data['chatId'] as String?;
+      final parcelId = data['parcelId'] as String?;
+      final travelerId = data['travelerId'] as String?;
+      final travelerName = data['travelerName'] as String?;
 
       // Display local notification
       await _displayLocalNotification(
@@ -298,6 +332,9 @@ class NotificationService {
         title: title,
         body: body,
         chatId: chatId,
+        parcelId: parcelId,
+        travelerId: travelerId,
+        travelerName: travelerName,
       );
 
       // Save notification to Firestore
@@ -326,17 +363,27 @@ class NotificationService {
     required String title,
     required String body,
     String? chatId,
+    String? parcelId,
+    String? travelerId,
+    String? travelerName,
   }) async {
-    const androidDetails = AndroidNotificationDetails(
-      'chat_messages',
-      'Chat Messages',
-      channelDescription: 'Notifications for new chat messages',
+    // Detect notification type from data
+    final type = message.data['type'] as String?;
+    final isParcelNotification = type == 'parcel_request_accepted';
+
+    // Use appropriate channel based on notification type
+    final androidDetails = AndroidNotificationDetails(
+      isParcelNotification ? 'parcel_updates' : 'chat_messages',
+      isParcelNotification ? 'Parcel Updates' : 'Chat Messages',
+      channelDescription: isParcelNotification
+          ? 'Notifications for parcel request updates'
+          : 'Notifications for new chat messages',
       importance: Importance.high,
       priority: Priority.high,
       showWhen: true,
       enableVibration: true,
       playSound: true,
-      groupKey: 'chat_group',
+      groupKey: isParcelNotification ? 'parcel_group' : 'chat_group',
     );
 
     const iosDetails = DarwinNotificationDetails(
@@ -345,14 +392,18 @@ class NotificationService {
       presentSound: true,
     );
 
-    const notificationDetails = NotificationDetails(
+    final notificationDetails = NotificationDetails(
       android: androidDetails,
       iOS: iosDetails,
     );
 
-    // Create payload with chatId for navigation
+    // Create payload with appropriate fields for navigation
     final payload = jsonEncode({
-      'chatId': chatId,
+      if (chatId != null) 'chatId': chatId,
+      if (parcelId != null) 'parcelId': parcelId,
+      if (travelerId != null) 'travelerId': travelerId,
+      if (travelerName != null) 'travelerName': travelerName,
+      if (type != null) 'type': type,
       'messageId': message.messageId,
       'notificationId': message.messageId,
     });
@@ -429,7 +480,7 @@ class NotificationService {
   }
 
   /// Handle notification tap
-  /// Parse notification payload JSON and navigate to ChatScreen
+  /// Parse notification payload JSON and navigate to appropriate screen
   Future<void> handleNotificationTap(NotificationResponse response) async {
     try {
       final payload = response.payload;
@@ -443,10 +494,11 @@ class NotificationService {
       // Parse payload JSON
       final data = jsonDecode(payload) as Map<String, dynamic>;
       final chatId = data['chatId'] as String?;
+      final parcelId = data['parcelId'] as String?;
       final notificationId = data['notificationId'] as String?;
 
       if (kDebugMode) {
-        Logger.logBasic('Notification tapped - chatId: $chatId, notificationId: $notificationId');
+        Logger.logBasic('Notification tapped - chatId: $chatId, parcelId: $parcelId, notificationId: $notificationId');
       }
 
       // Mark notification as read if notificationId exists
@@ -456,8 +508,16 @@ class NotificationService {
         await _updateBadgeCount();
       }
 
-      // Navigate to ChatScreen with chatId parameter
-      if (chatId != null) {
+      // Navigate to appropriate screen based on notification type
+      // Priority: parcelId > chatId
+      if (parcelId != null) {
+        // Navigate to RequestDetailsScreen with parcelId parameter
+        await navigationService.navigateTo(
+          Routes.requestDetails,
+          arguments: {'parcelId': parcelId},
+        );
+      } else if (chatId != null) {
+        // Navigate to ChatScreen with chatId parameter
         await navigationService.navigateTo(
           Routes.chat,
           arguments: {'chatId': chatId},

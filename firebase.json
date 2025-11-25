@@ -1,1 +1,53 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"parcel-am","appId":"1:905050052127:android:1b2d2b8aa147d61a81272a","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"parcel-am","configurations":{"android":"1:905050052127:android:1b2d2b8aa147d61a81272a","ios":"1:905050052127:ios:0eaaff5cef3d4bcc81272a","web":"1:905050052127:web:94aa2b783d3ee7a081272a"}}},"ios":{"default":{"projectId":"parcel-am","appId":"1:905050052127:ios:0eaaff5cef3d4bcc81272a","uploadDebugSymbols":false,"fileOutput":"ios/Runner/GoogleService-Info.plist"}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "parcel-am",
+          "appId": "1:905050052127:android:1b2d2b8aa147d61a81272a",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "parcel-am",
+          "configurations": {
+            "android": "1:905050052127:android:1b2d2b8aa147d61a81272a",
+            "ios": "1:905050052127:ios:0eaaff5cef3d4bcc81272a",
+            "web": "1:905050052127:web:94aa2b783d3ee7a081272a"
+          }
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "parcel-am",
+          "appId": "1:905050052127:ios:0eaaff5cef3d4bcc81272a",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      }
+    }
+  },
+  "functions": [
+    {
+      "codebase": "default",
+      "predeploy": [
+        "npm --prefix \"$RESOURCE_DIR\" run lint",
+        "npm --prefix \"$RESOURCE_DIR\" run build"
+      ],
+      "source": "functions"
+    },
+    {
+      "source": "firebase_functions",
+      "codebase": "parcel_am",
+      "disallowLegacyRuntimeConfig": true,
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
+    }
+  ]
+}

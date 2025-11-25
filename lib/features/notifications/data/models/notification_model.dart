@@ -16,6 +16,9 @@ class NotificationModel extends NotificationEntity {
     super.chatId,
     super.senderId,
     super.senderName,
+    super.parcelId,
+    super.travelerId,
+    super.travelerName,
   });
 
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
@@ -31,6 +34,9 @@ class NotificationModel extends NotificationEntity {
       chatId: json['chatId'] as String?,
       senderId: json['senderId'] as String?,
       senderName: json['senderName'] as String?,
+      parcelId: json['parcelId'] as String?,
+      travelerId: json['travelerId'] as String?,
+      travelerName: json['travelerName'] as String?,
     );
   }
 
@@ -64,6 +70,9 @@ class NotificationModel extends NotificationEntity {
       chatId: data['chatId'] as String?,
       senderId: data['senderId'] as String?,
       senderName: data['senderName'] as String?,
+      parcelId: data['parcelId'] as String?,
+      travelerId: data['travelerId'] as String?,
+      travelerName: data['travelerName'] as String?,
     );
   }
 
@@ -80,6 +89,9 @@ class NotificationModel extends NotificationEntity {
       'chatId': chatId,
       'senderId': senderId,
       'senderName': senderName,
+      'parcelId': parcelId,
+      'travelerId': travelerId,
+      'travelerName': travelerName,
     };
   }
 
@@ -96,6 +108,9 @@ class NotificationModel extends NotificationEntity {
       chatId: entity.chatId,
       senderId: entity.senderId,
       senderName: entity.senderName,
+      parcelId: entity.parcelId,
+      travelerId: entity.travelerId,
+      travelerName: entity.travelerName,
     );
   }
 
@@ -112,6 +127,9 @@ class NotificationModel extends NotificationEntity {
       chatId: chatId,
       senderId: senderId,
       senderName: senderName,
+      parcelId: parcelId,
+      travelerId: travelerId,
+      travelerName: travelerName,
     );
   }
 }

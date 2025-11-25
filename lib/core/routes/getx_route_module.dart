@@ -74,7 +74,16 @@ class GetXRouteModule {
     AuthGuard.createProtectedRoute(
       name: Routes.requestDetails,
       page: () {
-        final requestId = Get.arguments as String? ?? "";
+        // Support both direct String argument and Map with parcelId
+        final arguments = Get.arguments;
+        String requestId = "";
+
+        if (arguments is String) {
+          requestId = arguments;
+        } else if (arguments is Map<String, dynamic>) {
+          requestId = arguments['parcelId'] as String? ?? "";
+        }
+
         return RequestDetailsScreen(requestId: requestId);
       },
       transition: _transition,

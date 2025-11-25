@@ -303,6 +303,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         icon = Icons.notifications;
         color = AppColors.secondary;
         break;
+      default:
+        icon = Icons.notifications_none;
+        color = AppColors.onSurfaceVariant;
     }
 
     return Container(

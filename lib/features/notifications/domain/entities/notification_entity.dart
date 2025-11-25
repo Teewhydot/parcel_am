@@ -13,6 +13,9 @@ class NotificationEntity extends Equatable {
   final String? chatId;
   final String? senderId;
   final String? senderName;
+  final String? parcelId;
+  final String? travelerId;
+  final String? travelerName;
 
   const NotificationEntity({
     required this.id,
@@ -26,6 +29,9 @@ class NotificationEntity extends Equatable {
     this.chatId,
     this.senderId,
     this.senderName,
+    this.parcelId,
+    this.travelerId,
+    this.travelerName,
   });
 
   NotificationEntity copyWith({
@@ -40,6 +46,9 @@ class NotificationEntity extends Equatable {
     String? chatId,
     String? senderId,
     String? senderName,
+    String? parcelId,
+    String? travelerId,
+    String? travelerName,
   }) {
     return NotificationEntity(
       id: id ?? this.id,
@@ -53,6 +62,9 @@ class NotificationEntity extends Equatable {
       chatId: chatId ?? this.chatId,
       senderId: senderId ?? this.senderId,
       senderName: senderName ?? this.senderName,
+      parcelId: parcelId ?? this.parcelId,
+      travelerId: travelerId ?? this.travelerId,
+      travelerName: travelerName ?? this.travelerName,
     );
   }
 
@@ -69,5 +81,8 @@ class NotificationEntity extends Equatable {
         chatId,
         senderId,
         senderName,
+        parcelId,
+        travelerId,
+        travelerName,
       ];
 }

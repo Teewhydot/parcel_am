@@ -56,6 +56,14 @@ class MyApp extends StatelessWidget {
             initialRoute: Routes.initial,
             getPages: GetXRouteModule.routes,
             debugShowCheckedModeBanner: false,
+            builder: (context, child) {
+              return GestureDetector(
+                onTap: () {
+                  FocusManager.instance.primaryFocus?.unfocus();
+                },
+                child: child,
+              );
+            },
           ),
         );
       },
