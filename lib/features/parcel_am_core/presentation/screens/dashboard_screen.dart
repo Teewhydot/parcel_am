@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:skeletonizer/skeletonizer.dart';
 
 import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
 import 'package:parcel_am/core/services/auth/kyc_guard.dart';
@@ -208,61 +207,69 @@ class _DashboardScreenState extends State<DashboardScreen> {
             BlocProvider.value(value: _dashboardBloc),
             BlocProvider.value(value: _activePackagesBloc),
           ],
-          child: SingleChildScrollView(
-            child: AppContainer(
-              padding: AppSpacing.paddingXL,
-              child: Column(
-                children: [
-                  _HeaderSection(),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const KycStatusBanner(),
-                      AppSpacing.verticalSpacing(SpacingSize.md),
-                      AppText.titleLarge(
-                        'Quick Actions',
-                        fontWeight: FontWeight.bold,
-                      ),
-                      AppSpacing.verticalSpacing(SpacingSize.lg),
-                      _QuickActionsRow(),
-                      AppSpacing.verticalSpacing(SpacingSize.xxl),
-                      AppText.titleLarge(
-                        'Your Stats',
-                        fontWeight: FontWeight.bold,
-                      ),
-                      AppSpacing.verticalSpacing(SpacingSize.lg),
-                      const UserStatsGrid(),
-                      AppSpacing.verticalSpacing(SpacingSize.xxl),
-                      BlocBuilder<
-                        ActivePackagesBloc,
-                        BaseState<List<PackageEntity>>
-                      >(
-                        builder: (context, state) {
-                          if (state.isLoading) {
-                            return const Center(
-                              child: CircularProgressIndicator(),
+          child: RefreshIndicator(
+            onRefresh: () async {
+              final userId = _resolveCurrentUserId();
+              _requestDataForUser(userId, force: true);
+              await Future.delayed(const Duration(milliseconds: 500));
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: AppContainer(
+                padding: AppSpacing.paddingXL,
+                child: Column(
+                  children: [
+                    _HeaderSection(),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const KycStatusBanner(),
+                        AppSpacing.verticalSpacing(SpacingSize.md),
+                        AppText.titleLarge(
+                          'Quick Actions',
+                          fontWeight: FontWeight.bold,
+                        ),
+                        AppSpacing.verticalSpacing(SpacingSize.lg),
+                        _QuickActionsRow(),
+                        AppSpacing.verticalSpacing(SpacingSize.xxl),
+                        AppText.titleLarge(
+                          'Your Stats',
+                          fontWeight: FontWeight.bold,
+                        ),
+                        AppSpacing.verticalSpacing(SpacingSize.lg),
+                        const UserStatsGrid(),
+                        AppSpacing.verticalSpacing(SpacingSize.xxl),
+                        BlocBuilder<
+                          ActivePackagesBloc,
+                          BaseState<List<PackageEntity>>
+                        >(
+                          builder: (context, state) {
+                            if (state.isLoading) {
+                              return const Center(
+                                child: CircularProgressIndicator(),
+                              );
+                            }
+                            if (state.isError) {
+                              return Center(
+                                child: Text(
+                                  'Error: ${state.errorMessage ?? "Unknown error"}',
+                                ),
+                              );
+                            }
+                            if (state.hasData && state.data != null) {
+                              return _RecentActivitySection(
+                                activePackages: state.data!,
+                              );
+                            }
+                            return const _RecentActivitySection(
+                              activePackages: [],
                             );
-                          }
-                          if (state.isError) {
-                            return Center(
-                              child: Text(
-                                'Error: ${state.errorMessage ?? "Unknown error"}',
-                              ),
-                            );
-                          }
-                          if (state.hasData && state.data != null) {
-                            return _RecentActivitySection(
-                              activePackages: state.data!,
-                            );
-                          }
-                          return const _RecentActivitySection(
-                            activePackages: [],
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ],
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/bloc/base/base_state.dart';
@@ -280,13 +281,24 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> {
                           context.read<ParcelBloc>().add(const ParcelWatchAvailableParcelsRequested());
                           await Future.delayed(const Duration(seconds: 1));
                         },
-                        child: ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          itemCount: filteredParcels.length,
-                          itemBuilder: (context, index) {
-                            final parcel = filteredParcels[index];
-                            return _buildRequestCard(parcel);
-                          },
+                        child: AnimationLimiter(
+                          child: ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            itemCount: filteredParcels.length,
+                            itemBuilder: (context, index) {
+                              final parcel = filteredParcels[index];
+                              return AnimationConfiguration.staggeredList(
+                                position: index,
+                                duration: const Duration(milliseconds: 375),
+                                child: SlideAnimation(
+                                  verticalOffset: 50.0,
+                                  child: FadeInAnimation(
+                                    child: _buildRequestCard(parcel),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                         ),
                       ),
                     ),

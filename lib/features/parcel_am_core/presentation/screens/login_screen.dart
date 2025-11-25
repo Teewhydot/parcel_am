@@ -37,6 +37,16 @@ class _LoginScreenState extends State<LoginScreen>
   bool _obscurePassword = true;
   bool _showPasswordReset = false;
 
+  // Real-time validation states
+  String? _emailError;
+  String? _passwordError;
+  String? _displayNameError;
+  String? _resetEmailError;
+  bool _emailTouched = false;
+  bool _passwordTouched = false;
+  bool _displayNameTouched = false;
+  bool _resetEmailTouched = false;
+
   @override
   void initState() {
     super.initState();
@@ -45,6 +55,66 @@ class _LoginScreenState extends State<LoginScreen>
     if (args?['showSignIn'] == true) {
       _tabController.animateTo(0);
     }
+
+    // Add listeners for real-time validation
+    _emailController.addListener(_validateEmail);
+    _passwordController.addListener(_validatePassword);
+    _displayNameController.addListener(_validateDisplayName);
+    _resetEmailController.addListener(_validateResetEmail);
+  }
+
+  void _validateEmail() {
+    if (!_emailTouched) return;
+    setState(() {
+      final email = _emailController.text.trim();
+      if (email.isEmpty) {
+        _emailError = 'Email is required';
+      } else if (!_isValidEmail(email)) {
+        _emailError = 'Please enter a valid email';
+      } else {
+        _emailError = null;
+      }
+    });
+  }
+
+  void _validatePassword() {
+    if (!_passwordTouched) return;
+    setState(() {
+      final password = _passwordController.text.trim();
+      if (password.isEmpty) {
+        _passwordError = 'Password is required';
+      } else if (password.length < 6) {
+        _passwordError = 'Password must be at least 6 characters';
+      } else {
+        _passwordError = null;
+      }
+    });
+  }
+
+  void _validateDisplayName() {
+    if (!_displayNameTouched) return;
+    setState(() {
+      final displayName = _displayNameController.text.trim();
+      if (displayName.isEmpty) {
+        _displayNameError = 'Name is required';
+      } else {
+        _displayNameError = null;
+      }
+    });
+  }
+
+  void _validateResetEmail() {
+    if (!_resetEmailTouched) return;
+    setState(() {
+      final email = _resetEmailController.text.trim();
+      if (email.isEmpty) {
+        _resetEmailError = 'Email is required';
+      } else if (!_isValidEmail(email)) {
+        _resetEmailError = 'Please enter a valid email';
+      } else {
+        _resetEmailError = null;
+      }
+    });
   }
 
   @override
@@ -322,9 +392,15 @@ class _LoginScreenState extends State<LoginScreen>
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 enabled: !state.isLoading,
+                onTap: () {
+                  if (!_emailTouched) {
+                    setState(() => _emailTouched = true);
+                  }
+                },
                 decoration: InputDecoration(
                   hintText: 'your.email@example.com',
                   prefixIcon: const Icon(Icons.email_outlined),
+                  errorText: _emailError,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -341,9 +417,15 @@ class _LoginScreenState extends State<LoginScreen>
                 controller: _passwordController,
                 obscureText: _obscurePassword,
                 enabled: !state.isLoading,
+                onTap: () {
+                  if (!_passwordTouched) {
+                    setState(() => _passwordTouched = true);
+                  }
+                },
                 decoration: InputDecoration(
                   hintText: '••••••••',
                   prefixIcon: const Icon(Icons.lock_outline),
+                  errorText: _passwordError,
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscurePassword

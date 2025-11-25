@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:parcel_am/core/bloc/base/base_state.dart';
 import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -161,25 +162,36 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       }
     }
 
-    return ListView(
-      children: [
-        if (todayNotifications.isNotEmpty) ...[
-          _buildSectionHeader('Today'),
-          ...todayNotifications.map((notification) => _buildNotificationCard(context, notification)),
-        ],
-        if (yesterdayNotifications.isNotEmpty) ...[
-          _buildSectionHeader('Yesterday'),
-          ...yesterdayNotifications.map((notification) => _buildNotificationCard(context, notification)),
-        ],
-        if (thisWeekNotifications.isNotEmpty) ...[
-          _buildSectionHeader('This Week'),
-          ...thisWeekNotifications.map((notification) => _buildNotificationCard(context, notification)),
-        ],
-        if (earlierNotifications.isNotEmpty) ...[
-          _buildSectionHeader('Earlier'),
-          ...earlierNotifications.map((notification) => _buildNotificationCard(context, notification)),
-        ],
-      ],
+    return AnimationLimiter(
+      child: ListView(
+        children: AnimationConfiguration.toStaggeredList(
+          duration: const Duration(milliseconds: 375),
+          childAnimationBuilder: (widget) => SlideAnimation(
+            verticalOffset: 50.0,
+            child: FadeInAnimation(
+              child: widget,
+            ),
+          ),
+          children: [
+            if (todayNotifications.isNotEmpty) ...[
+              _buildSectionHeader('Today'),
+              ...todayNotifications.map((notification) => _buildNotificationCard(context, notification)),
+            ],
+            if (yesterdayNotifications.isNotEmpty) ...[
+              _buildSectionHeader('Yesterday'),
+              ...yesterdayNotifications.map((notification) => _buildNotificationCard(context, notification)),
+            ],
+            if (thisWeekNotifications.isNotEmpty) ...[
+              _buildSectionHeader('This Week'),
+              ...thisWeekNotifications.map((notification) => _buildNotificationCard(context, notification)),
+            ],
+            if (earlierNotifications.isNotEmpty) ...[
+              _buildSectionHeader('Earlier'),
+              ...earlierNotifications.map((notification) => _buildNotificationCard(context, notification)),
+            ],
+          ],
+        ),
+      ),
     );
   }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import '../helpers/haptic_helper.dart';
 import 'app_spacing.dart';
 
 enum ButtonVariant {
@@ -145,20 +146,28 @@ class AppButton extends StatelessWidget {
   final Widget? trailingIcon;
   final BorderRadius? borderRadius;
 
+  VoidCallback? _wrapWithHaptic(VoidCallback? callback) {
+    if (callback == null) return null;
+    return () {
+      HapticHelper.lightImpact();
+      callback();
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final isEnabled = enabled && !loading && onPressed != null;
-    
+
     Widget buttonChild = _buildButtonContent();
     Widget button = _buildButton(buttonChild, isEnabled);
-    
+
     if (fullWidth) {
       return SizedBox(
         width: double.infinity,
         child: button,
       );
     }
-    
+
     return button;
   }
 
@@ -202,10 +211,12 @@ class AppButton extends StatelessWidget {
   }
 
   Widget _buildButton(Widget buttonChild, bool isEnabled) {
+    final wrappedOnPressed = isEnabled ? _wrapWithHaptic(onPressed) : null;
+
     switch (variant) {
       case ButtonVariant.primary:
         return ElevatedButton(
-          onPressed: isEnabled ? onPressed : null,
+          onPressed: wrappedOnPressed,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
@@ -218,10 +229,10 @@ class AppButton extends StatelessWidget {
           ),
           child: buttonChild,
         );
-        
+
       case ButtonVariant.secondary:
         return ElevatedButton(
-          onPressed: isEnabled ? onPressed : null,
+          onPressed: wrappedOnPressed,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.secondary,
             foregroundColor: Colors.white,
@@ -234,10 +245,10 @@ class AppButton extends StatelessWidget {
           ),
           child: buttonChild,
         );
-        
+
       case ButtonVariant.outline:
         return OutlinedButton(
-          onPressed: isEnabled ? onPressed : null,
+          onPressed: wrappedOnPressed,
           style: OutlinedButton.styleFrom(
             foregroundColor: AppColors.primary,
             padding: size.padding,
@@ -252,7 +263,7 @@ class AppButton extends StatelessWidget {
         
       case ButtonVariant.text:
         return TextButton(
-          onPressed: isEnabled ? onPressed : null,
+          onPressed: wrappedOnPressed,
           style: TextButton.styleFrom(
             foregroundColor: AppColors.primary,
             padding: size.padding,
@@ -263,20 +274,20 @@ class AppButton extends StatelessWidget {
           ),
           child: buttonChild,
         );
-        
+
       case ButtonVariant.ghost:
         return InkWell(
-          onTap: isEnabled ? onPressed : null,
+          onTap: wrappedOnPressed,
           borderRadius: borderRadius ?? BorderRadius.circular(8),
           child: Container(
             padding: size.padding,
             child: buttonChild,
           ),
         );
-        
+
       case ButtonVariant.danger:
         return ElevatedButton(
-          onPressed: isEnabled ? onPressed : null,
+          onPressed: wrappedOnPressed,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.error,
             foregroundColor: Colors.white,

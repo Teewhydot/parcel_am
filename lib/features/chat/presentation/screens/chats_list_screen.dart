@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../../../../core/routes/routes.dart';
@@ -75,7 +77,39 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
         bloc: _chatsListBloc,
         builder: (context, state) {
           if (state is LoadingState<List<Chat>>) {
-            return const Center(child: CircularProgressIndicator());
+            return Skeletonizer(
+              enabled: true,
+              child: ListView.separated(
+                itemCount: 8,
+                separatorBuilder: (context, index) => const Divider(height: 1),
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    leading: const CircleAvatar(
+                      backgroundColor: AppColors.primary,
+                      child: Text('L'),
+                    ),
+                    title: const Text('Loading User Name'),
+                    subtitle: const Text('Loading message content here...'),
+                    trailing: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        const Text('12:00'),
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Text('3'),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            );
           }
 
           if (state is ErrorState<List<Chat>>) {
@@ -153,97 +187,108 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
               onRefresh: () async {
                 _chatsListBloc.add(LoadChats(widget.currentUserId));
               },
-              child: ListView.separated(
-                itemCount: chats.length,
-                separatorBuilder: (context, index) => const Divider(height: 1),
-                itemBuilder: (context, index) {
-                  final chat = chats[index];
-                  final otherParticipantName = _getOtherParticipantName(chat);
-                  final otherParticipantAvatar = _getOtherParticipantAvatar(chat);
-                  final otherParticipantId = _getOtherParticipantId(chat);
-                  final unreadCount = _getUnreadCount(chat);
-                  final isTyping = chat.isTyping[otherParticipantId] ?? false;
+              child: AnimationLimiter(
+                child: ListView.separated(
+                  itemCount: chats.length,
+                  separatorBuilder: (context, index) => const Divider(height: 1),
+                  itemBuilder: (context, index) {
+                    final chat = chats[index];
+                    final otherParticipantName = _getOtherParticipantName(chat);
+                    final otherParticipantAvatar = _getOtherParticipantAvatar(chat);
+                    final otherParticipantId = _getOtherParticipantId(chat);
+                    final unreadCount = _getUnreadCount(chat);
+                    final isTyping = chat.isTyping[otherParticipantId] ?? false;
 
-                  return ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: AppColors.primary,
-                      backgroundImage: otherParticipantAvatar != null
-                          ? NetworkImage(otherParticipantAvatar)
-                          : null,
-                      child: otherParticipantAvatar == null
-                          ? Text(
-                              otherParticipantName.isNotEmpty
-                                  ? otherParticipantName[0].toUpperCase()
-                                  : '?',
-                              style: const TextStyle(color: Colors.white),
-                            )
-                          : null,
-                    ),
-                    title: Text(
-                      otherParticipantName,
-                      style: TextStyle(
-                        fontWeight: unreadCount > 0 ? FontWeight.bold : FontWeight.normal,
-                      ),
-                    ),
-                    subtitle: Text(
-                      isTyping
-                          ? 'typing...'
-                          : chat.lastMessage?.content ?? 'No messages yet',
-                      style: TextStyle(
-                        color: isTyping ? AppColors.primary : Colors.grey[600],
-                        fontStyle: isTyping ? FontStyle.italic : FontStyle.normal,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    trailing: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        if (chat.lastMessageTime != null)
-                          Text(
-                            _formatTime(chat.lastMessageTime!),
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 12,
+                    return AnimationConfiguration.staggeredList(
+                      position: index,
+                      duration: const Duration(milliseconds: 375),
+                      child: SlideAnimation(
+                        verticalOffset: 50.0,
+                        child: FadeInAnimation(
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: AppColors.primary,
+                              backgroundImage: otherParticipantAvatar != null
+                                  ? NetworkImage(otherParticipantAvatar)
+                                  : null,
+                              child: otherParticipantAvatar == null
+                                  ? Text(
+                                      otherParticipantName.isNotEmpty
+                                          ? otherParticipantName[0].toUpperCase()
+                                          : '?',
+                                      style: const TextStyle(color: Colors.white),
+                                    )
+                                  : null,
                             ),
-                          ),
-                        if (unreadCount > 0) ...[
-                          const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              unreadCount > 99 ? '99+' : '$unreadCount',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
+                            title: Text(
+                              otherParticipantName,
+                              style: TextStyle(
+                                fontWeight: unreadCount > 0 ? FontWeight.bold : FontWeight.normal,
                               ),
                             ),
+                            subtitle: Text(
+                              isTyping
+                                  ? 'typing...'
+                                  : chat.lastMessage?.content ?? 'No messages yet',
+                              style: TextStyle(
+                                color: isTyping ? AppColors.primary : Colors.grey[600],
+                                fontStyle: isTyping ? FontStyle.italic : FontStyle.normal,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            trailing: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                if (chat.lastMessageTime != null)
+                                  Text(
+                                    _formatTime(chat.lastMessageTime!),
+                                    style: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                if (unreadCount > 0) ...[
+                                  const SizedBox(height: 4),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primary,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      unreadCount > 99 ? '99+' : '$unreadCount',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            onTap: () {
+                              sl<NavigationService>().navigateTo(
+                                Routes.chat,
+                                arguments: {
+                                  'chatId': chat.id,
+                                  'otherUserId': otherParticipantId,
+                                  'otherUserName': otherParticipantName,
+                                  'otherUserAvatar': otherParticipantAvatar,
+                                },
+                              );
+                            },
                           ),
-                        ],
-                      ],
-                    ),
-                    onTap: () {
-                      sl<NavigationService>().navigateTo(
-                        Routes.chat,
-                        arguments: {
-                          'chatId': chat.id,
-                          'otherUserId': otherParticipantId,
-                          'otherUserName': otherParticipantName,
-                          'otherUserAvatar': otherParticipantAvatar,
-                        },
-                      );
-                    },
-                  );
-                },
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
             );
           }
