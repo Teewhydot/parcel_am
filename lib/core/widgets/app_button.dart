@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../helpers/haptic_helper.dart';
+import '../services/auth/kyc_guard.dart';
 import 'app_spacing.dart';
+import 'kyc_blocked_action.dart';
 
 enum ButtonVariant {
   primary,
@@ -25,7 +27,7 @@ enum ButtonSize {
 class AppButton extends StatelessWidget {
   const AppButton({
     super.key,
-    required this.onPressed,
+     this.onPressed,
     required this.child,
     this.variant = ButtonVariant.primary,
     this.size = ButtonSize.large,
@@ -35,11 +37,13 @@ class AppButton extends StatelessWidget {
     this.leadingIcon,
     this.trailingIcon,
     this.borderRadius,
+    this.requiresKyc = false,
+    this.kycBlockedAction = KycBlockedAction.showSnackbar,
   });
 
   factory AppButton.primary({
     Key? key,
-    required VoidCallback? onPressed,
+     VoidCallback? onPressed,
     required Widget child,
     ButtonSize size = ButtonSize.large,
     bool fullWidth = false,
@@ -47,6 +51,8 @@ class AppButton extends StatelessWidget {
     Widget? leadingIcon,
     Widget? trailingIcon,
     BorderRadius? borderRadius,
+    bool requiresKyc = false,
+    KycBlockedAction kycBlockedAction = KycBlockedAction.showSnackbar,
   }) {
     return AppButton(
       key: key,
@@ -58,13 +64,15 @@ class AppButton extends StatelessWidget {
       leadingIcon: leadingIcon,
       trailingIcon: trailingIcon,
       borderRadius: borderRadius,
+      requiresKyc: requiresKyc,
+      kycBlockedAction: kycBlockedAction,
       child: child,
     );
   }
 
   factory AppButton.secondary({
     Key? key,
-    required VoidCallback? onPressed,
+     VoidCallback? onPressed,
     required Widget child,
     ButtonSize size = ButtonSize.large,
     bool fullWidth = false,
@@ -72,6 +80,8 @@ class AppButton extends StatelessWidget {
     Widget? leadingIcon,
     Widget? trailingIcon,
     BorderRadius? borderRadius,
+    bool requiresKyc = false,
+    KycBlockedAction kycBlockedAction = KycBlockedAction.showSnackbar,
   }) {
     return AppButton(
       key: key,
@@ -83,6 +93,8 @@ class AppButton extends StatelessWidget {
       leadingIcon: leadingIcon,
       trailingIcon: trailingIcon,
       borderRadius: borderRadius,
+      requiresKyc: requiresKyc,
+      kycBlockedAction: kycBlockedAction,
       child: child,
     );
   }
@@ -97,6 +109,8 @@ class AppButton extends StatelessWidget {
     Widget? leadingIcon,
     Widget? trailingIcon,
     BorderRadius? borderRadius,
+    bool requiresKyc = false,
+    KycBlockedAction kycBlockedAction = KycBlockedAction.showSnackbar,
   }) {
     return AppButton(
       key: key,
@@ -108,19 +122,23 @@ class AppButton extends StatelessWidget {
       leadingIcon: leadingIcon,
       trailingIcon: trailingIcon,
       borderRadius: borderRadius,
+      requiresKyc: requiresKyc,
+      kycBlockedAction: kycBlockedAction,
       child: child,
     );
   }
 
   factory AppButton.text({
     Key? key,
-    required VoidCallback? onPressed,
+     VoidCallback? onPressed,
     required Widget child,
     ButtonSize size = ButtonSize.medium,
     bool fullWidth = false,
     bool loading = false,
     Widget? leadingIcon,
     Widget? trailingIcon,
+    bool requiresKyc = false,
+    KycBlockedAction kycBlockedAction = KycBlockedAction.showSnackbar,
   }) {
     return AppButton(
       key: key,
@@ -131,6 +149,8 @@ class AppButton extends StatelessWidget {
       loading: loading,
       leadingIcon: leadingIcon,
       trailingIcon: trailingIcon,
+      requiresKyc: requiresKyc,
+      kycBlockedAction: kycBlockedAction,
       child: child,
     );
   }
@@ -145,6 +165,8 @@ class AppButton extends StatelessWidget {
   final Widget? leadingIcon;
   final Widget? trailingIcon;
   final BorderRadius? borderRadius;
+  final bool requiresKyc;
+  final KycBlockedAction kycBlockedAction;
 
   VoidCallback? _wrapWithHaptic(VoidCallback? callback) {
     if (callback == null) return null;
@@ -154,12 +176,44 @@ class AppButton extends StatelessWidget {
     };
   }
 
+  /// Returns the appropriate callback based on KYC access status
+  VoidCallback? _getKycAwareCallback(BuildContext context, bool hasKycAccess) {
+    if (onPressed == null) return null;
+
+    // If requires KYC and user doesn't have access, execute blocked action
+    if (requiresKyc && !hasKycAccess) {
+      return () {
+        HapticHelper.lightImpact();
+        kycBlockedAction.execute(context);
+      };
+    }
+
+    // Otherwise, use the normal callback with haptic feedback
+    return _wrapWithHaptic(onPressed);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isEnabled = enabled && !loading && onPressed != null;
+    // If KYC protection is required, wrap with StreamBuilder for realtime monitoring
+    if (requiresKyc) {
+      return StreamBuilder<bool>(
+        stream: context.watchKycAccess,
+        builder: (context, snapshot) {
+          final hasKycAccess = snapshot.data ?? false;
+          return _buildButtonWidget(context, hasKycAccess);
+        },
+      );
+    }
+
+    // For non-KYC buttons, build normally
+    return _buildButtonWidget(context, true);
+  }
+
+  Widget _buildButtonWidget(BuildContext context, bool hasKycAccess) {
+    final isEnabled = enabled && !loading;
 
     Widget buttonChild = _buildButtonContent();
-    Widget button = _buildButton(buttonChild, isEnabled);
+    Widget button = _buildButton(context, buttonChild, isEnabled, hasKycAccess);
 
     if (fullWidth) {
       return SizedBox(
@@ -210,13 +264,18 @@ class AppButton extends StatelessWidget {
     );
   }
 
-  Widget _buildButton(Widget buttonChild, bool isEnabled) {
-    final wrappedOnPressed = isEnabled ? _wrapWithHaptic(onPressed) : null;
+  Widget _buildButton(
+    BuildContext context,
+    Widget buttonChild,
+    bool isEnabled,
+    bool hasKycAccess,
+  ) {
+    final effectiveCallback = _getKycAwareCallback(context, hasKycAccess);
 
     switch (variant) {
       case ButtonVariant.primary:
         return ElevatedButton(
-          onPressed: wrappedOnPressed,
+          onPressed: effectiveCallback,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
@@ -232,7 +291,7 @@ class AppButton extends StatelessWidget {
 
       case ButtonVariant.secondary:
         return ElevatedButton(
-          onPressed: wrappedOnPressed,
+          onPressed: effectiveCallback,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.secondary,
             foregroundColor: Colors.white,
@@ -248,7 +307,7 @@ class AppButton extends StatelessWidget {
 
       case ButtonVariant.outline:
         return OutlinedButton(
-          onPressed: wrappedOnPressed,
+          onPressed: effectiveCallback,
           style: OutlinedButton.styleFrom(
             foregroundColor: AppColors.primary,
             padding: size.padding,
@@ -263,7 +322,7 @@ class AppButton extends StatelessWidget {
         
       case ButtonVariant.text:
         return TextButton(
-          onPressed: wrappedOnPressed,
+          onPressed: effectiveCallback,
           style: TextButton.styleFrom(
             foregroundColor: AppColors.primary,
             padding: size.padding,
@@ -277,7 +336,7 @@ class AppButton extends StatelessWidget {
 
       case ButtonVariant.ghost:
         return InkWell(
-          onTap: wrappedOnPressed,
+          onTap: effectiveCallback,
           borderRadius: borderRadius ?? BorderRadius.circular(8),
           child: Container(
             padding: size.padding,
@@ -287,7 +346,7 @@ class AppButton extends StatelessWidget {
 
       case ButtonVariant.danger:
         return ElevatedButton(
-          onPressed: wrappedOnPressed,
+          onPressed: effectiveCallback,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.error,
             foregroundColor: Colors.white,

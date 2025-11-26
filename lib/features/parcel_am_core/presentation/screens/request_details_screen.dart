@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
+import 'package:parcel_am/core/services/auth/kyc_guard.dart';
+import 'package:parcel_am/core/widgets/app_button.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../bloc/parcel/parcel_bloc.dart';
@@ -140,7 +143,8 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
           return const SizedBox.shrink();
         },
       ),
-      floatingActionButton: BlocBuilder<ParcelBloc, BaseState<ParcelData>>(
+      floatingActionButton: BlocManager<ParcelBloc, BaseState<ParcelData>>(
+        bloc:  context.read<ParcelBloc>(),
         builder: (context, state) {
           final parcel = state.data?.currentParcel;
           if (parcel == null || parcel.status != ParcelStatus.created) {
@@ -150,8 +154,13 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
           return Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: ElevatedButton(
-              onPressed: _isAccepting ? null : () => _acceptRequest(parcel),
+            child: AppButton(
+              enabled: true,
+              loading: state is LoadingState<ParcelData>,
+              requiresKyc: true,
+              onPressed: (){
+                _acceptRequest(parcel);
+              },
               child: _isAccepting
                   ? const SizedBox(
                       width: 20,
@@ -164,7 +173,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                   : const Text('Accept Request'),
             ),
           );
-        },
+        }, child: Container(),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
