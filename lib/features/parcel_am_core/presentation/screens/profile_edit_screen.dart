@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
 import 'package:parcel_am/core/helpers/user_extensions.dart';
+import 'package:parcel_am/core/routes/routes.dart';
 import 'package:parcel_am/core/services/file_upload_service.dart';
 import 'package:parcel_am/core/services/navigation_service/nav_config.dart';
 import 'package:parcel_am/features/parcel_am_core/data/models/user_model.dart';
@@ -64,6 +65,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         // Only navigate on SuccessState, not LoadedState
         if (state is LoadedState<AuthData>) {
           sl<NavigationService>().goBack();
+        }
+        //For Logout
+        if(state is SuccessState){
+          sl<NavigationService>().navigateTo(Routes.login);
         }
       },
       child: AppScaffold(
@@ -291,8 +296,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     final confirmed = await _showSignoutConfirmationDialog();
 
     if (confirmed == true) {
-      final authBloc = context.read<AuthBloc>();
-      authBloc.add(const AuthLogoutRequested());
+      context.read<AuthBloc>().add(const AuthLogoutRequested());
     }
   }
 

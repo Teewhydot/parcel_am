@@ -170,7 +170,7 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
         );
       },
       (_) {
-        emit(const InitialState<AuthData>());
+        emit(const SuccessState(successMessage: "Logout success"));
       },
     );
   }

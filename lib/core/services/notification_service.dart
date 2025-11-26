@@ -170,17 +170,27 @@ class NotificationService {
       // Configure iOS/Darwin notification settings
       await _configureIOSSettings();
 
-      // Get and store FCM token
-      final token = await getToken();
-      if (token != null) {
-        await storeToken(token);
-      }
-
-      // Subscribe to token refresh
+      // Subscribe to token refresh first (this will capture the token when it becomes available)
       _tokenRefreshSubscription = repository.onTokenRefresh.listen((newToken) {
         _currentToken = newToken;
         storeToken(newToken);
+        if (kDebugMode) {
+          Logger.logSuccess('FCM token refreshed: $newToken', tag: 'NotificationService');
+        }
       });
+
+      // Get and store FCM token (may be null on iOS initially if APNS token not ready)
+      final token = await getToken();
+      if (token != null) {
+        await storeToken(token);
+      } else {
+        if (kDebugMode) {
+          Logger.logWarning(
+            'FCM token not available during initialization. Will be retrieved when available via token refresh listener.',
+            tag: 'NotificationService',
+          );
+        }
+      }
 
       // Subscribe to foreground messages
       _foregroundMessageSubscription =
@@ -270,16 +280,32 @@ class NotificationService {
   Future<String?> getToken() async {
     try {
       _currentToken = await repository.getFCMToken();
-      if (kDebugMode) {
-        Logger.logBasic('FCM Token: $_currentToken');
+      if (_currentToken != null) {
+        if (kDebugMode) {
+          Logger.logSuccess('FCM Token retrieved: $_currentToken', tag: 'NotificationService');
+        }
       }
       return _currentToken;
     } catch (e) {
       if (kDebugMode) {
-        Logger.logError('Error getting FCM token: $e');
+        Logger.logError('Error getting FCM token: $e', tag: 'NotificationService');
       }
       return null;
     }
+  }
+
+  /// Manually retry getting FCM token
+  /// Useful for iOS when APNS token becomes available after initial initialization
+  Future<String?> retryGetToken() async {
+    if (kDebugMode) {
+      Logger.logBasic('Manually retrying FCM token retrieval...', tag: 'NotificationService');
+    }
+
+    final token = await getToken();
+    if (token != null) {
+      await storeToken(token);
+    }
+    return token;
   }
 
   /// Store FCM token to Firestore users/{userId}/fcmTokens array

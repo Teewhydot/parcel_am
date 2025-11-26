@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import '../../domain/repositories/notification_repository.dart';
@@ -15,7 +16,57 @@ class NotificationRepositoryImpl implements NotificationRepository {
 
   @override
   Future<String?> getFCMToken() async {
-    return await _firebaseMessaging.getToken();
+    try {
+      // On iOS, wait for APNS token before requesting FCM token
+      if (Platform.isIOS) {
+        // Try to get APNS token first with retry logic
+        String? apnsToken;
+        int retries = 0;
+        const maxRetries = 3;
+        const retryDelay = Duration(seconds: 2);
+
+        while (apnsToken == null && retries < maxRetries) {
+          try {
+            apnsToken = await _firebaseMessaging.getAPNSToken();
+            if (apnsToken != null) {
+              Logger.logSuccess(
+                'APNS token obtained successfully',
+                tag: 'NotificationRepository',
+              );
+              break;
+            }
+          } catch (e) {
+            Logger.logWarning(
+              'APNS token not available yet (attempt ${retries + 1}/$maxRetries)',
+              tag: 'NotificationRepository',
+            );
+          }
+
+          retries++;
+          if (retries < maxRetries && apnsToken == null) {
+            await Future.delayed(retryDelay);
+          }
+        }
+
+        // If APNS token is still not available after retries, log warning
+        if (apnsToken == null) {
+          Logger.logWarning(
+            'APNS token not available after $maxRetries attempts. FCM token will be retrieved when APNS token becomes available.',
+            tag: 'NotificationRepository',
+          );
+          return null;
+        }
+      }
+
+      // Get FCM token
+      return await _firebaseMessaging.getToken();
+    } catch (e) {
+      Logger.logError(
+        'Error getting FCM token: $e',
+        tag: 'NotificationRepository',
+      );
+      return null;
+    }
   }
 
   @override
