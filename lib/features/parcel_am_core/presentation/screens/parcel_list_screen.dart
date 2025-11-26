@@ -173,6 +173,7 @@ class _ParcelListScreenState extends State<ParcelListScreen> {
   }
 }
 
+
 class _ParcelCard extends StatelessWidget {
   final ParcelEntity parcel;
 

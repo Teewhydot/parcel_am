@@ -6,6 +6,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:app_badge_plus/app_badge_plus.dart';
+import 'package:parcel_am/features/notifications/domain/usecases/notification_usecase.dart';
 import '../../features/notifications/data/datasources/notification_remote_datasource.dart';
 import '../../features/notifications/data/models/notification_model.dart';
 import '../routes/routes.dart';
@@ -104,6 +105,7 @@ class NotificationService {
   static NotificationService? _instance;
 
   final NotificationRepository repository;
+  final  useCase = NotificationUseCase();
   final FlutterLocalNotificationsPlugin localNotifications;
   final NotificationRemoteDataSource remoteDataSource;
   final NavigationService navigationService;

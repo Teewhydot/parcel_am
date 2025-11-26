@@ -12,7 +12,7 @@ const ENVIRONMENT = {
 
 // Contact information configuration (can be updated remotely)
 const CONTACT_INFO = {
-  SUPPORT_EMAIL: process.env.SUPPORT_EMAIL || 'support@fooddelivery.com',
+  SUPPORT_EMAIL: process.env.SUPPORT_EMAIL || 'support@parcelam.com',
   SUPPORT_PHONE: process.env.SUPPORT_PHONE || '+234 XXX XXX XXXX',
   BUSINESS_LOCATION: process.env.BUSINESS_LOCATION || 'Lagos, Nigeria'
 };

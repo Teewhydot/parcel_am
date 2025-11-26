@@ -30,7 +30,6 @@ class ParcelSeeder {
         await docRef.set(parcelData);
         parcelIds.add(docRef.id);
       } catch (e) {
-        print('Error seeding parcel: $e');
       }
     }
 
