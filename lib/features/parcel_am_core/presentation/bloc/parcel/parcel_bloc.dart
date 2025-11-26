@@ -43,34 +43,34 @@ class ParcelBloc extends BaseBloC<ParcelEvent, BaseState<ParcelData>> {
     on<ParcelAcceptedListUpdated>(_onAcceptedListUpdated);
 
     // Task Group 4.2.1: Start connectivity monitoring
-    _initConnectivityMonitoring();
+    // _initConnectivityMonitoring();
   }
 
   /// Task Group 4.2.1: Initialize connectivity monitoring
   /// Syncs queued updates when connection is restored
-  void _initConnectivityMonitoring() {
-    _connectivityService.startMonitoring();
-    _isOnline = _connectivityService.isConnected;
-
-    _connectivitySubscription = _connectivityService.onConnectivityChanged.listen((isConnected) {
-      final wasOffline = !_isOnline;
-      _isOnline = isConnected;
-
-      // If connection is restored and we were offline, sync queued updates
-      if (isConnected && wasOffline) {
-        _syncQueuedUpdates();
-        DFoodUtils.showSnackBar(
-          'Connection restored. Syncing pending updates...',
-          AppColors.success,
-        );
-      } else if (!isConnected) {
-        DFoodUtils.showSnackBar(
-          'No internet connection. Changes will sync when online.',
-          AppColors.warning,
-        );
-      }
-    });
-  }
+  // void _initConnectivityMonitoring() {
+  //   _connectivityService.startMonitoring();
+  //   _isOnline = _connectivityService.isConnected;
+  //
+  //   _connectivitySubscription = _connectivityService.onConnectivityChanged.listen((isConnected) {
+  //     final wasOffline = !_isOnline;
+  //     _isOnline = isConnected;
+  //
+  //     // If connection is restored and we were offline, sync queued updates
+  //     if (isConnected && wasOffline) {
+  //       _syncQueuedUpdates();
+  //       DFoodUtils.showSnackBar(
+  //         'Connection restored. Syncing pending updates...',
+  //         AppColors.success,
+  //       );
+  //     } else if (!isConnected) {
+  //       DFoodUtils.showSnackBar(
+  //         'No internet connection. Changes will sync when online.',
+  //         AppColors.warning,
+  //       );
+  //     }
+  //   });
+  // }
 
   /// Task Group 4.2.1: Sync queued status updates when back online
   Future<void> _syncQueuedUpdates() async {

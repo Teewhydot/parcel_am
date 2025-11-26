@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get/get.dart';
 import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
 import 'package:parcel_am/core/helpers/user_extensions.dart';
+import 'package:parcel_am/features/file_upload/domain/entities/uploaded_file_entity.dart';
 import 'package:parcel_am/features/file_upload/domain/use_cases/file_upload_usecase.dart';
 import '../../../../core/domain/entities/kyc_status.dart';
+import '../../../../core/routes/routes.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_scaffold.dart';
 import '../../../../core/widgets/app_container.dart';
@@ -47,7 +50,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
   final _ninController = TextEditingController();
 
   String _selectedGender = 'Male';
-  final Map<String, DocumentUpload> _uploadedDocuments = {};
+  final Map<String, UploadedFileEntity> _uploadedDocuments = {};
   final Map<String, String> _uploadedDocumentUrls = {};
 
   @override
@@ -71,36 +74,11 @@ class _VerificationScreenState extends State<VerificationScreen> {
       bloc: context.read<KycBloc>(),
       showLoadingIndicator: false,
       showResultSuccessNotifications: false,
-      showResultErrorNotifications: false,
-
-      listener: (context, state) {
-        // Handle success state (document uploaded or KYC submitted)
-        if (state.isSuccess) {
-          setState(() => _isSubmitting = false);
-
-          // If KYC was fully submitted, show success dialog
-          if (state.data?.status == 'pending') {
-            if (mounted) _showSuccessDialog();
-          }
-        }
-
-        // Handle loaded state (document uploaded)
-        if (state.isLoaded && state.data != null) {
-          final kycData = state.data!;
-          // Update local uploaded documents map
-          setState(() {
-            _uploadedDocumentUrls.addAll(kycData.uploadedDocuments);
-          });
-        }
-
-        // Handle loading state
-        if (state.isLoading) {
-          setState(() => _isSubmitting = true);
-        }
-
-        // Handle error state
-        if (state.isError) {
-          setState(() => _isSubmitting = false);
+      showResultErrorNotifications: true,
+      listener: (context,state){
+        if(state is SuccessState<KycData>){
+          context.showSnackbar(message: state.successMessage);
+          sl<NavigationService>().goBack();
         }
       },
       child: AppScaffold(
@@ -247,15 +225,18 @@ class _VerificationScreenState extends State<VerificationScreen> {
             description:
                 'Upload your NIN slip, Driver\'s License, or International Passport',
             documentKey: 'government_id',
-            uploadedDocument: _uploadedDocuments['government_id'],
-            onUpload: (document) {
-              setState(() => _uploadedDocuments['government_id'] = document);
-              fileUploadUseCase.uploadFile(
-                userId: context.currentUserId!,
-                file: document.file,
-                folder: 'government_id',
-              );
-            },
+            isUploaded:  _uploadedDocumentUrls['government_id'] != null,
+            onUpload: (document) async {
+            final result =  await fileUploadUseCase.uploadFile(
+              userId: context.currentUserId!,
+              file: document.file,
+              folder: 'government_id',
+            );
+            result.fold(
+                  (failure) => context.showErrorMessage(failure.failureMessage),
+                    (document) => setState(() { _uploadedDocumentUrls['government_id'] = document.url; _uploadedDocuments['government_id'] = document;},)
+            );
+          },
           ),
 
           AppSpacing.verticalSpacing(SpacingSize.md),
@@ -264,14 +245,17 @@ class _VerificationScreenState extends State<VerificationScreen> {
             description:
                 'Upload a photo holding your government ID next to your face',
             documentKey: 'selfie_with_id',
-            uploadedDocument: _uploadedDocuments['selfie_with_id'],
-            onUpload: (document) {
-              setState(() => _uploadedDocuments['selfie_with_id'] = document);
-              fileUploadUseCase.uploadFile(
+            isUploaded:  _uploadedDocumentUrls['selfie_with_id'] != null,
+            onUpload: (document) async {
+              final result =  await fileUploadUseCase.uploadFile(
                 userId: context.currentUserId!,
                 file: document.file,
                 folder: 'selfie_with_id',
               );
+              result.fold(
+                    (failure) => context.showErrorMessage(failure.failureMessage),
+                    (document) => setState(() { _uploadedDocumentUrls['selfie_with_id'] = document.url; _uploadedDocuments['selfie_with_id'] = document;},
+                    ));
             },
             isCamera: false,
           ),
@@ -344,14 +328,17 @@ class _VerificationScreenState extends State<VerificationScreen> {
             description:
                 'Upload utility bill, bank statement, or tenancy agreement (dated within last 3 months)',
             documentKey: 'proof_of_address',
-            uploadedDocument: _uploadedDocuments['proof_of_address'],
-            onUpload: (document) {
-              setState(() => _uploadedDocuments['proof_of_address'] = document);
-              fileUploadUseCase.uploadFile(
+            isUploaded:  _uploadedDocumentUrls['proof_of_address'] != null,
+            onUpload: (document) async {
+            final result =  await fileUploadUseCase.uploadFile(
                 userId: context.currentUserId!,
                 file: document.file,
                 folder: 'proof_of_address',
               );
+            result.fold(
+                  (failure) => context.showErrorMessage(failure.failureMessage),
+                    (document) => setState(() { _uploadedDocumentUrls['proof_of_address'] = document.url; _uploadedDocuments['proof_of_address'] = document;},)
+            );
             },
           ),
 
@@ -535,20 +522,6 @@ class _VerificationScreenState extends State<VerificationScreen> {
     }
   }
 
-  void _uploadDocumentToFirebase(String documentType, String filePath) {
-    final authState = context.read<AuthBloc>().state;
-    if (authState is DataState<AuthData> && authState.data?.user != null) {
-      final userId = authState.data!.user!.uid;
-      context.read<KycBloc>().add(
-        KycDocumentUploadRequested(
-          userId: userId,
-          documentType: documentType,
-          filePath: filePath,
-        ),
-      );
-    }
-  }
-
   bool _validateCurrentStep() {
     switch (_currentStep) {
       case 0:
@@ -675,43 +648,4 @@ class _VerificationScreenState extends State<VerificationScreen> {
     );
   }
 
-  void _showSuccessDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.check_circle,
-                size: 64,
-                color: AppColors.success,
-              ),
-              AppSpacing.verticalSpacing(SpacingSize.md),
-              AppText.titleMedium(
-                'Verification Submitted!',
-                textAlign: TextAlign.center,
-              ),
-              AppSpacing.verticalSpacing(SpacingSize.xs),
-              AppText.bodyMedium(
-                VerificationConstants.successMessage,
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-          actions: [
-            AppButton.primary(
-              onPressed: () {
-                Navigator.of(context).pop();
-                sl<NavigationService>().goBack();
-              },
-              child: AppText.labelMedium('Continue', color: Colors.white),
-            ),
-          ],
-        );
-      },
-    );
-  }
 }

@@ -85,9 +85,8 @@ class DocumentUploadCard extends StatefulWidget {
   final String title;
   final String description;
   final String documentKey;
-  final DocumentUpload? uploadedDocument;
   final Function(DocumentUpload) onUpload;
-  final bool isCamera;
+  final bool isCamera,isUploaded;
   final Function(double progress)? onProgressUpdate;
 
   const DocumentUploadCard({
@@ -95,9 +94,9 @@ class DocumentUploadCard extends StatefulWidget {
     required this.title,
     required this.description,
     required this.documentKey,
-    this.uploadedDocument,
     required this.onUpload,
     this.isCamera = false,
+    this.isUploaded = false,
     this.onProgressUpdate,
   });
 
@@ -149,7 +148,6 @@ class _DocumentUploadCardState extends State<DocumentUploadCard> {
 
   @override
   Widget build(BuildContext context) {
-    final isUploaded = widget.uploadedDocument != null;
 
     return AppCard.outlined(
       child: Column(
@@ -173,7 +171,7 @@ class _DocumentUploadCardState extends State<DocumentUploadCard> {
                   ],
                 ),
               ),
-              if (isUploaded)
+              if (widget.isUploaded)
                 const Icon(
                   Icons.check_circle,
                   color: AppColors.success,
@@ -182,8 +180,8 @@ class _DocumentUploadCardState extends State<DocumentUploadCard> {
             ],
           ),
           AppSpacing.verticalSpacing(SpacingSize.md),
-          if (!isUploaded)
-            Column(
+          if (!widget.isUploaded)
+            if(!_isUploading) Column(
               children: [
                 AppButton.outline(
                   onPressed: _isUploading ? null : _pickDocument,
@@ -221,6 +219,8 @@ class _DocumentUploadCardState extends State<DocumentUploadCard> {
                 ),
               ],
             )
+              else
+                CircularProgressIndicator.adaptive()
           else
             AppContainer(
               padding: AppSpacing.paddingSM,
