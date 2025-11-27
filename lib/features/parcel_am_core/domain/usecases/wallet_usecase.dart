@@ -21,8 +21,9 @@ class WalletUseCase {
   Future<Either<Failure, WalletEntity>> updateBalance(
     String walletId,
     double amount,
+    String idempotencyKey,
   ) {
-    return walletRepo.updateBalance(walletId, amount);
+    return walletRepo.updateBalance(walletId, amount, idempotencyKey);
   }
 
   Stream<Either<Failure, WalletEntity>> watchBalance(String userId) {
@@ -33,16 +34,18 @@ class WalletUseCase {
     String walletId,
     double amount,
     String referenceId,
+    String idempotencyKey,
   ) {
-    return walletRepo.holdBalance(walletId, amount, referenceId);
+    return walletRepo.holdBalance(walletId, amount, referenceId, idempotencyKey);
   }
 
   Future<Either<Failure, WalletEntity>> releaseBalance(
     String walletId,
     double amount,
     String referenceId,
+    String idempotencyKey,
   ) {
-    return walletRepo.releaseBalance(walletId, amount, referenceId);
+    return walletRepo.releaseBalance(walletId, amount, referenceId, idempotencyKey);
   }
 
   Future<Either<Failure, TransactionEntity>> recordTransaction(
@@ -51,6 +54,7 @@ class WalletUseCase {
     TransactionType type,
     String? description,
     String? referenceId,
+    String idempotencyKey,
   ) {
     return walletRepo.recordTransaction(
       walletId,
@@ -58,6 +62,7 @@ class WalletUseCase {
       type,
       description,
       referenceId,
+      idempotencyKey,
     );
   }
 }

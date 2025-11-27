@@ -13,6 +13,7 @@ class TransactionModel {
   final String? description;
   final String? referenceId;
   final Map<String, dynamic> metadata;
+  final String idempotencyKey;
 
   const TransactionModel({
     required this.id,
@@ -26,6 +27,7 @@ class TransactionModel {
     this.description,
     this.referenceId,
     this.metadata = const {},
+    required this.idempotencyKey,
   });
 
   factory TransactionModel.fromJson(Map<String, dynamic> json) {
@@ -49,6 +51,7 @@ class TransactionModel {
       description: json['description'] as String?,
       referenceId: json['referenceId'] as String?,
       metadata: Map<String, dynamic>.from(json['metadata'] as Map? ?? {}),
+      idempotencyKey: json['idempotencyKey'] as String,
     );
   }
 
@@ -74,6 +77,7 @@ class TransactionModel {
       description: data['description'] as String?,
       referenceId: data['referenceId'] as String?,
       metadata: Map<String, dynamic>.from(data['metadata'] as Map? ?? {}),
+      idempotencyKey: data['idempotencyKey'] as String,
     );
   }
 
@@ -90,6 +94,7 @@ class TransactionModel {
       description: entity.description,
       referenceId: entity.referenceId,
       metadata: entity.metadata,
+      idempotencyKey: entity.idempotencyKey,
     );
   }
 
@@ -106,6 +111,7 @@ class TransactionModel {
       'description': description,
       'referenceId': referenceId,
       'metadata': metadata,
+      'idempotencyKey': idempotencyKey,
     };
   }
 
@@ -122,6 +128,7 @@ class TransactionModel {
       description: description,
       referenceId: referenceId,
       metadata: metadata,
+      idempotencyKey: idempotencyKey,
     );
   }
 
@@ -137,6 +144,7 @@ class TransactionModel {
     String? description,
     String? referenceId,
     Map<String, dynamic>? metadata,
+    String? idempotencyKey,
   }) {
     return TransactionModel(
       id: id ?? this.id,
@@ -150,6 +158,7 @@ class TransactionModel {
       description: description ?? this.description,
       referenceId: referenceId ?? this.referenceId,
       metadata: metadata ?? this.metadata,
+      idempotencyKey: idempotencyKey ?? this.idempotencyKey,
     );
   }
 }

@@ -102,6 +102,7 @@ Future<void> init() async {
   //! Features - Wallet (Parcel AM Core) Data Sources
   sl.registerLazySingleton<parcel_am_core_wallet_ds.WalletRemoteDataSource>(() => parcel_am_core_wallet_ds.WalletRemoteDataSourceImpl(
     firestore: sl(),
+    connectivityService: sl(),
   ));
 
   //! Features - Escrow Data Sources

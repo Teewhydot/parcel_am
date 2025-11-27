@@ -29,6 +29,7 @@ class TransactionEntity extends Equatable {
   final String? description;
   final String? referenceId;
   final Map<String, dynamic> metadata;
+  final String idempotencyKey;
 
   const TransactionEntity({
     required this.id,
@@ -42,6 +43,7 @@ class TransactionEntity extends Equatable {
     this.description,
     this.referenceId,
     this.metadata = const {},
+    required this.idempotencyKey,
   });
 
   TransactionEntity copyWith({
@@ -56,6 +58,7 @@ class TransactionEntity extends Equatable {
     String? description,
     String? referenceId,
     Map<String, dynamic>? metadata,
+    String? idempotencyKey,
   }) {
     return TransactionEntity(
       id: id ?? this.id,
@@ -69,6 +72,7 @@ class TransactionEntity extends Equatable {
       description: description ?? this.description,
       referenceId: referenceId ?? this.referenceId,
       metadata: metadata ?? this.metadata,
+      idempotencyKey: idempotencyKey ?? this.idempotencyKey,
     );
   }
 
@@ -85,5 +89,6 @@ class TransactionEntity extends Equatable {
         description,
         referenceId,
         metadata,
+        idempotencyKey,
       ];
 }

@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:parcel_am/core/bloc/base/base_bloc.dart';
 import 'package:parcel_am/core/bloc/base/base_state.dart';
+import 'package:parcel_am/core/services/connectivity_service.dart';
+import '../../../data/helpers/idempotency_helper.dart';
 import 'wallet_event.dart';
 import 'wallet_data.dart';
 import '../../../domain/usecases/wallet_usecase.dart';
@@ -9,12 +12,19 @@ import '../../../domain/usecases/wallet_usecase.dart';
 class WalletBloc extends BaseBloC<WalletEvent, BaseState<WalletData>> {
   Timer? _refreshTimer;
   StreamSubscription? _balanceSubscription;
+  StreamSubscription? _connectivitySubscription;
   String? _currentUserId;
-  String? _currentWalletId;
-  final _walletUseCase = WalletUseCase();
+  @visibleForTesting
+  String? currentWalletId;
+  bool _isOnline = true;
+  final WalletUseCase _walletUseCase;
+  final ConnectivityService _connectivityService;
 
-
-  WalletBloc()  :
+  WalletBloc({
+    WalletUseCase? walletUseCase,
+    ConnectivityService? connectivityService,
+  })  : _walletUseCase = walletUseCase ?? WalletUseCase(),
+        _connectivityService = connectivityService ?? ConnectivityService(),
         super(const InitialState<WalletData>()) {
     on<WalletStarted>(_onStarted);
     on<WalletLoadRequested>(_onLoadRequested);
@@ -23,6 +33,33 @@ class WalletBloc extends BaseBloC<WalletEvent, BaseState<WalletData>> {
     on<WalletEscrowHoldRequested>(_onEscrowHoldRequested);
     on<WalletEscrowReleaseRequested>(_onEscrowReleaseRequested);
     on<WalletBalanceRefreshRequested>(_onBalanceRefreshRequested);
+    on<WalletConnectivityChanged>(_onConnectivityChanged);
+
+    // Subscribe to connectivity changes
+    _connectivitySubscription =
+        _connectivityService.onConnectivityChanged.listen((isOnline) {
+      add(WalletConnectivityChanged(isOnline: isOnline));
+    });
+
+    // Start monitoring connectivity
+    _connectivityService.startMonitoring();
+  }
+
+  Future<void> _onConnectivityChanged(
+    WalletConnectivityChanged event,
+    Emitter<BaseState<WalletData>> emit,
+  ) async {
+    _isOnline = event.isOnline;
+
+    // If we have current data, update it with new connectivity status
+    final currentData = state.data;
+    if (currentData != null) {
+      // Emit the current data to trigger UI rebuild with connectivity state
+      emit(LoadedState<WalletData>(
+        data: currentData,
+        lastUpdated: DateTime.now(),
+      ));
+    }
   }
 
   Future<void> _onStarted(
@@ -42,16 +79,17 @@ class WalletBloc extends BaseBloC<WalletEvent, BaseState<WalletData>> {
           createResult.fold(
             (createFailure) {
               // Failed to create wallet
-              emit(ErrorState<WalletData>(errorMessage: createFailure.failureMessage));
+              emit(ErrorState<WalletData>(
+                  errorMessage: createFailure.failureMessage));
             },
             (wallet) {
-              _currentWalletId = wallet.id;
+              currentWalletId = wallet.id;
             },
           );
         }
       },
       (wallet) async {
-        _currentWalletId = wallet.id;
+        currentWalletId = wallet.id;
       },
     );
 
@@ -68,7 +106,7 @@ class WalletBloc extends BaseBloC<WalletEvent, BaseState<WalletData>> {
             ));
           },
           (wallet) {
-            _currentWalletId = wallet.id;
+            currentWalletId = wallet.id;
             add(WalletBalanceUpdated(
               availableBalance: wallet.availableBalance,
               pendingBalance: wallet.heldBalance,
@@ -136,6 +174,16 @@ class WalletBloc extends BaseBloC<WalletEvent, BaseState<WalletData>> {
       return;
     }
 
+    // Check connectivity before proceeding
+    if (!_isOnline) {
+      emit(AsyncErrorState<WalletData>(
+        errorMessage:
+            'No internet connection. Please check your connection and try again.',
+        data: currentData,
+      ));
+      return;
+    }
+
     if (currentData.availableBalance < event.amount) {
       emit(AsyncErrorState<WalletData>(
         errorMessage: 'Insufficient balance',
@@ -146,17 +194,33 @@ class WalletBloc extends BaseBloC<WalletEvent, BaseState<WalletData>> {
 
     emit(AsyncLoadingState<WalletData>(data: currentData));
 
-    if (_currentWalletId != null) {
+    if (currentWalletId != null) {
+      // Generate idempotency key
+      final idempotencyKey = IdempotencyHelper.generateTransactionId('hold');
+
       final result = await _walletUseCase.holdBalance(
-        _currentWalletId!,
+        currentWalletId!,
         event.amount,
         event.packageId,
+        idempotencyKey,
       );
 
       result.fold(
         (failure) {
+          String errorMessage = failure.failureMessage;
+
+          // Customize error message based on failure type
+          if (failure.failureMessage.contains('internet') ||
+              failure.failureMessage.contains('connection')) {
+            errorMessage =
+                'No internet connection. Please check your connection and try again.';
+          } else if (failure.failureMessage.contains('Insufficient')) {
+            errorMessage =
+                'Insufficient balance. Required: ${event.amount}, Available: ${currentData.availableBalance}';
+          }
+
           emit(AsyncErrorState<WalletData>(
-            errorMessage: failure.failureMessage,
+            errorMessage: errorMessage,
             data: currentData,
           ));
         },
@@ -186,21 +250,46 @@ class WalletBloc extends BaseBloC<WalletEvent, BaseState<WalletData>> {
       return;
     }
 
+    // Check connectivity before proceeding
+    if (!_isOnline) {
+      emit(AsyncErrorState<WalletData>(
+        errorMessage:
+            'No internet connection. Please check your connection and try again.',
+        data: currentData,
+      ));
+      return;
+    }
+
     emit(AsyncLoadingState<WalletData>(data: currentData));
 
-    if (_currentWalletId != null) {
-      // Use pendingBalance as the amount to release
-      // In a proper implementation, this should track held amounts per transaction
+    if (currentWalletId != null) {
+      // Generate idempotency key
+      final idempotencyKey = IdempotencyHelper.generateTransactionId('release');
+
+      // Use the amount from the event
       final result = await _walletUseCase.releaseBalance(
-        _currentWalletId!,
-        currentData.pendingBalance,
+        currentWalletId!,
+        event.amount,
         event.transactionId,
+        idempotencyKey,
       );
 
       result.fold(
         (failure) {
+          String errorMessage = failure.failureMessage;
+
+          // Customize error message based on failure type
+          if (failure.failureMessage.contains('internet') ||
+              failure.failureMessage.contains('connection')) {
+            errorMessage =
+                'No internet connection. Please check your connection and try again.';
+          } else if (failure.failureMessage.contains('Insufficient held balance')) {
+            errorMessage =
+                'Insufficient held balance. Required: ${event.amount}, Available: ${currentData.pendingBalance}';
+          }
+
           emit(AsyncErrorState<WalletData>(
-            errorMessage: failure.failureMessage,
+            errorMessage: errorMessage,
             data: currentData,
           ));
         },
@@ -249,7 +338,7 @@ class WalletBloc extends BaseBloC<WalletEvent, BaseState<WalletData>> {
           emit(ErrorState<WalletData>(errorMessage: failure.failureMessage));
         },
         (wallet) {
-          _currentWalletId = wallet.id;
+          currentWalletId = wallet.id;
           final walletData = WalletData(
             availableBalance: wallet.availableBalance,
             pendingBalance: wallet.heldBalance,
@@ -267,10 +356,15 @@ class WalletBloc extends BaseBloC<WalletEvent, BaseState<WalletData>> {
     }
   }
 
+  /// Returns current online status for UI to check
+  bool get isOnline => _isOnline;
+
   @override
   Future<void> close() {
     _refreshTimer?.cancel();
     _balanceSubscription?.cancel();
+    _connectivitySubscription?.cancel();
+    _connectivityService.dispose();
     return super.close();
   }
 }

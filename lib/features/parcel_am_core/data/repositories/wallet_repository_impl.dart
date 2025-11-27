@@ -52,11 +52,19 @@ class WalletRepositoryImpl implements WalletRepository {
   Future<Either<Failure, WalletEntity>> updateBalance(
     String walletId,
     double amount,
+    String idempotencyKey,
   ) async {
     try {
-     final walletModel =
-            await remoteDataSource.updateBalance(walletId, amount);
+     final walletModel = await remoteDataSource.updateBalance(
+          walletId,
+          amount,
+          idempotencyKey,
+        );
         return Right(walletModel.toEntity());
+    } on NoInternetException {
+      return const Left(NoInternetFailure(
+        failureMessage: 'No internet connection. Please check your connection and try again.',
+      ));
     } on InsufficientBalanceException catch (e) {
       return Left(ValidationFailure(failureMessage: e.message));
     } on WalletNotFoundException catch (e) {
@@ -85,14 +93,20 @@ class WalletRepositoryImpl implements WalletRepository {
     String walletId,
     double amount,
     String referenceId,
+    String idempotencyKey,
   ) async {
     try {
       final walletModel = await remoteDataSource.holdBalance(
         walletId,
         amount,
         referenceId,
+        idempotencyKey,
       );
       return Right(walletModel.toEntity());
+    } on NoInternetException {
+      return const Left(NoInternetFailure(
+        failureMessage: 'No internet connection. Please check your connection and try again.',
+      ));
     } on InsufficientBalanceException catch (e) {
       return Left(ValidationFailure(failureMessage: e.message));
     } on InvalidAmountException catch (e) {
@@ -115,14 +129,22 @@ class WalletRepositoryImpl implements WalletRepository {
     String walletId,
     double amount,
     String referenceId,
+    String idempotencyKey,
   ) async {
     try {
      final walletModel = await remoteDataSource.releaseBalance(
           walletId,
           amount,
           referenceId,
+          idempotencyKey,
         );
         return Right(walletModel.toEntity());
+    } on NoInternetException {
+      return const Left(NoInternetFailure(
+        failureMessage: 'No internet connection. Please check your connection and try again.',
+      ));
+    } on InsufficientHeldBalanceException catch (e) {
+      return Left(ValidationFailure(failureMessage: e.message));
     } on InvalidAmountException catch (e) {
       return Left(ValidationFailure(failureMessage: e.message));
     } on WalletNotFoundException catch (e) {
@@ -145,6 +167,7 @@ class WalletRepositoryImpl implements WalletRepository {
     TransactionType type,
     String? description,
     String? referenceId,
+    String idempotencyKey,
   ) async {
     try {
      final wallet = await remoteDataSource.getWallet(walletId);
@@ -155,6 +178,7 @@ class WalletRepositoryImpl implements WalletRepository {
           type,
           description,
           referenceId,
+          idempotencyKey,
         );
         return Right(transactionModel.toEntity());
     } on InvalidAmountException catch (e) {

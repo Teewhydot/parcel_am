@@ -73,3 +73,12 @@ class WalletEscrowReleaseRequested extends WalletEvent {
 class WalletBalanceRefreshRequested extends WalletEvent {
   const WalletBalanceRefreshRequested();
 }
+
+class WalletConnectivityChanged extends WalletEvent {
+  final bool isOnline;
+
+  const WalletConnectivityChanged({required this.isOnline});
+
+  @override
+  List<Object?> get props => [isOnline];
+}

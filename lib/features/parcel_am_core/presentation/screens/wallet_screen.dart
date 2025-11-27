@@ -25,8 +25,23 @@ class WalletScreen extends StatelessWidget {
           backgroundColor: AppColors.surface,
           elevation: 0,
         ),
-        body: BlocBuilder<WalletBloc, BaseState<WalletData>>(
+        body: BlocConsumer<WalletBloc, BaseState<WalletData>>(
+          listener: (context, state) {
+            // Show error snackbar when error occurs
+            if (state is AsyncErrorState<WalletData>) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.errorMessage),
+                  backgroundColor: Colors.red,
+                  duration: const Duration(seconds: 4),
+                ),
+              );
+            }
+          },
           builder: (context, state) {
+            final bloc = context.read<WalletBloc>();
+            final isOnline = bloc.isOnline;
+
             if (state.isLoading && !state.hasData) {
               return const Center(
                 child: CircularProgressIndicator(),
@@ -65,6 +80,32 @@ class WalletScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Connectivity warning banner
+                    if (!isOnline)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: AppSpacing.paddingMD,
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade100,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.orange.shade300),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.wifi_off, color: Colors.orange.shade700),
+                            AppSpacing.horizontalSpacing(SpacingSize.sm),
+                            Expanded(
+                              child: Text(
+                                'No internet connection. Wallet operations are disabled.',
+                                style: TextStyle(
+                                  color: Colors.orange.shade900,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     Card(
                       child: Padding(
                         padding: AppSpacing.paddingXXL,
@@ -111,7 +152,7 @@ class WalletScreen extends StatelessWidget {
                                 Column(
                                   children: [
                                     const Text(
-                                      'In Escrow',
+                                      'Pending Balance',
                                       style: TextStyle(
                                         fontSize: 12,
                                         color: AppColors.onSurfaceVariant,
@@ -137,27 +178,41 @@ class WalletScreen extends StatelessWidget {
                     Row(
                       children: [
                         Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () {},
-                            icon: const Icon(Icons.add),
-                            label: const Text('Add Funds'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              foregroundColor: Colors.white,
-                              padding: AppSpacing.paddingLG,
+                          child: Tooltip(
+                            message: isOnline
+                                ? 'Add funds to your wallet'
+                                : 'Wallet operations require internet connection',
+                            child: ElevatedButton.icon(
+                              onPressed: isOnline ? () {} : null,
+                              icon: const Icon(Icons.add),
+                              label: const Text('Add Funds'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: isOnline ? AppColors.primary : Colors.grey,
+                                foregroundColor: Colors.white,
+                                padding: AppSpacing.paddingLG,
+                                disabledBackgroundColor: Colors.grey.shade300,
+                                disabledForegroundColor: Colors.grey.shade600,
+                              ),
                             ),
                           ),
                         ),
                         AppSpacing.horizontalSpacing(SpacingSize.md),
                         Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () {},
-                            icon: const Icon(Icons.arrow_upward),
-                            label: const Text('Withdraw'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.surfaceVariant,
-                              foregroundColor: AppColors.onSurface,
-                              padding: AppSpacing.paddingLG,
+                          child: Tooltip(
+                            message: isOnline
+                                ? 'Withdraw funds from your wallet'
+                                : 'Wallet operations require internet connection',
+                            child: ElevatedButton.icon(
+                              onPressed: isOnline ? () {} : null,
+                              icon: const Icon(Icons.arrow_upward),
+                              label: const Text('Withdraw'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: isOnline ? AppColors.surfaceVariant : Colors.grey,
+                                foregroundColor: isOnline ? AppColors.onSurface : Colors.grey.shade600,
+                                padding: AppSpacing.paddingLG,
+                                disabledBackgroundColor: Colors.grey.shade300,
+                                disabledForegroundColor: Colors.grey.shade600,
+                              ),
                             ),
                           ),
                         ),

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
-import 'package:parcel_am/core/services/auth/kyc_guard.dart';
 import 'package:parcel_am/core/widgets/app_button.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/bloc/base/base_state.dart';

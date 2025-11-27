@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
-import 'package:mockito/mockito.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/widgets/delivery_card.dart';
 import 'package:parcel_am/features/parcel_am_core/domain/entities/parcel_entity.dart'
     as parcel;
 import 'package:parcel_am/core/services/navigation_service/nav_config.dart';
-import 'package:parcel_am/injection_container.dart' as di;
 import 'package:get_it/get_it.dart';
 
 import 'delivery_card_test.mocks.dart';
