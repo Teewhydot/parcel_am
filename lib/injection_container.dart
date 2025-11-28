@@ -149,12 +149,12 @@ Future<void> init() async {
 
   // Payment Repositories
   sl.registerLazySingleton<PaystackPaymentRepository>(
-    () => PaystackPaymentRepositoryImpl(sl()),
+    () => PaystackPaymentRepositoryImpl(),
   );
 
   // Payment Use Cases
   sl.registerLazySingleton<PaystackPaymentUseCase>(
-    () => PaystackPaymentUseCase(sl()),
+    () => PaystackPaymentUseCase(),
   );
 
   // Payment BLoCs

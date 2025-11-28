@@ -38,7 +38,7 @@ class PaystackService {
           },
           body: json.encode({
             'orderId': orderId,
-            'amount': (amount * 100).toInt(), // Convert to kobo
+            'amount': (amount).toInt(), // Convert to kobo
             'email': email,
             'userId': userId,
             'metadata': metadata ?? {},

@@ -1,14 +1,13 @@
 import 'package:dartz/dartz.dart';
 import 'package:get/get_utils/src/get_utils/get_utils.dart';
+import 'package:parcel_am/features/payments/data/repositories/paystack_payment_repository_impl.dart';
 
 import '../../../../core/errors/failures.dart';
 import '../entities/paystack_transaction_entity.dart';
 import '../repositories/paystack_payment_repository.dart';
 
 class PaystackPaymentUseCase {
-  final PaystackPaymentRepository _repository;
-
-  PaystackPaymentUseCase(this._repository);
+  final  _repository = PaystackPaymentRepositoryImpl();
 
   /// Initialize wallet funding payment
   /// [transactionId] - Unique transaction ID for the wallet top-up

@@ -2,8 +2,8 @@
 // Parcel_am App Firebase Functions - Modular Services
 // ========================================================================
 
-// Load environment variables from .env file
-require('dotenv').config();
+// Load environment variables from .env file (root directory for local development)
+require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
 
 // Firebase Functions
 const { onRequest } = require('firebase-functions/v2/https');

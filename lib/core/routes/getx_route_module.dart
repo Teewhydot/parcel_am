@@ -18,6 +18,8 @@ import 'package:parcel_am/features/chat/presentation/screens/chats_list_screen.d
 import 'package:parcel_am/features/chat/presentation/screens/chat_screen.dart';
 import 'package:parcel_am/features/notifications/presentation/screens/notifications_screen.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/screens/settings_screen.dart';
+import 'package:parcel_am/features/payments/presentation/screens/wallet_funding_payment_screen.dart';
+import 'package:parcel_am/features/payments/presentation/screens/wallet_funding_success_screen.dart';
 
 import '../../features/parcel_am_core/presentation/screens/splash_screen.dart';
 import '../services/auth/auth_guard.dart';
@@ -126,6 +128,46 @@ class GetXRouteModule {
         // Get current user ID from auth service or pass via route arguments
         final userId = Get.arguments as String? ?? '';
         return WalletScreen(userId: userId);
+      },
+      transition: _transition,
+      transitionDuration: _transitionDuration,
+      requiresKyc: true,
+    ),
+    AuthGuard.createProtectedRoute(
+      name: Routes.walletFundingPayment,
+      page: () {
+        final args = Get.arguments as Map<String, dynamic>? ?? {};
+        final authorizationUrl = args['authorizationUrl'] as String? ?? '';
+        final reference = args['reference'] as String? ?? '';
+        final transactionId = args['transactionId'] as String? ?? '';
+        final userId = args['userId'] as String? ?? '';
+        final amount = args['amount'] as double? ?? 0.0;
+        return WalletFundingPaymentScreen(
+          authorizationUrl: authorizationUrl,
+          reference: reference,
+          transactionId: transactionId,
+          userId: userId,
+          amount: amount,
+        );
+      },
+      transition: _transition,
+      transitionDuration: _transitionDuration,
+      requiresKyc: true,
+    ),
+    AuthGuard.createProtectedRoute(
+      name: Routes.walletFundingSuccess,
+      page: () {
+        final args = Get.arguments as Map<String, dynamic>? ?? {};
+        final transactionId = args['transactionId'] as String? ?? '';
+        final reference = args['reference'] as String? ?? '';
+        final amount = args['amount'] as double? ?? 0.0;
+        final userId = args['userId'] as String? ?? '';
+        return WalletFundingSuccessScreen(
+          transactionId: transactionId,
+          reference: reference,
+          amount: amount,
+          userId: userId,
+        );
       },
       transition: _transition,
       transitionDuration: _transitionDuration,

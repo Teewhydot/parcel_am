@@ -20,6 +20,20 @@ class WalletLoadRequested extends WalletEvent {
   const WalletLoadRequested();
 }
 
+class WalletsFundRequested extends WalletEvent {
+  final String userId,email,transactionId;
+  final double amount;
+
+
+  const WalletsFundRequested( {
+    required this.userId,
+    required this.email,
+    required this.transactionId,
+    required this.amount,
+  });
+
+}
+
 class WalletRefreshRequested extends WalletEvent {
   final String userId;
 

@@ -2,10 +2,13 @@
 // Constants and Configuration
 // ========================================================================
 
+const functions = require('firebase-functions');
+
 // Environment variables configuration (Firebase Functions v2)
+// Supports both Firebase config (for deployed functions) and process.env (for local development)
 const ENVIRONMENT = {
   GMAIL_PASSWORD: process.env.PASSWORD,
-  PAYSTACK_SECRET_KEY: process.env.PAYSTACK_SECRET_KEY,
+  PAYSTACK_SECRET_KEY: functions.config().paystack?.secret_key || process.env.PAYSTACK_SECRET_KEY,
   PROJECT_ID: process.env.GOOGLE_CLOUD_PROJECT || process.env.GCLOUD_PROJECT,
 
 };

@@ -1,13 +1,13 @@
 import 'package:dartz/dartz.dart';
+import 'package:get_it/get_it.dart';
 import '../../../../core/errors/failures.dart';
 import '../../domain/entities/paystack_transaction_entity.dart';
 import '../../domain/repositories/paystack_payment_repository.dart';
 import '../remote/data_sources/paystack_payment_data_source.dart';
 
 class PaystackPaymentRepositoryImpl implements PaystackPaymentRepository {
-  final PaystackPaymentDataSource _paystackDataSource;
+  final _paystackDataSource = GetIt.instance<PaystackPaymentDataSource>();
 
-  PaystackPaymentRepositoryImpl(this._paystackDataSource);
 
   @override
   Future<Either<Failure, PaystackTransactionEntity>> initializePayment({

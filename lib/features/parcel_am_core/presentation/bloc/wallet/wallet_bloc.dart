@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:parcel_am/core/bloc/base/base_bloc.dart';
 import 'package:parcel_am/core/bloc/base/base_state.dart';
 import 'package:parcel_am/core/services/connectivity_service.dart';
+import 'package:parcel_am/features/payments/domain/entities/paystack_transaction_entity.dart';
+import '../../../../payments/domain/use_cases/paystack_payment_usecase.dart';
 import '../../../data/helpers/idempotency_helper.dart';
 import 'wallet_event.dart';
 import 'wallet_data.dart';
@@ -19,6 +21,7 @@ class WalletBloc extends BaseBloC<WalletEvent, BaseState<WalletData>> {
   bool _isOnline = true;
   final WalletUseCase _walletUseCase;
   final ConnectivityService _connectivityService;
+
 
   WalletBloc({
     WalletUseCase? walletUseCase,
@@ -44,6 +47,7 @@ class WalletBloc extends BaseBloC<WalletEvent, BaseState<WalletData>> {
     // Start monitoring connectivity
     _connectivityService.startMonitoring();
   }
+
 
   Future<void> _onConnectivityChanged(
     WalletConnectivityChanged event,
@@ -355,6 +359,8 @@ class WalletBloc extends BaseBloC<WalletEvent, BaseState<WalletData>> {
       emit(ErrorState<WalletData>(errorMessage: e.toString()));
     }
   }
+
+
 
   /// Returns current online status for UI to check
   bool get isOnline => _isOnline;
