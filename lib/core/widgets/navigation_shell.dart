@@ -51,11 +51,6 @@ class _NavigationShellState extends State<NavigationShell> {
       activeIcon: Icons.chat_bubble,
       label: 'Chat',
     ),
-    FloatingNavItem(
-      icon: Icons.account_balance_wallet_outlined,
-      activeIcon: Icons.account_balance_wallet,
-      label: 'Wallet',
-    ),
   ];
 
   // Build screens for each tab based on current user
@@ -68,7 +63,6 @@ class _NavigationShellState extends State<NavigationShell> {
         child: const TrackingScreen(),
       ),
       ChatsListScreen(currentUserId: userId),
-      WalletScreen(userId: userId),
     ];
   }
 

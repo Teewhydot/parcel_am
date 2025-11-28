@@ -150,12 +150,6 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
           .snapshots()
           .handleError((error) {
         Logger.logError('Firestore Error (watchWallet): $error', tag: 'WalletRemoteDataSource');
-        if (error.toString().contains('index')) {
-          Logger.logError('INDEX REQUIRED: Create a composite index for:', tag: 'WalletRemoteDataSource');
-          Logger.logError('   Collection: wallets', tag: 'WalletRemoteDataSource');
-          Logger.logError('   Fields: userId (Ascending)', tag: 'WalletRemoteDataSource');
-          Logger.logError('   Or visit the Firebase Console to create the index automatically.', tag: 'WalletRemoteDataSource');
-        }
       })
           .map((snapshot) {
         if (snapshot.docs.isEmpty) {
