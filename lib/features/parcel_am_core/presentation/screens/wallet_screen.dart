@@ -7,15 +7,18 @@ import 'package:parcel_am/core/routes/routes.dart';
 import 'package:parcel_am/core/services/navigation_service/nav_config.dart';
 import 'package:parcel_am/core/widgets/app_button.dart';
 import 'package:parcel_am/core/widgets/app_text.dart';
-import 'package:parcel_am/features/payments/presentation/manager/paystack_bloc/paystack_payment_bloc.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../payments/domain/use_cases/paystack_payment_usecase.dart';
-import '../../../payments/presentation/manager/paystack_bloc/paystack_payment_state.dart';
+import '../../domain/value_objects/transaction_filter.dart';
 import '../bloc/wallet/wallet_bloc.dart';
 import '../bloc/wallet/wallet_event.dart';
 import '../bloc/wallet/wallet_data.dart';
+import '../widgets/transaction_list_item.dart';
+import '../widgets/transaction_details_bottom_sheet.dart';
+import '../widgets/transaction_filter_bar.dart';
+import '../widgets/transaction_search_bar.dart';
 
 class WalletScreen extends StatefulWidget {
   final String userId;
@@ -235,26 +238,123 @@ class _WalletScreenState extends State<WalletScreen> {
                     ],
                   ),
                   AppSpacing.verticalSpacing(SpacingSize.xxl),
-                  const Text(
-                    'Recent Transactions',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  AppSpacing.verticalSpacing(SpacingSize.md),
-                  if (walletData.wallet?.recentTransactions.isEmpty ?? true)
-                    const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(32.0),
-                        child: Text(
-                          'No transactions yet',
-                          style: TextStyle(
-                            color: AppColors.onSurfaceVariant,
-                          ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Recent Transactions',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
+                      IconButton(
+                        icon: const Icon(Icons.refresh),
+                        onPressed: () {
+                          context.read<WalletBloc>().add(
+                                const WalletTransactionsRefreshRequested(),
+                              );
+                        },
+                        tooltip: 'Refresh transactions',
+                      ),
+                    ],
+                  ),
+                  AppSpacing.verticalSpacing(SpacingSize.sm),
+
+                  // Search bar
+                  TransactionSearchBar(
+                    initialValue: walletData.wallet?.activeFilter.searchQuery,
+                    onSearchChanged: (query) {
+                      context.read<WalletBloc>().add(
+                            WalletTransactionSearchChanged(query: query),
+                          );
+                    },
+                  ),
+
+                  // Filter bar
+                  TransactionFilterBar(
+                    currentFilter: walletData.wallet?.activeFilter ??
+                        const TransactionFilter.empty(),
+                    onFilterChanged: (filter) {
+                      context.read<WalletBloc>().add(
+                            WalletTransactionFilterChanged(filter: filter),
+                          );
+                    },
+                  ),
+
+                  AppSpacing.verticalSpacing(SpacingSize.sm),
+
+                  // Transaction list
+                  if (walletData.wallet?.recentTransactions.isEmpty ?? true)
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32.0),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.receipt_long_outlined,
+                              size: 64,
+                              color: Colors.grey[400],
+                            ),
+                            AppSpacing.verticalSpacing(SpacingSize.md),
+                            Text(
+                              walletData.wallet?.activeFilter.hasActiveFilters ??
+                                      false
+                                  ? 'No transactions found'
+                                  : 'No transactions yet',
+                              style: const TextStyle(
+                                color: AppColors.onSurfaceVariant,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  else
+                    Card(
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: walletData.wallet!.recentTransactions.length,
+                        separatorBuilder: (context, index) => const Divider(
+                          height: 1,
+                          indent: 68,
+                        ),
+                        itemBuilder: (context, index) {
+                          final transaction =
+                              walletData.wallet!.recentTransactions[index];
+                          return TransactionListItem(
+                            transaction: transaction,
+                            onTap: () {
+                              TransactionDetailsBottomSheet.show(
+                                context,
+                                transaction,
+                              );
+                            },
+                          );
+                        },
+                      ),
                     ),
+
+                  // Load more button
+                  if (walletData.wallet?.hasMoreTransactions ?? false)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      child: Center(
+                        child: walletData.wallet?.isLoadingMore ?? false
+                            ? const CircularProgressIndicator()
+                            : OutlinedButton(
+                                onPressed: () {
+                                  context.read<WalletBloc>().add(
+                                        const WalletTransactionLoadMoreRequested(),
+                                      );
+                                },
+                                child: const Text('Load More'),
+                              ),
+                      ),
+                    ),
+
                   if (state is AsyncLoadingState)
                     if ((state as AsyncLoadingState).isRefreshing)
                       const LinearProgressIndicator(),

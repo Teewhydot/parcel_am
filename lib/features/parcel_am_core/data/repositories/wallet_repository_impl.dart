@@ -1,8 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
 import 'package:get_it/get_it.dart';
 import '../../domain/entities/wallet_entity.dart';
 import '../../domain/entities/transaction_entity.dart';
 import '../../domain/repositories/wallet_repository.dart';
+import '../../domain/value_objects/transaction_filter.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/services/error/error_handler.dart';
 import '../../domain/exceptions/wallet_exceptions.dart';
@@ -196,14 +198,44 @@ class WalletRepositoryImpl implements WalletRepository {
   Future<Either<Failure, List<TransactionEntity>>> getTransactions(
     String userId, {
     int limit = 20,
+    DocumentSnapshot? startAfter,
+    TransactionFilter? filter,
   }) async {
     try {
-      final transactions = await remoteDataSource.getTransactions(userId, limit: limit);
+      final transactions = await remoteDataSource.getTransactions(
+        userId,
+        limit: limit,
+        startAfter: startAfter,
+        status: filter?.status,
+        startDate: filter?.startDate,
+        endDate: filter?.endDate,
+        searchQuery: filter?.searchQuery,
+      );
       return Right(transactions.map((t) => t.toEntity()).toList());
     } on ServerException {
       return const Left(ServerFailure(failureMessage: 'Failed to fetch transactions'));
     } catch (e) {
       return Left(UnknownFailure(failureMessage: e.toString()));
     }
+  }
+
+  @override
+  Stream<Either<Failure, List<TransactionEntity>>> watchTransactions(
+    String userId, {
+    int limit = 20,
+    TransactionFilter? filter,
+  }) {
+    return ErrorHandler.handleStream(
+      () => remoteDataSource.watchTransactions(
+        userId,
+        limit: limit,
+        status: filter?.status,
+        startDate: filter?.startDate,
+        endDate: filter?.endDate,
+      ).map((transactions) {
+        return transactions.map((t) => t.toEntity()).toList();
+      }),
+      operationName: 'watchTransactions',
+    );
   }
 }

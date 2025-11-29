@@ -44,8 +44,8 @@ class _LoginScreenState extends State<LoginScreen>
   String? _resetEmailError;
   bool _emailTouched = false;
   bool _passwordTouched = false;
-  bool _displayNameTouched = false;
-  bool _resetEmailTouched = false;
+  final bool _displayNameTouched = false;
+  final bool _resetEmailTouched = false;
 
   @override
   void initState() {

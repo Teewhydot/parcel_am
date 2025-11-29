@@ -1,8 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
 import 'package:parcel_am/features/parcel_am_core/data/repositories/wallet_repository_impl.dart';
 import '../../../../core/errors/failures.dart';
 import '../entities/wallet_entity.dart';
 import '../entities/transaction_entity.dart';
+import '../value_objects/transaction_filter.dart';
 
 class WalletUseCase {
   final walletRepo  = WalletRepositoryImpl();
@@ -69,7 +71,26 @@ class WalletUseCase {
   Future<Either<Failure, List<TransactionEntity>>> getTransactions(
     String userId, {
     int limit = 20,
+    DocumentSnapshot? startAfter,
+    TransactionFilter? filter,
   }) {
-    return walletRepo.getTransactions(userId, limit: limit);
+    return walletRepo.getTransactions(
+      userId,
+      limit: limit,
+      startAfter: startAfter,
+      filter: filter,
+    );
+  }
+
+  Stream<Either<Failure, List<TransactionEntity>>> watchTransactions(
+    String userId, {
+    int limit = 20,
+    TransactionFilter? filter,
+  }) {
+    return walletRepo.watchTransactions(
+      userId,
+      limit: limit,
+      filter: filter,
+    );
   }
 }

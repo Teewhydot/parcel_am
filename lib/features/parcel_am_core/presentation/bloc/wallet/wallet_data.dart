@@ -1,4 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../escrow/domain/entities/escrow_status.dart';
+import '../../../domain/value_objects/transaction_filter.dart';
 
 class WalletData {
   final double availableBalance;
@@ -37,10 +39,35 @@ class WalletData {
 
 class WalletInfo {
   final List<Transaction> recentTransactions;
+  final bool hasMoreTransactions;
+  final bool isLoadingMore;
+  final TransactionFilter activeFilter;
+  final DocumentSnapshot? lastTransactionDoc;
 
   WalletInfo({
     this.recentTransactions = const [],
+    this.hasMoreTransactions = true,
+    this.isLoadingMore = false,
+    this.activeFilter = const TransactionFilter.empty(),
+    this.lastTransactionDoc,
   });
+
+  WalletInfo copyWith({
+    List<Transaction>? recentTransactions,
+    bool? hasMoreTransactions,
+    bool? isLoadingMore,
+    TransactionFilter? activeFilter,
+    DocumentSnapshot? lastTransactionDoc,
+    bool clearLastDoc = false,
+  }) {
+    return WalletInfo(
+      recentTransactions: recentTransactions ?? this.recentTransactions,
+      hasMoreTransactions: hasMoreTransactions ?? this.hasMoreTransactions,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      activeFilter: activeFilter ?? this.activeFilter,
+      lastTransactionDoc: clearLastDoc ? null : (lastTransactionDoc ?? this.lastTransactionDoc),
+    );
+  }
 }
 
 class EscrowTransaction {
@@ -81,6 +108,9 @@ class Transaction {
   final double amount;
   final DateTime date;
   final String description;
+  final String? status;
+  final String? referenceId;
+  final Map<String, dynamic>? metadata;
 
   const Transaction({
     required this.id,
@@ -88,5 +118,8 @@ class Transaction {
     required this.amount,
     required this.date,
     required this.description,
+    this.status,
+    this.referenceId,
+    this.metadata,
   });
 }

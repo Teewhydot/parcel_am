@@ -1,6 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
 import '../entities/wallet_entity.dart';
 import '../entities/transaction_entity.dart';
+import '../value_objects/transaction_filter.dart';
 import '../../../../core/errors/failures.dart';
 
 abstract class WalletRepository {
@@ -45,5 +47,13 @@ abstract class WalletRepository {
   Future<Either<Failure, List<TransactionEntity>>> getTransactions(
     String userId, {
     int limit = 20,
+    DocumentSnapshot? startAfter,
+    TransactionFilter? filter,
+  });
+
+  Stream<Either<Failure, List<TransactionEntity>>> watchTransactions(
+    String userId, {
+    int limit = 20,
+    TransactionFilter? filter,
   });
 }

@@ -37,7 +37,22 @@ abstract class WalletRemoteDataSource {
     String? referenceId,
     String idempotencyKey,
   );
-  Future<List<TransactionModel>> getTransactions(String userId, {int limit = 20});
+  Future<List<TransactionModel>> getTransactions(
+    String userId, {
+    int limit = 20,
+    DocumentSnapshot? startAfter,
+    String? status,
+    DateTime? startDate,
+    DateTime? endDate,
+    String? searchQuery,
+  });
+  Stream<List<TransactionModel>> watchTransactions(
+    String userId, {
+    int limit = 20,
+    String? status,
+    DateTime? startDate,
+    DateTime? endDate,
+  });
 }
 
 class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
@@ -376,16 +391,48 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
   }
 
   @override
-  Future<List<TransactionModel>> getTransactions(String userId, {int limit = 20}) async {
+  Future<List<TransactionModel>> getTransactions(
+    String userId, {
+    int limit = 20,
+    DocumentSnapshot? startAfter,
+    String? status,
+    DateTime? startDate,
+    DateTime? endDate,
+    String? searchQuery,
+  }) async {
     try {
-      final querySnapshot = await firestore
+      Query<Map<String, dynamic>> query = firestore
           .collection('funding_orders')
-          .where('userId', isEqualTo: userId)
-          .orderBy('time_created', descending: true)
-          .limit(limit)
-          .get();
+          .where('userId', isEqualTo: userId);
 
-      return querySnapshot.docs.map((doc) {
+      // Apply status filter
+      if (status != null && status.isNotEmpty) {
+        query = query.where('status', isEqualTo: status);
+      }
+
+      // Apply date range filter
+      if (startDate != null) {
+        query = query.where('time_created', isGreaterThanOrEqualTo: startDate.toIso8601String());
+      }
+      if (endDate != null) {
+        query = query.where('time_created', isLessThanOrEqualTo: endDate.toIso8601String());
+      }
+
+      // Order by time
+      query = query.orderBy('time_created', descending: true);
+
+      // Apply pagination
+      if (startAfter != null) {
+        query = query.startAfterDocument(startAfter);
+      }
+
+      // Apply limit
+      query = query.limit(limit);
+
+      final querySnapshot = await query.get();
+
+      // Map to transaction models
+      List<TransactionModel> transactions = querySnapshot.docs.map((doc) {
         final data = doc.data();
         return TransactionModel(
           id: doc.id,
@@ -402,11 +449,82 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
           idempotencyKey: doc.id,
         );
       }).toList();
+
+      // Apply search filter if provided (client-side filtering)
+      if (searchQuery != null && searchQuery.isNotEmpty) {
+        final lowerQuery = searchQuery.toLowerCase();
+        transactions = transactions.where((transaction) {
+          final reference = transaction.referenceId?.toLowerCase() ?? '';
+          final amount = transaction.amount.toString();
+          final description = transaction.description?.toLowerCase() ?? '';
+          return reference.contains(lowerQuery) ||
+              amount.contains(lowerQuery) ||
+              description.contains(lowerQuery);
+        }).toList();
+      }
+
+      return transactions;
     } on FirebaseException catch (e) {
       Logger.logError('Failed to fetch transactions: $e', tag: 'WalletRemoteDataSource');
       throw ServerException();
     } catch (e) {
       Logger.logError('Unexpected error fetching transactions: $e', tag: 'WalletRemoteDataSource');
+      throw ServerException();
+    }
+  }
+
+  @override
+  Stream<List<TransactionModel>> watchTransactions(
+    String userId, {
+    int limit = 20,
+    String? status,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) {
+    try {
+      Query<Map<String, dynamic>> query = firestore
+          .collection('funding_orders')
+          .where('userId', isEqualTo: userId);
+
+      // Apply status filter
+      if (status != null && status.isNotEmpty) {
+        query = query.where('status', isEqualTo: status);
+      }
+
+      // Apply date range filter
+      if (startDate != null) {
+        query = query.where('time_created', isGreaterThanOrEqualTo: startDate.toIso8601String());
+      }
+      if (endDate != null) {
+        query = query.where('time_created', isLessThanOrEqualTo: endDate.toIso8601String());
+      }
+
+      // Order by time and limit
+      query = query.orderBy('time_created', descending: true).limit(limit);
+
+      return query.snapshots().handleError((error) {
+        Logger.logError('Firestore Error (watchTransactions): $error', tag: 'WalletRemoteDataSource');
+      }).map((snapshot) {
+        return snapshot.docs.map((doc) {
+          final data = doc.data();
+          return TransactionModel(
+            id: doc.id,
+            walletId: userId,
+            userId: userId,
+            amount: (data['amount'] as num?)?.toDouble() ?? 0.0,
+            type: TransactionType.deposit,
+            status: _mapFundingStatus(data['status'] as String?),
+            currency: 'NGN',
+            timestamp: _parseTimestamp(data['time_created']),
+            description: 'Wallet Funding',
+            referenceId: data['reference'] as String?,
+            metadata: data['metadata'] as Map<String, dynamic>? ?? {},
+            idempotencyKey: doc.id,
+          );
+        }).toList();
+      });
+    } catch (e) {
+      Logger.logError('Error creating transaction stream: $e', tag: 'WalletRemoteDataSource');
       throw ServerException();
     }
   }

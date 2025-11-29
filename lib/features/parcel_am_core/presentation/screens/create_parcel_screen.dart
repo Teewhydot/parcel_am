@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/bloc/wallet/wallet_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/bloc/base/base_state.dart';
@@ -109,6 +111,7 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
 
   bool _validateParcelCreation() {
     // Get user from AuthBloc
+    final walletState= context.read<WalletBloc>().state;
     final authState = context.read<AuthBloc>().state;
     if (authState is! DataState<AuthData> || authState.data?.user == null) {
       context.showSnackbar(
@@ -119,6 +122,8 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
     }
 
     final currentUser = authState.data!.user!;
+    final userBalance = walletState.data?.availableBalance;
+
 
     // Check KYC status
     if (currentUser.kycStatus != KycStatus.approved) {
@@ -138,28 +143,9 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
     final totalAmount = parcelPrice + serviceFee;
 
     // Check balance
-    final userBalance = currentUser.availableBalance ?? 0.0;
-    if (userBalance < totalAmount) {
+    if (userBalance == null || userBalance < totalAmount) {
       // Show snackbar with manual SnackBar to include action button
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Insufficient balance. You need ₦${totalAmount.toStringAsFixed(2)} but have ₦${userBalance.toStringAsFixed(2)}',
-          ),
-          backgroundColor: AppColors.error,
-          duration: const Duration(seconds: 4),
-          action: SnackBarAction(
-            label: 'Add Funds',
-            textColor: Colors.white,
-            onPressed: () {
-              sl<NavigationService>().navigateTo(
-                Routes.wallet,
-                arguments: currentUser.uid,
-              );
-            },
-          ),
-        ),
-      );
+      context.showErrorMessage('Insufficient balance');
       return false;
     }
 
@@ -215,90 +201,38 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider.value(value: _parcelBloc),
-        BlocProvider.value(value: _escrowBloc),
-      ],
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Create Parcel'),
-          backgroundColor: AppColors.surface,
-          elevation: 0,
-        ),
-        body: MultiBlocListener(
-          listeners: [
-            BlocListener<ParcelBloc, BaseState<ParcelData>>(
-              listener: (context, state) {
-                if (state is LoadedState<ParcelData> && state.data?.currentParcel != null) {
-                  setState(() => _createdParcel = state.data!.currentParcel);
-
-                  // Show success message
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Parcel created successfully! You can pay from your wallet.'),
-                      backgroundColor: Colors.green,
-                      duration: Duration(seconds: 3),
-                    ),
-                  );
-
-                  // Navigate to dashboard, clearing navigation stack (using DI)
-                  sl<NavigationService>().navigateAndReplaceAll(Routes.dashboard);
-                } else if (state is ErrorState<ParcelData>) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(state.errorMessage),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              },
-            ),
-            BlocListener<EscrowBloc, BaseState<EscrowData>>(
-              listener: (context, state) {
-                final escrow = state.data?.currentEscrow;
-                if (escrow?.status == EscrowStatus.held) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Payment secured in escrow'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                  if (_createdParcel != null && escrow != null) {
-                    _parcelBloc.add(ParcelPaymentCompleted(
-                      parcelId: _createdParcel!.id,
-                      transactionId: escrow.id,
-                    ));
-                  }
-                } else if (state is ErrorState<EscrowData>) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(state.errorMessage),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              },
-            ),
-          ],
-          child: Column(
-            children: [
-              _buildStepIndicator(),
-              Expanded(
-                child: PageView(
-                  controller: _pageController,
-                  physics: const NeverScrollableScrollPhysics(),
-                  children: [
-                    _buildParcelDetailsStep(),
-                    _buildLocationStep(),
-                    _buildReviewStep(),
-                    _buildPaymentStep(),
-                  ],
-                ),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Create Parcel'),
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+      ),
+      body: BlocManager<ParcelBloc,BaseState<ParcelData>>(
+        bloc: _parcelBloc,
+        onSuccess: (context, state){
+          context.showSnackbar(message: 'Parcel created successfully', color: AppColors.success);
+          sl<NavigationService>().goBack();
+        },
+        onError: (context, state){
+          context.showSnackbar(message: "Error creating parcel", color: AppColors.error);
+        },
+        child: Column(
+          children: [
+            _buildStepIndicator(),
+            Expanded(
+              child: PageView(
+                controller: _pageController,
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  _buildParcelDetailsStep(),
+                  _buildLocationStep(),
+                  _buildReviewStep(),
+                  _buildPaymentStep(),
+                ],
               ),
-              _buildNavigationButtons(),
-            ],
-          ),
+            ),
+            _buildNavigationButtons(),
+          ],
         ),
       ),
     );

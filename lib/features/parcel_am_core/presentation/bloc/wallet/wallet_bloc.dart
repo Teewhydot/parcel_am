@@ -8,6 +8,7 @@ import 'package:parcel_am/core/utils/logger.dart';
 import 'package:parcel_am/features/payments/domain/entities/paystack_transaction_entity.dart';
 import '../../../../payments/domain/use_cases/paystack_payment_usecase.dart';
 import '../../../data/helpers/idempotency_helper.dart';
+import '../../../domain/value_objects/transaction_filter.dart';
 import 'wallet_event.dart';
 import 'wallet_data.dart';
 import '../../../domain/usecases/wallet_usecase.dart';
@@ -15,6 +16,7 @@ import '../../../domain/usecases/wallet_usecase.dart';
 class WalletBloc extends BaseBloC<WalletEvent, BaseState<WalletData>> {
   Timer? _refreshTimer;
   StreamSubscription? _balanceSubscription;
+  StreamSubscription? _transactionSubscription;
   StreamSubscription? _connectivitySubscription;
   String? _currentUserId;
   @visibleForTesting
@@ -38,6 +40,10 @@ class WalletBloc extends BaseBloC<WalletEvent, BaseState<WalletData>> {
     on<WalletEscrowReleaseRequested>(_onEscrowReleaseRequested);
     on<WalletBalanceRefreshRequested>(_onBalanceRefreshRequested);
     on<WalletConnectivityChanged>(_onConnectivityChanged);
+    on<WalletTransactionFilterChanged>(_onTransactionFilterChanged);
+    on<WalletTransactionSearchChanged>(_onTransactionSearchChanged);
+    on<WalletTransactionLoadMoreRequested>(_onTransactionLoadMoreRequested);
+    on<WalletTransactionsRefreshRequested>(_onTransactionsRefreshRequested);
 
     // Subscribe to connectivity changes
     _connectivitySubscription =
@@ -126,6 +132,9 @@ class WalletBloc extends BaseBloC<WalletEvent, BaseState<WalletData>> {
         ));
       },
     );
+
+    // Subscribe to transactions with default filter
+    _subscribeToTransactions(const TransactionFilter.empty());
   }
 
   Future<void> _onLoadRequested(
@@ -367,6 +376,9 @@ class WalletBloc extends BaseBloC<WalletEvent, BaseState<WalletData>> {
                 amount: t.amount,
                 date: t.timestamp,
                 description: t.description ?? 'Transaction',
+                status: t.status.name,
+                referenceId: t.referenceId,
+                metadata: t.metadata,
               )).toList();
             },
           );
@@ -390,6 +402,179 @@ class WalletBloc extends BaseBloC<WalletEvent, BaseState<WalletData>> {
 
 
 
+  Future<void> _onTransactionFilterChanged(
+    WalletTransactionFilterChanged event,
+    Emitter<BaseState<WalletData>> emit,
+  ) async {
+    final currentData = state.data;
+    if (currentData == null || _currentUserId == null) return;
+
+    // Cancel existing transaction subscription
+    await _transactionSubscription?.cancel();
+
+    // Update filter and reset pagination
+    final updatedWallet = currentData.wallet?.copyWith(
+      activeFilter: event.filter,
+      clearLastDoc: true,
+    ) ?? WalletInfo(activeFilter: event.filter);
+
+    emit(LoadedState<WalletData>(
+      data: currentData.copyWith(wallet: updatedWallet),
+      lastUpdated: DateTime.now(),
+    ));
+
+    // Subscribe to filtered transactions
+    _subscribeToTransactions(event.filter);
+  }
+
+  Future<void> _onTransactionSearchChanged(
+    WalletTransactionSearchChanged event,
+    Emitter<BaseState<WalletData>> emit,
+  ) async {
+    final currentData = state.data;
+    if (currentData == null || _currentUserId == null) return;
+
+    final currentFilter = currentData.wallet?.activeFilter ?? const TransactionFilter.empty();
+    final updatedFilter = currentFilter.copyWith(searchQuery: event.query);
+
+    add(WalletTransactionFilterChanged(filter: updatedFilter));
+  }
+
+  Future<void> _onTransactionLoadMoreRequested(
+    WalletTransactionLoadMoreRequested event,
+    Emitter<BaseState<WalletData>> emit,
+  ) async {
+    final currentData = state.data;
+    final walletInfo = currentData?.wallet;
+
+    if (currentData == null ||
+        walletInfo == null ||
+        !walletInfo.hasMoreTransactions ||
+        walletInfo.isLoadingMore ||
+        _currentUserId == null) {
+      return;
+    }
+
+    // Set loading more state
+    final loadingWallet = walletInfo.copyWith(isLoadingMore: true);
+    emit(LoadedState<WalletData>(
+      data: currentData.copyWith(wallet: loadingWallet),
+      lastUpdated: DateTime.now(),
+    ));
+
+    // Fetch more transactions
+    final result = await _walletUseCase.getTransactions(
+      _currentUserId!,
+      limit: 20,
+      startAfter: walletInfo.lastTransactionDoc,
+      filter: walletInfo.activeFilter,
+    );
+
+    result.fold(
+      (failure) {
+        final errorWallet = walletInfo.copyWith(isLoadingMore: false);
+        emit(AsyncErrorState<WalletData>(
+          errorMessage: failure.failureMessage,
+          data: currentData.copyWith(wallet: errorWallet),
+        ));
+      },
+      (newTransactions) {
+        final allTransactions = [
+          ...walletInfo.recentTransactions,
+          ...newTransactions.map((t) => Transaction(
+                id: t.id,
+                type: t.type.name,
+                amount: t.amount,
+                date: t.timestamp,
+                description: t.description ?? 'Transaction',
+                status: t.status.name,
+                referenceId: t.referenceId,
+                metadata: t.metadata,
+              )),
+        ];
+
+        final updatedWallet = walletInfo.copyWith(
+          recentTransactions: allTransactions,
+          isLoadingMore: false,
+          hasMoreTransactions: newTransactions.length >= 20,
+        );
+
+        emit(LoadedState<WalletData>(
+          data: currentData.copyWith(wallet: updatedWallet),
+          lastUpdated: DateTime.now(),
+        ));
+      },
+    );
+  }
+
+  Future<void> _onTransactionsRefreshRequested(
+    WalletTransactionsRefreshRequested event,
+    Emitter<BaseState<WalletData>> emit,
+  ) async {
+    final currentData = state.data;
+    if (currentData == null || _currentUserId == null) return;
+
+    final currentFilter = currentData.wallet?.activeFilter ?? const TransactionFilter.empty();
+
+    // Cancel and restart transaction subscription
+    await _transactionSubscription?.cancel();
+    _subscribeToTransactions(currentFilter);
+  }
+
+  void _subscribeToTransactions(TransactionFilter filter) {
+    if (_currentUserId == null) return;
+
+    _transactionSubscription = _walletUseCase
+        .watchTransactions(
+          _currentUserId!,
+          limit: 20,
+          filter: filter,
+        )
+        .listen(
+      (transactionsEither) {
+        transactionsEither.fold(
+          (failure) {
+            Logger.logError(
+              'Transaction stream error: ${failure.failureMessage}',
+              tag: 'WalletBloc',
+            );
+          },
+          (transactions) {
+            final currentData = state.data;
+            if (currentData != null) {
+              final transactionList = transactions.map((t) => Transaction(
+                    id: t.id,
+                    type: t.type.name,
+                    amount: t.amount,
+                    date: t.timestamp,
+                    description: t.description ?? 'Transaction',
+                    status: t.status.name,
+                    referenceId: t.referenceId,
+                    metadata: t.metadata,
+                  )).toList();
+
+              final updatedWallet = currentData.wallet?.copyWith(
+                    recentTransactions: transactionList,
+                    hasMoreTransactions: transactions.length >= 20,
+                  ) ?? WalletInfo(
+                    recentTransactions: transactionList,
+                    hasMoreTransactions: transactions.length >= 20,
+                  );
+
+              emit(LoadedState<WalletData>(
+                data: currentData.copyWith(wallet: updatedWallet),
+                lastUpdated: DateTime.now(),
+              ));
+            }
+          },
+        );
+      },
+      onError: (error) {
+        Logger.logError('Transaction stream error: $error', tag: 'WalletBloc');
+      },
+    );
+  }
+
   /// Returns current online status for UI to check
   bool get isOnline => _isOnline;
 
@@ -397,6 +582,7 @@ class WalletBloc extends BaseBloC<WalletEvent, BaseState<WalletData>> {
   Future<void> close() {
     _refreshTimer?.cancel();
     _balanceSubscription?.cancel();
+    _transactionSubscription?.cancel();
     _connectivitySubscription?.cancel();
     _connectivityService.dispose();
     return super.close();

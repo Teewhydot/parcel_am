@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../../domain/value_objects/transaction_filter.dart';
 
 abstract class WalletEvent extends Equatable {
   const WalletEvent();
@@ -95,4 +96,30 @@ class WalletConnectivityChanged extends WalletEvent {
 
   @override
   List<Object?> get props => [isOnline];
+}
+
+class WalletTransactionFilterChanged extends WalletEvent {
+  final TransactionFilter filter;
+
+  const WalletTransactionFilterChanged({required this.filter});
+
+  @override
+  List<Object?> get props => [filter];
+}
+
+class WalletTransactionSearchChanged extends WalletEvent {
+  final String query;
+
+  const WalletTransactionSearchChanged({required this.query});
+
+  @override
+  List<Object?> get props => [query];
+}
+
+class WalletTransactionLoadMoreRequested extends WalletEvent {
+  const WalletTransactionLoadMoreRequested();
+}
+
+class WalletTransactionsRefreshRequested extends WalletEvent {
+  const WalletTransactionsRefreshRequested();
 }
