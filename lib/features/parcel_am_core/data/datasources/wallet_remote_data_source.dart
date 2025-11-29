@@ -13,24 +13,23 @@ abstract class WalletRemoteDataSource {
   Future<WalletModel> getWallet(String userId);
   Stream<WalletModel> watchWallet(String userId);
   Future<WalletModel> updateBalance(
-    String walletId,
+    String userId,
     double amount,
     String idempotencyKey,
   );
   Future<WalletModel> holdBalance(
-    String walletId,
+    String userId,
     double amount,
     String referenceId,
     String idempotencyKey,
   );
   Future<WalletModel> releaseBalance(
-    String walletId,
+    String userId,
     double amount,
     String referenceId,
     String idempotencyKey,
   );
   Future<TransactionModel> recordTransaction(
-    String walletId,
     String userId,
     double amount,
     TransactionType type,
@@ -38,6 +37,7 @@ abstract class WalletRemoteDataSource {
     String? referenceId,
     String idempotencyKey,
   );
+  Future<List<TransactionModel>> getTransactions(String userId, {int limit = 20});
 }
 
 class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
@@ -82,22 +82,19 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
   @override
   Future<WalletModel> createWallet(String userId, {double initialBalance = 0.0}) async {
     try {
-      // Check if wallet already exists
-      final existingWalletQuery = await firestore
-          .collection('wallets')
-          .where('userId', isEqualTo: userId)
-          .limit(1)
-          .get();
+      // Use userId as document ID for direct access
+      final walletRef = firestore.collection('wallets').doc(userId);
 
-      if (existingWalletQuery.docs.isNotEmpty) {
+      // Check if wallet already exists
+      final existingDoc = await walletRef.get();
+      if (existingDoc.exists) {
         // Wallet already exists, return it
-        return WalletModel.fromFirestore(existingWalletQuery.docs.first);
+        return WalletModel.fromFirestore(existingDoc);
       }
 
-      // Create new wallet
-      final walletRef = firestore.collection('wallets').doc();
+      // Create new wallet with userId as document ID
       final walletData = {
-        'id': walletRef.id,
+        'id': userId,
         'userId': userId,
         'availableBalance': initialBalance,
         'heldBalance': 0.0,
@@ -121,17 +118,16 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
   @override
   Future<WalletModel> getWallet(String userId) async {
     try {
-      final querySnapshot = await firestore
+      final docSnapshot = await firestore
           .collection('wallets')
-          .where('userId', isEqualTo: userId)
-          .limit(1)
+          .doc(userId)
           .get();
 
-      if (querySnapshot.docs.isEmpty) {
+      if (!docSnapshot.exists) {
         throw const WalletNotFoundException();
       }
 
-      return WalletModel.fromFirestore(querySnapshot.docs.first);
+      return WalletModel.fromFirestore(docSnapshot);
     } on FirebaseException {
       throw ServerException();
     } catch (e) {
@@ -145,17 +141,16 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
     try {
       return firestore
           .collection('wallets')
-          .where('userId', isEqualTo: userId)
-          .limit(1)
+          .doc(userId)
           .snapshots()
           .handleError((error) {
         Logger.logError('Firestore Error (watchWallet): $error', tag: 'WalletRemoteDataSource');
       })
           .map((snapshot) {
-        if (snapshot.docs.isEmpty) {
+        if (!snapshot.exists) {
           throw const WalletNotFoundException();
         }
-        return WalletModel.fromFirestore(snapshot.docs.first);
+        return WalletModel.fromFirestore(snapshot);
       });
     } catch (e) {
       throw ServerException();
@@ -164,7 +159,7 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
 
   @override
   Future<WalletModel> updateBalance(
-    String walletId,
+    String userId,
     double amount,
     String idempotencyKey,
   ) async {
@@ -176,11 +171,11 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
       final duplicate = await _checkDuplicateTransaction(idempotencyKey);
       if (duplicate != null) {
         // Return wallet in current state for duplicate transaction
-        final walletDoc = await firestore.collection('wallets').doc(walletId).get();
+        final walletDoc = await firestore.collection('wallets').doc(userId).get();
         return WalletModel.fromFirestore(walletDoc);
       }
 
-      final docRef = firestore.collection('wallets').doc(walletId);
+      final docRef = firestore.collection('wallets').doc(userId);
 
       await firestore.runTransaction((transaction) async {
         final snapshot = await transaction.get(docRef);
@@ -218,7 +213,7 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
 
   @override
   Future<WalletModel> holdBalance(
-    String walletId,
+    String userId,
     double amount,
     String referenceId,
     String idempotencyKey,
@@ -235,11 +230,11 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
       final duplicate = await _checkDuplicateTransaction(idempotencyKey);
       if (duplicate != null) {
         // Return wallet in current state for duplicate transaction
-        final walletDoc = await firestore.collection('wallets').doc(walletId).get();
+        final walletDoc = await firestore.collection('wallets').doc(userId).get();
         return WalletModel.fromFirestore(walletDoc);
       }
 
-      final docRef = firestore.collection('wallets').doc(walletId);
+      final docRef = firestore.collection('wallets').doc(userId);
 
       await firestore.runTransaction((transaction) async {
         final snapshot = await transaction.get(docRef);
@@ -277,7 +272,7 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
 
   @override
   Future<WalletModel> releaseBalance(
-    String walletId,
+    String userId,
     double amount,
     String referenceId,
     String idempotencyKey,
@@ -294,11 +289,11 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
       final duplicate = await _checkDuplicateTransaction(idempotencyKey);
       if (duplicate != null) {
         // Return wallet in current state for duplicate transaction
-        final walletDoc = await firestore.collection('wallets').doc(walletId).get();
+        final walletDoc = await firestore.collection('wallets').doc(userId).get();
         return WalletModel.fromFirestore(walletDoc);
       }
 
-      final docRef = firestore.collection('wallets').doc(walletId);
+      final docRef = firestore.collection('wallets').doc(userId);
 
       await firestore.runTransaction((transaction) async {
         final snapshot = await transaction.get(docRef);
@@ -339,7 +334,6 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
 
   @override
   Future<TransactionModel> recordTransaction(
-    String walletId,
     String userId,
     double amount,
     TransactionType type,
@@ -355,7 +349,7 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
       final transactionRef = firestore.collection('transactions').doc();
 
       final transactionData = {
-        'walletId': walletId,
+        'walletId': userId,
         'userId': userId,
         'amount': amount,
         'type': type.name,
@@ -379,6 +373,70 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
       if (e is WalletException) rethrow;
       throw const TransactionFailedException();
     }
+  }
+
+  @override
+  Future<List<TransactionModel>> getTransactions(String userId, {int limit = 20}) async {
+    try {
+      final querySnapshot = await firestore
+          .collection('funding_orders')
+          .where('userId', isEqualTo: userId)
+          .orderBy('time_created', descending: true)
+          .limit(limit)
+          .get();
+
+      return querySnapshot.docs.map((doc) {
+        final data = doc.data();
+        return TransactionModel(
+          id: doc.id,
+          walletId: userId,
+          userId: userId,
+          amount: (data['amount'] as num?)?.toDouble() ?? 0.0,
+          type: TransactionType.deposit,
+          status: _mapFundingStatus(data['status'] as String?),
+          currency: 'NGN',
+          timestamp: _parseTimestamp(data['time_created']),
+          description: 'Wallet Funding',
+          referenceId: data['reference'] as String?,
+          metadata: data['metadata'] as Map<String, dynamic>? ?? {},
+          idempotencyKey: doc.id,
+        );
+      }).toList();
+    } on FirebaseException catch (e) {
+      Logger.logError('Failed to fetch transactions: $e', tag: 'WalletRemoteDataSource');
+      throw ServerException();
+    } catch (e) {
+      Logger.logError('Unexpected error fetching transactions: $e', tag: 'WalletRemoteDataSource');
+      throw ServerException();
+    }
+  }
+
+  TransactionStatus _mapFundingStatus(String? status) {
+    switch (status?.toLowerCase()) {
+      case 'success':
+      case 'completed':
+        return TransactionStatus.completed;
+      case 'pending':
+        return TransactionStatus.pending;
+      case 'failed':
+      case 'expired':
+        return TransactionStatus.failed;
+      default:
+        return TransactionStatus.pending;
+    }
+  }
+
+  DateTime _parseTimestamp(dynamic timestamp) {
+    if (timestamp == null) return DateTime.now();
+    if (timestamp is Timestamp) return timestamp.toDate();
+    if (timestamp is String) {
+      try {
+        return DateTime.parse(timestamp);
+      } catch (e) {
+        return DateTime.now();
+      }
+    }
+    return DateTime.now();
   }
 }
 

@@ -101,7 +101,6 @@ void main() {
       // Verify the method signature accepts idempotencyKey parameter
       expect(
         () => dataSource.recordTransaction(
-          'wallet_id',
           'user_id',
           100.0,
           TransactionType.deposit,

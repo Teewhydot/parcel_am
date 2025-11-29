@@ -2,13 +2,11 @@
 // Constants and Configuration
 // ========================================================================
 
-const functions = require('firebase-functions');
-
 // Environment variables configuration (Firebase Functions v2)
-// Supports both Firebase config (for deployed functions) and process.env (for local development)
+// In v2, use process.env directly - functions.config() is deprecated
 const ENVIRONMENT = {
-  GMAIL_PASSWORD: process.env.PASSWORD,
-  PAYSTACK_SECRET_KEY: functions.config().paystack?.secret_key || process.env.PAYSTACK_SECRET_KEY,
+  GMAIL_PASSWORD: process.env.PASSWORD?.trim(),
+  PAYSTACK_SECRET_KEY: process.env.PAYSTACK_SECRET_KEY?.trim(),
   PROJECT_ID: process.env.GOOGLE_CLOUD_PROJECT || process.env.GCLOUD_PROJECT,
 
 };
@@ -76,7 +74,10 @@ const PAYSTACK = {
 const FUNCTIONS_CONFIG = {
   REGION: 'us-central1',
   TIMEOUT_SECONDS: 560,
-  MEMORY: '256MB'
+  MEMORY: '512MB', // Increased from 256MB to speed up cold starts
+  CPU: 1, // Allocate 1 CPU to speed up initialization
+  MIN_INSTANCES: 0, // Set to 1 to keep functions warm (costs more)
+  MAX_INSTANCES: 20 // Maximum allowed with CPU:1 due to regional quota (20 CPUs max)
 };
 // Email styling constants
 const EMAIL_STYLES = {

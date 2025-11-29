@@ -38,7 +38,7 @@ class WalletData {
 class WalletInfo {
   final List<Transaction> recentTransactions;
 
-  const WalletInfo({
+  WalletInfo({
     this.recentTransactions = const [],
   });
 }

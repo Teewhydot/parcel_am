@@ -50,13 +50,13 @@ class WalletRepositoryImpl implements WalletRepository {
 
   @override
   Future<Either<Failure, WalletEntity>> updateBalance(
-    String walletId,
+    String userId,
     double amount,
     String idempotencyKey,
   ) async {
     try {
      final walletModel = await remoteDataSource.updateBalance(
-          walletId,
+          userId,
           amount,
           idempotencyKey,
         );
@@ -90,14 +90,14 @@ class WalletRepositoryImpl implements WalletRepository {
 
   @override
   Future<Either<Failure, WalletEntity>> holdBalance(
-    String walletId,
+    String userId,
     double amount,
     String referenceId,
     String idempotencyKey,
   ) async {
     try {
       final walletModel = await remoteDataSource.holdBalance(
-        walletId,
+        userId,
         amount,
         referenceId,
         idempotencyKey,
@@ -126,14 +126,14 @@ class WalletRepositoryImpl implements WalletRepository {
 
   @override
   Future<Either<Failure, WalletEntity>> releaseBalance(
-    String walletId,
+    String userId,
     double amount,
     String referenceId,
     String idempotencyKey,
   ) async {
     try {
      final walletModel = await remoteDataSource.releaseBalance(
-          walletId,
+          userId,
           amount,
           referenceId,
           idempotencyKey,
@@ -162,7 +162,7 @@ class WalletRepositoryImpl implements WalletRepository {
 
   @override
   Future<Either<Failure, TransactionEntity>> recordTransaction(
-    String walletId,
+    String userId,
     double amount,
     TransactionType type,
     String? description,
@@ -170,10 +170,8 @@ class WalletRepositoryImpl implements WalletRepository {
     String idempotencyKey,
   ) async {
     try {
-     final wallet = await remoteDataSource.getWallet(walletId);
         final transactionModel = await remoteDataSource.recordTransaction(
-          walletId,
-          wallet.userId,
+          userId,
           amount,
           type,
           description,
@@ -189,6 +187,21 @@ class WalletRepositoryImpl implements WalletRepository {
       return Left(ServerFailure(failureMessage: e.message));
     } on ServerException {
       return const Left(ServerFailure(failureMessage: 'Server error occurred'));
+    } catch (e) {
+      return Left(UnknownFailure(failureMessage: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<TransactionEntity>>> getTransactions(
+    String userId, {
+    int limit = 20,
+  }) async {
+    try {
+      final transactions = await remoteDataSource.getTransactions(userId, limit: limit);
+      return Right(transactions.map((t) => t.toEntity()).toList());
+    } on ServerException {
+      return const Left(ServerFailure(failureMessage: 'Failed to fetch transactions'));
     } catch (e) {
       return Left(UnknownFailure(failureMessage: e.toString()));
     }

@@ -25,7 +25,7 @@ class PaymentService {
       logger.info('Paystack service initialized', 'payment-service-init', {
         hasApiKey: true,
         apiKeyLength: this.apiKey.length,
-        apiKeyPrefix: this.apiKey.substring(0, 7) + '...',
+        apiKeySuffix: '...' + this.apiKey.slice(-5),
         baseUrl: this.baseUrl
       });
     }
@@ -38,10 +38,18 @@ class PaymentService {
   async initializeTransaction(email, amount, metadata, executionId = 'payment-init') {
     const initStartTime = Date.now();
     try {
+      console.log('💳 [PAYSTACK] Initializing transaction...');
+      console.log('  Email:', email);
+      console.log('  Amount (NGN):', amount);
+      console.log('  Amount (kobo):', amount * 100);
+
       // Validate API key before making request
       if (!this.apiKey) {
+        console.error('❌ [PAYSTACK] API key not configured!');
         throw new Error('Paystack API key is not configured. Please set PAYSTACK_SECRET_KEY environment variable or Firebase config.');
       }
+
+      console.log('  API Key:', this.apiKey ? '...' + this.apiKey.slice(-5) : 'NOT SET');
 
       logger.info(`Starting transaction initialization`, executionId, {
         email,
@@ -50,7 +58,7 @@ class PaymentService {
         hasMetadata: !!metadata,
         metadataKeys: metadata ? Object.keys(metadata) : [],
         apiKeyConfigured: !!this.apiKey,
-        apiKeyPrefix: this.apiKey ? this.apiKey.substring(0, 7) + '...' : 'NOT SET'
+        apiKeySuffix: this.apiKey ? '...' + this.apiKey.slice(-5) : 'NOT SET'
       });
 
       logger.apiCall('POST', `${this.baseUrl}${PAYSTACK.ENDPOINTS.INITIALIZE_TRANSACTION}`, null, executionId);
@@ -66,7 +74,7 @@ class PaymentService {
         url: `${this.baseUrl}${PAYSTACK.ENDPOINTS.INITIALIZE_TRANSACTION}`,
         payloadKeys: Object.keys(requestPayload),
         hasAuthHeader: !!this.apiKey,
-        authHeaderPrefix: this.apiKey ? `Bearer ${this.apiKey.substring(0, 7)}...` : 'MISSING'
+        authHeaderSuffix: this.apiKey ? `Bearer ...${this.apiKey.slice(-5)}` : 'MISSING'
       });
 
       const response = await axios.post(
@@ -84,6 +92,10 @@ class PaymentService {
       const initEndTime = Date.now();
       const initDuration = initEndTime - initStartTime;
 
+      console.log(`✅ [PAYSTACK] Response received (${initDuration}ms)`);
+      console.log('  HTTP Status:', response.status);
+      console.log('  Data Status:', response.data.status);
+
       logger.info(`Paystack API response received`, executionId, {
         status: response.status,
         dataStatus: response.data.status,
@@ -94,6 +106,10 @@ class PaymentService {
         const paystackReference = response.data.data.reference;
         const authorizationUrl = response.data.data.authorization_url;
         const accessCode = response.data.data.access_code;
+
+        console.log('🎉 [PAYSTACK] Transaction initialized successfully');
+        console.log('  Reference:', paystackReference);
+        console.log('  Authorization URL:', authorizationUrl?.substring(0, 50) + '...');
 
         logger.success(`Transaction initialized: ${paystackReference}`, executionId, {
           reference: paystackReference,
@@ -112,6 +128,10 @@ class PaymentService {
           amount: amount
         };
       } else {
+        console.error('❌ [PAYSTACK] Unexpected response');
+        console.error('  Status:', response.status);
+        console.error('  Message:', response.data.message);
+
         logger.error(`Unexpected Paystack response`, executionId, null, {
           status: response.status,
           dataStatus: response.data.status,
@@ -122,6 +142,17 @@ class PaymentService {
     } catch (error) {
       const initEndTime = Date.now();
       const initDuration = initEndTime - initStartTime;
+
+      console.error('====================================');
+      console.error('❌ [PAYSTACK] Initialization FAILED');
+      console.error('Error:', error.message);
+      console.error('Type:', error.name);
+      console.error('Duration:', `${initDuration}ms`);
+      if (error.response) {
+        console.error('Response Status:', error.response.status);
+        console.error('Response Data:', JSON.stringify(error.response.data, null, 2));
+      }
+      console.error('====================================');
 
       logger.error('Failed to initialize transaction', executionId, error, {
         email: email,
@@ -149,8 +180,12 @@ class PaymentService {
     const verificationStartTime = Date.now();
 
     try {
+      console.log('🔍 [PAYSTACK] Verifying transaction...');
+      console.log('  Reference:', reference);
+
       // Validate API key before making request
       if (!this.apiKey) {
+        console.error('❌ [PAYSTACK] API key not configured!');
         throw new Error('Paystack API key is not configured. Please set PAYSTACK_SECRET_KEY environment variable or Firebase config.');
       }
 
@@ -178,6 +213,10 @@ class PaymentService {
       const verificationEndTime = Date.now();
       const verificationDuration = verificationEndTime - verificationStartTime;
 
+      console.log(`✅ [PAYSTACK] Verification response (${verificationDuration}ms)`);
+      console.log('  HTTP Status:', response.status);
+      console.log('  Data Status:', response.data.status);
+
       logger.info(`Paystack API Response received`, executionId, {
         httpStatus: response.status,
         dataStatus: response.data.status,
@@ -187,6 +226,12 @@ class PaymentService {
 
       if (response.status === 200 && response.data.status) {
         const transactionData = response.data.data;
+
+        console.log('📊 [PAYSTACK] Transaction data:');
+        console.log('  Status:', transactionData.status);
+        console.log('  Amount (kobo):', transactionData.amount);
+        console.log('  Channel:', transactionData.channel);
+
         logger.info(`Processing verification response`, executionId, {
           reference: transactionData.reference,
           status: transactionData.status,
@@ -194,6 +239,8 @@ class PaymentService {
         });
 
         const verificationResult = this.processVerificationResponse(transactionData, executionId);
+
+        console.log('🎉 [PAYSTACK] Transaction verified successfully');
 
         logger.success(`Transaction verified: ${reference}`, executionId, {
           ...verificationResult,
@@ -204,6 +251,10 @@ class PaymentService {
           ...verificationResult
         };
       } else {
+        console.error('❌ [PAYSTACK] Unexpected verification response');
+        console.error('  Status:', response.status);
+        console.error('  Message:', response.data.message);
+
         logger.error(`Unexpected verification response`, executionId, null, {
           httpStatus: response.status,
           dataStatus: response.data.status,
@@ -214,6 +265,19 @@ class PaymentService {
     } catch (error) {
       const verificationEndTime = Date.now();
       const verificationDuration = verificationEndTime - verificationStartTime;
+
+      console.error('====================================');
+      console.error('❌ [PAYSTACK] Verification FAILED');
+      console.error('Reference:', reference);
+      console.error('Error:', error.message);
+      console.error('Type:', error.name);
+      console.error('Duration:', `${verificationDuration}ms`);
+      if (error.response) {
+        console.error('Response Status:', error.response.status);
+        console.error('Response Message:', error.response.data?.message);
+        console.error('Response Data:', JSON.stringify(error.response.data, null, 2));
+      }
+      console.error('====================================');
 
       logger.error(`Transaction verification failed after ${verificationDuration}ms`, executionId, error, {
         reference: reference,

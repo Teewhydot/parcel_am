@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:parcel_am/core/bloc/base/base_bloc.dart';
 import 'package:parcel_am/core/bloc/base/base_state.dart';
 import 'package:parcel_am/core/services/connectivity_service.dart';
+import 'package:parcel_am/core/utils/logger.dart';
 import 'package:parcel_am/features/payments/domain/entities/paystack_transaction_entity.dart';
 import '../../../../payments/domain/use_cases/paystack_payment_usecase.dart';
 import '../../../data/helpers/idempotency_helper.dart';
@@ -159,7 +160,7 @@ class WalletBloc extends BaseBloC<WalletEvent, BaseState<WalletData>> {
     final walletData = WalletData(
       availableBalance: event.availableBalance,
       pendingBalance: event.pendingBalance,
-      wallet: const WalletInfo(recentTransactions: []),
+      wallet: WalletInfo(recentTransactions: const []),
     );
 
     emit(LoadedState<WalletData>(
@@ -341,12 +342,39 @@ class WalletBloc extends BaseBloC<WalletEvent, BaseState<WalletData>> {
         (failure) {
           emit(ErrorState<WalletData>(errorMessage: failure.failureMessage));
         },
-        (wallet) {
+        (wallet) async {
           currentWalletId = wallet.id;
+
+          // Fetch recent transactions
+          List<Transaction> recentTransactions = [];
+          final transactionsResult = await _walletUseCase.getTransactions(
+            _currentUserId!,
+            limit: 10,
+          );
+
+          transactionsResult.fold(
+            (failure) {
+              // Log error but don't fail the entire load
+              Logger.logWarning(
+                'Failed to fetch transactions: ${failure.failureMessage}',
+                tag: 'WalletBloc',
+              );
+            },
+            (transactions) {
+              recentTransactions = transactions.map((t) => Transaction(
+                id: t.id,
+                type: t.type.name,
+                amount: t.amount,
+                date: t.timestamp,
+                description: t.description ?? 'Transaction',
+              )).toList();
+            },
+          );
+
           final walletData = WalletData(
             availableBalance: wallet.availableBalance,
             pendingBalance: wallet.heldBalance,
-            wallet: const WalletInfo(recentTransactions: []),
+            wallet: WalletInfo(recentTransactions: recentTransactions),
           );
 
           emit(LoadedState<WalletData>(

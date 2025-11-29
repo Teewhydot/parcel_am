@@ -321,6 +321,7 @@ class _LoginScreenState extends State<LoginScreen>
                               child: TabBar(
                                 controller: _tabController,
                                 automaticIndicatorColorAdjustment: true,
+                                indicatorSize: TabBarIndicatorSize.tab,
                                 indicator: BoxDecoration(
                                   color: AppColors.primary,
                                   borderRadius: BorderRadius.circular(8),

@@ -156,9 +156,8 @@ class DatabaseHelper {
 
     // Define prefix mapping for transaction types
     const prefixMapping = {
-      'F-': { type: 'food_order', collection: 'food_orders' },
-      'D-': { type: 'delivery', collection: 'delivery_orders' },
-      'S-': { type: 'subscription', collection: 'subscriptions' },
+      'F-': { type: 'funding', collection: 'funding_orders' },
+      'W-': { type: 'withdrawal', collection: 'withdrawals' },
     };
 
     // Try each prefix to find the document
@@ -182,10 +181,10 @@ class DatabaseHelper {
       }
     }
 
-    logger.error(`No document found for reference ${reference} with any known prefix. Tried: F-, D-, S-`, executionId);
+    logger.error(`No document found for reference ${reference} with any known prefix. Tried: F-, W-`, executionId);
     return {
       actualReference: reference,
-      transactionType: 'food_order', // Default to food_order which exists in TRANSACTION_TYPES
+      transactionType: 'funding', // Default to funding which exists in TRANSACTION_TYPES
       orderDetails: {},
       userEmail: ''
     };

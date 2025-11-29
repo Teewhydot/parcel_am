@@ -51,9 +51,12 @@ class _WalletFundingPaymentScreenState
   }
 
   void _startTransactionStatusListener() {
+    // Listen to funding_orders collection with the prefixed reference
+    final fundingOrderId = 'F-${widget.reference}';
+
     _transactionStatusSubscription = FirebaseFirestore.instance
-        .collection('walletTransactions')
-        .doc(widget.transactionId)
+        .collection('funding_orders')
+        .doc(fundingOrderId)
         .snapshots()
         .listen((docSnapshot) {
       if (!mounted || hasProcessedPayment) return;
@@ -62,30 +65,27 @@ class _WalletFundingPaymentScreenState
         final data = docSnapshot.data();
         if (data != null) {
           final status = data['status'] as String?;
-          final paymentStatus = data['paymentStatus'] as String?;
 
           // Check if payment was successful
-          if (paymentStatus == 'success' ||
-              paymentStatus == 'completed' ||
-              status == 'success' ||
+          if (status == 'success' ||
+              status == 'confirmed' ||
               status == 'completed') {
             hasProcessedPayment = true;
-            _navigateToSuccessScreen();
+            _navigateToConfirmationScreen();
           }
           // Check if payment failed
-          else if (paymentStatus == 'failed' ||
-              paymentStatus == 'cancelled' ||
-              status == 'failed' ||
-              status == 'cancelled') {
+          else if (status == 'failed' ||
+              status == 'cancelled' ||
+              status == 'expired') {
             hasProcessedPayment = true;
-            _handlePaymentFailure();
+            _navigateToConfirmationScreen();
           }
         }
       }
     });
   }
 
-  void _navigateToSuccessScreen() {
+  void _navigateToConfirmationScreen() {
     nav.navigateTo(
       Routes.walletFundingSuccess,
       arguments: {
@@ -97,17 +97,6 @@ class _WalletFundingPaymentScreenState
     );
   }
 
-  void _handlePaymentFailure() {
-    nav.goBack();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Payment failed or was cancelled. Please try again.'),
-        backgroundColor: AppColors.error,
-        duration: Duration(seconds: 4),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -115,32 +104,16 @@ class _WalletFundingPaymentScreenState
         title: const AppText('Complete Payment'),
         backgroundColor: AppColors.surface,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () {
-            showDialog(
-              context: context,
-              builder: (context) => AlertDialog(
-                title: const Text('Cancel Payment?'),
-                content: const Text(
-                    'Are you sure you want to cancel this payment? You will need to start over.'),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Continue Payment'),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      nav.goBack();
-                    },
-                    child: const Text('Cancel'),
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
+        automaticallyImplyLeading: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.arrow_forward),
+            tooltip: 'Proceed to confirmation',
+            onPressed: () {
+              _navigateToConfirmationScreen();
+            },
+          ),
+        ],
       ),
       body: Stack(
         children: [

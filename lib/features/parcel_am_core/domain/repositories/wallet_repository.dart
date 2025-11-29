@@ -12,7 +12,7 @@ abstract class WalletRepository {
   Future<Either<Failure, WalletEntity>> getWallet(String userId);
 
   Future<Either<Failure, WalletEntity>> updateBalance(
-    String walletId,
+    String userId,
     double amount,
     String idempotencyKey,
   );
@@ -20,25 +20,30 @@ abstract class WalletRepository {
   Stream<Either<Failure, WalletEntity>> watchBalance(String userId);
 
   Future<Either<Failure, WalletEntity>> holdBalance(
-    String walletId,
+    String userId,
     double amount,
     String referenceId,
     String idempotencyKey,
   );
 
   Future<Either<Failure, WalletEntity>> releaseBalance(
-    String walletId,
+    String userId,
     double amount,
     String referenceId,
     String idempotencyKey,
   );
 
   Future<Either<Failure, TransactionEntity>> recordTransaction(
-    String walletId,
+    String userId,
     double amount,
     TransactionType type,
     String? description,
     String? referenceId,
     String idempotencyKey,
   );
+
+  Future<Either<Failure, List<TransactionEntity>>> getTransactions(
+    String userId, {
+    int limit = 20,
+  });
 }
