@@ -201,10 +201,9 @@ class _WalletFundingSuccessScreenState
                   AppButton.primary(
                     onPressed: () {
                       // Navigate back to wallet screen, removing all previous routes
-                      nav.navigateAndReplaceAll(
-                        Routes.wallet,
-                        arguments: widget.userId,
-                      );
+                      nav.goBack();
+                      nav.goBack();
+
                     },
                     child: const AppText(
                       'Back to Wallet',
