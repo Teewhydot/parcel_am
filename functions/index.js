@@ -51,6 +51,11 @@ console.log('='.repeat(50));
 console.log('ParcelAm App Firebase Functions - Modular Version');
 console.log('='.repeat(50));
 console.log(`Using project ID: ${PROJECT_ID}`);
+console.log(`Paystack API Key Status: ${PAYSTACK_SECRET_KEY ? 'Configured (' + PAYSTACK_SECRET_KEY.substring(0, 7) + '...)' : 'NOT CONFIGURED!'}`);
+if (!PAYSTACK_SECRET_KEY) {
+  console.error('⚠️  WARNING: PAYSTACK_SECRET_KEY is not set! Payment functions will fail.');
+  console.error('   Please set the environment variable or Firebase config: paystack.secret_key');
+}
 
 
 
@@ -69,12 +74,20 @@ exports.createPaystackTransaction = onRequest(
 
       try {
         logger.startFunction('createTransaction', executionId);
+        logger.info(`Request body received`, executionId, { bodyKeys: Object.keys(req.body) });
 
         // Validate and sanitize request for food orders
         const validatedData = RequestValidators.validateTransactionRequest(req.body);
+        logger.info(`Request validation successful`, executionId, {
+          hasOrderId: !!validatedData.orderId,
+          hasUserId: !!validatedData.userId,
+          hasEmail: !!validatedData.email,
+          amount: validatedData.amount
+        });
         const { orderId, amount, userId, email, metadata, userName } = validatedData;
 
         // Extract and structure the food order details from metadata
+        logger.info(`Structuring funding details`, executionId, { orderId, transactionType: 'funding' });
         const fundingDetails = {
           orderId: orderId,
           transactionType: 'funding',
@@ -82,14 +95,17 @@ exports.createPaystackTransaction = onRequest(
           // Include all other metadata
           ...metadata
         };
+        logger.info(`Funding details structured`, executionId, { fundingDetailsKeys: Object.keys(fundingDetails) });
 
         // Initialize payment with Paystack
+        logger.info(`Initializing Paystack transaction`, executionId, { email, amount, userId });
         const paymentResult = await paymentService.initializeTransaction(
           email,
           amount,
           { userId, fundingDetails, userName },
           executionId
         );
+        logger.info(`Paystack initialization completed`, executionId, { success: paymentResult.success });
 
         if (!paymentResult.success) {
           logger.error('Payment initialization failed', executionId, null, paymentResult);
@@ -101,7 +117,13 @@ exports.createPaystackTransaction = onRequest(
 
         // Determine transaction type and generate reference
         const transactionType = fundingDetails.transactionType || "funding";
+        logger.info(`Transaction type determined: ${transactionType}`, executionId);
+
         const reference = paymentService.generatePrefixedReference(transactionType, paymentResult.reference);
+        logger.info(`Prefixed reference generated: ${reference}`, executionId, {
+          originalReference: paymentResult.reference
+        });
+
         const currentTimestamp = new Date().toISOString();
 
         logger.transaction('CREATE', reference, executionId, {
@@ -111,6 +133,7 @@ exports.createPaystackTransaction = onRequest(
         });
 
         // Create service record using database helper
+        logger.info(`Creating service record in database`, executionId, { reference, userId });
         await dbHelper.createServiceRecord(
           userId,
           userName,
@@ -122,6 +145,7 @@ exports.createPaystackTransaction = onRequest(
           currentTimestamp,
           executionId
         );
+        logger.success(`Service record created successfully in database`, executionId);
         logger.success(`Transaction created successfully: ${reference}`, executionId);
 
         res.status(200).json({
@@ -157,17 +181,27 @@ exports.verifyPaystackPayment = onRequest(
 
       try {
         logger.startFunction('verifyPaystackPayment', executionId);
+        logger.info(`Verify payment request received`, executionId, {
+          hasReference: !!req.body.reference,
+          hasOrderId: !!req.body.orderId
+        });
 
         const { reference, orderId } = req.body;
         if (!reference) {
+          logger.warning(`Verification failed: missing reference`, executionId);
           return res.status(400).json({
             success: false,
             error: 'Reference is required'
           });
         }
 
+        logger.info(`Verifying payment with reference: ${reference}`, executionId);
         // Verify payment with Paystack
         const verificationResult = await paymentService.verifyTransaction(reference, executionId);
+        logger.info(`Verification API call completed`, executionId, {
+          success: verificationResult.success,
+          status: verificationResult.status
+        });
 
         if (!verificationResult.success) {
           logger.error('Payment verification failed', executionId, null, verificationResult);
@@ -216,17 +250,26 @@ exports.getTransactionStatus = onRequest(
 
       try {
         logger.startFunction('getTransactionStatus', executionId);
+        logger.info(`Status check request received`, executionId, {
+          queryParams: Object.keys(req.query)
+        });
 
         const { reference } = req.query;
         if (!reference) {
+          logger.warning(`Status check failed: missing reference`, executionId);
           return res.status(400).json({
             success: false,
             error: 'Reference is required'
           });
         }
 
+        logger.info(`Checking status for reference: ${reference}`, executionId);
         // Get transaction status from Paystack
         const verificationResult = await paymentService.verifyTransaction(reference, executionId);
+        logger.info(`Status check API call completed`, executionId, {
+          success: verificationResult.success,
+          status: verificationResult.status
+        });
 
         if (!verificationResult.success) {
           return res.status(400).json({
@@ -276,30 +319,54 @@ exports.paystackWebhook = onRequest(
       const event = req.body;
       const paystackSignature = req.headers["x-paystack-signature"];
 
-      logger.info(`Received Paystack event: ${event.event} - ${event.data?.status}`, executionId);
+      logger.info(`Received Paystack webhook`, executionId, {
+        event: event.event,
+        status: event.data?.status,
+        reference: event.data?.reference,
+        hasSignature: !!paystackSignature
+      });
 
       // Verify webhook signature
+      logger.info(`Verifying webhook signature`, executionId);
       if (!paymentService.verifyWebhookSignature(event, paystackSignature, executionId)) {
-        logger.warning('Invalid webhook signature', executionId);
+        logger.warning('Invalid webhook signature - rejecting request', executionId);
         return res.status(400).send("Invalid paystack signature");
       }
+      logger.info(`Webhook signature verified successfully`, executionId);
 
       // Process webhook event
+      logger.info(`Processing webhook event data`, executionId);
       const processResult = paymentService.processWebhookEvent(event, executionId);
       if (!processResult.success) {
-        logger.error('Failed to process webhook event', executionId);
+        logger.error('Failed to process webhook event - invalid data structure', executionId, null, {
+          error: processResult.error
+        });
         return res.status(400).send("Invalid event data");
       }
+      logger.info(`Webhook event processed successfully`, executionId);
 
       const processedEvent = processResult.processedEvent;
 
       // Handle different event types
+      logger.info(`Routing webhook to handler`, executionId, {
+        eventType: event.event,
+        processedStatus: processedEvent.status
+      });
+
       if (event.event === "charge.success" && processedEvent.status === "success") {
+        logger.info(`Handling successful payment`, executionId, { reference: processedEvent.reference });
         await handleSuccessfulPayment(processedEvent, executionId);
       } else if (event.event === "charge.failed") {
+        logger.info(`Handling failed payment`, executionId, { reference: processedEvent.reference });
         await handleFailedPayment(processedEvent, executionId);
       } else if (event.event === "charge.abandoned") {
+        logger.info(`Handling abandoned payment`, executionId, { reference: processedEvent.reference });
         await handleAbandonedPayment(processedEvent, executionId);
+      } else {
+        logger.info(`Unhandled webhook event type`, executionId, {
+          eventType: event.event,
+          status: processedEvent.status
+        });
       }
 
       logger.success('Webhook processed successfully', executionId);
@@ -314,10 +381,22 @@ exports.paystackWebhook = onRequest(
 
 // Helper function for successful payments
 async function handleSuccessfulPayment(processedEvent, executionId) {
+  logger.info(`handleSuccessfulPayment started`, executionId, {
+    reference: processedEvent.reference,
+    amount: processedEvent.amount,
+    userId: processedEvent.userId
+  });
+
   const { reference, amount, paidAt, userId, userName, bookingDetails } = processedEvent;
 
   // Find document and update status
+  logger.info(`Finding document with prefix`, executionId, { reference });
   const { actualReference, transactionType, orderDetails, userEmail } = await dbHelper.findDocumentWithPrefix(reference, executionId);
+  logger.info(`Document found`, executionId, {
+    actualReference,
+    transactionType,
+    hasOrderDetails: !!orderDetails
+  });
 
   // Update transaction status - default to food_order if transactionType not found
   const config = TRANSACTION_TYPES[transactionType] || TRANSACTION_TYPES['food_order'];
@@ -326,6 +405,10 @@ async function handleSuccessfulPayment(processedEvent, executionId) {
     logger.error(`No configuration found for transaction type: ${transactionType}`, executionId);
     return;
   }
+  logger.info(`Transaction type config found`, executionId, {
+    transactionType,
+    collectionName: config.collectionName
+  });
 
   const updateData = {
     status: 'confirmed',
@@ -336,26 +419,46 @@ async function handleSuccessfulPayment(processedEvent, executionId) {
 
   if (config.transactionType === 'service') {
     updateData.updatedAt = paidAt;
+    logger.info(`Added updatedAt field for service transaction`, executionId);
   }
 
+  logger.info(`Updating document in database`, executionId, {
+    collection: config.collectionName,
+    reference: actualReference,
+    status: 'confirmed'
+  });
   await dbHelper.updateDocument(config.collectionName, actualReference, updateData, executionId);
+  logger.info(`Document updated successfully`, executionId);
 
   // Clear user cart after successful food order payment
   if (transactionType === 'food_order' && userId) {
     try {
+      logger.info(`Clearing user cart`, executionId, { userId, transactionType });
       const clearResult = await dbHelper.clearUserCart(userId, executionId);
       logger.info(`Cart clearing result for user ${userId}: ${clearResult.success ? 'success' : 'failed'} - ${clearResult.itemCount || 0} items`, executionId);
     } catch (error) {
       logger.error(`Failed to clear cart for user: ${userId}`, executionId, error);
     }
+  } else {
+    logger.info(`Skipping cart clearing`, executionId, {
+      transactionType,
+      hasUserId: !!userId,
+      reason: transactionType !== 'food_order' ? 'not a food order' : 'no userId'
+    });
   }
 
   // Send success notification
+  logger.info(`Generating notification data`, executionId, { transactionType });
   const notificationData = notificationService.generateNotificationData(
     transactionType, orderDetails, actualReference, amount, true
   );
+  logger.info(`Notification data generated`, executionId);
 
   if (userId && config) {
+    logger.info(`Sending notification to user`, executionId, {
+      userId,
+      title: config.notificationTitle.success
+    });
     await notificationService.sendNotificationToUser(
       userId,
       config.notificationTitle.success,
@@ -363,20 +466,40 @@ async function handleSuccessfulPayment(processedEvent, executionId) {
       notificationData,
       executionId
     );
+    logger.info(`Notification sent successfully`, executionId);
+  } else {
+    logger.warning(`Notification not sent`, executionId, {
+      hasUserId: !!userId,
+      hasConfig: !!config
+    });
   }
+
+  logger.success(`handleSuccessfulPayment completed`, executionId);
 }
 
 // Helper function for failed payments
 async function handleFailedPayment(processedEvent, executionId) {
+  logger.info(`handleFailedPayment started`, executionId, {
+    reference: processedEvent.reference,
+    amount: processedEvent.amount
+  });
+
   const { reference, amount, paidAt } = processedEvent;
 
+  logger.info(`Finding document with prefix`, executionId, { reference });
   const { actualReference, transactionType } = await dbHelper.findDocumentWithPrefix(reference, executionId);
+  logger.info(`Document found`, executionId, { actualReference, transactionType });
+
   const config = TRANSACTION_TYPES[transactionType] || TRANSACTION_TYPES['food_order'];
 
   if (!config) {
     logger.error(`No configuration found for transaction type: ${transactionType}`, executionId);
     return;
   }
+  logger.info(`Transaction type config found`, executionId, {
+    transactionType,
+    collectionName: config.collectionName
+  });
 
   const updateData = {
     status: 'failed',
@@ -384,21 +507,38 @@ async function handleFailedPayment(processedEvent, executionId) {
     amount: amount,
   };
 
+  logger.info(`Updating document to failed status`, executionId, {
+    collection: config.collectionName,
+    reference: actualReference
+  });
   await dbHelper.updateDocument(config.collectionName, actualReference, updateData, executionId);
   logger.info(`Payment failed for ${reference}`, executionId);
+  logger.success(`handleFailedPayment completed`, executionId);
 }
 
 // Helper function for abandoned payments
 async function handleAbandonedPayment(processedEvent, executionId) {
+  logger.info(`handleAbandonedPayment started`, executionId, {
+    reference: processedEvent.reference,
+    amount: processedEvent.amount
+  });
+
   const { reference, amount, paidAt } = processedEvent;
 
+  logger.info(`Finding document with prefix`, executionId, { reference });
   const { actualReference, transactionType } = await dbHelper.findDocumentWithPrefix(reference, executionId);
+  logger.info(`Document found`, executionId, { actualReference, transactionType });
+
   const config = TRANSACTION_TYPES[transactionType] || TRANSACTION_TYPES['food_order'];
 
   if (!config) {
     logger.error(`No configuration found for transaction type: ${transactionType}`, executionId);
     return;
   }
+  logger.info(`Transaction type config found`, executionId, {
+    transactionType,
+    collectionName: config.collectionName
+  });
 
   const updateData = {
     status: 'abandoned',
@@ -406,8 +546,13 @@ async function handleAbandonedPayment(processedEvent, executionId) {
     amount: amount,
   };
 
+  logger.info(`Updating document to abandoned status`, executionId, {
+    collection: config.collectionName,
+    reference: actualReference
+  });
   await dbHelper.updateDocument(config.collectionName, actualReference, updateData, executionId);
   logger.info(`Payment abandoned for ${reference}`, executionId);
+  logger.success(`handleAbandonedPayment completed`, executionId);
 }
 
 // ========================================================================

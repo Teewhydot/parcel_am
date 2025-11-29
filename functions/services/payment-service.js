@@ -13,6 +13,22 @@ class PaymentService {
   constructor() {
     this.apiKey = ENVIRONMENT.PAYSTACK_SECRET_KEY;
     this.baseUrl = PAYSTACK.API_BASE_URL;
+
+    // Log API key status (without exposing the actual key)
+    if (!this.apiKey) {
+      logger.error('CRITICAL: Paystack API key is not configured!', 'payment-service-init', null, {
+        hasApiKey: false,
+        apiKeyType: typeof this.apiKey,
+        envVarExists: !!process.env.PAYSTACK_SECRET_KEY
+      });
+    } else {
+      logger.info('Paystack service initialized', 'payment-service-init', {
+        hasApiKey: true,
+        apiKeyLength: this.apiKey.length,
+        apiKeyPrefix: this.apiKey.substring(0, 7) + '...',
+        baseUrl: this.baseUrl
+      });
+    }
   }
 
   // ========================================================================
@@ -20,17 +36,42 @@ class PaymentService {
   // ========================================================================
 
   async initializeTransaction(email, amount, metadata, executionId = 'payment-init') {
+    const initStartTime = Date.now();
     try {
+      // Validate API key before making request
+      if (!this.apiKey) {
+        throw new Error('Paystack API key is not configured. Please set PAYSTACK_SECRET_KEY environment variable or Firebase config.');
+      }
+
+      logger.info(`Starting transaction initialization`, executionId, {
+        email,
+        amount,
+        amountInKobo: amount * 100,
+        hasMetadata: !!metadata,
+        metadataKeys: metadata ? Object.keys(metadata) : [],
+        apiKeyConfigured: !!this.apiKey,
+        apiKeyPrefix: this.apiKey ? this.apiKey.substring(0, 7) + '...' : 'NOT SET'
+      });
+
       logger.apiCall('POST', `${this.baseUrl}${PAYSTACK.ENDPOINTS.INITIALIZE_TRANSACTION}`, null, executionId);
       logger.payment('INITIALIZE', 'new-transaction', amount, executionId);
 
+      const requestPayload = {
+        email: email,
+        amount: amount * 100, // Convert to kobo
+        metadata: metadata
+      };
+
+      logger.info(`Sending request to Paystack API`, executionId, {
+        url: `${this.baseUrl}${PAYSTACK.ENDPOINTS.INITIALIZE_TRANSACTION}`,
+        payloadKeys: Object.keys(requestPayload),
+        hasAuthHeader: !!this.apiKey,
+        authHeaderPrefix: this.apiKey ? `Bearer ${this.apiKey.substring(0, 7)}...` : 'MISSING'
+      });
+
       const response = await axios.post(
         `${this.baseUrl}${PAYSTACK.ENDPOINTS.INITIALIZE_TRANSACTION}`,
-        {
-          email: email,
-          amount: amount * 100, // Convert to kobo
-          metadata: metadata
-        },
+        requestPayload,
         {
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
@@ -40,6 +81,15 @@ class PaymentService {
         }
       );
 
+      const initEndTime = Date.now();
+      const initDuration = initEndTime - initStartTime;
+
+      logger.info(`Paystack API response received`, executionId, {
+        status: response.status,
+        dataStatus: response.data.status,
+        duration: `${initDuration}ms`
+      });
+
       if (response.status === 200 && response.data.status) {
         const paystackReference = response.data.data.reference;
         const authorizationUrl = response.data.data.authorization_url;
@@ -48,7 +98,10 @@ class PaymentService {
         logger.success(`Transaction initialized: ${paystackReference}`, executionId, {
           reference: paystackReference,
           amount: amount,
-          email: email
+          email: email,
+          hasAuthUrl: !!authorizationUrl,
+          hasAccessCode: !!accessCode,
+          duration: `${initDuration}ms`
         });
 
         return {
@@ -59,12 +112,25 @@ class PaymentService {
           amount: amount
         };
       } else {
+        logger.error(`Unexpected Paystack response`, executionId, null, {
+          status: response.status,
+          dataStatus: response.data.status,
+          message: response.data.message
+        });
         throw new Error(`Paystack API error: ${response.data.message || 'Unknown error'}`);
       }
     } catch (error) {
+      const initEndTime = Date.now();
+      const initDuration = initEndTime - initStartTime;
+
       logger.error('Failed to initialize transaction', executionId, error, {
         email: email,
-        amount: amount
+        amount: amount,
+        duration: `${initDuration}ms`,
+        errorType: error.name,
+        hasResponse: !!error.response,
+        responseStatus: error.response?.status,
+        responseData: error.response?.data
       });
 
       return {
@@ -83,11 +149,23 @@ class PaymentService {
     const verificationStartTime = Date.now();
 
     try {
+      // Validate API key before making request
+      if (!this.apiKey) {
+        throw new Error('Paystack API key is not configured. Please set PAYSTACK_SECRET_KEY environment variable or Firebase config.');
+      }
+
+      logger.info(`Starting transaction verification`, executionId, {
+        reference,
+        apiKeyConfigured: !!this.apiKey
+      });
       logger.payment('VERIFY', reference, null, executionId);
-      logger.apiCall('GET', `${this.baseUrl}${PAYSTACK.ENDPOINTS.VERIFY_TRANSACTION}/${reference}`, null, executionId);
+
+      const verificationUrl = `${this.baseUrl}${PAYSTACK.ENDPOINTS.VERIFY_TRANSACTION}/${reference}`;
+      logger.apiCall('GET', verificationUrl, null, executionId);
+      logger.info(`Sending GET request to Paystack`, executionId, { url: verificationUrl });
 
       const response = await axios.get(
-        `${this.baseUrl}${PAYSTACK.ENDPOINTS.VERIFY_TRANSACTION}/${reference}`,
+        verificationUrl,
         {
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
@@ -100,19 +178,37 @@ class PaymentService {
       const verificationEndTime = Date.now();
       const verificationDuration = verificationEndTime - verificationStartTime;
 
-      logger.info(`Paystack API Response: ${response.status} - ${response.data.status}`, executionId);
-      logger.info(`Verification took ${verificationDuration}ms`, executionId);
+      logger.info(`Paystack API Response received`, executionId, {
+        httpStatus: response.status,
+        dataStatus: response.data.status,
+        hasData: !!response.data.data,
+        duration: `${verificationDuration}ms`
+      });
 
       if (response.status === 200 && response.data.status) {
         const transactionData = response.data.data;
+        logger.info(`Processing verification response`, executionId, {
+          reference: transactionData.reference,
+          status: transactionData.status,
+          amount: transactionData.amount
+        });
+
         const verificationResult = this.processVerificationResponse(transactionData, executionId);
 
-        logger.success(`Transaction verified: ${reference}`, executionId, verificationResult);
+        logger.success(`Transaction verified: ${reference}`, executionId, {
+          ...verificationResult,
+          duration: `${verificationDuration}ms`
+        });
         return {
           success: true,
           ...verificationResult
         };
       } else {
+        logger.error(`Unexpected verification response`, executionId, null, {
+          httpStatus: response.status,
+          dataStatus: response.data.status,
+          message: response.data.message
+        });
         throw new Error(`Verification failed: ${response.data.message || 'Unknown error'}`);
       }
     } catch (error) {
@@ -120,7 +216,13 @@ class PaymentService {
       const verificationDuration = verificationEndTime - verificationStartTime;
 
       logger.error(`Transaction verification failed after ${verificationDuration}ms`, executionId, error, {
-        reference: reference
+        reference: reference,
+        errorType: error.name,
+        errorCode: error.code,
+        hasResponse: !!error.response,
+        responseStatus: error.response?.status,
+        responseMessage: error.response?.data?.message,
+        responseData: error.response?.data
       });
 
       return {
@@ -132,6 +234,14 @@ class PaymentService {
   }
 
   processVerificationResponse(transactionData, executionId = 'process-verification') {
+    logger.info(`Processing verification response data`, executionId, {
+      hasReference: !!transactionData.reference,
+      hasStatus: !!transactionData.status,
+      hasAmount: !!transactionData.amount,
+      hasPaidAt: !!transactionData.paid_at,
+      hasMetadata: !!transactionData.metadata
+    });
+
     const {
       reference,
       status,
@@ -144,10 +254,17 @@ class PaymentService {
       metadata
     } = transactionData;
 
+    const convertedAmount = amount / 100; // Convert from kobo
+
+    logger.info(`Converting amount from kobo to naira`, executionId, {
+      amountInKobo: amount,
+      amountInNaira: convertedAmount
+    });
+
     const processedData = {
       reference: reference,
       status: status,
-      amount: amount / 100, // Convert from kobo
+      amount: convertedAmount,
       amountInKobo: amount,
       paidAt: paid_at || created_at,
       channel: channel,
@@ -157,12 +274,13 @@ class PaymentService {
       timestamp: new Date().toISOString()
     };
 
-    logger.info('Transaction verification details', executionId, {
+    logger.info('Transaction verification details processed', executionId, {
       reference: processedData.reference,
       status: processedData.status,
       amount: `${processedData.currency} ${processedData.amount}`,
       channel: processedData.channel,
-      paidAt: processedData.paidAt
+      paidAt: processedData.paidAt,
+      hasMetadata: Object.keys(processedData.metadata).length > 0
     });
 
     return processedData;
@@ -174,12 +292,21 @@ class PaymentService {
 
   verifyWebhookSignature(requestBody, signature, executionId = 'webhook-verify') {
     try {
-      logger.info('Verifying webhook signature', executionId);
+      logger.info('Starting webhook signature verification', executionId, {
+        hasRequestBody: !!requestBody,
+        hasSignature: !!signature,
+        requestBodyType: typeof requestBody
+      });
 
       if (!signature) {
-        logger.warning('No signature provided in webhook', executionId);
+        logger.warning('No signature provided in webhook - rejecting', executionId);
         return false;
       }
+
+      logger.info('Computing HMAC hash', executionId, {
+        algorithm: 'sha512',
+        bodyLength: JSON.stringify(requestBody).length
+      });
 
       const hash = crypto
         .createHmac('sha512', this.apiKey)
@@ -188,10 +315,16 @@ class PaymentService {
 
       const isValid = hash === signature;
 
+      logger.info('Signature comparison completed', executionId, {
+        isValid,
+        hashPreview: hash.substring(0, 20) + '...',
+        signaturePreview: signature.substring(0, 20) + '...'
+      });
+
       if (isValid) {
-        logger.success('Webhook signature verified', executionId);
+        logger.success('Webhook signature verified successfully', executionId);
       } else {
-        logger.warning('Invalid webhook signature', executionId, {
+        logger.warning('Invalid webhook signature - possible tampering or incorrect key', executionId, {
           expected: hash.substring(0, 20) + '...',
           received: signature.substring(0, 20) + '...'
         });
@@ -199,30 +332,53 @@ class PaymentService {
 
       return isValid;
     } catch (error) {
-      logger.error('Error verifying webhook signature', executionId, error);
+      logger.error('Error verifying webhook signature', executionId, error, {
+        errorType: error.name,
+        errorMessage: error.message
+      });
       return false;
     }
   }
 
   processWebhookEvent(eventData, executionId = 'webhook-process') {
     try {
+      logger.info(`Starting webhook event processing`, executionId, {
+        hasEventData: !!eventData,
+        eventDataKeys: eventData ? Object.keys(eventData) : []
+      });
+
       const { event, data } = eventData;
 
       logger.info(`Processing webhook event: ${event}`, executionId, {
         event: event,
         status: data?.status,
-        reference: data?.reference
+        reference: data?.reference,
+        hasData: !!data
       });
 
       if (!data) {
+        logger.error('No data found in webhook event', executionId, null, {
+          event,
+          eventDataKeys: Object.keys(eventData)
+        });
         throw new Error('No data found in webhook event');
       }
+
+      logger.info('Extracting event data fields', executionId, {
+        hasReference: !!data.reference,
+        hasStatus: !!data.status,
+        hasAmount: !!data.amount,
+        hasPaidAt: !!data.paid_at,
+        hasMetadata: !!data.metadata
+      });
+
+      const convertedAmount = data.amount ? data.amount / 100 : 0;
 
       const processedEvent = {
         eventType: event,
         reference: data.reference,
         status: data.status,
-        amount: data.amount ? data.amount / 100 : 0,
+        amount: convertedAmount,
         paidAt: data.paid_at,
         metadata: data.metadata || {},
         channel: data.channel,
@@ -230,17 +386,37 @@ class PaymentService {
         gatewayResponse: data.gateway_response
       };
 
+      logger.info('Event data extracted', executionId, {
+        reference: processedEvent.reference,
+        status: processedEvent.status,
+        amount: `${processedEvent.currency} ${processedEvent.amount}`,
+        hasMetadata: Object.keys(processedEvent.metadata).length > 0
+      });
+
       // Extract user information from metadata
       if (processedEvent.metadata) {
+        logger.info('Extracting user information from metadata', executionId, {
+          metadataKeys: Object.keys(processedEvent.metadata)
+        });
+
         processedEvent.userId = processedEvent.metadata.userId;
         processedEvent.userName = processedEvent.metadata.userName;
         processedEvent.bookingDetails = processedEvent.metadata.bookingDetails || {};
+
+        logger.info('User information extracted', executionId, {
+          hasUserId: !!processedEvent.userId,
+          hasUserName: !!processedEvent.userName,
+          hasBookingDetails: Object.keys(processedEvent.bookingDetails).length > 0
+        });
+      } else {
+        logger.warning('No metadata found in webhook event', executionId);
       }
 
       logger.success(`Webhook event processed: ${event}`, executionId, {
         reference: processedEvent.reference,
         status: processedEvent.status,
-        amount: processedEvent.amount
+        amount: processedEvent.amount,
+        hasUserId: !!processedEvent.userId
       });
 
       return {
@@ -248,7 +424,11 @@ class PaymentService {
         processedEvent: processedEvent
       };
     } catch (error) {
-      logger.error('Failed to process webhook event', executionId, error);
+      logger.error('Failed to process webhook event', executionId, error, {
+        errorType: error.name,
+        errorMessage: error.message,
+        hasEventData: !!eventData
+      });
       return {
         success: false,
         error: error.message
