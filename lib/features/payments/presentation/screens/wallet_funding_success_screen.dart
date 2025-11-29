@@ -1,12 +1,13 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
-import '../../../../core/routes/routes.dart';
 import '../../../parcel_am_core/presentation/bloc/wallet/wallet_bloc.dart';
 import '../../../parcel_am_core/presentation/bloc/wallet/wallet_data.dart';
 import '../../../../core/bloc/base/base_state.dart';
@@ -37,6 +38,11 @@ class _WalletFundingSuccessScreenState
   late Animation<double> _scaleAnimation;
   final nav = GetIt.instance<NavigationService>();
 
+  // Payment status tracking
+  String _paymentStatus = 'pending';
+  bool _isLoadingStatus = true;
+  StreamSubscription<DocumentSnapshot>? _statusSubscription;
+
   @override
   void initState() {
     super.initState();
@@ -51,12 +57,166 @@ class _WalletFundingSuccessScreenState
     );
 
     _animationController.forward();
+
+    // Start listening to payment status
+    _listenToPaymentStatus();
   }
 
   @override
   void dispose() {
+    _statusSubscription?.cancel();
     _animationController.dispose();
     super.dispose();
+  }
+
+  void _listenToPaymentStatus() {
+    final fundingOrderId = 'F-${widget.reference}';
+
+    _statusSubscription = FirebaseFirestore.instance
+        .collection('funding_orders')
+        .doc(fundingOrderId)
+        .snapshots()
+        .listen(
+      (docSnapshot) {
+        if (!mounted) return;
+
+        if (docSnapshot.exists) {
+          final data = docSnapshot.data();
+          if (data != null) {
+            final status = data['status'] as String? ?? 'pending';
+            setState(() {
+              _paymentStatus = status.toLowerCase();
+              _isLoadingStatus = false;
+            });
+          }
+        } else {
+          // Document doesn't exist yet, keep as pending
+          setState(() {
+            _isLoadingStatus = false;
+          });
+        }
+      },
+      onError: (error) {
+        if (!mounted) return;
+        setState(() {
+          _isLoadingStatus = false;
+        });
+      },
+    );
+  }
+
+  bool _isSuccessStatus() {
+    return _paymentStatus == 'success' ||
+        _paymentStatus == 'confirmed' ||
+        _paymentStatus == 'completed';
+  }
+
+  bool _isPendingStatus() {
+    return _paymentStatus == 'pending';
+  }
+
+  bool _isFailedStatus() {
+    return _paymentStatus == 'failed' ||
+        _paymentStatus == 'cancelled' ||
+        _paymentStatus == 'expired';
+  }
+
+  Widget _buildStatusIcon() {
+    if (_isLoadingStatus) {
+      return const CircularProgressIndicator();
+    }
+
+    if (_isSuccessStatus()) {
+      return ScaleTransition(
+        scale: _scaleAnimation,
+        child: Container(
+          width: 120,
+          height: 120,
+          decoration: BoxDecoration(
+            color: Colors.green.shade50,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            Icons.check_circle,
+            size: 80,
+            color: Colors.green.shade600,
+          ),
+        ),
+      );
+    } else if (_isPendingStatus()) {
+      return Container(
+        width: 120,
+        height: 120,
+        decoration: BoxDecoration(
+          color: Colors.orange.shade50,
+          shape: BoxShape.circle,
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            SizedBox(
+              width: 60,
+              height: 60,
+              child: CircularProgressIndicator(
+                strokeWidth: 4,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.orange.shade600),
+              ),
+            ),
+            Icon(
+              Icons.hourglass_empty,
+              size: 40,
+              color: Colors.orange.shade600,
+            ),
+          ],
+        ),
+      );
+    } else {
+      // Failed status
+      return ScaleTransition(
+        scale: _scaleAnimation,
+        child: Container(
+          width: 120,
+          height: 120,
+          decoration: BoxDecoration(
+            color: Colors.red.shade50,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            Icons.error,
+            size: 80,
+            color: Colors.red.shade600,
+          ),
+        ),
+      );
+    }
+  }
+
+  String _getStatusTitle() {
+    if (_isLoadingStatus) {
+      return 'Checking Payment Status...';
+    }
+
+    if (_isSuccessStatus()) {
+      return 'Payment Successful!';
+    } else if (_isPendingStatus()) {
+      return 'Payment Processing';
+    } else {
+      return 'Payment Failed';
+    }
+  }
+
+  String _getStatusMessage() {
+    if (_isLoadingStatus) {
+      return 'Please wait while we verify your payment.';
+    }
+
+    if (_isSuccessStatus()) {
+      return 'Your wallet has been funded successfully.';
+    } else if (_isPendingStatus()) {
+      return 'Please wait while we confirm your payment. This may take a few moments.';
+    } else {
+      return 'Your payment could not be processed. Please try again or contact support.';
+    }
   }
 
   @override
@@ -78,29 +238,14 @@ class _WalletFundingSuccessScreenState
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Success Icon with Animation
-                  ScaleTransition(
-                    scale: _scaleAnimation,
-                    child: Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        color: Colors.green.shade50,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.check_circle,
-                        size: 80,
-                        color: Colors.green.shade600,
-                      ),
-                    ),
-                  ),
+                  // Status Icon with Animation
+                  _buildStatusIcon(),
 
                   AppSpacing.verticalSpacing(SpacingSize.xxl),
 
-                  // Success Title
-                  const AppText(
-                    'Payment Successful!',
+                  // Status Title
+                  AppText(
+                    _getStatusTitle(),
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                     textAlign: TextAlign.center,
@@ -108,9 +253,9 @@ class _WalletFundingSuccessScreenState
 
                   AppSpacing.verticalSpacing(SpacingSize.sm),
 
-                  // Success Message
+                  // Status Message
                   AppText(
-                    'Your wallet has been funded successfully.',
+                    _getStatusMessage(),
                     fontSize: 16,
                     color: AppColors.onSurfaceVariant,
                     textAlign: TextAlign.center,
@@ -131,9 +276,9 @@ class _WalletFundingSuccessScreenState
                     ),
                     child: Column(
                       children: [
-                        // Amount Funded
+                        // Amount
                         const AppText(
-                          'Amount Funded',
+                          'Amount',
                           fontSize: 14,
                           color: AppColors.onSurfaceVariant,
                         ),
@@ -154,25 +299,65 @@ class _WalletFundingSuccessScreenState
 
                         AppSpacing.verticalSpacing(SpacingSize.lg),
 
-                        // New Balance
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const AppText(
-                              'New Wallet Balance:',
-                              fontSize: 14,
-                              color: AppColors.onSurfaceVariant,
-                            ),
-                            AppText(
-                              '${walletData.currency} ${walletData.availableBalance.toStringAsFixed(2)}',
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.onSurface,
-                            ),
-                          ],
-                        ),
+                        // New Balance (only show for successful payments)
+                        if (_isSuccessStatus()) ...[
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const AppText(
+                                'New Wallet Balance:',
+                                fontSize: 14,
+                                color: AppColors.onSurfaceVariant,
+                              ),
+                              AppText(
+                                '${walletData.currency} ${walletData.availableBalance.toStringAsFixed(2)}',
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.onSurface,
+                              ),
+                            ],
+                          ),
+                          AppSpacing.verticalSpacing(SpacingSize.md),
+                        ],
 
-                        AppSpacing.verticalSpacing(SpacingSize.md),
+                        // Status badge
+                        if (!_isLoadingStatus) ...[
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const AppText(
+                                'Status:',
+                                fontSize: 12,
+                                color: AppColors.onSurfaceVariant,
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: _isSuccessStatus()
+                                      ? Colors.green.withOpacity(0.1)
+                                      : _isPendingStatus()
+                                          ? Colors.orange.withOpacity(0.1)
+                                          : Colors.red.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: AppText(
+                                  _paymentStatus.toUpperCase(),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: _isSuccessStatus()
+                                      ? Colors.green.shade700
+                                      : _isPendingStatus()
+                                          ? Colors.orange.shade700
+                                          : Colors.red.shade700,
+                                ),
+                              ),
+                            ],
+                          ),
+                          AppSpacing.verticalSpacing(SpacingSize.md),
+                        ],
 
                         // Transaction Reference
                         Row(
@@ -197,21 +382,64 @@ class _WalletFundingSuccessScreenState
 
                   const Spacer(),
 
-                  // Action Button
-                  AppButton.primary(
-                    onPressed: () {
-                      // Navigate back to wallet screen, removing all previous routes
-                      nav.goBack();
-                      nav.goBack();
-
-                    },
-                    child: const AppText(
-                      'Back to Wallet',
-                      color: AppColors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                  // Action Buttons
+                  if (_isSuccessStatus())
+                    AppButton.primary(
+                      onPressed: () {
+                        nav.goBack();
+                        nav.goBack();
+                      },
+                      child: const AppText(
+                        'Back to Wallet',
+                        color: AppColors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    )
+                  else if (_isFailedStatus())
+                    Column(
+                      children: [
+                        AppButton.primary(
+                          onPressed: () {
+                            nav.goBack();
+                            nav.goBack();
+                            nav.goBack();
+                          },
+                          child: const AppText(
+                            'Try Again',
+                            color: AppColors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        AppSpacing.verticalSpacing(SpacingSize.sm),
+                        AppButton.secondary(
+                          onPressed: () {
+                            nav.goBack();
+                            nav.goBack();
+                          },
+                          child: const AppText(
+                            'Back to Wallet',
+                            color: AppColors.onSurface,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    )
+                  else if (_isPendingStatus())
+                    AppButton.secondary(
+                      onPressed: () {
+                        nav.goBack();
+                        nav.goBack();
+                      },
+                      child: const AppText(
+                        'Back to Wallet',
+                        color: AppColors.onSurface,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
 
                   AppSpacing.verticalSpacing(SpacingSize.md),
                 ],

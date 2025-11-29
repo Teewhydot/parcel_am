@@ -533,6 +533,7 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
     switch (status?.toLowerCase()) {
       case 'success':
       case 'completed':
+      case 'confirmed':
         return TransactionStatus.completed;
       case 'pending':
         return TransactionStatus.pending;
