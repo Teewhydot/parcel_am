@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
+import 'package:parcel_am/core/routes/routes.dart';
+import 'package:parcel_am/core/services/navigation_service/nav_config.dart';
+import 'package:parcel_am/features/parcel_am_core/domain/repositories/withdrawal_repository.dart';
 import '../bloc/wallet/wallet_data.dart';
 
-class TransactionDetailsBottomSheet extends StatelessWidget {
+class TransactionDetailsBottomSheet extends StatefulWidget {
   final Transaction transaction;
 
   const TransactionDetailsBottomSheet({
@@ -23,6 +27,15 @@ class TransactionDetailsBottomSheet extends StatelessWidget {
       ),
     );
   }
+
+  @override
+  State<TransactionDetailsBottomSheet> createState() =>
+      _TransactionDetailsBottomSheetState();
+}
+
+class _TransactionDetailsBottomSheetState
+    extends State<TransactionDetailsBottomSheet> {
+  final sl = GetIt.instance;
 
   @override
   Widget build(BuildContext context) {
@@ -54,32 +67,39 @@ class TransactionDetailsBottomSheet extends StatelessWidget {
                     _buildDetailRow(
                       context,
                       'Transaction Type',
-                      _formatTransactionType(transaction.type),
+                      _formatTransactionType(widget.transaction.type),
                     ),
                     const Divider(height: 24),
                     _buildDetailRow(
                       context,
                       'Date',
-                      DateFormat('MMM d, yyyy • hh:mm a').format(transaction.date),
+                      DateFormat('MMM d, yyyy • hh:mm a')
+                          .format(widget.transaction.date),
                     ),
-                    if (transaction.referenceId != null) ...[
+                    if (widget.transaction.referenceId != null) ...[
                       const Divider(height: 24),
                       _buildCopyableDetailRow(
                         context,
                         'Reference ID',
-                        transaction.referenceId!,
+                        widget.transaction.referenceId!,
                       ),
                     ],
                     const Divider(height: 24),
                     _buildDetailRow(
                       context,
                       'Description',
-                      transaction.description,
+                      widget.transaction.description,
                     ),
-                    if (transaction.metadata != null &&
-                        transaction.metadata!.isNotEmpty) ...[
+                    if (widget.transaction.metadata != null &&
+                        widget.transaction.metadata!.isNotEmpty) ...[
                       const SizedBox(height: 24),
                       _buildMetadataSection(context),
+                    ],
+                    // Add withdrawal details button for withdrawal transactions
+                    if (widget.transaction.type.toLowerCase() == 'withdrawal' &&
+                        widget.transaction.referenceId != null) ...[
+                      const SizedBox(height: 24),
+                      _buildViewWithdrawalDetailsButton(context),
                     ],
                   ],
                 ),
@@ -132,7 +152,7 @@ class TransactionDetailsBottomSheet extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            '${_getAmountPrefix()}${_formatAmount(transaction.amount)}',
+            '${_getAmountPrefix()}${_formatAmount(widget.transaction.amount)}',
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: _getAmountColor(),
@@ -255,7 +275,7 @@ class TransactionDetailsBottomSheet extends StatelessWidget {
               ),
         ),
         const SizedBox(height: 12),
-        ...transaction.metadata!.entries.map((entry) {
+        ...widget.transaction.metadata!.entries.map((entry) {
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: _buildDetailRow(
@@ -269,13 +289,56 @@ class TransactionDetailsBottomSheet extends StatelessWidget {
     );
   }
 
+  /// Builds button to view full withdrawal details
+  Widget _buildViewWithdrawalDetailsButton(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: () async {
+          // Close the bottom sheet first
+          Navigator.of(context).pop();
+
+          // Navigate to withdrawal detail screen
+          try {
+            final withdrawalRepo = sl<WithdrawalRepository>();
+            final withdrawalOrder = await withdrawalRepo
+                .getWithdrawalOrder(widget.transaction.referenceId!);
+
+            if (context.mounted) {
+              sl<NavigationService>().navigateTo(
+                Routes.withdrawalTransactionDetail,
+                arguments: {'withdrawalOrder': withdrawalOrder},
+              );
+            }
+          } catch (e) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Failed to load withdrawal details: $e'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          }
+        },
+        icon: const Icon(Icons.arrow_forward),
+        label: const Text('View Withdrawal Details'),
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+        ),
+      ),
+    );
+  }
+
   String _getAmountPrefix() {
-    switch (transaction.type.toLowerCase()) {
+    switch (widget.transaction.type.toLowerCase()) {
       case 'deposit':
       case 'refund':
+      case 'release':
         return '+';
       case 'withdrawal':
       case 'payment':
+      case 'hold':
         return '-';
       default:
         return '';
@@ -283,12 +346,14 @@ class TransactionDetailsBottomSheet extends StatelessWidget {
   }
 
   Color _getAmountColor() {
-    switch (transaction.type.toLowerCase()) {
+    switch (widget.transaction.type.toLowerCase()) {
       case 'deposit':
       case 'refund':
+      case 'release':
         return Colors.green.shade700;
       case 'withdrawal':
       case 'payment':
+      case 'hold':
         return Colors.red.shade700;
       default:
         return Colors.black87;
@@ -301,9 +366,9 @@ class TransactionDetailsBottomSheet extends StatelessWidget {
   }
 
   String _getStatusText() {
-    if (transaction.status == null) return 'Unknown';
+    if (widget.transaction.status == null) return 'Unknown';
 
-    switch (transaction.status!.toLowerCase()) {
+    switch (widget.transaction.status!.toLowerCase()) {
       case 'completed':
       case 'success':
         return 'Completed';
@@ -315,14 +380,14 @@ class TransactionDetailsBottomSheet extends StatelessWidget {
       case 'cancelled':
         return 'Cancelled';
       default:
-        return transaction.status!;
+        return widget.transaction.status!;
     }
   }
 
   Color _getStatusColor() {
-    if (transaction.status == null) return Colors.grey;
+    if (widget.transaction.status == null) return Colors.grey;
 
-    switch (transaction.status!.toLowerCase()) {
+    switch (widget.transaction.status!.toLowerCase()) {
       case 'completed':
       case 'success':
         return Colors.green;

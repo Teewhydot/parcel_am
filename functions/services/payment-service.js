@@ -361,6 +361,335 @@ class PaymentService {
   }
 
   // ========================================================================
+  // Bank and Transfer Recipient APIs (for Withdrawals)
+  // ========================================================================
+
+  /**
+   * Get list of Nigerian banks from Paystack
+   * @param {string} executionId - Execution ID for logging
+   * @returns {Promise<Object>} List of banks
+   */
+  async getBankList(executionId = 'get-banks') {
+    const startTime = Date.now();
+
+    try {
+      logger.info('Fetching Nigerian banks from Paystack', executionId);
+
+      if (!this.apiKey) {
+        throw new Error('Paystack API key is not configured');
+      }
+
+      const response = await axios.get(
+        `${this.baseUrl}/bank?country=nigeria&currency=NGN`,
+        {
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          timeout: 30000
+        }
+      );
+
+      const duration = Date.now() - startTime;
+
+      if (response.status === 200 && response.data.status) {
+        const banks = response.data.data;
+        logger.success(`Fetched ${banks.length} banks`, executionId, {
+          count: banks.length,
+          duration: `${duration}ms`
+        });
+
+        return {
+          success: true,
+          banks: banks
+        };
+      } else {
+        throw new Error(`Unexpected response: ${response.data.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      logger.error('Failed to fetch bank list', executionId, error, {
+        duration: `${duration}ms`,
+        errorType: error.name,
+        responseData: error.response?.data
+      });
+
+      return {
+        success: false,
+        error: error.message,
+        details: error.response?.data || null
+      };
+    }
+  }
+
+  /**
+   * Resolve bank account details using Paystack Account Resolution API
+   * @param {string} accountNumber - 10-digit account number
+   * @param {string} bankCode - Bank code from Paystack
+   * @param {string} executionId - Execution ID for logging
+   * @returns {Promise<Object>} Account details
+   */
+  async resolveBankAccount(accountNumber, bankCode, executionId = 'resolve-account') {
+    const startTime = Date.now();
+
+    try {
+      logger.info('Resolving bank account', executionId, {
+        accountNumber: `***${accountNumber.slice(-4)}`, // Mask account number in logs
+        bankCode
+      });
+
+      if (!this.apiKey) {
+        throw new Error('Paystack API key is not configured');
+      }
+
+      // Validate inputs
+      if (!accountNumber || accountNumber.length !== 10) {
+        throw new Error('Account number must be 10 digits');
+      }
+
+      if (!bankCode) {
+        throw new Error('Bank code is required');
+      }
+
+      const response = await axios.get(
+        `${this.baseUrl}/bank/resolve?account_number=${accountNumber}&bank_code=${bankCode}`,
+        {
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          timeout: 30000
+        }
+      );
+
+      const duration = Date.now() - startTime;
+
+      if (response.status === 200 && response.data.status) {
+        const accountData = response.data.data;
+        logger.success('Bank account resolved', executionId, {
+          accountName: accountData.account_name,
+          accountNumber: `***${accountNumber.slice(-4)}`,
+          bankCode,
+          duration: `${duration}ms`
+        });
+
+        return {
+          success: true,
+          accountName: accountData.account_name,
+          accountNumber: accountData.account_number
+        };
+      } else {
+        throw new Error(`Account resolution failed: ${response.data.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      logger.error('Failed to resolve bank account', executionId, error, {
+        accountNumber: `***${accountNumber.slice(-4)}`,
+        bankCode,
+        duration: `${duration}ms`,
+        errorType: error.name,
+        responseData: error.response?.data
+      });
+
+      return {
+        success: false,
+        error: error.message,
+        details: error.response?.data || null
+      };
+    }
+  }
+
+  /**
+   * Create transfer recipient on Paystack
+   * @param {Object} params - Recipient parameters
+   * @param {string} params.name - Account name
+   * @param {string} params.accountNumber - 10-digit account number
+   * @param {string} params.bankCode - Bank code from Paystack
+   * @param {string} executionId - Execution ID for logging
+   * @returns {Promise<Object>} Recipient details with recipient_code
+   */
+  async createTransferRecipient(params, executionId = 'create-recipient') {
+    const startTime = Date.now();
+
+    try {
+      const { name, accountNumber, bankCode } = params;
+
+      logger.info('Creating transfer recipient', executionId, {
+        name,
+        accountNumber: `***${accountNumber.slice(-4)}`,
+        bankCode
+      });
+
+      if (!this.apiKey) {
+        throw new Error('Paystack API key is not configured');
+      }
+
+      const requestPayload = {
+        type: 'nuban',
+        name: name,
+        account_number: accountNumber,
+        bank_code: bankCode,
+        currency: 'NGN'
+      };
+
+      const response = await axios.post(
+        `${this.baseUrl}/transferrecipient`,
+        requestPayload,
+        {
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          timeout: 30000
+        }
+      );
+
+      const duration = Date.now() - startTime;
+
+      if (response.status === 201 && response.data.status) {
+        const recipientData = response.data.data;
+        logger.success('Transfer recipient created', executionId, {
+          recipientCode: recipientData.recipient_code,
+          name: recipientData.name,
+          duration: `${duration}ms`
+        });
+
+        return {
+          success: true,
+          recipientCode: recipientData.recipient_code,
+          recipientData: recipientData
+        };
+      } else {
+        throw new Error(`Failed to create recipient: ${response.data.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      logger.error('Failed to create transfer recipient', executionId, error, {
+        duration: `${duration}ms`,
+        errorType: error.name,
+        responseData: error.response?.data
+      });
+
+      return {
+        success: false,
+        error: error.message,
+        details: error.response?.data || null
+      };
+    }
+  }
+
+  /**
+   * Initiate transfer to bank account using Paystack Transfer API
+   * @param {Object} params - Transfer parameters
+   * @param {number} params.amount - Amount in Naira (will be converted to kobo)
+   * @param {string} params.recipientCode - Paystack recipient code
+   * @param {string} params.reference - Unique withdrawal reference (for idempotency)
+   * @param {string} params.reason - Transfer reason/description
+   * @param {Object} params.metadata - Additional metadata
+   * @param {string} executionId - Execution ID for logging
+   * @returns {Promise<Object>} Transfer details with transfer_code
+   */
+  async initiateTransfer(params, executionId = 'initiate-transfer') {
+    const startTime = Date.now();
+
+    try {
+      const { amount, recipientCode, reference, reason, metadata } = params;
+
+      logger.info('Initiating Paystack transfer', executionId, {
+        amount,
+        amountInKobo: amount * 100,
+        recipientCode,
+        reference,
+        reason
+      });
+
+      if (!this.apiKey) {
+        throw new Error('Paystack API key is not configured');
+      }
+
+      // Validate inputs
+      if (!amount || amount <= 0) {
+        throw new Error('Invalid transfer amount');
+      }
+
+      if (!recipientCode) {
+        throw new Error('Recipient code is required');
+      }
+
+      if (!reference) {
+        throw new Error('Transfer reference is required');
+      }
+
+      const requestPayload = {
+        source: 'balance',
+        amount: Math.round(amount * 100), // Convert to kobo
+        recipient: recipientCode,
+        reference: reference,
+        reason: reason || 'Wallet withdrawal',
+        metadata: metadata || {}
+      };
+
+      logger.info('Sending transfer request to Paystack', executionId, {
+        url: `${this.baseUrl}/transfer`,
+        payloadKeys: Object.keys(requestPayload)
+      });
+
+      const response = await axios.post(
+        `${this.baseUrl}/transfer`,
+        requestPayload,
+        {
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          timeout: 60000 // 60 second timeout for transfers
+        }
+      );
+
+      const duration = Date.now() - startTime;
+
+      if (response.status === 200 && response.data.status) {
+        const transferData = response.data.data;
+        logger.success('Transfer initiated successfully', executionId, {
+          transferCode: transferData.transfer_code,
+          reference: transferData.reference,
+          amount: amount,
+          status: transferData.status,
+          duration: `${duration}ms`
+        });
+
+        return {
+          success: true,
+          transferCode: transferData.transfer_code,
+          reference: transferData.reference,
+          amount: amount,
+          status: transferData.status,
+          transferData: transferData
+        };
+      } else {
+        throw new Error(`Transfer failed: ${response.data.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      logger.error('Failed to initiate transfer', executionId, error, {
+        amount: params.amount,
+        reference: params.reference,
+        duration: `${duration}ms`,
+        errorType: error.name,
+        errorCode: error.code,
+        responseStatus: error.response?.status,
+        responseData: error.response?.data
+      });
+
+      return {
+        success: false,
+        error: error.message,
+        details: error.response?.data || null
+      };
+    }
+  }
+
+  // ========================================================================
   // Webhook Verification
   // ========================================================================
 

@@ -203,6 +203,7 @@ class ParcelRemoteDataSourceImpl implements ParcelRemoteDataSource {
         'travelerId': travelerId,
         'status': ParcelStatus.paid.toJson(),
         'updatedAt': FieldValue.serverTimestamp(),
+        'lastStatusUpdate': FieldValue.serverTimestamp(),
       });
 
       final updatedDoc = await docRef.get();
