@@ -78,14 +78,7 @@ class NotificationService {
         throw new Error('User not found');
       }
 
-      const { token, fcmToken, notificationPreferences = ['general', 'payment', 'appUpdate'] } = userData;
-
-      // Check both token and fcmToken fields for compatibility
-      userToken = token || fcmToken;
-
-      if (!userToken) {
-        throw new Error('User does not have an FCM token');
-      }
+      const { token, fcmToken, fcmTokens, notificationPreferences = ['general', 'payment', 'appUpdate'] } = userData;
 
       // Check if notification type is allowed based on user preferences
       const notificationType = data.type || 'general';
@@ -95,11 +88,12 @@ class NotificationService {
         logger.warning(`Notification blocked for user ${userId} - type: ${notificationType}, category: ${preferenceCategory}`, executionId);
         return {
           success: false,
-          reason: 'User has disabled this notification type'
+          reason: 'User has disabled this notification type',
+          inAppCreated: false
         };
       }
 
-      // Create notification document in Firestore
+      // Create in-app notification document in Firestore (ALWAYS - even without FCM token)
       const notificationRef = await dbHelper.addDocument(`users/${userId}/notifications`, {
         title,
         body,
@@ -114,17 +108,71 @@ class NotificationService {
         unreadNotifications: dbHelper.increment(1)
       }, executionId);
 
-      // Send FCM notification
-      const result = await this.sendFCMMessage(userToken, title, body, {
-        ...data,
-        notificationId: notificationRef.id
-      }, executionId);
+      logger.success(`In-app notification created for user ${userId}`, executionId);
 
-      if (result.success) {
-        logger.success(`FCM notification sent to user ${userId}`, executionId);
+      // Check for FCM token in multiple locations for compatibility
+      // Priority: token (singular) > fcmToken (singular) > fcmTokens[0] (array)
+      let tokensToSend = [];
+      if (token) {
+        tokensToSend = [token];
+      } else if (fcmToken) {
+        tokensToSend = [fcmToken];
+      } else if (fcmTokens && Array.isArray(fcmTokens) && fcmTokens.length > 0) {
+        // Send to all tokens in array (multi-device support)
+        tokensToSend = fcmTokens;
+        logger.info(`Found ${fcmTokens.length} FCM token(s) for user ${userId}`, executionId);
       }
 
-      return result;
+      if (tokensToSend.length === 0) {
+        // User doesn't have FCM token - this is not an error, just means no push notification
+        // They will still see the in-app notification
+        logger.warning(`User ${userId} does not have an FCM token - in-app notification created but push notification skipped`, executionId);
+        return {
+          success: false,
+          reason: 'no_fcm_token',
+          inAppCreated: true,
+          notificationId: notificationRef.id
+        };
+      }
+
+      // Send FCM push notification to all registered tokens (multi-device)
+      const notificationData = {
+        ...data,
+        notificationId: notificationRef.id
+      };
+
+      const sendResults = await Promise.allSettled(
+        tokensToSend.map((token, index) =>
+          this.sendFCMMessage(token, title, body, notificationData, `${executionId}-device${index}`)
+        )
+      );
+
+      // Count successful sends
+      const successfulSends = sendResults.filter(
+        result => result.status === 'fulfilled' && result.value.success
+      ).length;
+
+      if (successfulSends > 0) {
+        logger.success(`FCM push notification sent to ${successfulSends}/${tokensToSend.length} device(s) for user ${userId}`, executionId);
+        return {
+          success: true,
+          inAppCreated: true,
+          pushSent: true,
+          notificationId: notificationRef.id,
+          devicesSent: successfulSends,
+          totalDevices: tokensToSend.length
+        };
+      }
+
+      // All FCM sends failed but in-app notification was created
+      logger.warning(`Failed to send push notification to any device for user ${userId}`, executionId);
+      return {
+        success: false,
+        reason: 'fcm_send_failed',
+        inAppCreated: true,
+        notificationId: notificationRef.id,
+        error: 'All device notifications failed'
+      };
     } catch (error) {
       logger.error(`Failed to send notification to user ${userId}`, executionId, error);
 
@@ -135,7 +183,8 @@ class NotificationService {
 
       return {
         success: false,
-        error: error.message
+        error: error.message,
+        inAppCreated: false
       };
     }
   }
@@ -478,12 +527,22 @@ class NotificationService {
     try {
       logger.warning(`Invalidating token for user ${userId}`, executionId);
 
-      // Remove invalid token from user document
-      await dbHelper.updateDocument('users', userId, {
+      // Get current user data to check fcmTokens array
+      const { data: userData } = await dbHelper.getDocument('users', userId, executionId);
+
+      const updateData = {
         token: null,
         fcmToken: null,
         tokenInvalidatedAt: dbHelper.getServerTimestamp()
-      }, executionId);
+      };
+
+      // If fcmTokens array exists, remove the invalid token from it
+      if (userData?.fcmTokens && Array.isArray(userData.fcmTokens)) {
+        const updatedTokens = userData.fcmTokens.filter(t => t !== invalidToken);
+        updateData.fcmTokens = updatedTokens;
+      }
+
+      await dbHelper.updateDocument('users', userId, updateData, executionId);
 
       logger.info(`Token invalidated for user ${userId}`, executionId);
     } catch (error) {
@@ -493,11 +552,27 @@ class NotificationService {
 
   async updateUserToken(userId, newToken, executionId = 'token-update') {
     try {
-      await dbHelper.updateDocument('users', userId, {
+      // Get current user data to check fcmTokens array
+      const { data: userData } = await dbHelper.getDocument('users', userId, executionId);
+
+      const updateData = {
         fcmToken: newToken,
         token: newToken,
         tokenUpdatedAt: dbHelper.getServerTimestamp()
-      }, executionId);
+      };
+
+      // If fcmTokens array exists, add new token to the beginning (most recent first)
+      if (userData?.fcmTokens && Array.isArray(userData.fcmTokens)) {
+        // Remove the token if it already exists to avoid duplicates
+        const filteredTokens = userData.fcmTokens.filter(t => t !== newToken);
+        // Add new token at the beginning and keep only last 5 tokens
+        updateData.fcmTokens = [newToken, ...filteredTokens].slice(0, 5);
+      } else {
+        // Initialize fcmTokens array if it doesn't exist
+        updateData.fcmTokens = [newToken];
+      }
+
+      await dbHelper.updateDocument('users', userId, updateData, executionId);
 
       logger.success(`Token updated for user ${userId}`, executionId);
       return true;
