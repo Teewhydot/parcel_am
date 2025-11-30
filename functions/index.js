@@ -455,6 +455,40 @@ exports.paystackWebhook = onRequest(
 
       logger.info(`Webhook signature verified successfully`, executionId);
 
+      // ========================================================================
+      // WEBHOOK DEDUPLICATION: Check if event has already been processed
+      // Paystack may retry webhooks, so we track event IDs to prevent duplicates
+      // ========================================================================
+      const eventId = event.id || `${event.data?.reference}-${event.event}`;
+      console.log('🔍 Checking for duplicate webhook event...');
+      console.log('  - Event ID:', eventId);
+
+      logger.info(`Checking webhook event deduplication`, executionId, { eventId });
+
+      const processedWebhookRef = db.collection('processed_webhooks').doc(eventId);
+      const processedWebhookDoc = await processedWebhookRef.get();
+
+      if (processedWebhookDoc.exists) {
+        const processedData = processedWebhookDoc.data();
+        console.log('⚠️  DUPLICATE WEBHOOK EVENT DETECTED');
+        console.log('  - Event ID:', eventId);
+        console.log('  - First Processed:', processedData.processedAt);
+        console.log('  - Event Type:', processedData.eventType);
+
+        logger.warning(`Duplicate webhook event ignored`, executionId, {
+          eventId,
+          eventType: event.event,
+          firstProcessedAt: processedData.processedAt,
+          reference: event.data?.reference
+        });
+
+        // Return 200 OK (webhook already processed successfully)
+        return res.status(200).send("Event already processed");
+      }
+
+      console.log('✅ Event not yet processed - continuing');
+      logger.info(`New webhook event - proceeding with processing`, executionId, { eventId });
+
       // Process webhook event
       console.log('📦 Processing webhook event data...');
 
@@ -510,6 +544,33 @@ exports.paystackWebhook = onRequest(
           eventType: event.event,
           status: processedEvent.status
         });
+      }
+
+      // ========================================================================
+      // STORE PROCESSED EVENT ID: Track this event to prevent future duplicates
+      // TTL: Auto-delete after 7 days (Paystack retries for 72 hours max)
+      // ========================================================================
+      console.log('💾 Recording processed webhook event...');
+      logger.info(`Storing processed webhook event ID`, executionId, { eventId });
+
+      try {
+        await processedWebhookRef.set({
+          eventId: eventId,
+          eventType: event.event,
+          reference: event.data?.reference,
+          status: event.data?.status,
+          processedAt: admin.firestore.FieldValue.serverTimestamp(),
+          executionId: executionId,
+          // TTL: Will be auto-deleted after 7 days (604800 seconds)
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+        });
+
+        console.log('✅ Webhook event recorded');
+        logger.info(`Webhook event ID stored successfully`, executionId, { eventId });
+      } catch (storageError) {
+        // Don't fail the webhook if storage fails - just log it
+        console.error('⚠️  Failed to store webhook event ID (non-critical):', storageError.message);
+        logger.warning(`Failed to store webhook event ID`, executionId, storageError, { eventId });
       }
 
       console.log('🎉 WEBHOOK PROCESSED SUCCESSFULLY');
@@ -570,6 +631,41 @@ async function handleSuccessfulPayment(processedEvent, executionId) {
     logger.error(`No configuration found for transaction type: ${transactionType}`, executionId);
     return;
   }
+
+  // ========================================================================
+  // IDEMPOTENCY CHECK: Verify transaction hasn't already been processed
+  // ========================================================================
+  console.log('🔍 Checking transaction status for idempotency...');
+  logger.info(`Checking current transaction status`, executionId, {
+    collection: config.collectionName,
+    reference: actualReference
+  });
+
+  const { doc: existingDoc, data: existingData } = await dbHelper.getDocument(
+    config.collectionName,
+    actualReference,
+    executionId
+  );
+
+  if (existingData && existingData.status === 'confirmed') {
+    console.log('⚠️  DUPLICATE WEBHOOK DETECTED - Transaction already confirmed');
+    console.log('  - Reference:', actualReference);
+    console.log('  - Current Status:', existingData.status);
+    console.log('  - Verified At:', existingData.verified_at);
+
+    logger.warning(`Duplicate webhook ignored - transaction already confirmed`, executionId, {
+      reference: actualReference,
+      currentStatus: existingData.status,
+      verifiedAt: existingData.verified_at,
+      amount: existingData.amount
+    });
+
+    // Return early - this webhook has already been processed (idempotent behavior)
+    return;
+  }
+
+  console.log('✅ Transaction not yet confirmed - proceeding with processing');
+  logger.info(`Transaction status: ${existingData?.status || 'not found'} - safe to process`, executionId);
   logger.info(`Transaction type config found`, executionId, {
     transactionType,
     collectionName: config.collectionName
@@ -587,78 +683,107 @@ async function handleSuccessfulPayment(processedEvent, executionId) {
     logger.info(`Added updatedAt field for service transaction`, executionId);
   }
 
-  console.log('💾 Updating document status to CONFIRMED...');
-  console.log('  - Collection:', config.collectionName);
-  console.log('  - Reference:', actualReference);
-
-  logger.info(`Updating document in database`, executionId, {
+  // ========================================================================
+  // ATOMIC TRANSACTION: Update transaction status and wallet balance
+  // All operations succeed or all fail - no partial updates
+  // ========================================================================
+  console.log('💾 Starting atomic transaction...');
+  logger.info(`Starting atomic Firestore transaction`, executionId, {
     collection: config.collectionName,
     reference: actualReference,
-    status: 'confirmed'
+    transactionType,
+    hasUserId: !!userId
   });
-  await dbHelper.updateDocument(config.collectionName, actualReference, updateData, executionId);
 
-  console.log('✅ Document updated successfully');
+  try {
+    await db.runTransaction(async (transaction) => {
+      // Get document references
+      const transactionDocRef = db.collection(config.collectionName).doc(actualReference);
+      const walletRef = userId ? db.collection('wallets').doc(userId) : null;
 
-  logger.info(`Document updated successfully`, executionId);
+      console.log('  📄 Step 1: Updating transaction status to CONFIRMED...');
 
-  // Update user wallet balance for funding transactions
-  if (transactionType === 'funding' && userId) {
-    try {
-      console.log('💰 Updating user wallet balance...');
-      console.log('  - User ID:', userId);
-      console.log('  - Amount to add: ₦', amount);
+      // Update transaction status
+      transaction.update(transactionDocRef, updateData);
 
-      logger.info(`Updating user wallet balance`, executionId, { userId, amount, transactionType });
+      logger.info(`Transaction document update queued`, executionId, {
+        reference: actualReference,
+        status: 'confirmed'
+      });
 
-      // Get current wallet document to check if wallet exists
-      const { doc: walletDoc, data: walletData } = await dbHelper.getDocument('wallets', userId, executionId);
+      // Update wallet balance if this is a funding transaction
+      if (transactionType === 'funding' && userId && walletRef) {
+        console.log('  💰 Step 2: Updating wallet balance...');
+        console.log('    - User ID:', userId);
+        console.log('    - Amount to add: ₦', amount);
 
-      if (walletDoc && walletDoc.exists) {
-        // Increment available balance only
-        await dbHelper.incrementField('wallets', userId, {
-          availableBalance: amount
-        }, executionId);
+        logger.info(`Wallet update queued`, executionId, { userId, amount });
 
-        // Update lastUpdated timestamp
-        await dbHelper.updateDocument('wallets', userId, {
-          lastUpdated: dbHelper.getServerTimestamp()
-        }, executionId);
+        // Read wallet within transaction
+        const walletSnapshot = await transaction.get(walletRef);
 
-        console.log('✅ Wallet available balance updated successfully');
-        logger.success(`Wallet available balance updated for user ${userId}: +₦${amount}`, executionId);
+        if (walletSnapshot.exists) {
+          // Wallet exists - increment balance
+          const currentWallet = walletSnapshot.data();
+          const newAvailableBalance = (currentWallet.availableBalance || 0) + amount;
+          const newTotalBalance = newAvailableBalance + (currentWallet.heldBalance || 0);
+
+          transaction.update(walletRef, {
+            availableBalance: newAvailableBalance,
+            totalBalance: newTotalBalance,
+            lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+          });
+
+          console.log('    ✅ Wallet balance increment queued');
+          logger.info(`Wallet increment queued: ${currentWallet.availableBalance} + ${amount} = ${newAvailableBalance}`, executionId);
+        } else {
+          // Wallet doesn't exist - create new wallet
+          console.log('    ⚠️  Wallet not found, creating new wallet...');
+
+          transaction.set(walletRef, {
+            id: userId,
+            userId: userId,
+            availableBalance: amount,
+            heldBalance: 0.0,
+            totalBalance: amount,
+            currency: 'NGN',
+            lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+          });
+
+          console.log('    ✅ Wallet creation queued');
+          logger.info(`Wallet creation queued with initial balance: ₦${amount}`, executionId);
+        }
+      } else if (transactionType === 'funding' && !userId) {
+        console.log('  ⚠️  Skipping wallet update: missing user ID');
+        logger.warning(`Cannot update wallet: missing userId`, executionId);
       } else {
-        console.log('⚠️ Wallet document not found, creating wallet...');
-
-        // Create wallet document with initial balance if it doesn't exist
-        await dbHelper.setDocument('wallets', userId, {
-          id: userId,
-          userId: userId,
-          availableBalance: amount,
-          heldBalance: 0.0,
-          totalBalance: amount,
-          currency: 'NGN',
-          lastUpdated: dbHelper.getServerTimestamp()
-        }, false, executionId);
-
-        console.log('✅ Wallet created successfully');
-        logger.success(`Wallet created for ${userId}: ₦${amount}`, executionId);
+        console.log('  ⏭️  Skipping wallet update (not a funding transaction)');
+        logger.info(`Skipping wallet update for ${transactionType}`, executionId);
       }
-    } catch (error) {
-      console.error('❌ Failed to update wallet balance:', error.message);
-      logger.error(`Failed to update wallet balance for user: ${userId}`, executionId, error);
-      // Don't throw - we still want to send notification even if wallet update fails
-    }
-  } else if (transactionType === 'funding' && !userId) {
-    console.log('⚠️ Cannot update wallet: missing user ID');
-    logger.warning(`Cannot update wallet balance: missing userId`, executionId, { transactionType });
-  } else {
-    console.log('⏭️  Skipping wallet update (not a funding transaction)');
-    logger.info(`Skipping wallet update`, executionId, {
-      transactionType,
-      hasUserId: !!userId,
-      reason: 'not a funding transaction'
+
+      console.log('  🔄 Committing atomic transaction...');
     });
+
+    console.log('✅ Atomic transaction committed successfully');
+    logger.success(`Transaction and wallet updated atomically`, executionId, {
+      reference: actualReference,
+      amount,
+      userId: userId || 'N/A'
+    });
+
+  } catch (error) {
+    console.error('❌ Atomic transaction FAILED - all changes rolled back');
+    console.error('  Error:', error.message);
+
+    logger.error(`Atomic transaction failed - rollback complete`, executionId, error, {
+      reference: actualReference,
+      transactionType,
+      userId: userId || 'N/A',
+      amount
+    });
+
+    // Re-throw to prevent notification from being sent if transaction failed
+    throw error;
   }
 
 //  // Clear user cart after successful food order payment

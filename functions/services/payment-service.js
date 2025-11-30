@@ -5,6 +5,7 @@
 const axios = require('axios');
 const crypto = require('crypto');
 const admin = require('firebase-admin');
+const { v4: uuidv4 } = require('uuid');
 const { ENVIRONMENT, PAYSTACK, TRANSACTION_PREFIX_MAP } = require('../utils/constants');
 const { logger } = require('../utils/logger');
 const { ReferenceUtils } = require('../utils/validation');
@@ -35,13 +36,17 @@ class PaymentService {
   // Transaction Initialization
   // ========================================================================
 
-  async initializeTransaction(email, amount, metadata, executionId = 'payment-init') {
+  async initializeTransaction(email, amount, metadata, reference = null, executionId = 'payment-init') {
     const initStartTime = Date.now();
     try {
+      // Generate unique reference if not provided (Paystack idempotency mechanism)
+      const transactionReference = reference || `TXN-${uuidv4()}`;
+
       console.log('💳 [PAYSTACK] Initializing transaction...');
       console.log('  Email:', email);
       console.log('  Amount (NGN):', amount);
       console.log('  Amount (kobo):', amount * 100);
+      console.log('  Reference:', transactionReference);
 
       // Validate API key before making request
       if (!this.apiKey) {
@@ -55,6 +60,8 @@ class PaymentService {
         email,
         amount,
         amountInKobo: amount * 100,
+        reference: transactionReference,
+        referenceProvided: !!reference,
         hasMetadata: !!metadata,
         metadataKeys: metadata ? Object.keys(metadata) : [],
         apiKeyConfigured: !!this.apiKey,
@@ -67,6 +74,7 @@ class PaymentService {
       const requestPayload = {
         email: email,
         amount: amount * 100, // Convert to kobo
+        reference: transactionReference, // Unique reference for idempotency
         metadata: metadata
       };
 
@@ -113,6 +121,7 @@ class PaymentService {
 
         logger.success(`Transaction initialized: ${paystackReference}`, executionId, {
           reference: paystackReference,
+          providedReference: transactionReference,
           amount: amount,
           email: email,
           hasAuthUrl: !!authorizationUrl,
@@ -123,6 +132,7 @@ class PaymentService {
         return {
           success: true,
           reference: paystackReference,
+          providedReference: transactionReference,
           authorizationUrl: authorizationUrl,
           accessCode: accessCode,
           amount: amount
