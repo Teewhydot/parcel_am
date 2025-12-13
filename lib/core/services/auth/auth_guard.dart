@@ -4,7 +4,9 @@ import 'package:get/get.dart';
 import '../../../features/parcel_am_core/presentation/bloc/auth/auth_bloc.dart';
 import '../../../features/parcel_am_core/presentation/bloc/auth/auth_data.dart';
 import '../../../core/bloc/base/base_state.dart';
+import '../../../injection_container.dart';
 import '../../routes/routes.dart';
+import '../navigation_service/nav_config.dart';
 import 'kyc_guard.dart';
 
 class AuthGuard {
@@ -25,7 +27,7 @@ class AuthGuard {
     
     if (!isAuthenticated) {
       // Redirect to login screen
-      Get.offAllNamed(Routes.login);
+      sl<NavigationService>().navigateAndReplaceAll(Routes.login);
       return false;
     }
     
@@ -62,7 +64,7 @@ class AuthGuard {
         if (!isAuthenticated) {
           // Auto-redirect to login
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            Get.offAllNamed(Routes.login);
+            sl<NavigationService>().navigateAndReplaceAll(Routes.login);
           });
           return unauthenticatedWidget ?? const _DefaultUnauthenticatedWidget();
         }
@@ -217,7 +219,7 @@ class _DefaultUnauthenticatedWidget extends StatelessWidget {
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () {
-                Get.offAllNamed(Routes.login);
+                sl<NavigationService>().navigateAndReplaceAll(Routes.login);
               },
               child: const Text('Go to Login'),
             ),

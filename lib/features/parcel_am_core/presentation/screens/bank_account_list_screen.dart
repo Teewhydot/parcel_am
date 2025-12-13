@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/bloc/base/base_state.dart';
+import '../../../../core/routes/routes.dart';
+import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
+import '../../../../injection_container.dart';
 import '../../domain/entities/user_bank_account_entity.dart';
 import '../bloc/bank_account/bank_account_bloc.dart';
 import '../bloc/bank_account/bank_account_data.dart';
 import '../bloc/bank_account/bank_account_event.dart';
-import 'add_bank_account_screen.dart';
 
 class BankAccountListScreen extends StatefulWidget {
   final String userId;
@@ -34,11 +36,9 @@ class _BankAccountListScreenState extends State<BankAccountListScreen> {
   }
 
   Future<void> _navigateToAddAccount() async {
-    final result = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(
-        builder: (context) => AddBankAccountScreen(userId: widget.userId),
-      ),
+    final result = await sl<NavigationService>().navigateTo<bool>(
+      Routes.addBankAccount,
+      arguments: {'userId': widget.userId},
     );
 
     if (result == true && mounted) {

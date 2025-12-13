@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 import '../../../../core/constants/env.dart';
+import '../../../../core/data/datasources/authenticated_remote_data_source.dart';
 import '../../../../core/services/connectivity_service.dart';
 import '../../../../core/utils/logger.dart';
 import '../../domain/exceptions/custom_exceptions.dart';
@@ -36,9 +37,13 @@ abstract class WithdrawalRemoteDataSource {
   });
 }
 
-class WithdrawalRemoteDataSourceImpl implements WithdrawalRemoteDataSource {
+class WithdrawalRemoteDataSourceImpl
+    with AuthenticatedRemoteDataSourceMixin
+    implements WithdrawalRemoteDataSource {
   final FirebaseFirestore firestore;
+  @override
   final FirebaseAuth auth;
+  @override
   final ConnectivityService connectivityService;
   final String? baseUrl = Env.firebaseCloudFunctionsUrl;
   final _uuid = const Uuid();
@@ -48,23 +53,6 @@ class WithdrawalRemoteDataSourceImpl implements WithdrawalRemoteDataSource {
     required this.auth,
     required this.connectivityService,
   });
-
-  /// Checks for connectivity and throws NoInternetException if offline
-  Future<void> _validateConnectivity() async {
-    final isConnected = await connectivityService.checkConnection();
-    if (!isConnected) {
-      throw NoInternetException();
-    }
-  }
-
-  /// Get Firebase Auth token
-  Future<String> _getAuthToken() async {
-    final user = auth.currentUser;
-    if (user == null) {
-      throw Exception('User not authenticated');
-    }
-    return await user.getIdToken() ?? '';
-  }
 
   @override
   String generateWithdrawalReference() {
@@ -82,10 +70,10 @@ class WithdrawalRemoteDataSourceImpl implements WithdrawalRemoteDataSource {
     required String bankAccountId,
   }) async {
     try {
-      await _validateConnectivity();
+      await validateConnectivity();
 
       Logger.logBasic('Initiating withdrawal: $withdrawalReference for amount: NGN $amount');
-      final idToken = await _getAuthToken();
+      final idToken = await getAuthToken();
 
       final response = await http.post(
         Uri.parse('$baseUrl/initiateWithdrawal'),

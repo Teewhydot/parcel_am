@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/auth/kyc_guard.dart';
+import '../services/navigation_service/nav_config.dart';
+import '../routes/routes.dart';
+import '../../injection_container.dart';
 
 /// Defines the action to take when a KYC-protected button is pressed
 /// but the user doesn't have KYC access.
@@ -20,9 +23,7 @@ extension KycBlockedActionExtension on KycBlockedAction {
         KycGuard.instance.showKycBlockedSnackbar();
         break;
       case KycBlockedAction.navigateToKyc:
-        // TODO: Navigate to KYC screen when available
-        // For now, fall back to showing snackbar
-        KycGuard.instance.showKycBlockedSnackbar();
+        sl<NavigationService>().navigateTo(Routes.verification);
         break;
     }
   }

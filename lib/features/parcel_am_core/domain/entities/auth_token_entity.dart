@@ -15,6 +15,24 @@ class AuthTokenEntity extends Equatable {
 
   bool get isExpired => DateTime.now().isAfter(expiresAt);
 
+  factory AuthTokenEntity.fromJson(Map<String, dynamic> json) {
+    return AuthTokenEntity(
+      accessToken: json['accessToken'] as String,
+      refreshToken: json['refreshToken'] as String?,
+      expiresAt: DateTime.parse(json['expiresAt'] as String),
+      tokenType: json['tokenType'] as String? ?? 'Bearer',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'accessToken': accessToken,
+      'refreshToken': refreshToken,
+      'expiresAt': expiresAt.toIso8601String(),
+      'tokenType': tokenType,
+    };
+  }
+
   AuthTokenEntity copyWith({
     String? accessToken,
     String? refreshToken,

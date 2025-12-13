@@ -1,9 +1,9 @@
-// Example usage of ChatScreen with BLoC provider
+// Example usage of ChatScreen with navigation service
 
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import '../bloc/chat_bloc.dart';
-import 'chat_screen.dart';
+import '../../../../core/routes/routes.dart';
+import '../../../../core/services/navigation_service/nav_config.dart';
+import '../../../../injection_container.dart';
 
 /// Example of how to navigate to ChatScreen with proper BLoC setup
 class ChatScreenExample extends StatelessWidget {
@@ -16,20 +16,15 @@ class ChatScreenExample extends StatelessWidget {
       body: Center(
         child: ElevatedButton(
           onPressed: () {
-            // Example: Navigate to chat screen
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => BlocProvider(
-                  create: (context) => ChatBloc(),
-                  child: const ChatScreen(
-                    chatId: 'chat_123',
-                    otherUserId: 'user_456',
-                    otherUserName: 'John Doe',
-                    otherUserAvatar: 'https://example.com/avatar.jpg',
-                  ),
-                ),
-              ),
+            // Example: Navigate to chat screen using navigation service
+            sl<NavigationService>().navigateTo(
+              Routes.chat,
+              arguments: {
+                'chatId': 'chat_123',
+                'otherUserId': 'user_456',
+                'otherUserName': 'John Doe',
+                'otherUserAvatar': 'https://example.com/avatar.jpg',
+              },
             );
           },
           child: const Text('Open Chat'),
@@ -82,19 +77,14 @@ class ChatListExample extends StatelessWidget {
               style: const TextStyle(fontSize: 12, color: Colors.grey),
             ),
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => BlocProvider(
-                    create: (context) => ChatBloc(),
-                    child: ChatScreen(
-                      chatId: chat['chatId'] as String,
-                      otherUserId: chat['userId'] as String,
-                      otherUserName: chat['name'] as String,
-                      otherUserAvatar: chat['avatar'],
-                    ),
-                  ),
-                ),
+              sl<NavigationService>().navigateTo(
+                Routes.chat,
+                arguments: {
+                  'chatId': chat['chatId'] as String,
+                  'otherUserId': chat['userId'] as String,
+                  'otherUserName': chat['name'] as String,
+                  'otherUserAvatar': chat['avatar'],
+                },
               );
             },
           );

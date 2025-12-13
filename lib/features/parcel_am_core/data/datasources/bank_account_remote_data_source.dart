@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import '../../../../core/constants/env.dart';
+import '../../../../core/data/datasources/authenticated_remote_data_source.dart';
 import '../../../../core/services/connectivity_service.dart';
 import '../../../../core/utils/logger.dart';
 import '../../domain/exceptions/custom_exceptions.dart';
@@ -46,9 +47,13 @@ abstract class BankAccountRemoteDataSource {
   });
 }
 
-class BankAccountRemoteDataSourceImpl implements BankAccountRemoteDataSource {
+class BankAccountRemoteDataSourceImpl
+    with AuthenticatedRemoteDataSourceMixin
+    implements BankAccountRemoteDataSource {
   final FirebaseFirestore firestore;
+  @override
   final FirebaseAuth auth;
+  @override
   final ConnectivityService connectivityService;
   final String? baseUrl = Env.firebaseCloudFunctionsUrl;
 
@@ -62,27 +67,10 @@ class BankAccountRemoteDataSourceImpl implements BankAccountRemoteDataSource {
     required this.connectivityService,
   });
 
-  /// Checks for connectivity and throws NoInternetException if offline
-  Future<void> _validateConnectivity() async {
-    final isConnected = await connectivityService.checkConnection();
-    if (!isConnected) {
-      throw NoInternetException();
-    }
-  }
-
-  /// Get Firebase Auth token
-  Future<String> _getAuthToken() async {
-    final user = auth.currentUser;
-    if (user == null) {
-      throw Exception('User not authenticated');
-    }
-    return await user.getIdToken() ?? '';
-  }
-
   @override
   Future<List<BankInfoModel>> getBankList() async {
     try {
-      await _validateConnectivity();
+      await validateConnectivity();
 
       // Check if cache is valid (less than 24 hours old)
       if (_cachedBankList != null &&
@@ -115,7 +103,7 @@ class BankAccountRemoteDataSourceImpl implements BankAccountRemoteDataSource {
 
       // If no cache, fetch from Firebase Function
       Logger.logBasic('Fetching bank list from Firebase Function');
-      final idToken = await _getAuthToken();
+      final idToken = await getAuthToken();
 
       final response = await http.get(
         Uri.parse('$baseUrl/getBankList'),
@@ -156,10 +144,10 @@ class BankAccountRemoteDataSourceImpl implements BankAccountRemoteDataSource {
     required String bankCode,
   }) async {
     try {
-      await _validateConnectivity();
+      await validateConnectivity();
 
       Logger.logBasic('Resolving bank account: $accountNumber with bank code: $bankCode');
-      final idToken = await _getAuthToken();
+      final idToken = await getAuthToken();
 
       final response = await http.post(
         Uri.parse('$baseUrl/resolveBankAccount'),
@@ -199,10 +187,10 @@ class BankAccountRemoteDataSourceImpl implements BankAccountRemoteDataSource {
     required String bankCode,
   }) async {
     try {
-      await _validateConnectivity();
+      await validateConnectivity();
 
       Logger.logBasic('Creating transfer recipient for account: $accountNumber');
-      final idToken = await _getAuthToken();
+      final idToken = await getAuthToken();
 
       final response = await http.post(
         Uri.parse('$baseUrl/createTransferRecipient'),
@@ -243,7 +231,7 @@ class BankAccountRemoteDataSourceImpl implements BankAccountRemoteDataSource {
     required String recipientCode,
   }) async {
     try {
-      await _validateConnectivity();
+      await validateConnectivity();
 
       // Check if user already has 5 bank accounts
       final existingAccounts = await getUserBankAccounts(userId);
@@ -316,7 +304,7 @@ class BankAccountRemoteDataSourceImpl implements BankAccountRemoteDataSource {
     required String accountId,
   }) async {
     try {
-      await _validateConnectivity();
+      await validateConnectivity();
 
       // Soft delete - set active to false
       await firestore

@@ -6,6 +6,7 @@ import '../../../../../core/bloc/base/base_state.dart';
 import '../../../../../core/errors/failures.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/utils/app_utils.dart';
+import '../../../../../core/utils/logger.dart';
 import '../../../../../core/services/connectivity_service.dart';
 import '../../../../../core/services/offline_queue_service.dart';
 import '../../../../../injection_container.dart';
@@ -88,7 +89,7 @@ class ParcelBloc extends BaseBloC<ParcelEvent, BaseState<ParcelData>> {
         result.fold(
           (failure) {
             // Keep in queue if sync fails
-            print('Failed to sync update for $parcelId: ${failure.failureMessage}');
+            Logger.logError('Failed to sync update for $parcelId: ${failure.failureMessage}');
           },
           (updatedParcel) {
             // Remove from queue on success
@@ -105,7 +106,7 @@ class ParcelBloc extends BaseBloC<ParcelEvent, BaseState<ParcelData>> {
         );
       }
     } catch (e) {
-      print('Error syncing queued updates: $e');
+      Logger.logError('Error syncing queued updates: $e');
     }
   }
 

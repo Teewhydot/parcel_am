@@ -145,9 +145,11 @@ class _FTextFieldState extends State<FTextField> {
                 // ),
                 suffixIcon: widget.isPassword
                     ? GestureDetector(
-                        onTap: () {},
+                        onTap: widget.passwordVisibilityPressed,
                         child: Icon(
-                          Icons.visibility_outlined,
+                          widget.isPasswordVisible == true
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
                           color: AppColors.black,
                           size: 20.sp,
                         ),

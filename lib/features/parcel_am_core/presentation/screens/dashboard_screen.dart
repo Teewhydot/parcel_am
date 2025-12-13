@@ -537,7 +537,7 @@ class _RecentActivitySection extends StatelessWidget {
           children: [
             AppText.titleLarge('Active Parcels', fontWeight: FontWeight.bold),
             AppButton.text(
-              onPressed: () {},
+              onPressed: () => sl<NavigationService>().navigateTo(Routes.browseRequests),
               child: AppText.labelMedium('View All'),
             ),
           ],

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/bloc/base/base_state.dart';
+import '../../../../core/services/navigation_service/nav_config.dart';
+import '../../../../injection_container.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_spacing.dart';
@@ -133,7 +135,7 @@ class _AddBankAccountScreenState extends State<AddBankAccountScreen> {
           if (state is LoadedState<BankAccountData> &&
               (state.data?.userBankAccounts.isNotEmpty ?? false) &&
               state.data?.verificationResult == null) {
-            Navigator.pop(context, true);
+            sl<NavigationService>().goBack<bool>(result: true);
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Bank account added successfully'),

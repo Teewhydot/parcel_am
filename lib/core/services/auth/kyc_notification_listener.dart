@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get/get.dart';
 import '../../../features/parcel_am_core/presentation/bloc/auth/auth_bloc.dart';
 import '../../../features/parcel_am_core/presentation/bloc/auth/auth_data.dart';
 import '../../../core/bloc/base/base_state.dart';
 import '../../../core/domain/entities/kyc_status.dart';
+import '../../../core/services/navigation_service/nav_config.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/routes/routes.dart';
+import '../../../injection_container.dart';
 
 /// Listens to KYC status changes and shows notifications
 class KycNotificationListener extends StatefulWidget {
@@ -417,7 +418,7 @@ class _KycStatusChangeDialog extends StatelessWidget {
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
-              Get.toNamed(data.actionRoute!);
+              sl<NavigationService>().navigateTo(data.actionRoute!);
             },
             child: Text(data.actionText!),
           ),

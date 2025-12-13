@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get_it/get_it.dart';
 import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
+import 'package:parcel_am/injection_container.dart';
 import 'package:parcel_am/core/helpers/user_extensions.dart';
 import 'package:parcel_am/core/routes/routes.dart';
 import 'package:parcel_am/core/services/navigation_service/nav_config.dart';
@@ -229,9 +229,20 @@ class _WalletScreenState extends State<WalletScreen> {
                               ? 'Withdraw funds from your wallet'
                               : 'Wallet operations require internet connection',
                           child: AppButton.secondary(
-                              onPressed: isOnline ? () {} : null,
-                              leadingIcon: Icon(Icons.arrow_downward_outlined),
-                              requiresKyc: true, child: AppText("Withdraw",color: AppColors.white,)
+                              onPressed: isOnline
+                                  ? () {
+                                      sl<NavigationService>().navigateTo(
+                                        Routes.withdrawal,
+                                        arguments: {
+                                          'userId': widget.userId,
+                                          'availableBalance': walletData.availableBalance,
+                                        },
+                                      );
+                                    }
+                                  : null,
+                              leadingIcon: const Icon(Icons.arrow_downward_outlined),
+                              requiresKyc: true,
+                              child: const AppText("Withdraw", color: AppColors.white),
                           ),
                         ),
                       ),
@@ -386,8 +397,7 @@ class _FundingModalContentState extends State<_FundingModalContent> {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
   bool _isLoading = false;
-  final  _paystackPaymentUseCase  = PaystackPaymentUseCase();
-  final sl = GetIt.instance;
+  final _paystackPaymentUseCase = PaystackPaymentUseCase();
 
 
   @override

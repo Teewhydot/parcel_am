@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_container.dart';
 import '../../../../core/widgets/app_text.dart';
@@ -7,6 +9,7 @@ import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
+import '../../../../core/routes/routes.dart';
 import '../../../../injection_container.dart';
 import '../../domain/entities/package_entity.dart';
 import '../bloc/package/package_bloc.dart';
@@ -40,6 +43,49 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
     _confirmationCodeController.dispose();
     _disputeReasonController.dispose();
     super.dispose();
+  }
+
+  void _sharePackageDetails(PackageEntity? package) {
+    if (package == null) return;
+
+    final shareText = '''
+Package Tracking Details
+========================
+Package ID: ${package.id}
+Status: ${_getStatusText(package.status)}
+From: ${package.origin.name}
+To: ${package.destination.name}
+Carrier: ${package.carrier.name}
+Progress: ${package.progress}%
+ETA: ${_formatETA(package.estimatedArrival)}
+''';
+
+    Share.share(shareText, subject: 'Package #${package.id.substring(0, 8)} Tracking');
+  }
+
+  Future<void> _callCarrier(String phoneNumber) async {
+    final uri = Uri(scheme: 'tel', path: phoneNumber);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not launch phone dialer')),
+        );
+      }
+    }
+  }
+
+  void _messageCarrier(PackageEntity package) {
+    sl<NavigationService>().navigateTo(
+      Routes.chat,
+      arguments: {
+        'chatId': null,
+        'otherUserId': package.carrier.id,
+        'otherUserName': package.carrier.name,
+        'otherUserAvatar': null,
+      },
+    );
   }
 
   @override
@@ -105,7 +151,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
             actions: [
               IconButton(
                 icon: const Icon(Icons.share),
-                onPressed: () {},
+                onPressed: () => _sharePackageDetails(state.package),
               ),
             ],
           ),
@@ -433,9 +479,9 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                           AppText.titleMedium(package.carrier.name),
                           Row(
                             children: [
-                              AppButton.outline(onPressed: () {}, size: ButtonSize.small, child: const Icon(Icons.phone, size: 16)),
+                              AppButton.outline(onPressed: () => _callCarrier(package.carrier.phone), size: ButtonSize.small, child: const Icon(Icons.phone, size: 16)),
                               AppSpacing.horizontalSpacing(SpacingSize.sm),
-                              AppButton.outline(onPressed: () {}, size: ButtonSize.small, child: const Icon(Icons.message, size: 16)),
+                              AppButton.outline(onPressed: () => _messageCarrier(package), size: ButtonSize.small, child: const Icon(Icons.message, size: 16)),
                             ],
                           ),
                         ],
@@ -850,7 +896,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                   children: [
                     Expanded(
                       child: AppButton.primary(
-                        onPressed: () {},
+                        onPressed: () => _callCarrier(package.carrier.phone),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -864,7 +910,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
                     AppSpacing.horizontalSpacing(SpacingSize.md),
                     Expanded(
                       child: AppButton.outline(
-                        onPressed: () {},
+                        onPressed: () => _messageCarrier(package),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [

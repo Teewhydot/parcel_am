@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:dartz/dartz.dart';
 import 'package:get_it/get_it.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:parcel_am/core/services/error/error_handler.dart';
 import '../../domain/entities/user_entity.dart';
 import '../../domain/entities/auth_token_entity.dart';
@@ -12,6 +14,8 @@ import '../models/user_model.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final remoteDataSource = GetIt.instance<AuthRemoteDataSource>();
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+  static const String _tokenKey = 'auth_token';
 
   @override
   Future<Either<Failure, UserEntity>> signInWithEmailAndPassword(
@@ -68,7 +72,12 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, AuthTokenEntity?>> getStoredToken() async {
     try {
-      return const Right(null);
+      final tokenJson = await _secureStorage.read(key: _tokenKey);
+      if (tokenJson == null) {
+        return const Right(null);
+      }
+      final tokenMap = jsonDecode(tokenJson) as Map<String, dynamic>;
+      return Right(AuthTokenEntity.fromJson(tokenMap));
     } on CacheException catch (e) {
       return Left(CacheFailure(failureMessage: e.message));
     } catch (e) {
@@ -79,7 +88,8 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, void>> storeToken(AuthTokenEntity token) async {
     try {
-      // TODO: Implement token storage
+      final tokenJson = jsonEncode(token.toJson());
+      await _secureStorage.write(key: _tokenKey, value: tokenJson);
       return const Right(null);
     } on CacheException catch (e) {
       return Left(CacheFailure(failureMessage: e.message));

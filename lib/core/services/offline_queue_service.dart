@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../utils/logger.dart';
 import '../../features/parcel_am_core/domain/entities/parcel_entity.dart';
 
 /// Service for queuing parcel status updates when offline.
@@ -44,7 +45,7 @@ class OfflineQueueService {
       await _saveQueue(queue);
     } catch (e) {
       // Log error but don't throw - offline queue is not critical
-      print('Error queuing status update: $e');
+      Logger.logError('Error queuing status update: $e');
     }
   }
 
@@ -64,7 +65,7 @@ class OfflineQueueService {
       queue.removeWhere((item) => item['parcelId'] == parcelId);
       await _saveQueue(queue);
     } catch (e) {
-      print('Error removing item from queue: $e');
+      Logger.logError('Error removing item from queue: $e');
     }
   }
 
@@ -75,7 +76,7 @@ class OfflineQueueService {
     try {
       await _prefs.remove(_queueKey);
     } catch (e) {
-      print('Error clearing queue: $e');
+      Logger.logError('Error clearing queue: $e');
     }
   }
 
@@ -123,7 +124,7 @@ class OfflineQueueService {
       final List<dynamic> decoded = jsonDecode(queueJson);
       return decoded.cast<Map<String, dynamic>>();
     } catch (e) {
-      print('Error reading queue: $e');
+      Logger.logError('Error reading queue: $e');
       return [];
     }
   }
@@ -134,7 +135,7 @@ class OfflineQueueService {
       final queueJson = jsonEncode(queue);
       await _prefs.setString(_queueKey, queueJson);
     } catch (e) {
-      print('Error saving queue: $e');
+      Logger.logError('Error saving queue: $e');
     }
   }
 }

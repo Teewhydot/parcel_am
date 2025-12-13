@@ -17,7 +17,10 @@ class Routes {
   static const String walletFundingPayment = '/wallet/payment';
   static const String walletFundingSuccess = '/wallet/payment/success';
   static const String withdrawal = '/wallet/withdrawal';
+  static const String withdrawalStatus = '/wallet/withdrawal/status';
   static const String withdrawalTransactionDetail = '/wallet/withdrawal/detail';
+  static const String bankAccounts = '/wallet/bank-accounts';
+  static const String addBankAccount = '/wallet/bank-accounts/add';
   static const String createParcel = '/createParcel';
   static const String profile = '/profile';
   static const String chatsList = '/chatsList';

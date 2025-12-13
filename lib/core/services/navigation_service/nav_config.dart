@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 
 abstract class NavigationService {
-  Future<void> navigateTo(String routeName, {Object? arguments});
+  Future<T?> navigateTo<T>(String routeName, {Object? arguments});
   Future<void> navigateAndReplace(String routeName, {Object? arguments});
   Future<void> navigateAndReplaceAll(String routeName, {Object? arguments});
   Future<void> navigateAndOffAll(
@@ -9,14 +9,14 @@ abstract class NavigationService {
     conditionRoute, {
     Object? arguments,
   });
-  Future<void> goBack();
+  void goBack<T>({T? result});
   Future<void> goBackUntil(String routeName);
 }
 
 class GetxNavigationService implements NavigationService {
   @override
-  Future<void> navigateTo(String routeName, {Object? arguments}) async {
-    await Get.toNamed(routeName, arguments: arguments);
+  Future<T?> navigateTo<T>(String routeName, {Object? arguments}) async {
+    return await Get.toNamed<T>(routeName, arguments: arguments);
   }
 
   @override
@@ -33,8 +33,8 @@ class GetxNavigationService implements NavigationService {
   }
 
   @override
-  Future<void> goBack() async {
-    Get.back();
+  void goBack<T>({T? result}) {
+    Get.back<T>(result: result);
   }
 
   @override

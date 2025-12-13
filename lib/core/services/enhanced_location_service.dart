@@ -144,7 +144,7 @@ class EnhancedLocationService {
       return await locationFromAddress(address);
     } catch (e) {
       if (kDebugMode) {
-        print('Error getting coordinates from address: $e');
+        Logger.logError('Error getting coordinates from address: $e');
       }
       return null;
     }
@@ -172,7 +172,7 @@ class EnhancedLocationService {
       },
       onError: (error) {
         if (kDebugMode) {
-          print('Error in location tracking: $error');
+          Logger.logError('Error in location tracking: $error');
         }
       },
     );
@@ -231,7 +231,7 @@ class EnhancedLocationService {
       return await Geolocator.getLastKnownPosition();
     } catch (e) {
       if (kDebugMode) {
-        print('Error getting last known position: $e');
+        Logger.logError('Error getting last known position: $e');
       }
       return null;
     }

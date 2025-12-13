@@ -1,14 +1,15 @@
 import 'package:dartz/dartz.dart' show Either;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get/get.dart';
 import 'package:parcel_am/core/errors/failures.dart' show Failure;
 import 'package:parcel_am/features/parcel_am_core/data/models/user_model.dart';
 import '../../../../core/domain/entities/kyc_status.dart';
+import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/routes/routes.dart';
+import '../../../../injection_container.dart';
 import '../../../parcel_am_core/presentation/bloc/auth/auth_bloc.dart';
 import '../../../parcel_am_core/presentation/bloc/auth/auth_data.dart';
 import '../../../../core/bloc/base/base_state.dart';
@@ -109,7 +110,7 @@ class KycStatusIndicator extends StatelessWidget {
         return GestureDetector(
           onTap: () {
             if (user.kycStatus.requiresAction) {
-              Get.toNamed(Routes.verification);
+              sl<NavigationService>().navigateTo(Routes.verification);
             }
           },
           child: KycStatusBadge(
@@ -167,8 +168,8 @@ class _KycStatusBannerState extends State<KycStatusBanner> {
         }
         
         return GestureDetector(
-          onTap: status.requiresAction 
-              ? () => Get.toNamed(Routes.verification)
+          onTap: status.requiresAction
+              ? () => sl<NavigationService>().navigateTo(Routes.verification)
               : null,
           child: Container(
             margin: widget.margin ?? AppSpacing.paddingMD,
@@ -360,7 +361,7 @@ class KycStatusCard extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () => Get.toNamed(Routes.verification),
+                    onPressed: () => sl<NavigationService>().navigateTo(Routes.verification),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _getStatusColor(status),
                       padding: const EdgeInsets.symmetric(vertical: 12),

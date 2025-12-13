@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import '../../../../core/domain/entities/kyc_status.dart';
 import '../../../../core/services/auth/kyc_guard.dart';
+import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../injection_container.dart';
 
 /// Reactive button that automatically updates based on realtime KYC status changes
 class KycRequiredButton extends StatelessWidget {
@@ -49,7 +50,7 @@ class KycRequiredButton extends StatelessWidget {
   }
 
   void _handleKycBlocked(BuildContext context, KycStatus status) {
-    Get.toNamed(
+    sl<NavigationService>().navigateTo(
       Routes.kycBlocked,
       arguments: {'status': status},
     );

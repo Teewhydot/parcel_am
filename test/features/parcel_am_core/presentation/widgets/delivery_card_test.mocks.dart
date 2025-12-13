@@ -32,17 +32,16 @@ class MockNavigationService extends _i1.Mock implements _i2.NavigationService {
   }
 
   @override
-  _i3.Future<void> navigateTo(String? routeName, {Object? arguments}) =>
+  _i3.Future<T?> navigateTo<T>(String? routeName, {Object? arguments}) =>
       (super.noSuchMethod(
             Invocation.method(
               #navigateTo,
               [routeName],
               {#arguments: arguments},
             ),
-            returnValue: _i3.Future<void>.value(),
-            returnValueForMissingStub: _i3.Future<void>.value(),
+            returnValue: _i3.Future<T?>.value(),
           )
-          as _i3.Future<void>);
+          as _i3.Future<T?>);
 
   @override
   _i3.Future<void> navigateAndReplace(String? routeName, {Object? arguments}) =>
@@ -91,13 +90,10 @@ class MockNavigationService extends _i1.Mock implements _i2.NavigationService {
           as _i3.Future<void>);
 
   @override
-  _i3.Future<void> goBack() =>
-      (super.noSuchMethod(
-            Invocation.method(#goBack, []),
-            returnValue: _i3.Future<void>.value(),
-            returnValueForMissingStub: _i3.Future<void>.value(),
-          )
-          as _i3.Future<void>);
+  void goBack<T>({T? result}) => super.noSuchMethod(
+    Invocation.method(#goBack, [], {#result: result}),
+    returnValueForMissingStub: null,
+  );
 
   @override
   _i3.Future<void> goBackUntil(String? routeName) =>

@@ -4,6 +4,7 @@ import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../bloc/parcel/parcel_bloc.dart';
+import '../bloc/parcel/parcel_event.dart';
 import '../bloc/parcel/parcel_state.dart';
 import '../../domain/entities/parcel_entity.dart';
 import 'delivery_card.dart';
@@ -43,15 +44,41 @@ class _MyDeliveriesTabState extends State<MyDeliveriesTab> {
   }
 
   /// Handles status update button press
-  /// Opens status update action sheet (will be implemented in Task Group 3.4)
+  /// Opens status update action sheet
   void _handleUpdateStatus(ParcelEntity parcel) {
-    // TODO: Open status update action sheet (Task Group 3.4)
-    // For now, show a snackbar as placeholder
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Status update for ${parcel.category ?? 'Package'} will be implemented in Task Group 3.4',
+    final currentStatus = parcel.status;
+    final nextStatus = currentStatus.nextDeliveryStatus;
+
+    if (nextStatus == null || !currentStatus.canProgressToNextStatus) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Cannot update status from ${currentStatus.displayName}',
+          ),
+          backgroundColor: AppColors.error,
         ),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => _StatusUpdateBottomSheet(
+        parcel: parcel,
+        currentStatus: currentStatus,
+        nextStatus: nextStatus,
+        onConfirm: () {
+          context.read<ParcelBloc>().add(
+            ParcelUpdateStatusRequested(
+              parcelId: parcel.id,
+              status: nextStatus,
+            ),
+          );
+          Navigator.pop(context);
+        },
       ),
     );
   }
@@ -297,6 +324,129 @@ class _MyDeliveriesTabState extends State<MyDeliveriesTab> {
               color: AppColors.onSurfaceVariant,
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Bottom sheet for confirming status update
+class _StatusUpdateBottomSheet extends StatelessWidget {
+  final ParcelEntity parcel;
+  final ParcelStatus currentStatus;
+  final ParcelStatus nextStatus;
+  final VoidCallback onConfirm;
+
+  const _StatusUpdateBottomSheet({
+    required this.parcel,
+    required this.currentStatus,
+    required this.nextStatus,
+    required this.onConfirm,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Update Delivery Status',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceVariant,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.arrow_forward,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Current: ${currentStatus.displayName}',
+                            style: TextStyle(
+                              color: AppColors.onSurfaceVariant,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Next: ${nextStatus.displayName}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Package: ${parcel.category ?? 'Package'} #${parcel.id.substring(0, 8)}',
+            style: TextStyle(
+              color: AppColors.onSurfaceVariant,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: onConfirm,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                  ),
+                  child: const Text(
+                    'Confirm',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
         ],
       ),
     );

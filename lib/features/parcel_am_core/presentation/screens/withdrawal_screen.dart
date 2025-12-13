@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/bloc/base/base_state.dart';
+import '../../../../core/routes/routes.dart';
+import '../../../../core/services/navigation_service/nav_config.dart';
+import '../../../../injection_container.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_spacing.dart';
@@ -14,8 +17,6 @@ import '../bloc/bank_account/bank_account_event.dart';
 import '../bloc/withdrawal/withdrawal_bloc.dart';
 import '../bloc/withdrawal/withdrawal_data.dart';
 import '../bloc/withdrawal/withdrawal_event.dart';
-import 'withdrawal_status_screen.dart';
-import 'bank_account_list_screen.dart';
 
 class WithdrawalScreen extends StatefulWidget {
   final String userId;
@@ -72,12 +73,10 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
             AppSpacing.verticalSpacing(SpacingSize.md),
             TextButton(
               onPressed: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => BankAccountListScreen(userId: widget.userId),
-                  ),
+                sl<NavigationService>().goBack();
+                sl<NavigationService>().navigateTo(
+                  Routes.bankAccounts,
+                  arguments: {'userId': widget.userId},
                 );
               },
               child: const Text('Manage Bank Accounts'),
@@ -200,13 +199,9 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
               // Navigate to status screen when withdrawal initiated
               if (state is LoadedState<WithdrawalData> &&
                   state.data?.withdrawalOrder != null) {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => WithdrawalStatusScreen(
-                      withdrawalId: state.data?.withdrawalOrder?.id ?? '',
-                    ),
-                  ),
+                sl<NavigationService>().navigateAndReplace(
+                  Routes.withdrawalStatus,
+                  arguments: {'withdrawalId': state.data?.withdrawalOrder?.id ?? ''},
                 );
               }
 
@@ -243,29 +238,31 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Available Balance Card
-                        Card(
-                          color: AppColors.primary.withOpacity(0.1),
-                          child: Padding(
-                            padding: AppSpacing.paddingLG,
-                            child: Column(
-                              children: [
-                                const Text(
-                                  'Available Balance',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: AppColors.onSurfaceVariant,
+                        Center(
+                          child: Card(
+                            color: AppColors.primary.withOpacity(0.1),
+                            child: Padding(
+                              padding: AppSpacing.paddingLG,
+                              child: Column(
+                                children: [
+                                  const Text(
+                                    'Available Balance',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: AppColors.onSurfaceVariant,
+                                    ),
                                   ),
-                                ),
-                                AppSpacing.verticalSpacing(SpacingSize.sm),
-                                Text(
-                                  _currencyFormat.format(widget.availableBalance),
-                                  style: const TextStyle(
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.primary,
+                                  AppSpacing.verticalSpacing(SpacingSize.sm),
+                                  Text(
+                                    _currencyFormat.format(widget.availableBalance),
+                                    style: const TextStyle(
+                                      fontSize: 32,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.primary,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -386,6 +383,20 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                                   ),
                                 ),
                               ],
+                            ),
+                          ),
+                          AppSpacing.verticalSpacing(SpacingSize.md),
+                          SizedBox(
+                            width: double.infinity,
+                            child: AppButton.primary(
+                              onPressed: () {
+                                sl<NavigationService>().navigateTo(
+                                  Routes.bankAccounts,
+                                  arguments: {'userId': widget.userId},
+                                );
+                              },
+                              leadingIcon: const Icon(Icons.add, color: Colors.white),
+                              child: const AppText('Add Bank Account', color: AppColors.white),
                             ),
                           ),
                         ],
