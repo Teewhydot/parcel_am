@@ -195,10 +195,7 @@ class _BankAccountListScreenState extends State<BankAccountListScreen> {
               textAlign: TextAlign.center,
             ),
             AppSpacing.verticalSpacing(SpacingSize.xl),
-            AppButton.primary(
-              onPressed: _navigateToAddAccount,
-              child: const Text('Add Bank Account'),
-            ),
+          
           ],
         ),
       ),

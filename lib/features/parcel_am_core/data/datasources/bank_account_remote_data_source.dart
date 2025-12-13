@@ -70,8 +70,6 @@ class BankAccountRemoteDataSourceImpl
   @override
   Future<List<BankInfoModel>> getBankList() async {
     try {
-      await validateConnectivity();
-
       // Check if cache is valid (less than 24 hours old)
       if (_cachedBankList != null &&
           _cacheTimestamp != null &&
@@ -80,60 +78,32 @@ class BankAccountRemoteDataSourceImpl
         return _cachedBankList!;
       }
 
-      // Try to fetch from Firestore cache first
-      final cachedDoc = await firestore
-          .collection('system_config')
-          .doc('banks')
+      // Fetch bank list from Firestore 'banks' collection
+      Logger.logBasic('Fetching bank list from Firestore');
+      final querySnapshot = await firestore
+          .collection('banks')
           .get();
 
-      if (cachedDoc.exists) {
-        final data = cachedDoc.data();
-        if (data != null && data['banks'] != null) {
-          final banksList = (data['banks'] as List)
-              .map((bank) => BankInfoModel.fromJson(bank as Map<String, dynamic>))
-              .toList();
+      // Sort by name in memory
+      final banksList = querySnapshot.docs
+          .map((doc) => BankInfoModel.fromFirestore(doc.data()))
+          .toList()
+        ..sort((a, b) => a.name.compareTo(b.name));
 
-          _cachedBankList = banksList;
-          _cacheTimestamp = DateTime.now();
-
-          Logger.logSuccess('Bank list loaded from Firestore cache');
-          return banksList;
-        }
+      if (banksList.isEmpty) {
+        Logger.logBasic('No banks found in Firestore');
       }
 
-      // If no cache, fetch from Firebase Function
-      Logger.logBasic('Fetching bank list from Firebase Function');
-      final idToken = await getAuthToken();
+      _cachedBankList = banksList;
+      _cacheTimestamp = DateTime.now();
 
-      final response = await http.get(
-        Uri.parse('$baseUrl/getBankList'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $idToken',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final banksList = (data['banks'] as List)
-            .map((bank) => BankInfoModel.fromJson(bank as Map<String, dynamic>))
-            .toList();
-
-        _cachedBankList = banksList;
-        _cacheTimestamp = DateTime.now();
-
-        Logger.logSuccess('Bank list fetched successfully: ${banksList.length} banks');
-        return banksList;
-      } else {
-        final error = json.decode(response.body);
-        throw Exception('Failed to fetch bank list: ${error['error'] ?? error['message']}');
-      }
+      Logger.logSuccess('Bank list loaded from Firestore: ${banksList.length} banks');
+      return banksList;
     } on FirebaseException catch (e) {
       Logger.logError('Firestore error fetching bank list: $e');
       throw ServerException();
     } catch (e) {
       Logger.logError('Error fetching bank list: $e');
-      if (e is NoInternetException) rethrow;
       throw ServerException();
     }
   }
