@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:parcel_am/features/parcel_am_core/domain/entities/withdrawal_order_entity.dart';
 import 'package:parcel_am/features/parcel_am_core/domain/entities/user_bank_account_entity.dart';
 import 'package:parcel_am/features/parcel_am_core/domain/entities/bank_info_entity.dart';

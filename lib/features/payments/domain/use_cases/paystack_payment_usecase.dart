@@ -4,7 +4,6 @@ import 'package:parcel_am/features/payments/data/repositories/paystack_payment_r
 
 import '../../../../core/errors/failures.dart';
 import '../entities/paystack_transaction_entity.dart';
-import '../repositories/paystack_payment_repository.dart';
 
 class PaystackPaymentUseCase {
   final  _repository = PaystackPaymentRepositoryImpl();

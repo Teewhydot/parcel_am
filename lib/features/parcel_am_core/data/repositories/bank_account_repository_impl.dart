@@ -2,8 +2,6 @@ import '../../domain/entities/bank_info_entity.dart';
 import '../../domain/entities/user_bank_account_entity.dart';
 import '../../domain/repositories/bank_account_repository.dart';
 import '../datasources/bank_account_remote_data_source.dart';
-import '../models/bank_info_model.dart';
-import '../models/user_bank_account_model.dart';
 import '../../../../core/utils/logger.dart';
 
 class BankAccountRepositoryImpl implements BankAccountRepository {

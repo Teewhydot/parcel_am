@@ -5,8 +5,6 @@ import 'package:parcel_am/core/bloc/base/base_bloc.dart';
 import 'package:parcel_am/core/bloc/base/base_state.dart';
 import 'package:parcel_am/core/services/connectivity_service.dart';
 import 'package:parcel_am/core/utils/logger.dart';
-import 'package:parcel_am/features/payments/domain/entities/paystack_transaction_entity.dart';
-import '../../../../payments/domain/use_cases/paystack_payment_usecase.dart';
 import '../../../data/helpers/idempotency_helper.dart';
 import '../../../domain/value_objects/transaction_filter.dart';
 import 'wallet_event.dart';

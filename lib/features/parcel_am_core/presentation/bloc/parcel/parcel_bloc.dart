@@ -25,7 +25,7 @@ class ParcelBloc extends BaseBloC<ParcelEvent, BaseState<ParcelData>> {
   // Task Group 4.2.1: Offline handling services
   final ConnectivityService _connectivityService = sl<ConnectivityService>();
   final OfflineQueueService _offlineQueueService = sl<OfflineQueueService>();
-  bool _isOnline = true;
+  final bool _isOnline = true;
 
   ParcelBloc() : super(const InitialState<ParcelData>()) {
     on<ParcelCreateRequested>(_onCreateRequested);
