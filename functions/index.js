@@ -1190,5 +1190,214 @@ exports.cleanupOldPendingTransactions = onSchedule(
   }
 );
 
+// ========================================================================
+// Bank Account Resolution Function (Paystack)
+// ========================================================================
+exports.resolveBankAccount = onRequest(
+  {
+    region: FUNCTIONS_CONFIG.REGION,
+    timeoutSeconds: 60,
+    memory: FUNCTIONS_CONFIG.MEMORY,
+    cpu: FUNCTIONS_CONFIG.CPU,
+    minInstances: FUNCTIONS_CONFIG.MIN_INSTANCES,
+    maxInstances: FUNCTIONS_CONFIG.MAX_INSTANCES,
+    secrets: ['PAYSTACK_SECRET_KEY']
+  },
+  async (req, res) => {
+    cors(req, res, async () => {
+      const executionId = `resolve-bank-${Date.now()}`;
+
+      try {
+        console.log('====================================');
+        console.log('🏦 RESOLVE BANK ACCOUNT STARTED', executionId);
+
+        logger.startFunction('resolveBankAccount', executionId);
+
+        const { accountNumber, bankCode } = req.body;
+
+        // Validate required fields
+        if (!accountNumber || !bankCode) {
+          console.log('❌ Missing required fields');
+          return res.status(400).json({
+            success: false,
+            error: 'Account number and bank code are required'
+          });
+        }
+
+        console.log('  - Account Number:', accountNumber);
+        console.log('  - Bank Code:', bankCode);
+
+        logger.info(`Resolving bank account`, executionId, { accountNumber, bankCode });
+
+        // Call Paystack Resolve Account API
+        const paystackUrl = `https://api.paystack.co/bank/resolve?account_number=${accountNumber}&bank_code=${bankCode}`;
+
+        const response = await axios.get(paystackUrl, {
+          headers: {
+            'Authorization': `Bearer ${PAYSTACK_SECRET_KEY}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.data.status === true) {
+          const accountName = response.data.data.account_name;
+          console.log('✅ Account resolved successfully:', accountName);
+
+          logger.success(`Bank account resolved: ${accountName}`, executionId);
+
+          return res.status(200).json({
+            success: true,
+            accountName: accountName,
+            accountNumber: accountNumber,
+            bankCode: bankCode
+          });
+        } else {
+          console.log('❌ Paystack returned error:', response.data.message);
+
+          logger.error('Paystack resolve failed', executionId, null, response.data);
+
+          return res.status(400).json({
+            success: false,
+            error: response.data.message || 'Could not resolve account'
+          });
+        }
+
+      } catch (error) {
+        console.error('====================================');
+        console.error('❌ RESOLVE BANK ACCOUNT FAILED');
+        console.error('Error:', error.message);
+
+        // Handle Paystack-specific errors
+        if (error.response) {
+          const paystackError = error.response.data;
+          console.error('Paystack Error:', paystackError);
+
+          logger.error('Paystack API error', executionId, error, paystackError);
+
+          return res.status(error.response.status).json({
+            success: false,
+            error: paystackError.message || 'Account verification failed'
+          });
+        }
+
+        logger.critical('Resolve bank account failed', executionId, error);
+
+        res.status(500).json({
+          success: false,
+          error: 'Internal server error'
+        });
+      }
+    });
+  }
+);
+
+// ========================================================================
+// Create Transfer Recipient Function (Paystack)
+// ========================================================================
+exports.createTransferRecipient = onRequest(
+  {
+    region: FUNCTIONS_CONFIG.REGION,
+    timeoutSeconds: 60,
+    memory: FUNCTIONS_CONFIG.MEMORY,
+    cpu: FUNCTIONS_CONFIG.CPU,
+    minInstances: FUNCTIONS_CONFIG.MIN_INSTANCES,
+    maxInstances: FUNCTIONS_CONFIG.MAX_INSTANCES,
+    secrets: ['PAYSTACK_SECRET_KEY']
+  },
+  async (req, res) => {
+    cors(req, res, async () => {
+      const executionId = `create-recipient-${Date.now()}`;
+
+      try {
+        console.log('====================================');
+        console.log('👤 CREATE TRANSFER RECIPIENT STARTED', executionId);
+
+        logger.startFunction('createTransferRecipient', executionId);
+
+        const { accountNumber, accountName, bankCode } = req.body;
+
+        // Validate required fields
+        if (!accountNumber || !accountName || !bankCode) {
+          console.log('❌ Missing required fields');
+          return res.status(400).json({
+            success: false,
+            error: 'Account number, account name, and bank code are required'
+          });
+        }
+
+        console.log('  - Account Number:', accountNumber);
+        console.log('  - Account Name:', accountName);
+        console.log('  - Bank Code:', bankCode);
+
+        logger.info(`Creating transfer recipient`, executionId, { accountNumber, accountName, bankCode });
+
+        // Call Paystack Create Transfer Recipient API
+        const response = await axios.post(
+          'https://api.paystack.co/transferrecipient',
+          {
+            type: 'nuban',
+            name: accountName,
+            account_number: accountNumber,
+            bank_code: bankCode,
+            currency: 'NGN'
+          },
+          {
+            headers: {
+              'Authorization': `Bearer ${PAYSTACK_SECRET_KEY}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        if (response.data.status === true) {
+          const recipientCode = response.data.data.recipient_code;
+          console.log('✅ Transfer recipient created:', recipientCode);
+
+          logger.success(`Transfer recipient created: ${recipientCode}`, executionId);
+
+          return res.status(200).json({
+            success: true,
+            recipientCode: recipientCode
+          });
+        } else {
+          console.log('❌ Paystack returned error:', response.data.message);
+
+          logger.error('Paystack create recipient failed', executionId, null, response.data);
+
+          return res.status(400).json({
+            success: false,
+            error: response.data.message || 'Could not create transfer recipient'
+          });
+        }
+
+      } catch (error) {
+        console.error('====================================');
+        console.error('❌ CREATE TRANSFER RECIPIENT FAILED');
+        console.error('Error:', error.message);
+
+        // Handle Paystack-specific errors
+        if (error.response) {
+          const paystackError = error.response.data;
+          console.error('Paystack Error:', paystackError);
+
+          logger.error('Paystack API error', executionId, error, paystackError);
+
+          return res.status(error.response.status).json({
+            success: false,
+            error: paystackError.message || 'Failed to create transfer recipient'
+          });
+        }
+
+        logger.critical('Create transfer recipient failed', executionId, error);
+
+        res.status(500).json({
+          success: false,
+          error: 'Internal server error'
+        });
+      }
+    });
+  }
+);
+
 console.log('✅ ParcelAm  App Firebase Functions initialized successfully');
 console.log('📦 All services loaded and ready');

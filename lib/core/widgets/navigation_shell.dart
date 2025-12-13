@@ -7,6 +7,7 @@ import 'package:parcel_am/features/parcel_am_core/presentation/screens/dashboard
 import 'package:parcel_am/features/parcel_am_core/presentation/screens/browse_requests_screen.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/screens/tracking_screen.dart';
 import 'package:parcel_am/features/chat/presentation/screens/chats_list_screen.dart';
+import 'package:parcel_am/features/seeder/presentation/screens/database_seeder_screen.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_bloc.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_data.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/package/package_bloc.dart';
@@ -50,6 +51,11 @@ class _NavigationShellState extends State<NavigationShell> {
       activeIcon: Icons.chat_bubble,
       label: 'Chat',
     ),
+    FloatingNavItem(
+      icon: Icons.storage_outlined,
+      activeIcon: Icons.storage,
+      label: 'Seeder',
+    ),
   ];
 
   // Build screens for each tab based on current user
@@ -62,6 +68,7 @@ class _NavigationShellState extends State<NavigationShell> {
         child: const TrackingScreen(),
       ),
       ChatsListScreen(currentUserId: userId),
+      const DatabaseSeederScreen(),
     ];
   }
 

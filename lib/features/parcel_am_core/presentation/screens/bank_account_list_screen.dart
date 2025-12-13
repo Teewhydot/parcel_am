@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/bloc/base/base_state.dart';
-import '../../../../core/routes/routes.dart';
-import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
-import '../../../../injection_container.dart';
 import '../../domain/entities/user_bank_account_entity.dart';
 import '../bloc/bank_account/bank_account_bloc.dart';
 import '../bloc/bank_account/bank_account_data.dart';
 import '../bloc/bank_account/bank_account_event.dart';
+import '../widgets/add_bank_account_bottom_sheet.dart';
 
 class BankAccountListScreen extends StatefulWidget {
   final String userId;
@@ -35,10 +32,10 @@ class _BankAccountListScreenState extends State<BankAccountListScreen> {
         );
   }
 
-  Future<void> _navigateToAddAccount() async {
-    final result = await sl<NavigationService>().navigateTo<bool>(
-      Routes.addBankAccount,
-      arguments: {'userId': widget.userId},
+  Future<void> _showAddAccountModal() async {
+    final result = await AddBankAccountBottomSheet.show(
+      context,
+      userId: widget.userId,
     );
 
     if (result == true && mounted) {
@@ -161,7 +158,7 @@ class _BankAccountListScreenState extends State<BankAccountListScreen> {
           final canAddMore = !data.hasReachedMaxAccounts;
 
           return FloatingActionButton.extended(
-            onPressed: canAddMore ? _navigateToAddAccount : null,
+            onPressed: canAddMore ? _showAddAccountModal : null,
             backgroundColor: canAddMore ? AppColors.primary : Colors.grey,
             icon: const Icon(Icons.add),
             label: const Text('Add Account'),
