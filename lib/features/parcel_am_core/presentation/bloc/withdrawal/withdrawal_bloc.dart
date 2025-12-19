@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../core/bloc/base/base_bloc.dart';
 import '../../../../../core/bloc/base/base_state.dart';
 import '../../../../../core/utils/logger.dart';
+import '../../../domain/entities/withdrawal_order_entity.dart';
 import '../../../domain/repositories/withdrawal_repository.dart';
 import 'withdrawal_event.dart';
 import 'withdrawal_data.dart';
@@ -123,7 +124,13 @@ class WithdrawalBloc extends BaseBloC<WithdrawalEvent, BaseState<WithdrawalData>
         amount: event.amount,
         recipientCode: event.bankAccount.recipientCode,
         withdrawalReference: withdrawalReference,
-        bankAccountId: event.bankAccount.id,
+        bankAccount: BankAccountInfo(
+          id: event.bankAccount.id,
+          accountNumber: event.bankAccount.accountNumber,
+          accountName: event.bankAccount.accountName,
+          bankCode: event.bankAccount.bankCode,
+          bankName: event.bankAccount.bankName,
+        ),
       );
 
       emit(LoadedState<WithdrawalData>(

@@ -16,6 +16,7 @@ void main() {
         userId: 'user123',
         amount: 5000.0,
         bankAccount: const BankAccountInfo(
+          id: 'bank-account-123',
           accountNumber: '0123456789',
           accountName: 'John Doe',
           bankCode: '058',

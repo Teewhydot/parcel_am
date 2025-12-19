@@ -8,6 +8,8 @@ import 'package:parcel_am/app/bloc_providers.dart';
 import 'package:provider/provider.dart';
 import 'package:parcel_am/app/init.dart';
 import 'package:parcel_am/core/services/notification_service.dart';
+import 'package:parcel_am/core/utils/logger.dart';
+import 'package:parcel_am/features/passkey/data/datasources/passkey_remote_data_source.dart';
 import 'package:parcel_am/injection_container.dart' as di;
 
 import 'core/routes/getx_route_module.dart';
@@ -30,6 +32,9 @@ void main() async {
     // Initialize NotificationService after Firebase and DI, before runApp
     final notificationService = di.sl<NotificationService>();
     await notificationService.initialize();
+
+    // Initialize Corbado Passkey SDK
+    await _initializeCorbado();
 
     runApp(MultiBlocProvider(providers: blocs, child: const MyApp()));
   } catch (e) {
@@ -68,6 +73,24 @@ class MyApp extends StatelessWidget {
         );
       },
     );
+  }
+}
+
+/// Initialize Corbado SDK for passkey authentication
+Future<void> _initializeCorbado() async {
+  try {
+    final projectId = dotenv.env['CORBADO_PROJECT_ID'];
+    if (projectId == null || projectId.isEmpty || projectId == 'your_corbado_project_id_here') {
+      Logger.logWarning('Corbado Project ID not configured. Passkey authentication will be disabled.');
+      return;
+    }
+
+    final passkeyDataSource = di.sl<PasskeyRemoteDataSource>();
+    await passkeyDataSource.initialize(projectId);
+    Logger.logSuccess('Corbado SDK initialized successfully');
+  } catch (e) {
+    Logger.logError('Failed to initialize Corbado SDK: $e');
+    // Don't fail the app, just disable passkey functionality
   }
 }
 

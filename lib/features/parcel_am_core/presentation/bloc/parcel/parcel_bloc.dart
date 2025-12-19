@@ -6,7 +6,6 @@ import '../../../../../core/bloc/base/base_state.dart';
 import '../../../../../core/errors/failures.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/utils/app_utils.dart';
-import '../../../../../core/utils/logger.dart';
 import '../../../../../core/services/connectivity_service.dart';
 import '../../../../../core/services/offline_queue_service.dart';
 import '../../../../../injection_container.dart';
@@ -26,7 +25,6 @@ class ParcelBloc extends BaseBloC<ParcelEvent, BaseState<ParcelData>> {
   // Task Group 4.2.1: Offline handling services
   final ConnectivityService _connectivityService = sl<ConnectivityService>();
   final OfflineQueueService _offlineQueueService = sl<OfflineQueueService>();
-  final bool _isOnline = true;
 
   ParcelBloc() : super(const InitialState<ParcelData>()) {
     on<ParcelCreateRequested>(_onCreateRequested);
@@ -47,68 +45,6 @@ class ParcelBloc extends BaseBloC<ParcelEvent, BaseState<ParcelData>> {
     // _initConnectivityMonitoring();
   }
 
-  /// Task Group 4.2.1: Initialize connectivity monitoring
-  /// Syncs queued updates when connection is restored
-  // void _initConnectivityMonitoring() {
-  //   _connectivityService.startMonitoring();
-  //   _isOnline = _connectivityService.isConnected;
-  //
-  //   _connectivitySubscription = _connectivityService.onConnectivityChanged.listen((isConnected) {
-  //     final wasOffline = !_isOnline;
-  //     _isOnline = isConnected;
-  //
-  //     // If connection is restored and we were offline, sync queued updates
-  //     if (isConnected && wasOffline) {
-  //       _syncQueuedUpdates();
-  //       DFoodUtils.showSnackBar(
-  //         'Connection restored. Syncing pending updates...',
-  //         AppColors.success,
-  //       );
-  //     } else if (!isConnected) {
-  //       DFoodUtils.showSnackBar(
-  //         'No internet connection. Changes will sync when online.',
-  //         AppColors.warning,
-  //       );
-  //     }
-  //   });
-  // }
-
-  /// Task Group 4.2.1: Sync queued status updates when back online
-  Future<void> _syncQueuedUpdates() async {
-    try {
-      final queuedUpdates = await _offlineQueueService.getQueuedUpdates();
-
-      for (final update in queuedUpdates) {
-        final parcelId = update['parcelId'] as String;
-        final statusStr = update['status'] as String;
-        final status = ParcelStatus.fromString(statusStr);
-
-        // Attempt to sync the update
-        final result = await _parcelUseCase.updateParcelStatus(parcelId, status);
-
-        result.fold(
-          (failure) {
-            // Keep in queue if sync fails
-            Logger.logError('Failed to sync update for $parcelId: ${failure.failureMessage}');
-          },
-          (updatedParcel) {
-            // Remove from queue on success
-            _offlineQueueService.removeFromQueue(parcelId);
-          },
-        );
-      }
-
-      final remainingCount = await _offlineQueueService.getQueueSize();
-      if (remainingCount == 0) {
-        DFoodUtils.showSnackBar(
-          'All updates synced successfully',
-          AppColors.success,
-        );
-      }
-    } catch (e) {
-      Logger.logError('Error syncing queued updates: $e');
-    }
-  }
 
   Future<void> _onCreateRequested(
     ParcelCreateRequested event,

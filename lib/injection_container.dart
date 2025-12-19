@@ -53,6 +53,11 @@ import 'features/file_upload/data/repositories/file_upload_repository_impl.dart'
 import 'features/file_upload/domain/repositories/file_upload_repository.dart';
 import 'features/file_upload/domain/use_cases/file_upload_usecase.dart';
 
+// Passkey Authentication
+import 'features/passkey/data/datasources/passkey_remote_data_source.dart';
+import 'features/passkey/data/repositories/passkey_repository_impl.dart';
+import 'features/passkey/domain/repositories/passkey_repository.dart';
+
 final sl = GetIt.instance;
 
 Future<void> init() async {
@@ -204,5 +209,16 @@ Future<void> init() async {
       navigationService: sl(),
       firebaseAuth: sl(),
     ),
+  );
+
+  //! Features - Passkey Authentication
+  // Passkey Data Source
+  sl.registerLazySingleton<PasskeyRemoteDataSource>(
+    () => CorbadoPasskeyDataSourceImpl(),
+  );
+
+  // Passkey Repository
+  sl.registerLazySingleton<PasskeyRepository>(
+    () => PasskeyRepositoryImpl(),
   );
 }

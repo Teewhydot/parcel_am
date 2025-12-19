@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:parcel_am/features/kyc/presentation/bloc/kyc_bloc.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/escrow/escrow_bloc.dart';
+import 'package:parcel_am/features/passkey/presentation/bloc/passkey_bloc.dart';
 import '../features/notifications/presentation/bloc/notification_bloc.dart';
 import '../features/parcel_am_core/presentation/bloc/auth/auth_bloc.dart';
 import '../features/parcel_am_core/presentation/bloc/dashboard/dashboard_bloc.dart';
@@ -29,5 +30,5 @@ final List<BlocProvider> blocs = [
     create: (_) => KycBloc(),
   ),
   BlocProvider<EscrowBloc>(create:(_)=> EscrowBloc()),
-
+  BlocProvider<PasskeyBloc>(create: (_) => PasskeyBloc()),
 ];

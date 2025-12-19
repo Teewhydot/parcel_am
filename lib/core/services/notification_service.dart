@@ -348,7 +348,6 @@ class NotificationService {
 
       final title = notification?.title ?? data['title'] as String? ?? '';
       final body = notification?.body ?? data['body'] as String? ?? '';
-      final type = data['type'] as String?;
       final chatId = data['chatId'] as String?;
       final parcelId = data['parcelId'] as String?;
       final travelerId = data['travelerId'] as String?;

@@ -14,7 +14,7 @@ abstract class WithdrawalRepository {
     required double amount,
     required String recipientCode,
     required String withdrawalReference,
-    required String bankAccountId,
+    required BankAccountInfo bankAccount,
   });
 
   /// Get withdrawal order by ID

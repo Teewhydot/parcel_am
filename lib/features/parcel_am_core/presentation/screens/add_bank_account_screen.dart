@@ -157,7 +157,6 @@ class _AddBankAccountScreenState extends State<AddBankAccountScreen> {
         },
         builder: (context, state) {
           final data = state.data ?? const BankAccountData();
-          final isLoading = state.isLoading;
           final isVerifying = data.isVerifying;
           final isSaving = data.isSaving;
 

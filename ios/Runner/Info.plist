@@ -61,5 +61,13 @@
 	<string>We need access to your photo library to select identity documents for KYC verification.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>We need permission to save photos to your library for KYC verification purposes.</string>
+	<!-- Passkey Authentication - Associated Domains for Corbado -->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>webcredentials:$(CORBADO_PROJECT_ID).frontendapi.corbado.io</string>
+	</array>
+	<!-- Face ID usage for passkey authentication -->
+	<key>NSFaceIDUsageDescription</key>
+	<string>We use Face ID for secure passkey authentication to protect your account.</string>
 </dict>
 </plist>

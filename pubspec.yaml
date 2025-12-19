@@ -68,6 +68,10 @@ dependencies:
   cloud_firestore: ^6.1.0
   firebase_storage: ^13.0.4
   firebase_messaging: ^16.0.4
+  cloud_functions: ^6.0.4
+
+  # Corbado Passkey Authentication
+  corbado_auth: ^3.4.0
 
   # Secure storage for tokens
   flutter_secure_storage: ^9.2.2
@@ -119,6 +123,9 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
   firebase_auth_platform_interface: any
+  flutter_local_notifications_platform_interface: any
+  timezone: any
+  cloud_firestore_platform_interface: any
 flutter:
 
   # The following line ensures that the Material Icons font is

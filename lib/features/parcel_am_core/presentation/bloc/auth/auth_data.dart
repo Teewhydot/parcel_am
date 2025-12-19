@@ -8,6 +8,8 @@ class AuthData extends Equatable {
   final String password;
   final String? verificationId;
   final int? resendToken;
+  final bool isPasskeySupported;
+  final bool hasPasskeys;
 
   const AuthData({
     this.user,
@@ -15,6 +17,8 @@ class AuthData extends Equatable {
     this.password = '',
     this.verificationId,
     this.resendToken,
+    this.isPasskeySupported = false,
+    this.hasPasskeys = false,
   });
 
   AuthData copyWith({
@@ -23,6 +27,8 @@ class AuthData extends Equatable {
     String? password,
     String? verificationId,
     int? resendToken,
+    bool? isPasskeySupported,
+    bool? hasPasskeys,
   }) {
     return AuthData(
       user: user ?? this.user,
@@ -30,6 +36,8 @@ class AuthData extends Equatable {
       password: password ?? this.password,
       verificationId: verificationId ?? this.verificationId,
       resendToken: resendToken ?? this.resendToken,
+      isPasskeySupported: isPasskeySupported ?? this.isPasskeySupported,
+      hasPasskeys: hasPasskeys ?? this.hasPasskeys,
     );
   }
 
@@ -48,5 +56,7 @@ class AuthData extends Equatable {
         password,
         verificationId,
         resendToken,
+        isPasskeySupported,
+        hasPasskeys,
       ];
 }

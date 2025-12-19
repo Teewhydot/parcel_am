@@ -102,3 +102,30 @@ class AuthKycStatusUpdated extends AuthEvent {
   @override
   List<Object> get props => [kycStatus];
 }
+
+/// Event to check if passkeys are supported on this device
+class AuthPasskeyCheckSupport extends AuthEvent {
+  const AuthPasskeyCheckSupport();
+}
+
+/// Event to sign in with passkey
+class AuthPasskeySignInRequested extends AuthEvent {
+  const AuthPasskeySignInRequested();
+}
+
+/// Event to handle successful passkey authentication
+/// Links the passkey user with Firebase user
+class AuthPasskeySignInCompleted extends AuthEvent {
+  final String corbadoUserId;
+  final String email;
+  final String? displayName;
+
+  const AuthPasskeySignInCompleted({
+    required this.corbadoUserId,
+    required this.email,
+    this.displayName,
+  });
+
+  @override
+  List<Object?> get props => [corbadoUserId, email, displayName];
+}

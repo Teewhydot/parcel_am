@@ -5,6 +5,9 @@ import 'package:parcel_am/core/bloc/base/base_state.dart';
 import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
 import 'package:parcel_am/core/helpers/user_extensions.dart';
 import 'package:parcel_am/core/widgets/app_scaffold.dart';
+import 'package:parcel_am/features/passkey/presentation/bloc/passkey_bloc.dart';
+import 'package:parcel_am/features/passkey/presentation/bloc/passkey_data.dart';
+import 'package:parcel_am/features/passkey/presentation/bloc/passkey_event.dart';
 
 import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
@@ -61,6 +64,11 @@ class _LoginScreenState extends State<LoginScreen>
     _passwordController.addListener(_validatePassword);
     _displayNameController.addListener(_validateDisplayName);
     _resetEmailController.addListener(_validateResetEmail);
+
+    // Check passkey support
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<PasskeyBloc>().add(const PasskeyCheckSupport());
+    });
   }
 
   void _validateEmail() {
@@ -487,8 +495,90 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                 ),
               ),
+              // Passkey Login Option
+              _buildPasskeyLoginButton(state),
             ],
           ),
+        );
+      },
+    );
+  }
+
+  /// Build passkey login button if supported
+  Widget _buildPasskeyLoginButton(BaseState<AuthData> authState) {
+    return BlocConsumer<PasskeyBloc, BaseState<PasskeyData>>(
+      listener: (context, passkeyState) {
+        if (passkeyState.isSuccess) {
+          _navigateToDashboard();
+        } else if (passkeyState.isError) {
+          _showError(passkeyState.errorMessage ?? 'Passkey authentication failed');
+        }
+      },
+      builder: (context, passkeyState) {
+        final passkeyData = passkeyState.data ?? const PasskeyData();
+
+        // Only show if passkeys are supported
+        if (!passkeyData.isSupported) {
+          return const SizedBox.shrink();
+        }
+
+        final isLoading = authState.isLoading || passkeyState.isLoading;
+
+        return Column(
+          children: [
+            AppSpacing.verticalSpacing(SpacingSize.md),
+            Row(
+              children: [
+                const Expanded(child: Divider(color: AppColors.outline)),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: AppText.bodySmall('or', color: Colors.grey),
+                ),
+                const Expanded(child: Divider(color: AppColors.outline)),
+              ],
+            ),
+            AppSpacing.verticalSpacing(SpacingSize.md),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: OutlinedButton.icon(
+                onPressed: isLoading
+                    ? null
+                    : () {
+                        context.read<PasskeyBloc>().add(
+                              const PasskeySignInRequested(),
+                            );
+                      },
+                icon: passkeyState.isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            AppColors.primary,
+                          ),
+                        ),
+                      )
+                    : const Icon(Icons.fingerprint, size: 24),
+                label: AppText.bodyLarge(
+                  passkeyState.isLoading ? 'Authenticating...' : 'Sign in with Passkey',
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(
+                    color: AppColors.primary,
+                    width: 1.5,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ],
         );
       },
     );

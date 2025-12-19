@@ -389,7 +389,6 @@ void main() {
       'should respect loading state even when KYC verified',
       (WidgetTester tester) async {
         // Arrange
-        bool callbackExecuted = false;
         final user = createTestUser(kycStatus: KycStatus.approved);
         final authState = LoadedState<AuthData>(
           data: AuthData(user: user),
@@ -398,7 +397,6 @@ void main() {
 
         final button = AppButton.primary(
           onPressed: () {
-            callbackExecuted = true;
           },
           requiresKyc: true,
           loading: true,

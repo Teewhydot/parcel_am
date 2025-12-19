@@ -98,7 +98,7 @@ class WithdrawalRemoteDataSourceImpl
       Logger.logBasic('Withdrawal response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        json.decode(response.body);
         Logger.logSuccess('Withdrawal initiated successfully: $withdrawalReference');
 
         // Fetch the created withdrawal order from Firestore

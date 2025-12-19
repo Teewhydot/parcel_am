@@ -93,12 +93,14 @@ class WithdrawalOrderEntity extends Equatable {
 
 /// Embedded bank account information in withdrawal order
 class BankAccountInfo extends Equatable {
+  final String id;
   final String accountNumber;
   final String accountName;
   final String bankCode;
   final String bankName;
 
   const BankAccountInfo({
+    required this.id,
     required this.accountNumber,
     required this.accountName,
     required this.bankCode,
@@ -107,6 +109,7 @@ class BankAccountInfo extends Equatable {
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'accountNumber': accountNumber,
       'accountName': accountName,
       'bankCode': bankCode,
@@ -116,6 +119,7 @@ class BankAccountInfo extends Equatable {
 
   factory BankAccountInfo.fromJson(Map<String, dynamic> json) {
     return BankAccountInfo(
+      id: json['id'] as String? ?? '',
       accountNumber: json['accountNumber'] as String,
       accountName: json['accountName'] as String,
       bankCode: json['bankCode'] as String,
@@ -124,5 +128,5 @@ class BankAccountInfo extends Equatable {
   }
 
   @override
-  List<Object?> get props => [accountNumber, accountName, bankCode, bankName];
+  List<Object?> get props => [id, accountNumber, accountName, bankCode, bankName];
 }

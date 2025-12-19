@@ -17,6 +17,7 @@ class AuthTokenModel extends AuthTokenEntity {
     );
   }
 
+  @override
   Map<String, dynamic> toJson() {
     return {
       'accessToken': accessToken,

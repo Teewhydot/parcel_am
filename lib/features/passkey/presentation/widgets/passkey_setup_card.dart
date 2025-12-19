@@ -1,0 +1,140 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/bloc/base/base_state.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_spacing.dart';
+import '../bloc/passkey_bloc.dart';
+import '../bloc/passkey_data.dart';
+import '../bloc/passkey_event.dart';
+
+/// Card widget for setting up passkey authentication
+/// Shows in settings when user hasn't set up a passkey yet
+class PasskeySetupCard extends StatelessWidget {
+  const PasskeySetupCard({
+    super.key,
+    this.onSetupComplete,
+  });
+
+  final VoidCallback? onSetupComplete;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocConsumer<PasskeyBloc, BaseState<PasskeyData>>(
+      listener: (context, state) {
+        if (state.isSuccess) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.successMessage ?? 'Passkey added successfully!'),
+              backgroundColor: AppColors.success,
+            ),
+          );
+          onSetupComplete?.call();
+        } else if (state.isError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.errorMessage ?? 'Failed to add passkey'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      },
+      builder: (context, state) {
+        final passkeyData = state.data ?? const PasskeyData();
+
+        // Don't show if passkeys aren't supported
+        if (!passkeyData.isSupported) {
+          return const SizedBox.shrink();
+        }
+
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.primary.withOpacity(0.1),
+                AppColors.primaryLight.withOpacity(0.05),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.primary.withOpacity(0.2),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.fingerprint,
+                      color: AppColors.primary,
+                      size: 28,
+                    ),
+                  ),
+                  AppSpacing.horizontalSpacing(SpacingSize.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Enable Passkey Login',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.onBackground,
+                          ),
+                        ),
+                        AppSpacing.verticalSpacing(SpacingSize.xs),
+                        Text(
+                          'Quick and secure sign-in with biometrics',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              AppSpacing.verticalSpacing(SpacingSize.lg),
+              const Text(
+                'Passkeys let you sign in with your fingerprint, face, or screen lock instead of a password.',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.onSurface,
+                  height: 1.5,
+                ),
+              ),
+              AppSpacing.verticalSpacing(SpacingSize.lg),
+              AppButton.primary(
+                onPressed: state.isLoading
+                    ? null
+                    : () {
+                        context.read<PasskeyBloc>().add(
+                              const PasskeyAppendRequested(),
+                            );
+                      },
+                loading: state.isLoading,
+                fullWidth: true,
+                leadingIcon: const Icon(Icons.add, size: 20),
+                child: const Text('Add Passkey'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}

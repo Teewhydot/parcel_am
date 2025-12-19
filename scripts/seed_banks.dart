@@ -1,7 +1,7 @@
 // ignore_for_file: avoid_print
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
-import '../lib/firebase_options.dart';
+import 'package:parcel_am/firebase_options.dart';
 
 const List<Map<String, dynamic>> nigerianBanks = [
   {'id': 1, 'name': 'Access Bank', 'code': '044', 'slug': 'access-bank', 'country': 'Nigeria', 'currency': 'NGN', 'type': 'nuban'},

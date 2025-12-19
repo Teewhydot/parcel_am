@@ -11,6 +11,7 @@ void main() {
     test('should serialize and deserialize correctly', () {
       // Arrange
       final bankAccount = BankAccountInfo(
+        id: 'bank-account-123',
         accountNumber: '0123456789',
         accountName: 'John Doe',
         bankCode: '058',

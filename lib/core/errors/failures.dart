@@ -55,3 +55,34 @@ class TokenExpiredFailure extends AuthFailure {
 class InvalidDataFailure extends Failure {
   const InvalidDataFailure({required super.failureMessage});
 }
+
+// Passkey-specific failures
+class PasskeyFailure extends Failure {
+  const PasskeyFailure({required super.failureMessage});
+}
+
+class PasskeyNotSupportedFailure extends PasskeyFailure {
+  const PasskeyNotSupportedFailure({
+    super.failureMessage = 'Passkeys are not supported on this device',
+  });
+}
+
+class PasskeyRegistrationFailure extends PasskeyFailure {
+  const PasskeyRegistrationFailure({required super.failureMessage});
+}
+
+class PasskeyAuthenticationFailure extends PasskeyFailure {
+  const PasskeyAuthenticationFailure({required super.failureMessage});
+}
+
+class PasskeyCancelledFailure extends PasskeyFailure {
+  const PasskeyCancelledFailure({
+    super.failureMessage = 'Passkey operation was cancelled',
+  });
+}
+
+class PasskeyAlreadyExistsFailure extends PasskeyFailure {
+  const PasskeyAlreadyExistsFailure({
+    super.failureMessage = 'A passkey is already registered for this device',
+  });
+}

@@ -8,11 +8,13 @@ import 'package:parcel_am/core/errors/failures.dart';
 import 'package:parcel_am/core/utils/logger.dart';
 import 'package:parcel_am/features/parcel_am_core/data/models/user_model.dart';
 import 'package:parcel_am/features/parcel_am_core/domain/usecases/auth_usecase.dart';
+import 'package:parcel_am/features/passkey/domain/usecases/passkey_usecase.dart';
 import 'auth_event.dart';
 import 'auth_data.dart';
 
 class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
   final authUseCase = AuthUseCase();
+  final passkeyUseCase = PasskeyUseCase();
 
   AuthBloc() : super(const InitialState<AuthData>()) {
     on<AuthStarted>(_onAuthStarted);
@@ -24,6 +26,9 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
     on<AuthUserProfileUpdateRequested>(_onUserProfileUpdateRequested);
     on<AuthPasswordResetRequested>(_onPasswordResetRequested);
     on<AuthKycStatusUpdated>(_onKycStatusUpdated);
+    on<AuthPasskeyCheckSupport>(_onPasskeyCheckSupport);
+    on<AuthPasskeySignInRequested>(_onPasskeySignInRequested);
+    on<AuthPasskeySignInCompleted>(_onPasskeySignInCompleted);
   }
 
 
@@ -251,6 +256,104 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
         data: currentData.copyWith(user: updatedUser),
         lastUpdated: DateTime.now(),
       ),
+    );
+  }
+
+  /// Check if passkeys are supported on this device
+  Future<void> _onPasskeyCheckSupport(
+    AuthPasskeyCheckSupport event,
+    Emitter<BaseState<AuthData>> emit,
+  ) async {
+    final result = await passkeyUseCase.isPasskeySupported();
+
+    result.fold(
+      (failure) {
+        Logger.logError('Passkey support check failed: ${failure.failureMessage}');
+        final currentData = state.data ?? const AuthData();
+        emit(LoadedState<AuthData>(
+          data: currentData.copyWith(isPasskeySupported: false),
+          lastUpdated: DateTime.now(),
+        ));
+      },
+      (isSupported) {
+        Logger.logSuccess('Passkey support: $isSupported');
+        final currentData = state.data ?? const AuthData();
+        emit(LoadedState<AuthData>(
+          data: currentData.copyWith(isPasskeySupported: isSupported),
+          lastUpdated: DateTime.now(),
+        ));
+      },
+    );
+  }
+
+  /// Sign in using passkey
+  Future<void> _onPasskeySignInRequested(
+    AuthPasskeySignInRequested event,
+    Emitter<BaseState<AuthData>> emit,
+  ) async {
+    emit(const LoadingState<AuthData>(message: 'Authenticating with passkey...'));
+
+    final result = await passkeyUseCase.signInWithPasskey();
+
+    await result.fold(
+      (failure) async {
+        emit(ErrorState<AuthData>(
+          errorMessage: failure.failureMessage,
+          errorCode: 'passkey_signin_failed',
+        ));
+        Logger.logError('Passkey sign in failed: ${failure.failureMessage}');
+      },
+      (authResult) async {
+        // Passkey auth succeeded, now we need to link with Firebase user
+        // Dispatch completed event to handle Firebase linking
+        add(AuthPasskeySignInCompleted(
+          corbadoUserId: authResult.corbadoUserId,
+          email: authResult.email,
+          displayName: authResult.displayName,
+        ));
+      },
+    );
+  }
+
+  /// Handle passkey sign in completion - link with Firebase user
+  Future<void> _onPasskeySignInCompleted(
+    AuthPasskeySignInCompleted event,
+    Emitter<BaseState<AuthData>> emit,
+  ) async {
+    // Try to get existing Firebase user by email
+    final result = await authUseCase.getCurrentUser();
+
+    await result.fold(
+      (failure) async {
+        // No existing Firebase user, create one or handle accordingly
+        Logger.logError('Firebase user lookup failed: ${failure.failureMessage}');
+        emit(ErrorState<AuthData>(
+          errorMessage: 'Unable to complete passkey authentication',
+          errorCode: 'firebase_linking_failed',
+        ));
+      },
+      (user) async {
+        if (user != null) {
+          // User exists, complete sign in
+          emit(SuccessState<AuthData>(successMessage: 'Signed in with passkey!'));
+          emit(LoadedState<AuthData>(
+            data: const AuthData().copyWith(
+              user: user,
+              email: event.email,
+              isPasskeySupported: true,
+              hasPasskeys: true,
+            ),
+            lastUpdated: DateTime.now(),
+          ));
+          Logger.logSuccess('Passkey sign in completed for: ${user.displayName}');
+        } else {
+          // No user found - this shouldn't happen for passkey signin
+          emit(const ErrorState<AuthData>(
+            errorMessage: 'No account found. Please sign in with email/password first.',
+            errorCode: 'no_user_found',
+          ));
+        }
+      },
     );
   }
 }

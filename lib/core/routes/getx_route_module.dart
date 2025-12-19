@@ -24,6 +24,7 @@ import 'package:parcel_am/features/chat/presentation/screens/chats_list_screen.d
 import 'package:parcel_am/features/chat/presentation/screens/chat_screen.dart';
 import 'package:parcel_am/features/notifications/presentation/screens/notifications_screen.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/screens/settings_screen.dart';
+import 'package:parcel_am/features/passkey/presentation/screens/passkey_management_screen.dart';
 import 'package:parcel_am/features/seeder/presentation/screens/database_seeder_screen.dart';
 import 'package:parcel_am/features/payments/presentation/screens/wallet_funding_payment_screen.dart';
 import 'package:parcel_am/features/payments/presentation/screens/wallet_funding_success_screen.dart';
@@ -354,6 +355,13 @@ class GetXRouteModule {
     AuthGuard.createProtectedRoute(
       name: Routes.settings,
       page: () => const SettingsScreen(),
+      transition: _transition,
+      transitionDuration: _transitionDuration,
+      requiresKyc: false,
+    ),
+    AuthGuard.createProtectedRoute(
+      name: Routes.passkeyManagement,
+      page: () => const PasskeyManagementScreen(),
       transition: _transition,
       transitionDuration: _transitionDuration,
       requiresKyc: false,

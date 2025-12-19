@@ -44,7 +44,7 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
     required double amount,
     required String recipientCode,
     required String withdrawalReference,
-    required String bankAccountId,
+    required BankAccountInfo bankAccount,
   }) async {
     try {
       // Validate amount format
@@ -65,7 +65,7 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
         amount: amount,
         recipientCode: recipientCode,
         withdrawalReference: withdrawalReference,
-        bankAccountId: bankAccountId,
+        bankAccountId: bankAccount.id,
       );
 
       Logger.logSuccess('Withdrawal initiated successfully: $withdrawalReference');
