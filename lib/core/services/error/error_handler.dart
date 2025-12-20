@@ -51,6 +51,12 @@ class ErrorHandler {
       );
       return Left(UnknownFailure(failureMessage: message));
     } catch (e, stackTrace) {
+      // Always log the original error first
+      Logger.logError(
+        'Original Error${operationName != null ? " in $operationName" : ""}: Type=${e.runtimeType}, Error=$e',
+      );
+      Logger.logError('Stack trace: ${stackTrace.toString()}');
+
       // Try to map using the registered mapper
       final failure = _mapper?.map(e);
       if (failure != null) {
@@ -59,11 +65,6 @@ class ErrorHandler {
         );
         return Left(failure);
       }
-
-      Logger.logError(
-        'Catch-All Error${operationName != null ? " in $operationName" : ""}: Type=${e.runtimeType}, Error=$e',
-      );
-      Logger.logError('Stack trace: ${stackTrace.toString()}');
 
       return Left(UnknownFailure(failureMessage: e.toString()));
     }
@@ -87,10 +88,16 @@ class ErrorHandler {
           controller.add(Right(data));
         },
         onError: (error, stackTrace) {
+          // Always log the original error first
+          Logger.logError(
+            'Stream Original Error${operationName != null ? " in $operationName" : ""}: Type=${error.runtimeType}, Error=$error',
+          );
+          Logger.logError('Stream stack trace: ${stackTrace.toString()}');
+
           // Try to map using the registered mapper
           final failure = _mapper?.map(error);
           if (failure != null) {
-             Logger.logError(
+            Logger.logError(
               'Stream Mapped Error${operationName != null ? " in $operationName" : ""}: ${failure.failureMessage}',
             );
             controller.add(Left(failure));
@@ -132,11 +139,12 @@ class ErrorHandler {
         },
         cancelOnError: false, // Continue stream even after errors
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
       final message = 'Failed to initialize stream';
       Logger.logError(
-        'Stream Initialization Error${operationName != null ? " in $operationName" : ""}: $e',
+        'Stream Initialization Error${operationName != null ? " in $operationName" : ""}: Type=${e.runtimeType}, Error=$e',
       );
+      Logger.logError('Stream init stack trace: ${stackTrace.toString()}');
       controller.add(Left(UnknownFailure(failureMessage: message)));
       controller.close();
     }

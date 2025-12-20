@@ -229,7 +229,21 @@ class GetXRouteModule {
       page: () {
         final args = Get.arguments as Map<String, dynamic>? ?? {};
         final withdrawalId = args['withdrawalId'] as String? ?? '';
-        return WithdrawalStatusScreen(withdrawalId: withdrawalId);
+
+        // Create data source and repository for withdrawal
+        final withdrawalDataSource = WithdrawalRemoteDataSourceImpl(
+          firestore: FirebaseFirestore.instance,
+          auth: FirebaseAuth.instance,
+          connectivityService: sl<ConnectivityService>(),
+        );
+        final withdrawalRepository = WithdrawalRepositoryImpl(
+          remoteDataSource: withdrawalDataSource,
+        );
+
+        return BlocProvider<WithdrawalBloc>(
+          create: (_) => WithdrawalBloc(repository: withdrawalRepository),
+          child: WithdrawalStatusScreen(withdrawalId: withdrawalId),
+        );
       },
       transition: _transition,
       transitionDuration: _transitionDuration,

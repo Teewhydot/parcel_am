@@ -53,6 +53,10 @@ const { notificationService } = require('./services/notification-service');
 const { statisticsService } = require('./services/statistics-service');
 const { inventoryService } = require('./services/inventory-service');
 
+// Import Handlers
+const { initiateWithdrawal: initiateWithdrawalHandler } = require('./handlers/withdrawal-handler');
+const { processTransferWebhook } = require('./handlers/webhook-transfer-handler');
+
 // Legacy constants for backward compatibility
 const PAYSTACK_SECRET_KEY = ENVIRONMENT.PAYSTACK_SECRET_KEY;
 const PROJECT_ID = ENVIRONMENT.PROJECT_ID;
@@ -97,7 +101,7 @@ exports.createPaystackTransaction = onRequest(
         logger.startFunction('createTransaction', executionId);
         logger.info(`Request body received`, executionId, { bodyKeys: Object.keys(req.body) });
 
-        // Validate and sanitize request for food orders
+        // Validate and sanitize request
         const validatedData = RequestValidators.validateTransactionRequest(req.body);
         console.log('✅ Request validation successful');
         console.log('  - User ID:', validatedData.userId);
@@ -113,7 +117,7 @@ exports.createPaystackTransaction = onRequest(
         });
         const { orderId, amount, userId, email, metadata, userName } = validatedData;
 
-        // Extract and structure the food order details from metadata
+      
         console.log('📦 Structuring funding details...');
 
         logger.info(`Structuring funding details`, executionId, { orderId, transactionType: 'funding' });
@@ -537,6 +541,17 @@ exports.paystackWebhook = onRequest(
 
         logger.info(`Handling abandoned payment`, executionId, { reference: processedEvent.reference });
         await handleAbandonedPayment(processedEvent, executionId);
+      } else if (event.event === "transfer.success" || event.event === "transfer.failed" || event.event === "transfer.reversed") {
+        console.log('💸 Handling TRANSFER event:', event.event);
+        console.log('  - Reference:', event.data?.reference);
+        console.log('  - Transfer Code:', event.data?.transfer_code);
+
+        logger.info(`Handling transfer event`, executionId, {
+          eventType: event.event,
+          reference: event.data?.reference,
+          transferCode: event.data?.transfer_code
+        });
+        await processTransferWebhook(event, executionId);
       } else {
         console.log('ℹ️ Unhandled event type:', event.event);
 
@@ -1393,6 +1408,142 @@ exports.createTransferRecipient = onRequest(
         res.status(500).json({
           success: false,
           error: 'Internal server error'
+        });
+      }
+    });
+  }
+);
+
+// ========================================================================
+// Initiate Withdrawal Function (Paystack Transfer)
+// ========================================================================
+exports.initiateWithdrawal = onRequest(
+  {
+    region: FUNCTIONS_CONFIG.REGION,
+    timeoutSeconds: 60,
+    memory: FUNCTIONS_CONFIG.MEMORY,
+    cpu: FUNCTIONS_CONFIG.CPU,
+    minInstances: FUNCTIONS_CONFIG.MIN_INSTANCES,
+    maxInstances: FUNCTIONS_CONFIG.MAX_INSTANCES,
+    secrets: ['PAYSTACK_SECRET_KEY']
+  },
+  async (req, res) => {
+    cors(req, res, async () => {
+      const executionId = `withdrawal-${Date.now()}`;
+
+      try {
+        console.log('====================================');
+        console.log('💸 INITIATE WITHDRAWAL STARTED', executionId);
+
+        logger.startFunction('initiateWithdrawal', executionId);
+
+        // Verify Firebase ID token from Authorization header
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+          console.log('❌ Missing or invalid Authorization header');
+          return res.status(401).json({
+            success: false,
+            error: 'Authorization header is required'
+          });
+        }
+
+        const idToken = authHeader.split('Bearer ')[1];
+        let decodedToken;
+
+        try {
+          decodedToken = await admin.auth().verifyIdToken(idToken);
+        } catch (authError) {
+          console.log('❌ Invalid ID token:', authError.message);
+          return res.status(401).json({
+            success: false,
+            error: 'Invalid or expired token'
+          });
+        }
+
+        const { userId, amount, recipientCode, withdrawalReference, bankAccountId } = req.body;
+
+        // Validate required fields
+        if (!userId || !amount || !recipientCode || !withdrawalReference || !bankAccountId) {
+          console.log('❌ Missing required fields');
+          return res.status(400).json({
+            success: false,
+            error: 'userId, amount, recipientCode, withdrawalReference, and bankAccountId are required'
+          });
+        }
+
+        console.log('  - User ID:', userId);
+        console.log('  - Amount:', amount);
+        console.log('  - Recipient Code:', recipientCode);
+        console.log('  - Withdrawal Reference:', withdrawalReference);
+        console.log('  - Bank Account ID:', bankAccountId);
+
+        logger.info(`Initiating withdrawal`, executionId, {
+          userId,
+          amount,
+          recipientCode,
+          withdrawalReference
+        });
+
+        // Get bank account details from user's subcollection
+        const bankAccountDoc = await admin.firestore()
+          .collection('users')
+          .doc(userId)
+          .collection('user_bank_accounts')
+          .doc(bankAccountId)
+          .get();
+
+        if (!bankAccountDoc.exists) {
+          console.log('❌ Bank account not found:', bankAccountId, 'for user:', userId);
+          return res.status(404).json({
+            success: false,
+            error: 'Bank account not found'
+          });
+        }
+
+        const bankAccountDetails = bankAccountDoc.data();
+
+        // Create context object for the handler
+        const context = {
+          auth: {
+            uid: decodedToken.uid,
+            token: decodedToken
+          }
+        };
+
+        // Call the withdrawal handler
+        const result = await initiateWithdrawalHandler({
+          userId,
+          amount,
+          recipientCode,
+          withdrawalReference,
+          bankAccountId,
+          bankAccountDetails: {
+            id: bankAccountId,
+            bankName: bankAccountDetails.bankName,
+            bankCode: bankAccountDetails.bankCode,
+            accountNumber: bankAccountDetails.accountNumber,
+            accountName: bankAccountDetails.accountName
+          }
+        }, context, executionId);
+
+        console.log('✅ Withdrawal initiated successfully:', withdrawalReference);
+        logger.success(`Withdrawal initiated: ${withdrawalReference}`, executionId);
+
+        return res.status(200).json({
+          success: true,
+          ...result
+        });
+
+      } catch (error) {
+        console.error('====================================');
+        console.error('❌ INITIATE WITHDRAWAL FAILED');
+        console.error('Error:', error.message);
+
+        logger.error('Initiate withdrawal failed', executionId, error);
+
+        return res.status(500).json({
+          success: false,
+          error: error.message || 'Failed to initiate withdrawal'
         });
       }
     });

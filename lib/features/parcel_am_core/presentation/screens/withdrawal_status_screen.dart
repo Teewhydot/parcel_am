@@ -159,11 +159,10 @@ class _WithdrawalStatusScreenState extends State<WithdrawalStatusScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Status Card
-                Card(
-                  color: statusColor.withOpacity(0.1),
-                  elevation: 0,
-                  child: Padding(
-                    padding: AppSpacing.paddingXL,
+                Padding(
+                  padding: AppSpacing.paddingXL,
+                  child: Align(
+                    alignment: Alignment.center,
                     child: Column(
                       children: [
                         Icon(

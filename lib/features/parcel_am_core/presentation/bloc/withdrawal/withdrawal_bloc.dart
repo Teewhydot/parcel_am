@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../core/bloc/base/base_bloc.dart';
 import '../../../../../core/bloc/base/base_state.dart';
@@ -10,7 +9,6 @@ import 'withdrawal_data.dart';
 
 class WithdrawalBloc extends BaseBloC<WithdrawalEvent, BaseState<WithdrawalData>> {
   final WithdrawalRepository _repository;
-  StreamSubscription? _withdrawalStatusSubscription;
 
   // Withdrawal limits in NGN
   static const double minWithdrawalAmount = 100.0;
@@ -26,12 +24,6 @@ class WithdrawalBloc extends BaseBloC<WithdrawalEvent, BaseState<WithdrawalData>
     on<WithdrawalStatusWatchRequested>(_onStatusWatchRequested);
     on<WithdrawalRetryRequested>(_onRetryRequested);
     on<WithdrawalReset>(_onReset);
-  }
-
-  @override
-  Future<void> close() {
-    _withdrawalStatusSubscription?.cancel();
-    return super.close();
   }
 
   Future<void> _onAmountChanged(
@@ -148,13 +140,10 @@ class WithdrawalBloc extends BaseBloC<WithdrawalEvent, BaseState<WithdrawalData>
     } catch (e) {
       Logger.logError('Error initiating withdrawal: $e');
       final currentData = state.data ?? const WithdrawalData();
-      emit(LoadedState<WithdrawalData>(
-        data: currentData.copyWith(isInitiating: false),
-        lastUpdated: DateTime.now(),
-      ));
+      final updatedData = currentData.copyWith(isInitiating: false);
       emit(AsyncErrorState<WithdrawalData>(
         errorMessage: _getErrorMessage(e),
-        data: currentData,
+        data: updatedData,
       ));
     }
   }
@@ -164,29 +153,24 @@ class WithdrawalBloc extends BaseBloC<WithdrawalEvent, BaseState<WithdrawalData>
     Emitter<BaseState<WithdrawalData>> emit,
   ) async {
     try {
-      // Cancel existing subscription if any
-      await _withdrawalStatusSubscription?.cancel();
-
-      // Watch for real-time updates
-      _withdrawalStatusSubscription = _repository
-          .watchWithdrawalOrder(event.withdrawalId)
-          .listen(
-        (withdrawalOrder) {
+      // Use emit.forEach for proper stream handling in bloc
+      await emit.forEach<WithdrawalOrderEntity>(
+        _repository.watchWithdrawalOrder(event.withdrawalId),
+        onData: (withdrawalOrder) {
           final currentData = state.data ?? const WithdrawalData();
-          emit(LoadedState<WithdrawalData>(
+          Logger.logBasic('Withdrawal status updated: ${withdrawalOrder.status.name}');
+          return LoadedState<WithdrawalData>(
             data: currentData.copyWith(withdrawalOrder: withdrawalOrder),
             lastUpdated: DateTime.now(),
-          ));
-
-          Logger.logBasic('Withdrawal status updated: ${withdrawalOrder.status.name}');
+          );
         },
-        onError: (error) {
+        onError: (error, stackTrace) {
           Logger.logError('Error watching withdrawal status: $error');
           final currentData = state.data ?? const WithdrawalData();
-          emit(AsyncErrorState<WithdrawalData>(
+          return AsyncErrorState<WithdrawalData>(
             errorMessage: 'Failed to get withdrawal status updates',
             data: currentData,
-          ));
+          );
         },
       );
     } catch (e) {
@@ -221,10 +205,6 @@ class WithdrawalBloc extends BaseBloC<WithdrawalEvent, BaseState<WithdrawalData>
     WithdrawalReset event,
     Emitter<BaseState<WithdrawalData>> emit,
   ) async {
-    // Cancel withdrawal status subscription
-    await _withdrawalStatusSubscription?.cancel();
-    _withdrawalStatusSubscription = null;
-
     // Reset to initial state
     emit(const InitialState<WithdrawalData>());
     Logger.logBasic('Withdrawal state reset');
