@@ -401,38 +401,34 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
     String? searchQuery,
   }) async {
     try {
-      Query<Map<String, dynamic>> query = firestore
+      // Fetch from both funding_orders and withdrawal_orders
+      final List<TransactionModel> allTransactions = [];
+
+      // 1. Fetch funding orders (deposits)
+      Query<Map<String, dynamic>> fundingQuery = firestore
           .collection('funding_orders')
           .where('userId', isEqualTo: userId);
 
-      // Apply status filter
+      // Apply status filter for funding orders
       if (status != null && status.isNotEmpty) {
-        query = query.where('status', isEqualTo: status);
+        final fundingStatus = _mapFilterStatusToFundingStatus(status);
+        if (fundingStatus != null) {
+          fundingQuery = fundingQuery.where('status', isEqualTo: fundingStatus);
+        }
       }
 
-      // Apply date range filter
+      // Apply date range filter for funding orders
       if (startDate != null) {
-        query = query.where('time_created', isGreaterThanOrEqualTo: startDate.toIso8601String());
+        fundingQuery = fundingQuery.where('time_created', isGreaterThanOrEqualTo: startDate.toIso8601String());
       }
       if (endDate != null) {
-        query = query.where('time_created', isLessThanOrEqualTo: endDate.toIso8601String());
+        fundingQuery = fundingQuery.where('time_created', isLessThanOrEqualTo: endDate.toIso8601String());
       }
 
-      // Order by time
-      query = query.orderBy('time_created', descending: true);
+      fundingQuery = fundingQuery.orderBy('time_created', descending: true).limit(limit);
 
-      // Apply pagination
-      if (startAfter != null) {
-        query = query.startAfterDocument(startAfter);
-      }
-
-      // Apply limit
-      query = query.limit(limit);
-
-      final querySnapshot = await query.get();
-
-      // Map to transaction models
-      List<TransactionModel> transactions = querySnapshot.docs.map((doc) {
+      final fundingSnapshot = await fundingQuery.get();
+      final fundingTransactions = fundingSnapshot.docs.map((doc) {
         final data = doc.data();
         return TransactionModel(
           id: doc.id,
@@ -449,8 +445,58 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
           idempotencyKey: doc.id,
         );
       }).toList();
+      allTransactions.addAll(fundingTransactions);
 
-      // Apply search filter if provided (client-side filtering)
+      // 2. Fetch withdrawal orders
+      Query<Map<String, dynamic>> withdrawalQuery = firestore
+          .collection('withdrawal_orders')
+          .where('userId', isEqualTo: userId);
+
+      // Apply status filter for withdrawals
+      if (status != null && status.isNotEmpty) {
+        final withdrawalStatus = _mapFilterStatusToWithdrawalStatus(status);
+        if (withdrawalStatus != null) {
+          withdrawalQuery = withdrawalQuery.where('status', isEqualTo: withdrawalStatus);
+        }
+      }
+
+      // Apply date range filter for withdrawals (uses createdAt, not time_created)
+      if (startDate != null) {
+        withdrawalQuery = withdrawalQuery.where('createdAt', isGreaterThanOrEqualTo: Timestamp.fromDate(startDate));
+      }
+      if (endDate != null) {
+        withdrawalQuery = withdrawalQuery.where('createdAt', isLessThanOrEqualTo: Timestamp.fromDate(endDate));
+      }
+
+      withdrawalQuery = withdrawalQuery.orderBy('createdAt', descending: true).limit(limit);
+
+      final withdrawalSnapshot = await withdrawalQuery.get();
+      final withdrawalTransactions = withdrawalSnapshot.docs.map((doc) {
+        final data = doc.data();
+        return TransactionModel(
+          id: doc.id,
+          walletId: userId,
+          userId: userId,
+          amount: (data['amount'] as num?)?.toDouble() ?? 0.0,
+          type: TransactionType.withdrawal,
+          status: _mapWithdrawalStatus(data['status'] as String?),
+          currency: 'NGN',
+          timestamp: _parseTimestamp(data['createdAt']),
+          description: 'Withdrawal to ${_getBankName(data)}',
+          referenceId: doc.id,
+          metadata: data['metadata'] as Map<String, dynamic>? ?? {},
+          idempotencyKey: doc.id,
+        );
+      }).toList();
+      allTransactions.addAll(withdrawalTransactions);
+
+      // 3. Sort all transactions by timestamp (descending)
+      allTransactions.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+      // 4. Apply limit after merging
+      List<TransactionModel> transactions = allTransactions.take(limit).toList();
+
+      // 5. Apply search filter if provided (client-side filtering)
       if (searchQuery != null && searchQuery.isNotEmpty) {
         final lowerQuery = searchQuery.toLowerCase();
         transactions = transactions.where((transaction) {
@@ -473,6 +519,58 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
     }
   }
 
+  /// Extract bank name from withdrawal data
+  String _getBankName(Map<String, dynamic> data) {
+    final bankAccount = data['bankAccount'] as Map<String, dynamic>?;
+    return bankAccount?['bankName'] as String? ?? 'Bank';
+  }
+
+  /// Map filter status to funding order status
+  String? _mapFilterStatusToFundingStatus(String status) {
+    switch (status.toLowerCase()) {
+      case 'success':
+      case 'completed':
+        return 'confirmed';
+      case 'pending':
+        return 'pending';
+      case 'failed':
+        return 'failed';
+      default:
+        return null; // Return null to not filter
+    }
+  }
+
+  /// Map filter status to withdrawal order status
+  String? _mapFilterStatusToWithdrawalStatus(String status) {
+    switch (status.toLowerCase()) {
+      case 'success':
+      case 'completed':
+        return 'success';
+      case 'pending':
+        return 'pending';
+      case 'failed':
+        return 'failed';
+      default:
+        return null; // Return null to not filter
+    }
+  }
+
+  /// Map withdrawal status string to TransactionStatus
+  TransactionStatus _mapWithdrawalStatus(String? status) {
+    switch (status?.toLowerCase()) {
+      case 'success':
+        return TransactionStatus.completed;
+      case 'pending':
+      case 'processing':
+        return TransactionStatus.pending;
+      case 'failed':
+      case 'reversed':
+        return TransactionStatus.failed;
+      default:
+        return TransactionStatus.pending;
+    }
+  }
+
   @override
   Stream<List<TransactionModel>> watchTransactions(
     String userId, {
@@ -482,51 +580,153 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
     DateTime? endDate,
   }) {
     try {
-      Query<Map<String, dynamic>> query = firestore
+      // Build funding orders query
+      Query<Map<String, dynamic>> fundingQuery = firestore
           .collection('funding_orders')
           .where('userId', isEqualTo: userId);
 
-      // Apply status filter
+      // Apply status filter for funding orders
       if (status != null && status.isNotEmpty) {
-        query = query.where('status', isEqualTo: status);
+        final fundingStatus = _mapFilterStatusToFundingStatus(status);
+        if (fundingStatus != null) {
+          fundingQuery = fundingQuery.where('status', isEqualTo: fundingStatus);
+        }
       }
 
-      // Apply date range filter
+      // Apply date range filter for funding orders
       if (startDate != null) {
-        query = query.where('time_created', isGreaterThanOrEqualTo: startDate.toIso8601String());
+        fundingQuery = fundingQuery.where('time_created', isGreaterThanOrEqualTo: startDate.toIso8601String());
       }
       if (endDate != null) {
-        query = query.where('time_created', isLessThanOrEqualTo: endDate.toIso8601String());
+        fundingQuery = fundingQuery.where('time_created', isLessThanOrEqualTo: endDate.toIso8601String());
       }
 
-      // Order by time and limit
-      query = query.orderBy('time_created', descending: true).limit(limit);
+      fundingQuery = fundingQuery.orderBy('time_created', descending: true).limit(limit);
 
-      return query.snapshots().handleError((error) {
-        Logger.logError('Firestore Error (watchTransactions): $error', tag: 'WalletRemoteDataSource');
-      }).map((snapshot) {
-        return snapshot.docs.map((doc) {
-          final data = doc.data();
-          return TransactionModel(
-            id: doc.id,
-            walletId: userId,
-            userId: userId,
-            amount: (data['amount'] as num?)?.toDouble() ?? 0.0,
-            type: TransactionType.deposit,
-            status: _mapFundingStatus(data['status'] as String?),
-            currency: 'NGN',
-            timestamp: _parseTimestamp(data['time_created']),
-            description: 'Wallet Funding',
-            referenceId: data['reference'] as String?,
-            metadata: data['metadata'] as Map<String, dynamic>? ?? {},
-            idempotencyKey: doc.id,
-          );
-        }).toList();
+      // Build withdrawal orders query
+      Query<Map<String, dynamic>> withdrawalQuery = firestore
+          .collection('withdrawal_orders')
+          .where('userId', isEqualTo: userId);
+
+      // Apply status filter for withdrawals
+      if (status != null && status.isNotEmpty) {
+        final withdrawalStatus = _mapFilterStatusToWithdrawalStatus(status);
+        if (withdrawalStatus != null) {
+          withdrawalQuery = withdrawalQuery.where('status', isEqualTo: withdrawalStatus);
+        }
+      }
+
+      // Apply date range filter for withdrawals
+      if (startDate != null) {
+        withdrawalQuery = withdrawalQuery.where('createdAt', isGreaterThanOrEqualTo: Timestamp.fromDate(startDate));
+      }
+      if (endDate != null) {
+        withdrawalQuery = withdrawalQuery.where('createdAt', isLessThanOrEqualTo: Timestamp.fromDate(endDate));
+      }
+
+      withdrawalQuery = withdrawalQuery.orderBy('createdAt', descending: true).limit(limit);
+
+      // Combine both streams
+      final fundingStream = fundingQuery.snapshots().handleError((error) {
+        Logger.logError('Firestore Error (watchFundingOrders): $error', tag: 'WalletRemoteDataSource');
       });
+
+      final withdrawalStream = withdrawalQuery.snapshots().handleError((error) {
+        Logger.logError('Firestore Error (watchWithdrawalOrders): $error', tag: 'WalletRemoteDataSource');
+      });
+
+      // Use combineLatest to merge both streams
+      return _combineTransactionStreams(
+        fundingStream,
+        withdrawalStream,
+        userId,
+        limit,
+      );
     } catch (e) {
       Logger.logError('Error creating transaction stream: $e', tag: 'WalletRemoteDataSource');
       throw ServerException();
     }
+  }
+
+  /// Combines funding and withdrawal streams into a single sorted stream
+  Stream<List<TransactionModel>> _combineTransactionStreams(
+    Stream<QuerySnapshot<Map<String, dynamic>>> fundingStream,
+    Stream<QuerySnapshot<Map<String, dynamic>>> withdrawalStream,
+    String userId,
+    int limit,
+  ) {
+    List<TransactionModel> lastFundingTransactions = [];
+    List<TransactionModel> lastWithdrawalTransactions = [];
+
+    // Create a stream controller to emit combined results
+    final controller = StreamController<List<TransactionModel>>();
+
+    // Track subscriptions for cleanup
+    StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? fundingSub;
+    StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? withdrawalSub;
+
+    void emitCombined() {
+      final allTransactions = <TransactionModel>[
+        ...lastFundingTransactions,
+        ...lastWithdrawalTransactions,
+      ];
+      allTransactions.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      controller.add(allTransactions.take(limit).toList());
+    }
+
+    fundingSub = fundingStream.listen((snapshot) {
+      lastFundingTransactions = snapshot.docs.map((doc) {
+        final data = doc.data();
+        return TransactionModel(
+          id: doc.id,
+          walletId: userId,
+          userId: userId,
+          amount: (data['amount'] as num?)?.toDouble() ?? 0.0,
+          type: TransactionType.deposit,
+          status: _mapFundingStatus(data['status'] as String?),
+          currency: 'NGN',
+          timestamp: _parseTimestamp(data['time_created']),
+          description: 'Wallet Funding',
+          referenceId: data['reference'] as String?,
+          metadata: data['metadata'] as Map<String, dynamic>? ?? {},
+          idempotencyKey: doc.id,
+        );
+      }).toList();
+      emitCombined();
+    }, onError: (error) {
+      Logger.logError('Funding stream error: $error', tag: 'WalletRemoteDataSource');
+    });
+
+    withdrawalSub = withdrawalStream.listen((snapshot) {
+      lastWithdrawalTransactions = snapshot.docs.map((doc) {
+        final data = doc.data();
+        return TransactionModel(
+          id: doc.id,
+          walletId: userId,
+          userId: userId,
+          amount: (data['amount'] as num?)?.toDouble() ?? 0.0,
+          type: TransactionType.withdrawal,
+          status: _mapWithdrawalStatus(data['status'] as String?),
+          currency: 'NGN',
+          timestamp: _parseTimestamp(data['createdAt']),
+          description: 'Withdrawal to ${_getBankName(data)}',
+          referenceId: doc.id,
+          metadata: data['metadata'] as Map<String, dynamic>? ?? {},
+          idempotencyKey: doc.id,
+        );
+      }).toList();
+      emitCombined();
+    }, onError: (error) {
+      Logger.logError('Withdrawal stream error: $error', tag: 'WalletRemoteDataSource');
+    });
+
+    // Clean up when the stream is cancelled
+    controller.onCancel = () {
+      fundingSub?.cancel();
+      withdrawalSub?.cancel();
+    };
+
+    return controller.stream;
   }
 
   TransactionStatus _mapFundingStatus(String? status) {
