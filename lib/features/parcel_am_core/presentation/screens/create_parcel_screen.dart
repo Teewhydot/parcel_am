@@ -4,6 +4,7 @@ import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/wallet/wallet_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_spacing.dart';
+import '../../../../core/widgets/app_text.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
@@ -203,7 +204,7 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Create Parcel'),
+        title: AppText.titleLarge('Create Parcel'),
         backgroundColor: AppColors.surface,
         elevation: 0,
       ),
@@ -274,14 +275,12 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
                         child: isCompleted
                             ? const Icon(Icons.check,
                                 color: Colors.white, size: 18)
-                            : Text(
+                            : AppText(
                                 '${index + 1}',
-                                style: TextStyle(
-                                  color: isActive
-                                      ? Colors.white
-                                      : AppColors.onSurfaceVariant,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                color: isActive
+                                    ? Colors.white
+                                    : AppColors.onSurfaceVariant,
+                                fontWeight: FontWeight.bold,
                               ),
                       ),
                     ),
@@ -297,15 +296,12 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
                   ],
                 ),
                 AppSpacing.verticalSpacing(SpacingSize.xs),
-                Text(
+                AppText.bodySmall(
                   steps[index],
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-                    color: isActive
-                        ? AppColors.primary
-                        : AppColors.onSurfaceVariant,
-                  ),
+                  fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                  color: isActive
+                      ? AppColors.primary
+                      : AppColors.onSurfaceVariant,
                 ),
               ],
             ),
@@ -321,9 +317,9 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          AppText.headlineSmall(
             'Parcel Details',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            fontWeight: FontWeight.bold,
           ),
           AppSpacing.verticalSpacing(SpacingSize.lg),
           TextField(
@@ -354,7 +350,7 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
             items: _packageTypes
                 .map((type) => DropdownMenuItem(
                       value: type,
-                      child: Text(type),
+                      child: AppText.bodyMedium(type),
                     ))
                 .toList(),
             onChanged: (value) => setState(() => _packageType = value!),
@@ -389,7 +385,7 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
             items: _urgencyLevels
                 .map((level) => DropdownMenuItem(
                       value: level,
-                      child: Text(level),
+                      child: AppText.bodyMedium(level),
                     ))
                 .toList(),
             onChanged: (value) => setState(() => _urgency = value!),
@@ -405,14 +401,16 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          AppText.headlineSmall(
             'Pickup & Delivery',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            fontWeight: FontWeight.bold,
           ),
           AppSpacing.verticalSpacing(SpacingSize.lg),
-          const Text(
+          const AppText(
             'Pickup Location',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            variant: TextVariant.titleMedium,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
           ),
           AppSpacing.verticalSpacing(SpacingSize.md),
           TextField(
@@ -434,9 +432,11 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
             ),
           ),
           AppSpacing.verticalSpacing(SpacingSize.lg),
-          const Text(
+          const AppText(
             'Delivery Location',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            variant: TextVariant.titleMedium,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
           ),
           AppSpacing.verticalSpacing(SpacingSize.md),
           TextField(
@@ -490,12 +490,9 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
                   ),
                 ),
                 AppSpacing.verticalSpacing(SpacingSize.lg),
-                Text(
+                AppText.bodyLarge(
                   'Creating parcel... ${((state.progress ?? 0) * 100).toInt()}%',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  fontWeight: FontWeight.w500,
                 ),
               ],
             ),
@@ -507,9 +504,9 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              AppText.headlineSmall(
                 'Review Parcel',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                fontWeight: FontWeight.bold,
               ),
               AppSpacing.verticalSpacing(SpacingSize.lg),
               Card(
@@ -536,10 +533,9 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      AppText.bodyLarge(
                         'Locations',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w600),
+                        fontWeight: FontWeight.w600,
                       ),
                       AppSpacing.verticalSpacing(SpacingSize.md),
                       _buildReviewItem(
@@ -567,18 +563,16 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
         children: [
           SizedBox(
             width: 100,
-            child: Text(
+            child: AppText.bodyMedium(
               label,
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-                color: AppColors.onSurfaceVariant,
-              ),
+              fontWeight: FontWeight.w500,
+              color: AppColors.onSurfaceVariant,
             ),
           ),
           Expanded(
-            child: Text(
+            child: AppText.bodyMedium(
               value,
-              style: const TextStyle(fontWeight: FontWeight.w600),
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
@@ -599,15 +593,15 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
                 size: 80,
               ),
               AppSpacing.verticalSpacing(SpacingSize.lg),
-              const Text(
+              AppText.headlineSmall(
                 'Parcel Created!',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                fontWeight: FontWeight.bold,
               ),
               AppSpacing.verticalSpacing(SpacingSize.md),
-              const Text(
+              AppText.bodyMedium(
                 'Your parcel has been created successfully. Complete payment to proceed.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.onSurfaceVariant),
+                color: AppColors.onSurfaceVariant,
               ),
               AppSpacing.verticalSpacing(SpacingSize.lg),
               if (_createdParcel != null)
@@ -650,19 +644,14 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          AppText.bodyMedium(
                             _getEscrowStatusText(escrowState.data?.currentEscrow?.status),
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.primary,
-                            ),
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
                           ),
-                          Text(
+                          AppText.bodySmall(
                             _getEscrowDescriptionText(escrowState.data?.currentEscrow?.status),
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.onSurfaceVariant,
-                            ),
+                            color: AppColors.onSurfaceVariant,
                           ),
                         ],
                       ),
@@ -694,7 +683,7 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                   ),
-                  child: const Text('Proceed to Payment'),
+                  child: AppText.bodyMedium('Proceed to Payment', color: Colors.white),
                 ),
               ),
               if (escrowState.data?.currentEscrow?.status == EscrowStatus.held) ...[
@@ -704,7 +693,7 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
                   height: 48,
                   child: OutlinedButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Done'),
+                    child: AppText.bodyMedium('Done', color: AppColors.primary),
                   ),
                 ),
               ],
@@ -721,20 +710,16 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
+          AppText(
             label,
-            style: TextStyle(
-              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-              fontSize: isBold ? 18 : 14,
-            ),
+            fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+            fontSize: isBold ? 18 : 14,
           ),
-          Text(
+          AppText(
             amount,
-            style: TextStyle(
-              fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
-              fontSize: isBold ? 18 : 14,
-              color: isBold ? AppColors.primary : null,
-            ),
+            fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
+            fontSize: isBold ? 18 : 14,
+            color: isBold ? AppColors.primary : null,
           ),
         ],
       ),
@@ -817,7 +802,7 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: isCreating ? null : _previousStep,
-                    child: const Text('Back'),
+                    child: AppText.bodyMedium('Back', color: AppColors.primary),
                   ),
                 ),
               if (_currentStep > 0) AppSpacing.horizontalSpacing(SpacingSize.md),
@@ -853,10 +838,10 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
                               ),
                             ),
                             AppSpacing.horizontalSpacing(SpacingSize.sm),
-                            const Text('Creating...'),
+                            AppText.bodyMedium('Creating...', color: Colors.white),
                           ],
                         )
-                      : Text(_currentStep == 2 ? 'Create Parcel' : 'Next'),
+                      : AppText.bodyMedium(_currentStep == 2 ? 'Create Parcel' : 'Next', color: Colors.white),
                 ),
               ),
             ],

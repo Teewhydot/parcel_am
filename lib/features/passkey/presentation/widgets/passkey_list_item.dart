@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_spacing.dart';
+import '../../../../core/widgets/app_text.dart';
 import '../../domain/entities/passkey_entity.dart';
 
 /// Widget displaying a single passkey in a list
@@ -51,32 +52,25 @@ class PasskeyListItem extends StatelessWidget {
             size: 28,
           ),
         ),
-        title: Text(
+        title: AppText.bodyLarge(
           passkey.deviceName ?? 'Passkey',
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 16,
-          ),
+          fontWeight: FontWeight.w600,
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             AppSpacing.verticalSpacing(SpacingSize.xs),
-            Text(
+            AppText(
               'Created ${timeago.format(passkey.createdAt)}',
-              style: TextStyle(
-                color: AppColors.onSurfaceVariant,
-                fontSize: 13,
-              ),
+              variant: TextVariant.bodySmall,
+              fontSize: 13,
+              color: AppColors.onSurfaceVariant,
             ),
             if (passkey.lastUsedAt != null) ...[
               AppSpacing.verticalSpacing(SpacingSize.xs),
-              Text(
+              AppText.bodySmall(
                 'Last used ${timeago.format(passkey.lastUsedAt!)}',
-                style: TextStyle(
-                  color: AppColors.onSurfaceVariant,
-                  fontSize: 12,
-                ),
+                color: AppColors.onSurfaceVariant,
               ),
             ],
           ],
@@ -105,15 +99,15 @@ class PasskeyListItem extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Remove Passkey'),
-        content: Text(
+        title: AppText.titleMedium('Remove Passkey'),
+        content: AppText.bodyMedium(
           'Are you sure you want to remove ${passkey.deviceName ?? 'this passkey'}? '
           'You will need to add it again to use passkey authentication on this device.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: AppText.bodyMedium('Cancel'),
           ),
           TextButton(
             onPressed: () {
@@ -123,7 +117,7 @@ class PasskeyListItem extends StatelessWidget {
             style: TextButton.styleFrom(
               foregroundColor: AppColors.error,
             ),
-            child: const Text('Remove'),
+            child: AppText.bodyMedium('Remove', color: AppColors.error),
           ),
         ],
       ),

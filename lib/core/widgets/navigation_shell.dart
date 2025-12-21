@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:parcel_am/core/bloc/base/base_state.dart';
+import 'package:parcel_am/core/widgets/app_text.dart';
 import 'package:parcel_am/core/widgets/floating_bottom_nav_bar.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/screens/dashboard_screen.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/screens/browse_requests_screen.dart';
@@ -118,9 +119,9 @@ class _NavigationShellState extends State<NavigationShell> {
 
         // If user is not authenticated, show error
         if (userId == null) {
-          return const Scaffold(
+          return Scaffold(
             body: Center(
-              child: Text('User not authenticated'),
+              child: AppText.bodyMedium('User not authenticated'),
             ),
           );
         }

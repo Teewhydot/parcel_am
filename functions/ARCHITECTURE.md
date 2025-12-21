@@ -460,6 +460,365 @@ final response = await http.post(
 
 ---
 
+## Real World Example: Escrow Acceptance Flow
+
+This section demonstrates a complete real-world implementation of a function triggered when a user marks an escrow as accepted. The function:
+
+1. Credits the receiver's **pending balance** with the escrow amount
+2. Debits the sender's **main balance** and credits their **pending balance**
+
+### Step 1: Create the Domain Service
+
+```javascript
+// domain/escrow/escrow-balance-service.js
+const admin = require('firebase-admin');
+const { logger } = require('../../utils/logger');
+
+class EscrowBalanceService {
+  constructor() {
+    this.db = admin.firestore();
+  }
+
+  /**
+   * Process balance transfers when escrow is accepted.
+   * - Debits sender's main balance
+   * - Credits sender's pending balance (funds in transit)
+   * - Credits receiver's pending balance (awaiting delivery confirmation)
+   */
+  async processEscrowAcceptance(escrowData, executionId) {
+    const { escrowId, senderId, receiverId, amount, currency } = escrowData;
+
+    logger.info('Processing escrow acceptance', executionId, {
+      escrowId,
+      senderId,
+      receiverId,
+      amount,
+      currency
+    });
+
+    const senderWalletRef = this.db.collection('wallets').doc(senderId);
+    const receiverWalletRef = this.db.collection('wallets').doc(receiverId);
+    const escrowRef = this.db.collection('escrows').doc(escrowId);
+
+    try {
+      await this.db.runTransaction(async (transaction) => {
+        // Get current wallet states
+        const [senderWallet, receiverWallet] = await Promise.all([
+          transaction.get(senderWalletRef),
+          transaction.get(receiverWalletRef)
+        ]);
+
+        if (!senderWallet.exists) {
+          throw new Error(`Sender wallet not found: ${senderId}`);
+        }
+        if (!receiverWallet.exists) {
+          throw new Error(`Receiver wallet not found: ${receiverId}`);
+        }
+
+        const senderData = senderWallet.data();
+        const receiverData = receiverWallet.data();
+
+        // Validate sender has sufficient main balance
+        const senderMainBalance = senderData.mainBalance || 0;
+        if (senderMainBalance < amount) {
+          throw new Error(
+            `Insufficient balance. Required: ${amount}, Available: ${senderMainBalance}`
+          );
+        }
+
+        // Calculate new balances
+        const newSenderMainBalance = senderMainBalance - amount;
+        const newSenderPendingBalance = (senderData.pendingBalance || 0) + amount;
+        const newReceiverPendingBalance = (receiverData.pendingBalance || 0) + amount;
+
+        // Update sender wallet: debit main, credit pending
+        transaction.update(senderWalletRef, {
+          mainBalance: newSenderMainBalance,
+          pendingBalance: newSenderPendingBalance,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        // Update receiver wallet: credit pending balance
+        transaction.update(receiverWalletRef, {
+          pendingBalance: newReceiverPendingBalance,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        // Update escrow status
+        transaction.update(escrowRef, {
+          status: 'accepted',
+          acceptedAt: admin.firestore.FieldValue.serverTimestamp(),
+          balanceProcessed: true
+        });
+
+        // Create transaction records for audit trail
+        const timestamp = admin.firestore.FieldValue.serverTimestamp();
+
+        // Sender transaction record
+        transaction.set(this.db.collection('transactions').doc(), {
+          type: 'escrow_hold',
+          userId: senderId,
+          escrowId,
+          amount: -amount,
+          balanceType: 'main',
+          description: `Escrow hold for parcel to ${receiverId}`,
+          currency,
+          createdAt: timestamp
+        });
+
+        // Sender pending credit record
+        transaction.set(this.db.collection('transactions').doc(), {
+          type: 'escrow_pending',
+          userId: senderId,
+          escrowId,
+          amount: amount,
+          balanceType: 'pending',
+          description: `Pending escrow for parcel delivery`,
+          currency,
+          createdAt: timestamp
+        });
+
+        // Receiver pending credit record
+        transaction.set(this.db.collection('transactions').doc(), {
+          type: 'escrow_pending_received',
+          userId: receiverId,
+          escrowId,
+          amount: amount,
+          balanceType: 'pending',
+          description: `Pending payment for incoming parcel`,
+          currency,
+          createdAt: timestamp
+        });
+      });
+
+      logger.success('Escrow acceptance processed', executionId, {
+        escrowId,
+        amount,
+        senderId,
+        receiverId
+      });
+
+      return { success: true, escrowId };
+    } catch (error) {
+      logger.error('Failed to process escrow acceptance', executionId, error, {
+        escrowId
+      });
+      throw error;
+    }
+  }
+}
+
+const escrowBalanceService = new EscrowBalanceService();
+
+module.exports = { escrowBalanceService, EscrowBalanceService };
+```
+
+### Step 2: Create the Barrel Export
+
+```javascript
+// domain/escrow/index.js
+const { escrowBalanceService } = require('./escrow-balance-service');
+
+module.exports = { escrowBalanceService };
+```
+
+```javascript
+// domain/index.js
+const { escrowBalanceService } = require('./escrow');
+// ... other exports
+
+module.exports = {
+  // ... existing exports
+  escrowBalanceService
+};
+```
+
+### Step 3: Create the Firestore Trigger
+
+```javascript
+// triggers/escrow-triggers.js
+const { onDocumentUpdated } = require('firebase-functions/v2/firestore');
+const { escrowBalanceService } = require('../domain');
+const { logger } = require('../utils/logger');
+const { v4: uuidv4 } = require('uuid');
+
+/**
+ * Triggered when an escrow document is updated.
+ * Processes balance transfers when status changes to 'accepted'.
+ */
+const onEscrowAccepted = onDocumentUpdated(
+  {
+    document: 'escrows/{escrowId}',
+    region: 'us-central1'
+  },
+  async (event) => {
+    const executionId = uuidv4();
+    const escrowId = event.params.escrowId;
+
+    const beforeData = event.data.before.data();
+    const afterData = event.data.after.data();
+
+    // Only process if status changed to 'accepted'
+    if (beforeData.status === afterData.status) {
+      return null; // No status change
+    }
+
+    if (afterData.status !== 'accepted') {
+      return null; // Not an acceptance event
+    }
+
+    // Prevent double-processing
+    if (afterData.balanceProcessed) {
+      logger.info('Escrow already processed, skipping', executionId, { escrowId });
+      return null;
+    }
+
+    logger.info('Escrow acceptance detected', executionId, {
+      escrowId,
+      previousStatus: beforeData.status,
+      newStatus: afterData.status
+    });
+
+    try {
+      await escrowBalanceService.processEscrowAcceptance({
+        escrowId,
+        senderId: afterData.senderId,
+        receiverId: afterData.receiverId,
+        amount: afterData.amount,
+        currency: afterData.currency || 'NGN'
+      }, executionId);
+
+      return { success: true };
+    } catch (error) {
+      logger.error('Failed to process escrow acceptance', executionId, error, {
+        escrowId
+      });
+      throw error; // Re-throw to trigger Cloud Functions retry
+    }
+  }
+);
+
+module.exports = { onEscrowAccepted };
+```
+
+### Step 4: Create the Barrel Export for Triggers
+
+```javascript
+// triggers/index.js
+const { onEscrowAccepted } = require('./escrow-triggers');
+
+module.exports = { onEscrowAccepted };
+```
+
+### Step 5: Register in index.js
+
+```javascript
+// index.js
+const { onEscrowAccepted } = require('./triggers');
+
+// ... other exports
+
+exports.onEscrowAccepted = onEscrowAccepted;
+```
+
+### Data Model Reference
+
+**Escrow Document (`escrows/{escrowId}`)**
+```javascript
+{
+  senderId: 'user_abc123',           // User sending the parcel
+  receiverId: 'user_xyz789',         // User receiving the parcel
+  amount: 5000,                       // Escrow amount in smallest unit
+  currency: 'NGN',
+  status: 'pending' | 'accepted' | 'completed' | 'cancelled',
+  balanceProcessed: false,            // Prevents double-processing
+  createdAt: Timestamp,
+  acceptedAt: Timestamp | null
+}
+```
+
+**Wallet Document (`wallets/{userId}`)**
+```javascript
+{
+  userId: 'user_abc123',
+  mainBalance: 50000,                 // Available balance
+  pendingBalance: 5000,               // Funds in escrow/transit
+  updatedAt: Timestamp
+}
+```
+
+### Flow Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    ESCROW ACCEPTANCE FLOW                           │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  1. User marks escrow as "accepted" in app                          │
+│     └──> Firestore update: escrows/{id}.status = 'accepted'         │
+│                                                                     │
+│  2. Cloud Function triggered (onEscrowAccepted)                     │
+│     └──> Detects status change from 'pending' to 'accepted'         │
+│                                                                     │
+│  3. Atomic Transaction Executes:                                    │
+│     ┌─────────────────────────────────────────────────────────────┐ │
+│     │ SENDER WALLET                                               │ │
+│     │   mainBalance:    50,000 → 45,000  (debit 5,000)           │ │
+│     │   pendingBalance:  0     → 5,000   (credit 5,000)          │ │
+│     ├─────────────────────────────────────────────────────────────┤ │
+│     │ RECEIVER WALLET                                             │ │
+│     │   pendingBalance:  0     → 5,000   (credit 5,000)          │ │
+│     ├─────────────────────────────────────────────────────────────┤ │
+│     │ ESCROW DOCUMENT                                             │ │
+│     │   status:          'accepted'                               │ │
+│     │   balanceProcessed: true                                    │ │
+│     └─────────────────────────────────────────────────────────────┘ │
+│                                                                     │
+│  4. Transaction records created for audit trail                     │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Key Design Decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| **Firestore Trigger** | Automatic execution when escrow status changes - no API call needed |
+| **Atomic Transaction** | All balance updates succeed or fail together - no partial states |
+| **balanceProcessed Flag** | Prevents double-processing if function retries |
+| **Separate Pending Balances** | Clear distinction between available and in-transit funds |
+| **Audit Trail** | Transaction records for compliance and dispute resolution |
+| **Idempotency** | Safe to retry without causing duplicate balance changes |
+
+### Testing the Flow
+
+```javascript
+// Test: Simulate escrow acceptance
+const admin = require('firebase-admin');
+
+async function testEscrowAcceptance() {
+  const db = admin.firestore();
+
+  // Create test escrow
+  const escrowRef = await db.collection('escrows').add({
+    senderId: 'test_sender',
+    receiverId: 'test_receiver',
+    amount: 5000,
+    currency: 'NGN',
+    status: 'pending',
+    balanceProcessed: false,
+    createdAt: admin.firestore.FieldValue.serverTimestamp()
+  });
+
+  // Update to accepted - this triggers the function
+  await escrowRef.update({ status: 'accepted' });
+
+  console.log('Escrow acceptance triggered for:', escrowRef.id);
+}
+```
+
+---
+
 ## Quick Reference
 
 ### Adding a New Feature Checklist

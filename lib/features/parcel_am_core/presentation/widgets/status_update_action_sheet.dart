@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/helpers/haptic_helper.dart';
 import '../../../../core/utils/app_utils.dart';
+import '../../../../core/widgets/app_text.dart';
 import '../../domain/entities/parcel_entity.dart';
 import '../bloc/parcel/parcel_bloc.dart';
 import '../bloc/parcel/parcel_event.dart';
@@ -133,30 +134,23 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                AppText.bodySmall(
                   'Current Status',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.onSurfaceVariant,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  color: AppColors.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
                 ),
                 const SizedBox(height: 4),
-                Text(
+                AppText(
                   widget.parcel.status.displayName,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: widget.parcel.status.statusColor,
-                  ),
+                  variant: TextVariant.titleLarge,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: widget.parcel.status.statusColor,
                 ),
                 const SizedBox(height: 4),
-                Text(
+                AppText.bodySmall(
                   _getStatusDescription(widget.parcel.status),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.onSurfaceVariant,
-                  ),
+                  color: AppColors.onSurfaceVariant,
                 ),
               ],
             ),
@@ -181,13 +175,10 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        AppText.bodyMedium(
           'Delivery Progress',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: AppColors.onSurface,
-          ),
+          fontWeight: FontWeight.w600,
+          color: AppColors.onSurface,
         ),
         const SizedBox(height: 16),
         Row(
@@ -237,16 +228,15 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
             final isCurrent = index == currentIndex;
 
             return Expanded(
-              child: Text(
+              child: AppText(
                 _getShortStatusName(status),
+                variant: TextVariant.bodySmall,
+                fontSize: 9,
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 9,
-                  color: isCompleted || isCurrent
-                      ? status.statusColor
-                      : AppColors.onSurfaceVariant,
-                  fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
-                ),
+                color: isCompleted || isCurrent
+                    ? status.statusColor
+                    : AppColors.onSurfaceVariant,
+                fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -346,14 +336,12 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
                     size: 20,
                   ),
                   const SizedBox(width: 8),
-                  Text(
+                  AppText.bodyLarge(
                     nextStatus != null
                         ? 'Mark as ${nextStatus.displayName}'
                         : 'Already at Final Status',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
                   ),
                 ],
               ),
@@ -368,12 +356,11 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
       style: TextButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: 12),
       ),
-      child: const Text(
+      child: AppText(
         'Cancel',
-        style: TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w500,
-        ),
+        variant: TextVariant.bodyMedium,
+        fontSize: 15,
+        fontWeight: FontWeight.w500,
       ),
     );
   }
@@ -444,14 +431,15 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
-        title: const Text('Confirm Status Update'),
+        title: AppText.titleMedium('Confirm Status Update'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            AppText(
               'Are you sure you want to mark this delivery as ${nextStatus.displayName}?',
-              style: const TextStyle(fontSize: 15),
+              variant: TextVariant.bodyMedium,
+              fontSize: 15,
             ),
             const SizedBox(height: 12),
             Container(
@@ -469,12 +457,9 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text(
+                    child: AppText.bodySmall(
                       _getStatusDescription(nextStatus),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.onSurfaceVariant,
-                      ),
+                      color: AppColors.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -488,7 +473,7 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
               HapticHelper.lightImpact();
               Navigator.of(context).pop(false);
             },
-            child: const Text('Cancel'),
+            child: AppText.bodyMedium('Cancel'),
           ),
           ElevatedButton(
             onPressed: () {
@@ -498,7 +483,7 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
             style: ElevatedButton.styleFrom(
               backgroundColor: nextStatus.statusColor,
             ),
-            child: const Text('Confirm'),
+            child: AppText.bodyMedium('Confirm', color: Colors.white),
           ),
         ],
       ),
@@ -516,7 +501,7 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     final snackBarController = scaffoldMessenger.showSnackBar(
       SnackBar(
-        content: Text('Failed to update status: $errorMessage'),
+        content: AppText.bodyMedium('Failed to update status: $errorMessage', color: Colors.white),
         backgroundColor: AppColors.error,
         duration: const Duration(seconds: 5),
         action: SnackBarAction(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_spacing.dart';
+import '../../../../core/widgets/app_text.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../../../escrow/domain/entities/escrow_status.dart';
 import '../widgets/bottom_navigation.dart';
@@ -140,7 +141,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       ],
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Secure Payment'),
+          title: AppText.titleLarge('Secure Payment'),
           backgroundColor: AppColors.surface,
           elevation: 0,
           leading: IconButton(
@@ -222,12 +223,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   ],
                 ),
                 AppSpacing.verticalSpacing(SpacingSize.sm),
-                Text(
+                AppText.bodyMedium(
                   steps[currentStep]['title'],
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  fontWeight: FontWeight.w500,
                 ),
               ],
             ),
@@ -261,11 +259,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: Text(
+                  child: AppText.bodyLarge(
                     currentStep == 0 ? 'Proceed to Payment' :
                     currentStep == 1 ? 'Confirm Payment Method' :
                     'Complete Payment',
-                    style: const TextStyle(fontSize: 16),
+                    color: Colors.white,
                   ),
                 ),
               ),
@@ -303,12 +301,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                const AppText(
                   'Order Summary',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  variant: TextVariant.titleMedium,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
                 AppSpacing.verticalSpacing(SpacingSize.lg),
                 Row(
@@ -332,37 +329,27 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          AppText.bodyLarge(
                             packageDetails['title']!,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            fontWeight: FontWeight.w600,
                           ),
-                          Text(
+                          AppText.bodyMedium(
                             packageDetails['route']!,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: AppColors.onSurfaceVariant,
-                            ),
+                            color: AppColors.onSurfaceVariant,
                           ),
-                          Text(
+                          AppText.bodyMedium(
                             'Traveler: ${packageDetails['traveler']}',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: AppColors.onSurfaceVariant,
-                            ),
+                            color: AppColors.onSurfaceVariant,
                           ),
                         ],
                       ),
                     ),
-                    Text(
+                    AppText(
                       packageDetails['price']!,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
-                      ),
+                      variant: TextVariant.titleMedium,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
                     ),
                   ],
                 ),
@@ -380,53 +367,50 @@ class _PaymentScreenState extends State<PaymentScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                const AppText(
                   'Price Breakdown',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  variant: TextVariant.titleMedium,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
                 AppSpacing.verticalSpacing(SpacingSize.lg),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    AppText.bodyMedium(
                       'Delivery Fee',
-                      style: TextStyle(color: AppColors.onSurfaceVariant),
+                      color: AppColors.onSurfaceVariant,
                     ),
-                    Text(packageDetails['deliveryFee']!),
+                    AppText.bodyMedium(packageDetails['deliveryFee']!),
                   ],
                 ),
                 AppSpacing.verticalSpacing(SpacingSize.sm),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    AppText.bodyMedium(
                       'Service Fee',
-                      style: TextStyle(color: AppColors.onSurfaceVariant),
+                      color: AppColors.onSurfaceVariant,
                     ),
-                    Text(packageDetails['serviceFee']!),
+                    AppText.bodyMedium(packageDetails['serviceFee']!),
                   ],
                 ),
                 const Divider(),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    const AppText(
                       'Total',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      variant: TextVariant.titleMedium,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
-                    Text(
+                    AppText(
                       packageDetails['total']!,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
-                      ),
+                      variant: TextVariant.titleMedium,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
                     ),
                   ],
                 ),
@@ -460,20 +444,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    AppText.bodyMedium(
                       'Escrow Protection',
-                      style: TextStyle(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
                     ),
-                    const Text(
+                    AppText.bodySmall(
                       'Your payment will be securely held until delivery is confirmed by both parties.',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.onSurfaceVariant,
-                      ),
+                      color: AppColors.onSurfaceVariant,
                     ),
                   ],
                 ),
@@ -494,12 +472,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                const AppText(
                   'Select Payment Method',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  variant: TextVariant.titleMedium,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
                 AppSpacing.verticalSpacing(SpacingSize.lg),
                 for (var method in paymentMethods) ...
@@ -539,19 +516,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
+                                  AppText.bodyLarge(
                                     method['name'],
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                    fontWeight: FontWeight.w600,
                                   ),
-                                  Text(
+                                  AppText.bodyMedium(
                                     method['description'],
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      color: AppColors.onSurfaceVariant,
-                                    ),
+                                    color: AppColors.onSurfaceVariant,
                                   ),
                                 ],
                               ),
@@ -563,13 +534,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                   color: AppColors.accent,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: const Text(
+                                child: AppText.bodySmall(
                                   'Popular',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                           ],
@@ -591,12 +559,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    AppText.bodyLarge(
                       'Bank Account Details',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      fontWeight: FontWeight.bold,
                     ),
                     AppSpacing.verticalSpacing(SpacingSize.lg),
                     TextFormField(
@@ -643,12 +608,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         children: [
                           Row(
                             children: [
-                              const Text(
+                              AppText.bodyLarge(
                                 'Wallet Balance',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                fontWeight: FontWeight.bold,
                               ),
                               const Spacer(),
                               Icon(
@@ -657,13 +619,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                 size: 20,
                               ),
                               const SizedBox(width: 4),
-                              Text(
+                              AppText(
                                 _getEscrowStatusLabel(escrowStatus),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: _getEscrowStatusColor(escrowStatus),
-                                ),
+                                variant: TextVariant.bodySmall,
+                                fontWeight: FontWeight.w600,
+                                color: _getEscrowStatusColor(escrowStatus),
                               ),
                             ],
                           ),
@@ -671,16 +631,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
+                              AppText.bodyMedium(
                                 'Available Balance',
-                                style: TextStyle(color: AppColors.onSurfaceVariant),
+                                color: AppColors.onSurfaceVariant,
                               ),
-                              Text(
+                              AppText.bodyLarge(
                                 '₦${walletState.data!.availableBalance.toStringAsFixed(2)}',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                                fontWeight: FontWeight.w600,
                               ),
                             ],
                           ),
@@ -688,17 +645,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
+                              AppText.bodyMedium(
                                 'Pending (Escrow)',
-                                style: TextStyle(color: AppColors.onSurfaceVariant),
+                                color: AppColors.onSurfaceVariant,
                               ),
-                              Text(
+                              AppText.bodyLarge(
                                 '₦${walletState.data!.pendingBalance.toStringAsFixed(2)}',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.accent,
-                                ),
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.accent,
                               ),
                             ],
                           ),
@@ -727,36 +681,29 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       ),
                     ),
                     AppSpacing.verticalSpacing(SpacingSize.lg),
-                    const Text(
+                    const AppText(
                       'Securing Your Payment',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      variant: TextVariant.titleMedium,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
                     AppSpacing.verticalSpacing(SpacingSize.sm),
-                    Text(
+                    AppText.bodyMedium(
                       'Your ${packageDetails['total']} is being deposited into our secure escrow system',
                       textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: AppColors.onSurfaceVariant,
-                    fontSize: 14,
-                  ),
-                ),
-                AppSpacing.verticalSpacing(SpacingSize.xxl),
-                LinearProgressIndicator(
-                  value: 0.75,
-                  backgroundColor: AppColors.surfaceVariant,
-                  valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
-                ),
-                AppSpacing.verticalSpacing(SpacingSize.lg),
-                const Text(
-                  'Processing payment...',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.onSurfaceVariant,
-                  ),
-                ),
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                    AppSpacing.verticalSpacing(SpacingSize.xxl),
+                    LinearProgressIndicator(
+                      value: 0.75,
+                      backgroundColor: AppColors.surfaceVariant,
+                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                    ),
+                    AppSpacing.verticalSpacing(SpacingSize.lg),
+                    AppText.bodySmall(
+                      'Processing payment...',
+                      color: AppColors.onSurfaceVariant,
+                    ),
               ],
             ),
           ),
@@ -771,12 +718,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                AppText.bodyLarge(
                   'How Escrow Protection Works',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  fontWeight: FontWeight.bold,
                 ),
                 AppSpacing.verticalSpacing(SpacingSize.lg),
                 _buildEscrowStep(
@@ -877,13 +821,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
             borderRadius: BorderRadius.circular(12),
           ),
           child: Center(
-            child: Text(
+            child: AppText.bodySmall(
               step.toString(),
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ),
@@ -892,19 +833,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              AppText.bodyMedium(
                 title,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
+                fontWeight: FontWeight.w600,
               ),
-              Text(
+              AppText.bodySmall(
                 description,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.onSurfaceVariant,
-                ),
+                color: AppColors.onSurfaceVariant,
               ),
             ],
           ),
@@ -930,20 +865,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
             size: 40,
           ),
         ),
-        const Text(
+        AppText.headlineSmall(
           'Payment Secured!',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
+          fontWeight: FontWeight.bold,
         ),
         AppSpacing.verticalSpacing(SpacingSize.sm),
-        Text(
+        AppText.bodyMedium(
           'Your ${packageDetails['total']} has been successfully deposited into escrow',
           textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: AppColors.onSurfaceVariant,
-          ),
+          color: AppColors.onSurfaceVariant,
         ),
         AppSpacing.verticalSpacing(SpacingSize.xxl),
 
@@ -953,12 +883,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                AppText.bodyLarge(
                   'What\'s Next?',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  fontWeight: FontWeight.bold,
                 ),
                 AppSpacing.verticalSpacing(SpacingSize.lg),
                 Container(
@@ -979,19 +906,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            AppText.bodyMedium(
                               'Waiting for traveler confirmation',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
+                              fontWeight: FontWeight.w500,
                             ),
-                            const Text(
+                            AppText.bodySmall(
                               'You\'ll be notified when accepted',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppColors.onSurfaceVariant,
-                              ),
+                              color: AppColors.onSurfaceVariant,
                             ),
                           ],
                         ),
@@ -1018,19 +939,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            AppText.bodyMedium(
                               'Track your package',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
+                              fontWeight: FontWeight.w500,
                             ),
-                            const Text(
+                            AppText.bodySmall(
                               'Real-time updates via SMS & app',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppColors.onSurfaceVariant,
-                              ),
+                              color: AppColors.onSurfaceVariant,
                             ),
                           ],
                         ),
@@ -1061,9 +976,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text(
+                child: AppText.bodyLarge(
                   'Track Package',
-                  style: TextStyle(fontSize: 16),
+                  color: Colors.white,
                 ),
               ),
             ),
@@ -1082,9 +997,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text(
+                child: AppText.bodyLarge(
                   'Message Traveler',
-                  style: TextStyle(fontSize: 16),
+                  color: AppColors.primary,
                 ),
               ),
             ),

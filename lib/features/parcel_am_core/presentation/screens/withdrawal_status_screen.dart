@@ -101,7 +101,7 @@ class _WithdrawalStatusScreenState extends State<WithdrawalStatusScreen> {
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$label copied to clipboard'),
+        content: AppText.bodyMedium('$label copied to clipboard', color: Colors.white),
         duration: const Duration(seconds: 2),
       ),
     );
@@ -111,7 +111,7 @@ class _WithdrawalStatusScreenState extends State<WithdrawalStatusScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Withdrawal Status'),
+        title: AppText.titleLarge('Withdrawal Status'),
         backgroundColor: AppColors.surface,
         elevation: 0,
       ),
@@ -128,7 +128,7 @@ class _WithdrawalStatusScreenState extends State<WithdrawalStatusScreen> {
                 children: [
                   const Icon(Icons.error_outline, size: 48, color: Colors.red),
                   AppSpacing.verticalSpacing(SpacingSize.md),
-                  Text(state.errorMessage ?? 'Failed to load withdrawal status'),
+                  AppText.bodyMedium(state.errorMessage ?? 'Failed to load withdrawal status'),
                   AppSpacing.verticalSpacing(SpacingSize.md),
                   ElevatedButton(
                     onPressed: () {
@@ -136,7 +136,7 @@ class _WithdrawalStatusScreenState extends State<WithdrawalStatusScreen> {
                             WithdrawalStatusWatchRequested(withdrawalId: widget.withdrawalId),
                           );
                     },
-                    child: const Text('Retry'),
+                    child: AppText.bodyMedium('Retry', color: Colors.white),
                   ),
                 ],
               ),
@@ -145,8 +145,8 @@ class _WithdrawalStatusScreenState extends State<WithdrawalStatusScreen> {
 
           final withdrawalOrder = state.data?.withdrawalOrder;
           if (withdrawalOrder == null) {
-            return const Center(
-              child: Text('Withdrawal order not found'),
+            return Center(
+              child: AppText.bodyMedium('Withdrawal order not found'),
             );
           }
 
@@ -171,22 +171,18 @@ class _WithdrawalStatusScreenState extends State<WithdrawalStatusScreen> {
                           color: statusColor,
                         ),
                         AppSpacing.verticalSpacing(SpacingSize.md),
-                        Text(
+                        AppText(
                           withdrawalOrder.status.name.toUpperCase(),
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: statusColor,
-                          ),
+                          variant: TextVariant.titleLarge,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: statusColor,
                         ),
                         AppSpacing.verticalSpacing(SpacingSize.sm),
-                        Text(
+                        AppText.bodyMedium(
                           _getStatusMessage(withdrawalOrder.status),
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey.shade700,
-                          ),
+                          color: Colors.grey.shade700,
                         ),
                         if (withdrawalOrder.status == WithdrawalStatus.pending ||
                             withdrawalOrder.status == WithdrawalStatus.processing) ...[
@@ -207,20 +203,14 @@ class _WithdrawalStatusScreenState extends State<WithdrawalStatusScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
+                        AppText.bodyLarge(
                           'Amount',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: AppColors.onSurfaceVariant,
-                          ),
+                          color: AppColors.onSurfaceVariant,
                         ),
-                        Text(
+                        AppText.headlineSmall(
                           _currencyFormat.format(withdrawalOrder.amount),
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
-                          ),
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
                         ),
                       ],
                     ),
@@ -299,21 +289,15 @@ class _WithdrawalStatusScreenState extends State<WithdrawalStatusScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
+                              AppText.bodyMedium(
                                 'Failure Reason',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.red.shade900,
-                                ),
+                                fontWeight: FontWeight.bold,
+                                color: Colors.red.shade900,
                               ),
                               AppSpacing.verticalSpacing(SpacingSize.xs),
-                              Text(
+                              AppText.bodyMedium(
                                 withdrawalOrder.failureReason!,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.red.shade900,
-                                ),
+                                color: Colors.red.shade900,
                               ),
                             ],
                           ),
@@ -341,21 +325,15 @@ class _WithdrawalStatusScreenState extends State<WithdrawalStatusScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
+                              AppText.bodyMedium(
                                 'Reversal Reason',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.purple.shade900,
-                                ),
+                                fontWeight: FontWeight.bold,
+                                color: Colors.purple.shade900,
                               ),
                               AppSpacing.verticalSpacing(SpacingSize.xs),
-                              Text(
+                              AppText.bodyMedium(
                                 withdrawalOrder.reversalReason!,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.purple.shade900,
-                                ),
+                                color: Colors.purple.shade900,
                               ),
                             ],
                           ),
@@ -375,7 +353,7 @@ class _WithdrawalStatusScreenState extends State<WithdrawalStatusScreen> {
                       onPressed: () {
                         sl<NavigationService>().navigateAndReplaceAll(Routes.home);
                       },
-                      child: const Text('Back to Wallet'),
+                      child: const AppText('Back to Wallet', color: AppColors.white),
                     ),
                   ),
 
@@ -387,7 +365,7 @@ class _WithdrawalStatusScreenState extends State<WithdrawalStatusScreen> {
                         // Navigate back to wallet with retry option
                         sl<NavigationService>().navigateAndReplaceAll(Routes.home);
                       },
-                      child: const Text('Try Again'),
+                      child: const AppText('Try Again', color: AppColors.white),
                     ),
                   ),
               ],
@@ -403,21 +381,15 @@ class _WithdrawalStatusScreenState extends State<WithdrawalStatusScreen> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        AppText.bodyMedium(
           label,
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey.shade700,
-          ),
+          color: Colors.grey.shade700,
         ),
         Flexible(
-          child: Text(
+          child: AppText.bodyMedium(
             value,
             textAlign: TextAlign.right,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],
@@ -429,26 +401,19 @@ class _WithdrawalStatusScreenState extends State<WithdrawalStatusScreen> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        AppText.bodyMedium(
           label,
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey.shade700,
-          ),
+          color: Colors.grey.shade700,
         ),
         Flexible(
           child: Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               Flexible(
-                child: Text(
+                child: AppText(
                   value,
                   textAlign: TextAlign.right,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'monospace',
-                  ),
+                  fontWeight: FontWeight.w600,
                 ),
               ),
               IconButton(

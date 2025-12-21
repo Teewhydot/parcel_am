@@ -3,6 +3,7 @@ import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_scaffold.dart';
+import '../../../../core/widgets/app_text.dart';
 import '../../../../injection_container.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -49,13 +50,12 @@ class _SettingsSection extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Text(
+          child: AppText(
             title,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.primary,
-            ),
+            variant: TextVariant.bodyMedium,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppColors.primary,
           ),
         ),
         ...children,
@@ -91,18 +91,13 @@ class _SettingsTile extends StatelessWidget {
           color: AppColors.primary,
         ),
       ),
-      title: Text(
+      title: AppText.bodyLarge(
         title,
-        style: const TextStyle(
-          fontWeight: FontWeight.w500,
-        ),
+        fontWeight: FontWeight.w500,
       ),
-      subtitle: Text(
+      subtitle: AppText.bodySmall(
         subtitle,
-        style: TextStyle(
-          fontSize: 12,
-          color: Colors.grey[600],
-        ),
+        color: Colors.grey[600],
       ),
       trailing: const Icon(Icons.chevron_right),
       onTap: onTap,

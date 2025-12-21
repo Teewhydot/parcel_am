@@ -4,6 +4,7 @@ import '../../../../core/bloc/base/base_state.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_spacing.dart';
+import '../../../../core/widgets/app_text.dart';
 import '../bloc/passkey_bloc.dart';
 import '../bloc/passkey_data.dart';
 import '../bloc/passkey_event.dart';
@@ -25,7 +26,7 @@ class PasskeySetupCard extends StatelessWidget {
         if (state.isSuccess) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(state.successMessage ?? 'Passkey added successfully!'),
+              content: AppText.bodyMedium(state.successMessage ?? 'Passkey added successfully!', color: Colors.white),
               backgroundColor: AppColors.success,
             ),
           );
@@ -33,7 +34,7 @@ class PasskeySetupCard extends StatelessWidget {
         } else if (state.isError) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(state.errorMessage ?? 'Failed to add passkey'),
+              content: AppText.bodyMedium(state.errorMessage ?? 'Failed to add passkey', color: Colors.white),
               backgroundColor: AppColors.error,
             ),
           );
@@ -87,21 +88,17 @@ class PasskeySetupCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        AppText(
                           'Enable Passkey Login',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.onBackground,
-                          ),
+                          variant: TextVariant.titleMedium,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.onBackground,
                         ),
                         AppSpacing.verticalSpacing(SpacingSize.xs),
-                        Text(
+                        AppText.bodyMedium(
                           'Quick and secure sign-in with biometrics',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: AppColors.onSurfaceVariant,
-                          ),
+                          color: AppColors.onSurfaceVariant,
                         ),
                       ],
                     ),
@@ -109,13 +106,9 @@ class PasskeySetupCard extends StatelessWidget {
                 ],
               ),
               AppSpacing.verticalSpacing(SpacingSize.lg),
-              const Text(
+              AppText.bodyMedium(
                 'Passkeys let you sign in with your fingerprint, face, or screen lock instead of a password.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.onSurface,
-                  height: 1.5,
-                ),
+                color: AppColors.onSurface,
               ),
               AppSpacing.verticalSpacing(SpacingSize.lg),
               AppButton.primary(
@@ -129,7 +122,7 @@ class PasskeySetupCard extends StatelessWidget {
                 loading: state.isLoading,
                 fullWidth: true,
                 leadingIcon: const Icon(Icons.add, size: 20),
-                child: const Text('Add Passkey'),
+                child: AppText.bodyMedium('Add Passkey', color: Colors.white),
               ),
             ],
           ),

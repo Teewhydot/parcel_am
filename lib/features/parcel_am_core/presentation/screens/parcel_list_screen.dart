@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_spacing.dart';
+import '../../../../core/widgets/app_text.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
@@ -56,7 +57,7 @@ class _ParcelListScreenState extends State<ParcelListScreen> {
       value: _parcelBloc,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('My Parcels'),
+          title: AppText.titleLarge('My Parcels'),
           backgroundColor: AppColors.surface,
           elevation: 0,
           actions: [
@@ -83,14 +84,11 @@ class _ParcelListScreenState extends State<ParcelListScreen> {
                       color: Colors.red,
                     ),
                     AppSpacing.verticalSpacing(SpacingSize.md),
-                    Text(
-                      state.errorMessage,
-                      style: const TextStyle(fontSize: 16),
-                    ),
+                    AppText.bodyLarge(state.errorMessage),
                     AppSpacing.verticalSpacing(SpacingSize.lg),
                     ElevatedButton(
                       onPressed: _refreshParcels,
-                      child: const Text('Retry'),
+                      child: AppText.bodyMedium('Retry', color: Colors.white),
                     ),
                   ],
                 ),
@@ -110,19 +108,16 @@ class _ParcelListScreenState extends State<ParcelListScreen> {
                       color: AppColors.onSurfaceVariant.withValues(alpha: 0.5),
                     ),
                     AppSpacing.verticalSpacing(SpacingSize.lg),
-                    const Text(
+                    AppText(
                       'No parcels yet',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      variant: TextVariant.titleLarge,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
                     ),
                     AppSpacing.verticalSpacing(SpacingSize.sm),
-                    const Text(
+                    AppText.bodyMedium(
                       'Create your first parcel to get started',
-                      style: TextStyle(
-                        color: AppColors.onSurfaceVariant,
-                      ),
+                      color: AppColors.onSurfaceVariant,
                     ),
                     AppSpacing.verticalSpacing(SpacingSize.lg),
                     ElevatedButton.icon(
@@ -130,7 +125,7 @@ class _ParcelListScreenState extends State<ParcelListScreen> {
                         sl<NavigationService>().navigateTo(Routes.createParcel);
                       },
                       icon: const Icon(Icons.add),
-                      label: const Text('Create Parcel'),
+                      label: AppText.bodyMedium('Create Parcel', color: Colors.white),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
@@ -212,19 +207,13 @@ class _ParcelCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        AppText.bodyLarge(
                           parcel.description ?? 'Parcel #${parcel.id.substring(0, 8)}',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          fontWeight: FontWeight.w600,
                         ),
-                        Text(
+                        AppText.bodyMedium(
                           '${parcel.route.origin} → ${parcel.route.destination}',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: AppColors.onSurfaceVariant,
-                          ),
+                          color: AppColors.onSurfaceVariant,
                         ),
                       ],
                     ),
@@ -276,23 +265,17 @@ class _ParcelCard extends StatelessWidget {
                         color: _getStatusColor(parcel.status),
                       ),
                       AppSpacing.horizontalSpacing(SpacingSize.sm),
-                      Text(
+                      AppText.bodySmall(
                         'Escrow Protected',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: _getStatusColor(parcel.status),
-                        ),
+                        fontWeight: FontWeight.w500,
+                        color: _getStatusColor(parcel.status),
                       ),
                       const Spacer(),
                       if (parcel.price != null)
-                        Text(
+                        AppText.bodySmall(
                           '₦${parcel.price!.toStringAsFixed(2)}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: _getStatusColor(parcel.status),
-                          ),
+                          fontWeight: FontWeight.w600,
+                          color: _getStatusColor(parcel.status),
                         ),
                     ],
                   ),
@@ -311,12 +294,9 @@ class _ParcelCard extends StatelessWidget {
         Icon(icon, size: 16, color: AppColors.onSurfaceVariant),
         const SizedBox(width: 4),
         Expanded(
-          child: Text(
+          child: AppText.bodySmall(
             text,
-            style: const TextStyle(
-              fontSize: 12,
-              color: AppColors.onSurfaceVariant,
-            ),
+            color: AppColors.onSurfaceVariant,
             overflow: TextOverflow.ellipsis,
           ),
         ),
@@ -334,13 +314,12 @@ class _ParcelCard extends StatelessWidget {
           color: _getStatusColor(status).withValues(alpha: 0.3),
         ),
       ),
-      child: Text(
+      child: AppText(
         status.displayName,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          color: _getStatusColor(status),
-        ),
+        variant: TextVariant.bodySmall,
+        fontSize: 11,
+        fontWeight: FontWeight.w600,
+        color: _getStatusColor(status),
       ),
     );
   }

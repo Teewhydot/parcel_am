@@ -52,7 +52,7 @@ class _WalletScreenState extends State<WalletScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Wallet'),
+        title: AppText.titleLarge('My Wallet'),
         backgroundColor: AppColors.surface,
         elevation: 0,
       ),
@@ -63,7 +63,7 @@ class _WalletScreenState extends State<WalletScreen> {
           if (state is AsyncErrorState<WalletData>) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(state.errorMessage),
+                content: AppText.bodyMedium(state.errorMessage, color: Colors.white),
                 backgroundColor: Colors.red,
                 duration: const Duration(seconds: 4),
               ),
@@ -87,13 +87,13 @@ class _WalletScreenState extends State<WalletScreen> {
                 children: [
                   const Icon(Icons.error_outline, size: 48, color: Colors.red),
                   AppSpacing.verticalSpacing(SpacingSize.md),
-                  Text(state.errorMessage ?? 'Failed to load wallet'),
+                  AppText.bodyMedium(state.errorMessage ?? 'Failed to load wallet'),
                   AppSpacing.verticalSpacing(SpacingSize.md),
                   ElevatedButton(
                     onPressed: () {
                       context.read<WalletBloc>().add(WalletRefreshRequested(widget.userId));
                     },
-                    child: const Text('Retry'),
+                    child: AppText.bodyMedium('Retry', color: Colors.white),
                   ),
                 ],
               ),
@@ -127,12 +127,9 @@ class _WalletScreenState extends State<WalletScreen> {
                           Icon(Icons.wifi_off, color: Colors.orange.shade700),
                           AppSpacing.horizontalSpacing(SpacingSize.sm),
                           Expanded(
-                            child: Text(
+                            child: AppText.bodyMedium(
                               'No internet connection. Wallet operations are disabled.',
-                              style: TextStyle(
-                                color: Colors.orange.shade900,
-                                fontSize: 14,
-                              ),
+                              color: Colors.orange.shade900,
                             ),
                           ),
                         ],
@@ -143,21 +140,17 @@ class _WalletScreenState extends State<WalletScreen> {
                       padding: AppSpacing.paddingXXL,
                       child: Column(
                         children: [
-                          const Text(
+                          AppText.bodyLarge(
                             'Available Balance',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: AppColors.onSurfaceVariant,
-                            ),
+                            color: AppColors.onSurfaceVariant,
                           ),
                           AppSpacing.verticalSpacing(SpacingSize.sm),
-                          Text(
+                          AppText(
                             '${walletData.currency} ${walletData.availableBalance.toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              fontSize: 36,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primary,
-                            ),
+                            variant: TextVariant.headlineLarge,
+                            fontSize: 36,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
                           ),
                           AppSpacing.verticalSpacing(SpacingSize.lg),
                           Row(
@@ -165,38 +158,26 @@ class _WalletScreenState extends State<WalletScreen> {
                             children: [
                               Column(
                                 children: [
-                                  const Text(
+                                  AppText.bodySmall(
                                     'Total Balance',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: AppColors.onSurfaceVariant,
-                                    ),
+                                    color: AppColors.onSurfaceVariant,
                                   ),
-                                  Text(
+                                  AppText.bodyLarge(
                                     '${walletData.currency} ${walletData.balance.toStringAsFixed(2)}',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ],
                               ),
                               Column(
                                 children: [
-                                  const Text(
+                                  AppText.bodySmall(
                                     'Pending Balance',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: AppColors.onSurfaceVariant,
-                                    ),
+                                    color: AppColors.onSurfaceVariant,
                                   ),
-                                  Text(
+                                  AppText.bodyLarge(
                                     '${walletData.currency} ${walletData.escrowBalance.toStringAsFixed(2)}',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.orange,
-                                    ),
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.orange,
                                   ),
                                 ],
                               ),
@@ -252,12 +233,11 @@ class _WalletScreenState extends State<WalletScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      AppText(
                         'Recent Transactions',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        variant: TextVariant.titleMedium,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
                       IconButton(
                         icon: const Icon(Icons.refresh),
@@ -308,15 +288,12 @@ class _WalletScreenState extends State<WalletScreen> {
                               color: Colors.grey[400],
                             ),
                             AppSpacing.verticalSpacing(SpacingSize.md),
-                            Text(
+                            AppText.bodyLarge(
                               walletData.wallet?.activeFilter.hasActiveFilters ??
                                       false
                                   ? 'No transactions found'
                                   : 'No transactions yet',
-                              style: const TextStyle(
-                                color: AppColors.onSurfaceVariant,
-                                fontSize: 16,
-                              ),
+                              color: AppColors.onSurfaceVariant,
                             ),
                           ],
                         ),
@@ -361,7 +338,7 @@ class _WalletScreenState extends State<WalletScreen> {
                                         const WalletTransactionLoadMoreRequested(),
                                       );
                                 },
-                                child: const Text('Load More'),
+                                child: AppText.bodyMedium('Load More', color: AppColors.primary),
                               ),
                       ),
                     ),
@@ -487,7 +464,7 @@ class _FundingModalContentState extends State<_FundingModalContent> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to initialize payment: $e'),
+          content: AppText.bodyMedium('Failed to initialize payment: $e', color: Colors.white),
           backgroundColor: AppColors.error,
           duration: const Duration(seconds: 4),
         ),
@@ -538,12 +515,11 @@ class _FundingModalContentState extends State<_FundingModalContent> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
+                        AppText(
                           'Add Money to Wallet',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          variant: TextVariant.titleLarge,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
                         ),
                         IconButton(
                           icon: const Icon(Icons.close),

@@ -208,7 +208,7 @@ class _WalletBalanceCardState extends State<WalletBalanceCard> {
                       context.read<WalletBloc>().add(WalletStarted(userId));
                     }
                   },
-                  child: const Text('Retry'),
+                  child: AppText.bodyMedium('Retry'),
                 ),
               ],
             ),

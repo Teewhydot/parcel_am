@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/domain/entities/kyc_status.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/bloc/base/base_state.dart';
+import '../../../../core/widgets/app_text.dart';
 import '../../../parcel_am_core/presentation/bloc/auth/auth_bloc.dart';
 import '../../../parcel_am_core/presentation/bloc/auth/auth_data.dart';
 import 'kyc_status_widgets.dart';
@@ -29,7 +30,7 @@ class AppBarWithKyc extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      title: Text(title),
+      title: AppText.titleLarge(title),
       leading: leading,
       backgroundColor: backgroundColor ?? AppColors.surface,
       elevation: elevation,
@@ -87,12 +88,13 @@ class ProfileHeaderWithKyc extends StatelessWidget {
                       backgroundImage: photoUrl != null 
                           ? NetworkImage(photoUrl!) 
                           : null,
-                      child: photoUrl == null 
-                          ? Text(
-                              displayName.isNotEmpty 
-                                  ? displayName[0].toUpperCase() 
+                      child: photoUrl == null
+                          ? AppText(
+                              displayName.isNotEmpty
+                                  ? displayName[0].toUpperCase()
                                   : 'U',
-                              style: const TextStyle(fontSize: 32),
+                              variant: TextVariant.headlineMedium,
+                              fontSize: 32,
                             )
                           : null,
                     ),
@@ -108,20 +110,18 @@ class ProfileHeaderWithKyc extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 16),
-              Text(
+              AppText(
                 displayName,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
+                variant: TextVariant.titleLarge,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
               ),
               const SizedBox(height: 4),
-              Text(
+              AppText(
                 email,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
+                variant: TextVariant.bodyMedium,
+                fontSize: 14,
+                color: Colors.grey[600],
               ),
             ],
           ),

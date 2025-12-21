@@ -79,7 +79,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                   arguments: {'userId': widget.userId},
                 );
               },
-              child: const Text('Manage Bank Accounts'),
+              child: AppText.bodyMedium('Manage Bank Accounts', color: AppColors.primary),
             ),
           ],
         ),
@@ -94,11 +94,11 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
         backgroundColor: AppColors.primary.withOpacity(0.1),
         child: Icon(Icons.account_balance, color: AppColors.primary),
       ),
-      title: Text(
+      title: AppText.bodyMedium(
         account.accountName,
-        style: const TextStyle(fontWeight: FontWeight.w600),
+        fontWeight: FontWeight.w600,
       ),
-      subtitle: Text(
+      subtitle: AppText.bodySmall(
         '${account.bankName} - ${account.maskedAccountNumber}',
       ),
       onTap: () {
@@ -117,19 +117,19 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Confirm Withdrawal'),
+        title: AppText.titleMedium('Confirm Withdrawal', fontWeight: FontWeight.w600),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            AppText.bodyLarge(
               'Amount: ${_currencyFormat.format(amount)}',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              fontWeight: FontWeight.w600,
             ),
             AppSpacing.verticalSpacing(SpacingSize.sm),
-            Text('Bank: ${bankAccount.bankName}'),
-            Text('Account: ${bankAccount.accountName}'),
-            Text('Number: ${bankAccount.maskedAccountNumber}'),
+            AppText.bodyMedium('Bank: ${bankAccount.bankName}'),
+            AppText.bodyMedium('Account: ${bankAccount.accountName}'),
+            AppText.bodyMedium('Number: ${bankAccount.maskedAccountNumber}'),
             AppSpacing.verticalSpacing(SpacingSize.md),
             Container(
               padding: AppSpacing.paddingMD,
@@ -143,12 +143,9 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                   Icon(Icons.info_outline, color: Colors.orange.shade700, size: 20),
                   AppSpacing.horizontalSpacing(SpacingSize.sm),
                   Expanded(
-                    child: Text(
+                    child: AppText.bodySmall(
                       'Funds will be transferred to your account within 24 hours',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.orange.shade900,
-                      ),
+                      color: Colors.orange.shade900,
                     ),
                   ),
                 ],
@@ -159,14 +156,14 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: AppText.bodyMedium('Cancel', color: AppColors.primary),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
               _initiateWithdrawal(amount, bankAccount);
             },
-            child: const Text('Confirm'),
+            child: AppText.bodyMedium('Confirm', color: Colors.white),
           ),
         ],
       ),
@@ -188,7 +185,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Withdraw Funds'),
+        title: AppText.titleLarge('Withdraw Funds'),
         backgroundColor: AppColors.surface,
         elevation: 0,
       ),
@@ -209,7 +206,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
               if (state is AsyncErrorState<WithdrawalData>) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(state.errorMessage),
+                    content: AppText.bodyMedium(state.errorMessage, color: Colors.white),
                     backgroundColor: Colors.red,
                     duration: const Duration(seconds: 4),
                   ),
@@ -245,21 +242,17 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                               padding: AppSpacing.paddingLG,
                               child: Column(
                                 children: [
-                                  const Text(
+                                  AppText.bodyMedium(
                                     'Available Balance',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: AppColors.onSurfaceVariant,
-                                    ),
+                                    color: AppColors.onSurfaceVariant,
                                   ),
                                   AppSpacing.verticalSpacing(SpacingSize.sm),
-                                  Text(
+                                  AppText(
                                     _currencyFormat.format(widget.availableBalance),
-                                    style: const TextStyle(
-                                      fontSize: 32,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.primary,
-                                    ),
+                                    variant: TextVariant.headlineMedium,
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primary,
                                   ),
                                 ],
                               ),
@@ -309,12 +302,9 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                         ),
 
                         AppSpacing.verticalSpacing(SpacingSize.sm),
-                        Text(
+                        AppText.bodySmall(
                           'Min: ₦100 • Max: ₦500,000',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
-                          ),
+                          color: Colors.grey.shade600,
                         ),
 
                         AppSpacing.verticalSpacing(SpacingSize.xl),
@@ -329,11 +319,11 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                                 backgroundColor: AppColors.primary.withOpacity(0.1),
                                 child: Icon(Icons.account_balance, color: AppColors.primary),
                               ),
-                              title: Text(
+                              title: AppText.bodyMedium(
                                 withdrawalData.selectedBankAccount!.accountName,
-                                style: const TextStyle(fontWeight: FontWeight.w600),
+                                fontWeight: FontWeight.w600,
                               ),
-                              subtitle: Text(
+                              subtitle: AppText.bodySmall(
                                 '${withdrawalData.selectedBankAccount!.bankName} - ${withdrawalData.selectedBankAccount!.maskedAccountNumber}',
                               ),
                               trailing: IconButton(
@@ -356,7 +346,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                                       )
                                   : null,
                               icon: const Icon(Icons.account_balance),
-                              label: const Text('Select Bank Account'),
+                              label: AppText.bodyMedium('Select Bank Account', color: AppColors.primary),
                             ),
                           ),
 
@@ -374,12 +364,9 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                                 Icon(Icons.info_outline, color: Colors.orange.shade700),
                                 AppSpacing.horizontalSpacing(SpacingSize.sm),
                                 Expanded(
-                                  child: Text(
+                                  child: AppText.bodyMedium(
                                     'Please add a bank account first',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.orange.shade900,
-                                    ),
+                                    color: Colors.orange.shade900,
                                   ),
                                 ),
                               ],
@@ -420,7 +407,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                                   }
                                 : null,
                             loading: withdrawalData.isInitiating,
-                            child: const Text('Withdraw'),
+                            child: const AppText('Withdraw', color: AppColors.white),
                           ),
                         ),
                       ],

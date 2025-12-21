@@ -7,6 +7,7 @@ import '../bloc/parcel/parcel_bloc.dart';
 import '../bloc/parcel/parcel_event.dart';
 import '../bloc/parcel/parcel_state.dart';
 import '../../domain/entities/parcel_entity.dart';
+import '../../../../core/widgets/app_text.dart';
 import 'delivery_card.dart';
 
 /// My Deliveries tab showing parcels accepted by the current user as courier.
@@ -52,8 +53,9 @@ class _MyDeliveriesTabState extends State<MyDeliveriesTab> {
     if (nextStatus == null || !currentStatus.canProgressToNextStatus) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
+          content: AppText.bodyMedium(
             'Cannot update status from ${currentStatus.displayName}',
+            color: Colors.white,
           ),
           backgroundColor: AppColors.error,
         ),
@@ -119,20 +121,17 @@ class _MyDeliveriesTabState extends State<MyDeliveriesTab> {
                   color: AppColors.error,
                 ),
                 const SizedBox(height: 16),
-                const Text(
+                AppText(
                   'Failed to load deliveries',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  variant: TextVariant.titleMedium,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
                 ),
                 const SizedBox(height: 8),
-                Text(
+                AppText.bodyMedium(
                   state.errorMessage,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: AppColors.onSurfaceVariant,
-                  ),
+                  color: AppColors.onSurfaceVariant,
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton(
@@ -140,7 +139,7 @@ class _MyDeliveriesTabState extends State<MyDeliveriesTab> {
                     // Retry loading accepted parcels
                     // Note: Would need userId from auth context
                   },
-                  child: const Text('Retry'),
+                  child: AppText.bodyMedium('Retry', color: Colors.white),
                 ),
               ],
             ),
@@ -184,12 +183,9 @@ class _MyDeliveriesTabState extends State<MyDeliveriesTab> {
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: Text(
+                  child: AppText.bodyMedium(
                     '${filteredParcels.length} delivery${filteredParcels.length == 1 ? '' : 'ies'}',
-                    style: TextStyle(
-                      color: AppColors.onSurfaceVariant,
-                      fontSize: 14,
-                    ),
+                    color: AppColors.onSurfaceVariant,
                   ),
                 ),
               ),
@@ -247,13 +243,10 @@ class _MyDeliveriesTabState extends State<MyDeliveriesTab> {
             color: AppColors.onSurfaceVariant,
           ),
           const SizedBox(width: 8),
-          Text(
+          AppText.bodyMedium(
             'Filter:',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: AppColors.onSurfaceVariant,
-            ),
+            fontWeight: FontWeight.w500,
+            color: AppColors.onSurfaceVariant,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -270,12 +263,9 @@ class _MyDeliveriesTabState extends State<MyDeliveriesTab> {
                 items: _filterOptions.map((filter) {
                   return DropdownMenuItem<String>(
                     value: filter,
-                    child: Text(
+                    child: AppText.bodyMedium(
                       filter,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      fontWeight: FontWeight.w500,
                     ),
                   );
                 }).toList(),
@@ -310,19 +300,16 @@ class _MyDeliveriesTabState extends State<MyDeliveriesTab> {
             color: AppColors.onSurfaceVariant,
           ),
           const SizedBox(height: 16),
-          Text(
+          AppText(
             title,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
+            variant: TextVariant.titleMedium,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
           ),
           const SizedBox(height: 8),
-          Text(
+          AppText.bodyMedium(
             subtitle,
-            style: TextStyle(
-              color: AppColors.onSurfaceVariant,
-            ),
+            color: AppColors.onSurfaceVariant,
           ),
         ],
       ),
@@ -363,12 +350,11 @@ class _StatusUpdateBottomSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          const Text(
+          AppText(
             'Update Delivery Status',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
+            variant: TextVariant.titleLarge,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
           ),
           const SizedBox(height: 16),
           Container(
@@ -391,20 +377,14 @@ class _StatusUpdateBottomSheet extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          AppText.bodyMedium(
                             'Current: ${currentStatus.displayName}',
-                            style: TextStyle(
-                              color: AppColors.onSurfaceVariant,
-                              fontSize: 14,
-                            ),
+                            color: AppColors.onSurfaceVariant,
                           ),
                           const SizedBox(height: 4),
-                          Text(
+                          AppText.bodyLarge(
                             'Next: ${nextStatus.displayName}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
-                            ),
+                            fontWeight: FontWeight.w600,
                           ),
                         ],
                       ),
@@ -415,12 +395,9 @@ class _StatusUpdateBottomSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          Text(
+          AppText.bodyMedium(
             'Package: ${parcel.category ?? 'Package'} #${parcel.id.substring(0, 8)}',
-            style: TextStyle(
-              color: AppColors.onSurfaceVariant,
-              fontSize: 14,
-            ),
+            color: AppColors.onSurfaceVariant,
           ),
           const SizedBox(height: 24),
           Row(
@@ -428,7 +405,7 @@ class _StatusUpdateBottomSheet extends StatelessWidget {
               Expanded(
                 child: OutlinedButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
+                  child: AppText.bodyMedium('Cancel', color: AppColors.primary),
                 ),
               ),
               const SizedBox(width: 16),
@@ -438,9 +415,9 @@ class _StatusUpdateBottomSheet extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                   ),
-                  child: const Text(
+                  child: AppText.bodyMedium(
                     'Confirm',
-                    style: TextStyle(color: Colors.white),
+                    color: Colors.white,
                   ),
                 ),
               ),

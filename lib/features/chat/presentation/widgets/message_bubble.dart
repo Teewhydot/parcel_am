@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../../../core/widgets/app_text.dart';
 import '../../domain/entities/message.dart';
 import '../../domain/entities/message_type.dart';
 import 'package:intl/intl.dart';
@@ -64,23 +65,17 @@ class MessageBubble extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          AppText.bodySmall(
             reply.senderName,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: isMe ? Colors.blue : Colors.grey.shade700,
-            ),
+            fontWeight: FontWeight.bold,
+            color: isMe ? Colors.blue : Colors.grey.shade700,
           ),
           const SizedBox(height: 2),
-          Text(
+          AppText.bodySmall(
             reply.type == MessageType.text
                 ? reply.content
                 : _getMediaTypeLabel(reply.type),
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey.shade600,
-            ),
+            color: Colors.grey.shade600,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
@@ -109,13 +104,9 @@ class MessageBubble extends StatelessWidget {
         color: isMe ? Colors.blue : Colors.grey.shade200,
         borderRadius: BorderRadius.circular(18),
       ),
-      child: Text(
+      child: AppText.bodyLarge(
         message.isDeleted ? 'This message was deleted' : message.content,
-        style: TextStyle(
-          fontSize: 16,
-          color: isMe ? Colors.white : Colors.black87,
-          fontStyle: message.isDeleted ? FontStyle.italic : FontStyle.normal,
-        ),
+        color: isMe ? Colors.white : Colors.black87,
       ),
     );
   }
@@ -155,12 +146,9 @@ class MessageBubble extends StatelessWidget {
               color: isMe ? Colors.blue : Colors.grey.shade200,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Text(
+            child: AppText.bodyMedium(
               message.content,
-              style: TextStyle(
-                fontSize: 14,
-                color: isMe ? Colors.white : Colors.black87,
-              ),
+              color: isMe ? Colors.white : Colors.black87,
             ),
           ),
       ],
@@ -238,23 +226,17 @@ class MessageBubble extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                AppText.bodyMedium(
                   message.fileName ?? 'Document',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: isMe ? Colors.white : Colors.black87,
-                  ),
+                  fontWeight: FontWeight.w500,
+                  color: isMe ? Colors.white : Colors.black87,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 if (message.fileSize != null)
-                  Text(
+                  AppText.bodySmall(
                     _formatFileSize(message.fileSize!),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isMe ? Colors.white70 : Colors.grey.shade600,
-                    ),
+                    color: isMe ? Colors.white70 : Colors.grey.shade600,
                   ),
               ],
             ),
@@ -274,12 +256,11 @@ class MessageBubble extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
+        AppText(
           DateFormat('HH:mm').format(message.timestamp),
-          style: TextStyle(
-            fontSize: 11,
-            color: Colors.grey.shade600,
-          ),
+          variant: TextVariant.bodySmall,
+          fontSize: 11,
+          color: Colors.grey.shade600,
         ),
         if (isMe) ...[
           const SizedBox(width: 4),

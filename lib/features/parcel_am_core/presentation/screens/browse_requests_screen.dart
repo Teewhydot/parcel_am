@@ -13,6 +13,7 @@ import '../bloc/parcel/parcel_state.dart';
 import '../../../parcel_am_core/domain/entities/parcel_entity.dart';
 import '../bloc/auth/auth_bloc.dart';
 import '../widgets/my_deliveries_tab.dart';
+import '../../../../core/widgets/app_text.dart';
 
 class BrowseRequestsScreen extends StatefulWidget {
   const BrowseRequestsScreen({super.key});
@@ -94,7 +95,7 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> with Ticker
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Browse Requests'),
+        title: AppText.titleLarge('Browse Requests'),
         actions: [
           IconButton(
             icon: const Icon(Icons.tune),
@@ -171,12 +172,10 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> with Ticker
                     color: isSelected ? AppColors.primary : AppColors.surfaceVariant,
                     borderRadius: BorderRadius.circular(25),
                   ),
-                  child: Text(
+                  child: AppText.bodyMedium(
                     _routes[index],
-                    style: TextStyle(
-                      color: isSelected ? Colors.white : AppColors.onSurface,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    color: isSelected ? Colors.white : AppColors.onSurface,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               );
@@ -203,27 +202,24 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> with Ticker
                         color: AppColors.error,
                       ),
                       const SizedBox(height: 16),
-                      Text(
+                      AppText(
                         'Failed to load requests',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        variant: TextVariant.titleMedium,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
                       ),
                       const SizedBox(height: 8),
-                      Text(
+                      AppText.bodyMedium(
                         state.errorMessage,
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: AppColors.onSurfaceVariant,
-                        ),
+                        color: AppColors.onSurfaceVariant,
                       ),
                       const SizedBox(height: 24),
                       ElevatedButton(
                         onPressed: () {
                           context.read<ParcelBloc>().add(const ParcelWatchAvailableParcelsRequested());
                         },
-                        child: const Text('Retry'),
+                        child: AppText.bodyMedium('Retry', color: Colors.white),
                       ),
                     ],
                   ),
@@ -244,19 +240,16 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> with Ticker
                         color: AppColors.onSurfaceVariant,
                       ),
                       const SizedBox(height: 16),
-                      const Text(
+                      AppText(
                         'No requests available',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        variant: TextVariant.titleMedium,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
                       ),
                       const SizedBox(height: 8),
-                      Text(
+                      AppText.bodyMedium(
                         'Check back later for new delivery requests',
-                        style: TextStyle(
-                          color: AppColors.onSurfaceVariant,
-                        ),
+                        color: AppColors.onSurfaceVariant,
                       ),
                     ],
                   ),
@@ -274,19 +267,16 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> with Ticker
                         color: AppColors.onSurfaceVariant,
                       ),
                       const SizedBox(height: 16),
-                      const Text(
+                      AppText(
                         'No matching requests',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        variant: TextVariant.titleMedium,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
                       ),
                       const SizedBox(height: 8),
-                      Text(
+                      AppText.bodyMedium(
                         'Try adjusting your filters or search',
-                        style: TextStyle(
-                          color: AppColors.onSurfaceVariant,
-                        ),
+                        color: AppColors.onSurfaceVariant,
                       ),
                     ],
                   ),
@@ -300,12 +290,9 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> with Ticker
                     padding: const EdgeInsets.all(16),
                     child: Align(
                       alignment: Alignment.centerLeft,
-                      child: Text(
+                      child: AppText.bodyMedium(
                         '${filteredParcels.length} request${filteredParcels.length == 1 ? '' : 's'} available',
-                        style: TextStyle(
-                          color: AppColors.onSurfaceVariant,
-                          fontSize: 14,
-                        ),
+                        color: AppColors.onSurfaceVariant,
                       ),
                     ),
                   ),
@@ -409,31 +396,24 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> with Ticker
                         Row(
                           children: [
                             Expanded(
-                              child: Text(
+                              child: AppText.bodyLarge(
                                 parcel.category ?? 'Package',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
-                            Text(
+                            AppText(
                               price,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primary,
-                              ),
+                              variant: TextVariant.titleMedium,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primary,
                             ),
                           ],
                         ),
                         const SizedBox(height: 8),
-                        Text(
+                        AppText.bodyMedium(
                           parcel.description ?? 'No description',
-                          style: const TextStyle(
-                            color: AppColors.onSurfaceVariant,
-                            fontSize: 14,
-                          ),
+                          color: AppColors.onSurfaceVariant,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -447,7 +427,7 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> with Ticker
                 children: [
                   Icon(Icons.location_on, size: 16, color: AppColors.onSurfaceVariant),
                   const SizedBox(width: 4),
-                  Text(parcel.route.origin, style: const TextStyle(fontSize: 14)),
+                  AppText.bodyMedium(parcel.route.origin),
                   const SizedBox(width: 8),
                   Container(
                     width: 20,
@@ -457,7 +437,7 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> with Ticker
                   const SizedBox(width: 8),
                   Icon(Icons.flag, size: 16, color: AppColors.onSurfaceVariant),
                   const SizedBox(width: 4),
-                  Text(parcel.route.destination, style: const TextStyle(fontSize: 14)),
+                  AppText.bodyMedium(parcel.route.destination),
                 ],
               ),
               const SizedBox(height: 12),
@@ -479,12 +459,9 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> with Ticker
                       children: [
                         const Icon(Icons.person, size: 16, color: AppColors.accent),
                         const SizedBox(width: 4),
-                        Text(
+                        AppText.bodyMedium(
                           parcel.sender.name.split(' ').first,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
+                          fontWeight: FontWeight.w500,
                         ),
                       ],
                     ),
@@ -503,12 +480,9 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> with Ticker
       children: [
         Icon(icon, size: 14, color: AppColors.onSurfaceVariant),
         const SizedBox(width: 4),
-        Text(
+        AppText.bodySmall(
           '$label: $value',
-          style: TextStyle(
-            fontSize: 12,
-            color: AppColors.onSurfaceVariant,
-          ),
+          color: AppColors.onSurfaceVariant,
         ),
       ],
     );

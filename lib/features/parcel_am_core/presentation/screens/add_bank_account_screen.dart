@@ -50,8 +50,8 @@ class _AddBankAccountScreenState extends State<AddBankAccountScreen> {
   void _verifyAccount() {
     if (_selectedBank == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a bank'),
+        SnackBar(
+          content: AppText.bodyMedium('Please select a bank', color: Colors.white),
           backgroundColor: Colors.orange,
         ),
       );
@@ -60,8 +60,8 @@ class _AddBankAccountScreenState extends State<AddBankAccountScreen> {
 
     if (_accountNumberController.text.length != 10) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Account number must be 10 digits'),
+        SnackBar(
+          content: AppText.bodyMedium('Account number must be 10 digits', color: Colors.white),
           backgroundColor: Colors.orange,
         ),
       );
@@ -83,8 +83,8 @@ class _AddBankAccountScreenState extends State<AddBankAccountScreen> {
 
     if (!_isVerified) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please verify the account first'),
+        SnackBar(
+          content: AppText.bodyMedium('Please verify the account first', color: Colors.white),
           backgroundColor: Colors.orange,
         ),
       );
@@ -106,7 +106,7 @@ class _AddBankAccountScreenState extends State<AddBankAccountScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Bank Account'),
+        title: AppText.titleLarge('Add Bank Account'),
         backgroundColor: AppColors.surface,
         elevation: 0,
       ),
@@ -123,8 +123,9 @@ class _AddBankAccountScreenState extends State<AddBankAccountScreen> {
 
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(
+                content: AppText.bodyMedium(
                   'Account verified: ${state.data?.verificationResult?.accountName ?? 'Unknown'}',
+                  color: Colors.white,
                 ),
                 backgroundColor: Colors.green,
               ),
@@ -137,8 +138,8 @@ class _AddBankAccountScreenState extends State<AddBankAccountScreen> {
               state.data?.verificationResult == null) {
             sl<NavigationService>().goBack<bool>(result: true);
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Bank account added successfully'),
+              SnackBar(
+                content: AppText.bodyMedium('Bank account added successfully', color: Colors.white),
                 backgroundColor: Colors.green,
               ),
             );
@@ -148,7 +149,7 @@ class _AddBankAccountScreenState extends State<AddBankAccountScreen> {
           if (state is AsyncErrorState<BankAccountData>) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(state.errorMessage),
+                content: AppText.bodyMedium(state.errorMessage, color: Colors.white),
                 backgroundColor: Colors.red,
                 duration: const Duration(seconds: 4),
               ),
@@ -174,12 +175,9 @@ class _AddBankAccountScreenState extends State<AddBankAccountScreen> {
                   AppSpacing.verticalSpacing(SpacingSize.md),
 
                   // Bank Selection Dropdown
-                  const Text(
+                  AppText.bodyMedium(
                     'Select Bank',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    fontWeight: FontWeight.w500,
                   ),
                   AppSpacing.verticalSpacing(SpacingSize.sm),
                   DropdownButtonFormField<BankInfoEntity>(
@@ -195,7 +193,7 @@ class _AddBankAccountScreenState extends State<AddBankAccountScreen> {
                     items: data.bankList.map((bank) {
                       return DropdownMenuItem(
                         value: bank,
-                        child: Text(bank.name),
+                        child: AppText.bodyMedium(bank.name),
                       );
                     }).toList(),
                     onChanged: (bank) {
@@ -220,12 +218,9 @@ class _AddBankAccountScreenState extends State<AddBankAccountScreen> {
                   AppSpacing.verticalSpacing(SpacingSize.lg),
 
                   // Account Number Input
-                  const Text(
+                  AppText.bodyMedium(
                     'Account Number',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    fontWeight: FontWeight.w500,
                   ),
                   AppSpacing.verticalSpacing(SpacingSize.sm),
                   TextFormField(
@@ -276,7 +271,7 @@ class _AddBankAccountScreenState extends State<AddBankAccountScreen> {
                           ? null
                           : _verifyAccount,
                       loading: isVerifying,
-                      child: Text(
+                      child: AppText.bodyMedium(
                         _isVerified ? 'Verified' : 'Verify Account',
                       ),
                     ),
@@ -286,12 +281,9 @@ class _AddBankAccountScreenState extends State<AddBankAccountScreen> {
                     AppSpacing.verticalSpacing(SpacingSize.lg),
 
                     // Account Name Display
-                    const Text(
+                    AppText.bodyMedium(
                       'Account Name',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      fontWeight: FontWeight.w500,
                     ),
                     AppSpacing.verticalSpacing(SpacingSize.sm),
                     Container(
@@ -307,13 +299,10 @@ class _AddBankAccountScreenState extends State<AddBankAccountScreen> {
                           Icon(Icons.check_circle, color: Colors.green.shade700),
                           AppSpacing.horizontalSpacing(SpacingSize.sm),
                           Expanded(
-                            child: Text(
+                            child: AppText.bodyLarge(
                               _accountNameController.text,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.green.shade900,
-                              ),
+                              fontWeight: FontWeight.w600,
+                              color: Colors.green.shade900,
                             ),
                           ),
                         ],
@@ -328,7 +317,7 @@ class _AddBankAccountScreenState extends State<AddBankAccountScreen> {
                       child: AppButton.primary(
                         onPressed: isSaving ? null : _saveAccount,
                         loading: isSaving,
-                        child: const Text('Save Bank Account'),
+                        child: AppText.bodyMedium('Save Bank Account', color: Colors.white),
                       ),
                     ),
                   ],
@@ -349,12 +338,9 @@ class _AddBankAccountScreenState extends State<AddBankAccountScreen> {
                           Icon(Icons.info_outline, color: Colors.orange.shade700),
                           AppSpacing.horizontalSpacing(SpacingSize.sm),
                           Expanded(
-                            child: Text(
+                            child: AppText.bodyMedium(
                               'You have reached the maximum of 5 bank accounts',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.orange.shade900,
-                              ),
+                              color: Colors.orange.shade900,
                             ),
                           ),
                         ],
@@ -373,12 +359,9 @@ class _AddBankAccountScreenState extends State<AddBankAccountScreen> {
                           Icon(Icons.info_outline, color: Colors.blue.shade700),
                           AppSpacing.horizontalSpacing(SpacingSize.sm),
                           Expanded(
-                            child: Text(
+                            child: AppText.bodyMedium(
                               'You can save up to ${data.remainingAccountSlots} more bank account(s)',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.blue.shade900,
-                              ),
+                              color: Colors.blue.shade900,
                             ),
                           ),
                         ],

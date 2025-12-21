@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/app_text.dart';
 import '../../domain/entities/chat_entity.dart';
 
 class ChatListItem extends StatelessWidget {
@@ -37,15 +38,14 @@ class ChatListItem extends StatelessWidget {
                   ? NetworkImage(participantAvatar)
                   : null,
               child: participantAvatar == null
-                  ? Text(
+                  ? AppText(
                       participantName.isNotEmpty
                           ? participantName[0].toUpperCase()
                           : '?',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primary,
-                      ),
+                      variant: TextVariant.titleLarge,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary,
                     )
                   : null,
             ),
@@ -57,22 +57,18 @@ class ChatListItem extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: Text(
+                        child: AppText.titleMedium(
                           participantName,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: unreadCount > 0 ? FontWeight.w600 : FontWeight.w500,
-                              ),
+                          fontWeight: unreadCount > 0 ? FontWeight.w600 : FontWeight.w500,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       if (chat.lastMessageTime != null)
-                        Text(
+                        AppText.bodySmall(
                           timeago.format(chat.lastMessageTime!, locale: 'en_short'),
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: unreadCount > 0 ? AppColors.primary : AppColors.textSecondary,
-                                fontWeight: unreadCount > 0 ? FontWeight.w600 : FontWeight.normal,
-                              ),
+                          color: unreadCount > 0 ? AppColors.primary : AppColors.textSecondary,
+                          fontWeight: unreadCount > 0 ? FontWeight.w600 : FontWeight.normal,
                         ),
                     ],
                   ),
@@ -89,12 +85,10 @@ class ChatListItem extends StatelessWidget {
                           ),
                         ),
                       Expanded(
-                        child: Text(
+                        child: AppText.bodyMedium(
                           chat.lastMessage ?? 'No messages yet',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: unreadCount > 0 ? AppColors.onSurface : AppColors.textSecondary,
-                                fontWeight: unreadCount > 0 ? FontWeight.w500 : FontWeight.normal,
-                              ),
+                          color: unreadCount > 0 ? AppColors.onSurface : AppColors.textSecondary,
+                          fontWeight: unreadCount > 0 ? FontWeight.w500 : FontWeight.normal,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -107,13 +101,10 @@ class ChatListItem extends StatelessWidget {
                             color: AppColors.primary,
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Text(
+                          child: AppText.bodySmall(
                             unreadCount > 99 ? '99+' : unreadCount.toString(),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],

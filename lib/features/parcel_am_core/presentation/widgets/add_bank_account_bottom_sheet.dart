@@ -65,8 +65,8 @@ class _AddBankAccountBottomSheetState extends State<AddBankAccountBottomSheet> {
   void _verifyAccount() {
     if (_selectedBank == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a bank'),
+        SnackBar(
+          content: AppText.bodyMedium('Please select a bank', color: Colors.white),
           backgroundColor: Colors.orange,
         ),
       );
@@ -75,8 +75,8 @@ class _AddBankAccountBottomSheetState extends State<AddBankAccountBottomSheet> {
 
     if (_accountNumberController.text.length != 10) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Account number must be 10 digits'),
+        SnackBar(
+          content: AppText.bodyMedium('Account number must be 10 digits', color: Colors.white),
           backgroundColor: Colors.orange,
         ),
       );
@@ -98,8 +98,8 @@ class _AddBankAccountBottomSheetState extends State<AddBankAccountBottomSheet> {
 
     if (!_isVerified) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please verify the account first'),
+        SnackBar(
+          content: AppText.bodyMedium('Please verify the account first', color: Colors.white),
           backgroundColor: Colors.orange,
         ),
       );
@@ -146,8 +146,9 @@ class _AddBankAccountBottomSheetState extends State<AddBankAccountBottomSheet> {
 
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(
+                content: AppText.bodyMedium(
                   'Account verified: ${state.data?.verificationResult?.accountName ?? 'Unknown'}',
+                  color: Colors.white,
                 ),
                 backgroundColor: Colors.green,
               ),
@@ -162,8 +163,8 @@ class _AddBankAccountBottomSheetState extends State<AddBankAccountBottomSheet> {
               _accountSaved = true;
             });
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Bank account added successfully'),
+              SnackBar(
+                content: AppText.bodyMedium('Bank account added successfully', color: Colors.white),
                 backgroundColor: Colors.green,
               ),
             );
@@ -174,7 +175,7 @@ class _AddBankAccountBottomSheetState extends State<AddBankAccountBottomSheet> {
           if (state is AsyncErrorState<BankAccountData>) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(state.errorMessage),
+                content: AppText.bodyMedium(state.errorMessage, color: Colors.white),
                 backgroundColor: Colors.red,
                 duration: const Duration(seconds: 4),
               ),
@@ -247,12 +248,11 @@ class _AddBankAccountBottomSheetState extends State<AddBankAccountBottomSheet> {
                                     color: Colors.blue.shade700, size: 20),
                                 AppSpacing.horizontalSpacing(SpacingSize.sm),
                                 Expanded(
-                                  child: Text(
+                                  child: AppText(
                                     'You can only add bank accounts registered in your name.',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: Colors.blue.shade900,
-                                    ),
+                                    variant: TextVariant.bodySmall,
+                                    fontSize: 13,
+                                    color: Colors.blue.shade900,
                                   ),
                                 ),
                               ],
@@ -262,12 +262,9 @@ class _AddBankAccountBottomSheetState extends State<AddBankAccountBottomSheet> {
                           AppSpacing.verticalSpacing(SpacingSize.lg),
 
                           // Bank Selection
-                          const Text(
+                          AppText.bodyMedium(
                             'Select Bank',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
+                            fontWeight: FontWeight.w500,
                           ),
                           AppSpacing.verticalSpacing(SpacingSize.sm),
 
@@ -291,9 +288,9 @@ class _AddBankAccountBottomSheetState extends State<AddBankAccountBottomSheet> {
                                     ),
                                   ),
                                   AppSpacing.horizontalSpacing(SpacingSize.sm),
-                                  Text(
+                                  AppText.bodyMedium(
                                     'Loading banks...',
-                                    style: TextStyle(color: Colors.grey.shade600),
+                                    color: Colors.grey.shade600,
                                   ),
                                 ],
                               ),
@@ -313,7 +310,7 @@ class _AddBankAccountBottomSheetState extends State<AddBankAccountBottomSheet> {
                               items: bankList.map((bank) {
                                 return DropdownMenuItem(
                                   value: bank,
-                                  child: Text(
+                                  child: AppText.bodyMedium(
                                     bank.name,
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -340,12 +337,9 @@ class _AddBankAccountBottomSheetState extends State<AddBankAccountBottomSheet> {
                           AppSpacing.verticalSpacing(SpacingSize.lg),
 
                           // Account Number Input
-                          const Text(
+                          AppText.bodyMedium(
                             'Account Number',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
+                            fontWeight: FontWeight.w500,
                           ),
                           AppSpacing.verticalSpacing(SpacingSize.sm),
                           TextFormField(
@@ -404,7 +398,7 @@ class _AddBankAccountBottomSheetState extends State<AddBankAccountBottomSheet> {
                                         color: Colors.green, size: 20),
                                   if (_isVerified)
                                     AppSpacing.horizontalSpacing(SpacingSize.xs),
-                                  Text(_isVerified ? 'Verified' : 'Verify Account'),
+                                  AppText.bodyMedium(_isVerified ? 'Verified' : 'Verify Account'),
                                 ],
                               ),
                             ),
@@ -414,12 +408,9 @@ class _AddBankAccountBottomSheetState extends State<AddBankAccountBottomSheet> {
                             AppSpacing.verticalSpacing(SpacingSize.lg),
 
                             // Account Name Display
-                            const Text(
+                            AppText.bodyMedium(
                               'Account Name',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
+                              fontWeight: FontWeight.w500,
                             ),
                             AppSpacing.verticalSpacing(SpacingSize.sm),
                             Container(
@@ -436,13 +427,10 @@ class _AddBankAccountBottomSheetState extends State<AddBankAccountBottomSheet> {
                                       color: Colors.green.shade700),
                                   AppSpacing.horizontalSpacing(SpacingSize.sm),
                                   Expanded(
-                                    child: Text(
+                                    child: AppText.bodyLarge(
                                       _accountNameController.text,
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.green.shade900,
-                                      ),
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.green.shade900,
                                     ),
                                   ),
                                 ],
@@ -457,7 +445,7 @@ class _AddBankAccountBottomSheetState extends State<AddBankAccountBottomSheet> {
                               child: AppButton.primary(
                                 onPressed: isSaving ? null : _saveAccount,
                                 loading: isSaving,
-                                child: const Text('Save Bank Account'),
+                                child: AppText.bodyMedium('Save Bank Account', color: Colors.white),
                               ),
                             ),
                           ],

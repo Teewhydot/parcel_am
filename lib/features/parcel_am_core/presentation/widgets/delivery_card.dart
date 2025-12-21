@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/app_text.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../injection_container.dart';
@@ -135,12 +136,11 @@ class _DeliveryCardState extends State<DeliveryCard> {
               Row(
                 children: [
                   Expanded(
-                    child: Text(
+                    child: AppText(
                       widget.parcel.category ?? 'Package',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      variant: TextVariant.titleMedium,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   // Task 3.3.3: Status indicator badge
@@ -148,13 +148,12 @@ class _DeliveryCardState extends State<DeliveryCard> {
                 ],
               ),
               const SizedBox(height: 4),
-              Text(
+              AppText(
                 '${widget.parcel.currency ?? '₦'}${(widget.parcel.price ?? 0.0).toStringAsFixed(0)}',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
-                ),
+                variant: TextVariant.titleMedium,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primary,
               ),
             ],
           ),
@@ -201,13 +200,10 @@ class _DeliveryCardState extends State<DeliveryCard> {
               color: widget.parcel.status.statusColor,
             ),
             const SizedBox(width: 4),
-            Text(
+            AppText.bodySmall(
               widget.parcel.status.displayName,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: widget.parcel.status.statusColor,
-              ),
+              fontWeight: FontWeight.w600,
+              color: widget.parcel.status.statusColor,
             ),
           ],
         ),
@@ -233,12 +229,9 @@ class _DeliveryCardState extends State<DeliveryCard> {
             ),
             const SizedBox(width: 6),
             Expanded(
-              child: Text(
+              child: AppText.bodyMedium(
                 widget.parcel.route.origin,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
+                fontWeight: FontWeight.w500,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -271,12 +264,9 @@ class _DeliveryCardState extends State<DeliveryCard> {
             ),
             const SizedBox(width: 6),
             Expanded(
-              child: Text(
+              child: AppText.bodyMedium(
                 widget.parcel.route.destination,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
+                fontWeight: FontWeight.w500,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -297,12 +287,11 @@ class _DeliveryCardState extends State<DeliveryCard> {
         // Package description (truncated if long)
         if (widget.parcel.description != null && widget.parcel.description!.isNotEmpty) ...[
           const SizedBox(height: 8),
-          Text(
+          AppText(
             widget.parcel.description!,
-            style: TextStyle(
-              fontSize: 13,
-              color: AppColors.onSurfaceVariant,
-            ),
+            variant: TextVariant.bodySmall,
+            fontSize: 13,
+            color: AppColors.onSurfaceVariant,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
@@ -335,30 +324,23 @@ class _DeliveryCardState extends State<DeliveryCard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                AppText(
                   'Sender',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: AppColors.onSurfaceVariant,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  variant: TextVariant.bodySmall,
+                  fontSize: 11,
+                  color: AppColors.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
                 ),
                 const SizedBox(height: 2),
-                Text(
+                AppText.bodyMedium(
                   widget.parcel.sender.name,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  fontWeight: FontWeight.w600,
                 ),
                 if (widget.parcel.sender.phoneNumber.isNotEmpty) ...[
                   const SizedBox(height: 2),
-                  Text(
+                  AppText.bodySmall(
                     widget.parcel.sender.phoneNumber,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.onSurfaceVariant,
-                    ),
+                    color: AppColors.onSurfaceVariant,
                   ),
                 ],
               ],
@@ -394,13 +376,10 @@ class _DeliveryCardState extends State<DeliveryCard> {
               color: AppColors.onSurfaceVariant,
             ),
             const SizedBox(width: 6),
-            Text(
+            AppText.bodySmall(
               'Receiver Details',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppColors.onSurfaceVariant,
-              ),
+              fontWeight: FontWeight.w600,
+              color: AppColors.onSurfaceVariant,
             ),
           ],
         ),
@@ -421,12 +400,9 @@ class _DeliveryCardState extends State<DeliveryCard> {
                       ),
                       const SizedBox(width: 6),
                       Expanded(
-                        child: Text(
+                        child: AppText.bodyMedium(
                           widget.parcel.receiver.name,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
@@ -443,14 +419,12 @@ class _DeliveryCardState extends State<DeliveryCard> {
                       Expanded(
                         child: InkWell(
                           onTap: () => _handlePhoneCall(widget.parcel.receiver.phoneNumber),
-                          child: Text(
+                          child: AppText(
                             widget.parcel.receiver.phoneNumber,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.primary,
-                              decoration: TextDecoration.underline,
-                            ),
+                            variant: TextVariant.bodyMedium,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.primary,
+                            decoration: TextDecoration.underline,
                           ),
                         ),
                       ),
@@ -467,11 +441,10 @@ class _DeliveryCardState extends State<DeliveryCard> {
                       ),
                       const SizedBox(width: 6),
                       Expanded(
-                        child: Text(
+                        child: AppText(
                           widget.parcel.receiver.address,
-                          style: const TextStyle(
-                            fontSize: 13,
-                          ),
+                          variant: TextVariant.bodySmall,
+                          fontSize: 13,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -520,21 +493,17 @@ class _DeliveryCardState extends State<DeliveryCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  AppText.bodySmall(
                     'Urgent Delivery',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.orange.shade700,
-                    ),
+                    fontWeight: FontWeight.w600,
+                    color: Colors.orange.shade700,
                   ),
                   const SizedBox(height: 2),
-                  Text(
+                  AppText(
                     'Deliver by $formattedDate',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.orange.shade800,
-                    ),
+                    variant: TextVariant.bodySmall,
+                    fontSize: 11,
+                    color: Colors.orange.shade800,
                   ),
                 ],
               ),
@@ -565,16 +534,15 @@ class _DeliveryCardState extends State<DeliveryCard> {
           isDelivered ? Icons.check_circle : Icons.update,
           size: 20,
         ),
-        label: Text(
+        label: AppText(
           isDelivered
               ? 'Delivered'
               : nextStatus != null
                   ? 'Update to ${nextStatus.displayName}'
                   : 'Update Status',
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 15,
-          ),
+          variant: TextVariant.bodyMedium,
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
         ),
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 14),
@@ -645,13 +613,10 @@ class _DeliveryCardState extends State<DeliveryCard> {
         children: [
           Icon(icon, size: 14, color: AppColors.onSurfaceVariant),
           const SizedBox(width: 4),
-          Text(
+          AppText.bodySmall(
             value,
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.onSurfaceVariant,
-              fontWeight: FontWeight.w500,
-            ),
+            color: AppColors.onSurfaceVariant,
+            fontWeight: FontWeight.w500,
           ),
         ],
       ),
@@ -665,7 +630,7 @@ class _DeliveryCardState extends State<DeliveryCard> {
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please sign in to chat')),
+          SnackBar(content: AppText.bodyMedium('Please sign in to chat', color: Colors.white)),
         );
         return;
       }
@@ -688,7 +653,7 @@ class _DeliveryCardState extends State<DeliveryCard> {
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to open chat: $e')),
+        SnackBar(content: AppText.bodyMedium('Failed to open chat: $e', color: Colors.white)),
       );
     }
   }

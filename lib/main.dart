@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:parcel_am/app/bloc_providers.dart';
+import 'package:parcel_am/core/widgets/app_text.dart';
 import 'package:provider/provider.dart';
 import 'package:parcel_am/app/init.dart';
 import 'package:parcel_am/core/services/notification_service.dart';
@@ -112,26 +113,26 @@ class FirebaseErrorApp extends StatelessWidget {
               children: [
                 const Icon(Icons.error_outline, size: 80, color: Colors.red),
                 const SizedBox(height: 20),
-                const Text(
+                AppText(
                   'Firebase Initialization Failed',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.red,
-                  ),
+                  variant: TextVariant.headlineSmall,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red,
                 ),
                 const SizedBox(height: 20),
-                Text(
+                AppText(
                   'Please check your Firebase configuration:\n\n$error',
+                  variant: TextVariant.bodyLarge,
+                  fontSize: 16,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 16),
                 ),
                 const SizedBox(height: 30),
                 ElevatedButton(
                   onPressed: () {
                     // Restart app
                   },
-                  child: const Text('Retry'),
+                  child: AppText.bodyMedium('Retry'),
                 ),
               ],
             ),

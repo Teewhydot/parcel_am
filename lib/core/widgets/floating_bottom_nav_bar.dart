@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:parcel_am/core/theme/app_colors.dart';
+import 'package:parcel_am/core/widgets/app_text.dart';
 
 class FloatingBottomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -109,14 +110,12 @@ class FloatingBottomNavBar extends StatelessWidget {
                           minHeight: 18,
                         ),
                         child: Center(
-                          child: Text(
+                          child: AppText(
                             item.badgeCount! > 99 ? '99+' : '${item.badgeCount}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              height: 1,
-                            ),
+                            variant: TextVariant.bodySmall,
+                            fontSize: 10,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
@@ -124,19 +123,14 @@ class FloatingBottomNavBar extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 4),
-              AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 200),
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                  color: color,
-                  height: 1.2,
-                ),
-                child: Text(
-                  item.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+              AppText(
+                item.label,
+                variant: TextVariant.bodySmall,
+                fontSize: 11,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                color: color,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),

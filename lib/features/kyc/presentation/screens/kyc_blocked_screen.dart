@@ -177,14 +177,14 @@ class KycBlockedScreen extends StatelessWidget {
 
     return AppButton(
       onPressed: onPressed,
-      child: Text(buttonText),
+      child: AppText.bodyMedium(buttonText),
     );
   }
 
   Widget _buildSecondaryButton(BuildContext context) {
     return AppButton(
       onPressed: () => sl<NavigationService>().navigateAndReplace(Routes.home),
-      child: const Text('Back to Home'),
+      child: AppText.bodyMedium('Back to Home'),
     );
   }
 }

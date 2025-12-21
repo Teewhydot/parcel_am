@@ -11,6 +11,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../injection_container.dart';
 import '../../domain/entities/notification_entity.dart';
+import '../../../../core/widgets/app_text.dart';
 import '../bloc/notification_bloc.dart';
 import '../bloc/notification_event.dart';
 import '../bloc/notification_state.dart';
@@ -38,7 +39,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notifications'),
+        title: AppText.titleLarge('Notifications'),
         actions: [
           IconButton(
             icon: const Icon(Icons.done_all),
@@ -71,13 +72,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 children: [
                   const Icon(Icons.error_outline, size: 64, color: AppColors.error),
                   const SizedBox(height: 16),
-                  Text(state.errorMessage ?? 'An error occurred'),
+                  AppText.bodyMedium(state.errorMessage ?? 'An error occurred'),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () {
                       context.read<NotificationBloc>().add(LoadNotifications(widget.userId));
                     },
-                    child: const Text('Retry'),
+                    child: AppText.bodyMedium('Retry', color: Colors.white),
                   ),
                 ],
               ),
@@ -99,18 +100,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       color: AppColors.onSurfaceVariant,
                     ),
                     const SizedBox(height: 16),
-                    Text(
+                    AppText.titleMedium(
                       'No notifications yet',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: AppColors.onSurfaceVariant,
-                          ),
+                      color: AppColors.onSurfaceVariant,
                     ),
                     const SizedBox(height: 8),
-                    Text(
+                    AppText.bodyMedium(
                       'You\'ll see notifications here',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
+                      color: AppColors.textSecondary,
                     ),
                   ],
                 ),
@@ -126,7 +123,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           }
 
           // Initial or empty state
-          return const Center(child: Text('Loading notifications...'));
+          return Center(child: AppText.bodyMedium('Loading notifications...'));
         },
         child: Container(),
       ),
@@ -198,12 +195,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget _buildSectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Text(
+      child: AppText.bodySmall(
         title.toUpperCase(),
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w600,
-            ),
+        color: AppColors.textSecondary,
+        fontWeight: FontWeight.w600,
       ),
     );
   }
@@ -250,11 +245,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     Row(
                       children: [
                         Expanded(
-                          child: Text(
+                          child: AppText(
                             notification.title,
-                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                  fontWeight: notification.isRead ? FontWeight.normal : FontWeight.bold,
-                                ),
+                            variant: TextVariant.titleSmall,
+                            fontWeight: notification.isRead ? FontWeight.normal : FontWeight.bold,
                           ),
                         ),
                         if (!notification.isRead)
@@ -269,20 +263,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       ],
                     ),
                     const SizedBox(height: 4),
-                    Text(
+                    AppText.bodyMedium(
                       notification.body,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
+                      color: AppColors.textSecondary,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-                    Text(
+                    AppText.bodySmall(
                       timeago.format(notification.timestamp),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.onSurfaceVariant,
-                          ),
+                      color: AppColors.onSurfaceVariant,
                     ),
                   ],
                 ),
@@ -357,12 +347,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete Notification'),
-        content: const Text('Are you sure you want to delete this notification?'),
+        title: AppText.titleMedium('Delete Notification', fontWeight: FontWeight.w600),
+        content: AppText.bodyMedium('Are you sure you want to delete this notification?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
+            child: AppText.bodyMedium('Cancel', color: AppColors.primary),
           ),
           TextButton(
             onPressed: () {
@@ -370,7 +360,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               Navigator.pop(dialogContext);
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('Delete'),
+            child: AppText.bodyMedium('Delete', color: AppColors.error),
           ),
         ],
       ),
@@ -381,12 +371,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Clear All Notifications'),
-        content: const Text('Are you sure you want to clear all notifications? This action cannot be undone.'),
+        title: AppText.titleMedium('Clear All Notifications', fontWeight: FontWeight.w600),
+        content: AppText.bodyMedium('Are you sure you want to clear all notifications? This action cannot be undone.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
+            child: AppText.bodyMedium('Cancel', color: AppColors.primary),
           ),
           TextButton(
             onPressed: () {
@@ -394,7 +384,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               Navigator.pop(dialogContext);
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('Clear All'),
+            child: AppText.bodyMedium('Clear All', color: AppColors.error),
           ),
         ],
       ),

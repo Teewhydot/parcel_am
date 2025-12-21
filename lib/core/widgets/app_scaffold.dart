@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import 'app_text.dart';
 
 class AppScaffold extends StatelessWidget {
   const AppScaffold({
@@ -45,7 +46,7 @@ class AppScaffold extends StatelessWidget {
       resizeToAvoidBottomInset: resizeToAvoidBottomInset,
       appBar: title != null || leading != null || actions != null 
         ? AppBar(
-            title: title != null ? Text(title!) : null,
+            title: title != null ? AppText.titleLarge(title!) : null,
             leading: leading,
             actions: actions,
             backgroundColor: appBarBackgroundColor ?? (hasGradientBackground ? Colors.transparent : null),

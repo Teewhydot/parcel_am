@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/widgets/app_text.dart';
 import '../bloc/wallet/wallet_data.dart';
 
 class TransactionListItem extends StatelessWidget {
@@ -26,29 +27,22 @@ class TransactionListItem extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  AppText.bodyMedium(
                     transaction.description,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w500,
-                        ),
+                    fontWeight: FontWeight.w500,
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Text(
+                      AppText.bodySmall(
                         _formatDate(transaction.date),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.grey[600],
-                            ),
+                        color: Colors.grey[600],
                       ),
                       if (transaction.referenceId != null) ...[
                         const SizedBox(width: 8),
-                        Text(
+                        AppText.bodySmall(
                           '• ${transaction.referenceId!.substring(0, 8)}',
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Colors.grey[600],
-                                  ),
+                          color: Colors.grey[600],
                         ),
                       ],
                     ],
@@ -60,12 +54,10 @@ class TransactionListItem extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(
+                AppText.bodyMedium(
                   '${_getAmountPrefix()}${_formatAmount(transaction.amount)}',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: _getAmountColor(),
-                      ),
+                  fontWeight: FontWeight.w600,
+                  color: _getAmountColor(),
                 ),
                 const SizedBox(height: 4),
                 _buildStatusChip(),
@@ -160,13 +152,12 @@ class TransactionListItem extends StatelessWidget {
         color: chipColor.withOpacity(0.1),
         borderRadius: BorderRadius.circular(4),
       ),
-      child: Text(
+      child: AppText(
         statusText,
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w500,
-          color: chipColor,
-        ),
+        variant: TextVariant.bodySmall,
+        fontSize: 10,
+        fontWeight: FontWeight.w500,
+        color: chipColor,
       ),
     );
   }

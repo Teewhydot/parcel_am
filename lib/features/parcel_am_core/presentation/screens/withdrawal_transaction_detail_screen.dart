@@ -6,6 +6,7 @@ import 'package:parcel_am/core/routes/routes.dart';
 import 'package:parcel_am/core/services/navigation_service/nav_config.dart';
 import 'package:parcel_am/core/theme/app_colors.dart';
 import 'package:parcel_am/core/widgets/app_spacing.dart';
+import 'package:parcel_am/core/widgets/app_text.dart';
 import 'package:parcel_am/features/parcel_am_core/domain/entities/withdrawal_order_entity.dart';
 
 /// Screen displaying detailed information about a withdrawal transaction
@@ -29,7 +30,7 @@ class WithdrawalTransactionDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Withdrawal Details'),
+        title: AppText.titleLarge('Withdrawal Details'),
         backgroundColor: AppColors.surface,
         elevation: 0,
       ),
@@ -71,19 +72,16 @@ class WithdrawalTransactionDetailScreen extends StatelessWidget {
         padding: AppSpacing.paddingXXL,
         child: Column(
           children: [
-            Text(
+            AppText.bodyMedium(
               'Withdrawal Amount',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.onSurfaceVariant,
-                  ),
+              color: AppColors.onSurfaceVariant,
             ),
             AppSpacing.verticalSpacing(SpacingSize.sm),
-            Text(
+            AppText(
               '₦${_formatAmount(withdrawalOrder.amount)}',
-              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.error,
-                  ),
+              variant: TextVariant.headlineLarge,
+              fontWeight: FontWeight.bold,
+              color: AppColors.error,
             ),
             AppSpacing.verticalSpacing(SpacingSize.md),
             _buildStatusChip(context),
@@ -113,13 +111,10 @@ class WithdrawalTransactionDetailScreen extends StatelessWidget {
             color: statusInfo['color'],
           ),
           const SizedBox(width: 6),
-          Text(
+          AppText.bodyMedium(
             statusInfo['text'],
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: statusInfo['color'],
-            ),
+            fontWeight: FontWeight.w600,
+            color: statusInfo['color'],
           ),
         ],
       ),
@@ -135,11 +130,9 @@ class WithdrawalTransactionDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            AppText.titleMedium(
               'Transaction Timeline',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+              fontWeight: FontWeight.w600,
             ),
             AppSpacing.verticalSpacing(SpacingSize.md),
             _buildTimelineItem(
@@ -231,21 +224,17 @@ class WithdrawalTransactionDetailScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  AppText.bodyMedium(
                     label,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: isCompleted || isActive
-                              ? AppColors.onSurface
-                              : AppColors.onSurfaceVariant,
-                        ),
+                    fontWeight: FontWeight.w600,
+                    color: isCompleted || isActive
+                        ? AppColors.onSurface
+                        : AppColors.onSurfaceVariant,
                   ),
                   const SizedBox(height: 2),
-                  Text(
+                  AppText.bodySmall(
                     timestamp,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.onSurfaceVariant,
-                        ),
+                    color: AppColors.onSurfaceVariant,
                   ),
                 ],
               ),
@@ -265,11 +254,9 @@ class WithdrawalTransactionDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            AppText.titleMedium(
               'Bank Account',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+              fontWeight: FontWeight.w600,
             ),
             AppSpacing.verticalSpacing(SpacingSize.md),
             _buildDetailRow(
@@ -304,11 +291,9 @@ class WithdrawalTransactionDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            AppText.titleMedium(
               'Transaction Details',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+              fontWeight: FontWeight.w600,
             ),
             AppSpacing.verticalSpacing(SpacingSize.md),
             _buildCopyableDetailRow(
@@ -368,21 +353,18 @@ class WithdrawalTransactionDetailScreen extends StatelessWidget {
                   size: 20,
                 ),
                 const SizedBox(width: 8),
-                Text(
+                AppText(
                   'Failure Reason',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.error,
-                      ),
+                  variant: TextVariant.titleSmall,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.error,
                 ),
               ],
             ),
             AppSpacing.verticalSpacing(SpacingSize.sm),
-            Text(
+            AppText.bodyMedium(
               withdrawalOrder.failureReason!,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.onSurface,
-                  ),
+              color: AppColors.onSurface,
             ),
           ],
         ),
@@ -408,21 +390,18 @@ class WithdrawalTransactionDetailScreen extends StatelessWidget {
                   size: 20,
                 ),
                 const SizedBox(width: 8),
-                Text(
+                AppText(
                   'Reversal Reason',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: Colors.orange.shade700,
-                      ),
+                  variant: TextVariant.titleSmall,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.orange.shade700,
                 ),
               ],
             ),
             AppSpacing.verticalSpacing(SpacingSize.sm),
-            Text(
+            AppText.bodyMedium(
               withdrawalOrder.reversalReason!,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.onSurface,
-                  ),
+              color: AppColors.onSurface,
             ),
           ],
         ),
@@ -436,19 +415,15 @@ class WithdrawalTransactionDetailScreen extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        AppText.bodyMedium(
           label,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.onSurfaceVariant,
-              ),
+          color: AppColors.onSurfaceVariant,
         ),
         const SizedBox(width: 16),
         Flexible(
-          child: Text(
+          child: AppText.bodyMedium(
             value,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                ),
+            fontWeight: FontWeight.w500,
             textAlign: TextAlign.right,
           ),
         ),
@@ -463,11 +438,9 @@ class WithdrawalTransactionDetailScreen extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        AppText.bodyMedium(
           label,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.onSurfaceVariant,
-              ),
+          color: AppColors.onSurfaceVariant,
         ),
         const SizedBox(width: 16),
         Flexible(
@@ -475,9 +448,9 @@ class WithdrawalTransactionDetailScreen extends StatelessWidget {
             onTap: () {
               Clipboard.setData(ClipboardData(text: value));
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Reference ID copied to clipboard'),
-                  duration: Duration(seconds: 2),
+                SnackBar(
+                  content: AppText.bodyMedium('Reference ID copied to clipboard', color: Colors.white),
+                  duration: const Duration(seconds: 2),
                 ),
               );
             },
@@ -485,12 +458,10 @@ class WithdrawalTransactionDetailScreen extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Flexible(
-                  child: Text(
+                  child: AppText.bodyMedium(
                     value,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.primary,
-                        ),
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.primary,
                     textAlign: TextAlign.right,
                   ),
                 ),
@@ -525,7 +496,7 @@ class WithdrawalTransactionDetailScreen extends StatelessWidget {
           );
         },
         icon: const Icon(Icons.refresh),
-        label: const Text('Retry Withdrawal'),
+        label: AppText.bodyMedium('Retry Withdrawal', color: Colors.white),
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,

@@ -50,19 +50,19 @@ class _BankAccountListScreenState extends State<BankAccountListScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Bank Account'),
-        content: Text(
+        title: AppText.titleMedium('Delete Bank Account', fontWeight: FontWeight.w600),
+        content: AppText.bodyMedium(
           'Are you sure you want to delete ${account.bankName} - ${account.maskedAccountNumber}?',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: AppText.bodyMedium('Cancel', color: AppColors.primary),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
+            child: AppText.bodyMedium('Delete', color: Colors.red),
           ),
         ],
       ),
@@ -82,7 +82,7 @@ class _BankAccountListScreenState extends State<BankAccountListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Saved Bank Accounts'),
+        title: AppText.titleLarge('Saved Bank Accounts'),
         backgroundColor: AppColors.surface,
         elevation: 0,
         actions: [
@@ -101,7 +101,7 @@ class _BankAccountListScreenState extends State<BankAccountListScreen> {
           if (state is AsyncErrorState<BankAccountData>) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(state.errorMessage),
+                content: AppText.bodyMedium(state.errorMessage, color: Colors.white),
                 backgroundColor: Colors.red,
                 duration: const Duration(seconds: 4),
               ),
@@ -122,7 +122,7 @@ class _BankAccountListScreenState extends State<BankAccountListScreen> {
                 children: [
                   const Icon(Icons.error_outline, size: 48, color: Colors.red),
                   AppSpacing.verticalSpacing(SpacingSize.md),
-                  Text(state.errorMessage ?? 'Failed to load bank accounts'),
+                  AppText.bodyMedium(state.errorMessage ?? 'Failed to load bank accounts'),
                   AppSpacing.verticalSpacing(SpacingSize.md),
                   ElevatedButton(
                     onPressed: () {
@@ -130,7 +130,7 @@ class _BankAccountListScreenState extends State<BankAccountListScreen> {
                             BankAccountLoadRequested(userId: widget.userId),
                           );
                     },
-                    child: const Text('Retry'),
+                    child: AppText.bodyMedium('Retry', color: Colors.white),
                   ),
                 ],
               ),
@@ -161,7 +161,7 @@ class _BankAccountListScreenState extends State<BankAccountListScreen> {
             onPressed: canAddMore ? _showAddAccountModal : null,
             backgroundColor: canAddMore ? AppColors.primary : Colors.grey,
             icon: const Icon(Icons.add),
-            label: const Text('Add Account'),
+            label: AppText.bodyMedium('Add Account', color: Colors.white),
           );
         },
       ),
@@ -183,12 +183,9 @@ class _BankAccountListScreenState extends State<BankAccountListScreen> {
             AppSpacing.verticalSpacing(SpacingSize.lg),
             AppText.titleLarge('No Bank Accounts', fontWeight: FontWeight.w600),
             AppSpacing.verticalSpacing(SpacingSize.sm),
-            Text(
+            AppText.bodyLarge(
               'Add a bank account to enable withdrawals',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey.shade600,
-              ),
+              color: Colors.grey.shade600,
               textAlign: TextAlign.center,
             ),
             AppSpacing.verticalSpacing(SpacingSize.xl),
@@ -223,14 +220,11 @@ class _BankAccountListScreenState extends State<BankAccountListScreen> {
                   Icon(Icons.info_outline, color: Colors.blue.shade700),
                   AppSpacing.horizontalSpacing(SpacingSize.sm),
                   Expanded(
-                    child: Text(
+                    child: AppText.bodyMedium(
                       data.hasReachedMaxAccounts
                           ? 'Maximum of 5 bank accounts reached'
                           : 'You can add ${data.remainingAccountSlots} more account(s)',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.blue.shade900,
-                      ),
+                      color: Colors.blue.shade900,
                     ),
                   ),
                 ],
@@ -269,19 +263,19 @@ class _BankAccountListScreenState extends State<BankAccountListScreen> {
           return await showDialog<bool>(
             context: context,
             builder: (context) => AlertDialog(
-              title: const Text('Delete Bank Account'),
-              content: Text(
+              title: AppText.titleMedium('Delete Bank Account', fontWeight: FontWeight.w600),
+              content: AppText.bodyMedium(
                 'Are you sure you want to delete ${account.bankName} - ${account.maskedAccountNumber}?',
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Cancel'),
+                  child: AppText.bodyMedium('Cancel', color: AppColors.primary),
                 ),
                 TextButton(
                   onPressed: () => Navigator.pop(context, true),
                   style: TextButton.styleFrom(foregroundColor: Colors.red),
-                  child: const Text('Delete'),
+                  child: AppText.bodyMedium('Delete', color: Colors.red),
                 ),
               ],
             ),
@@ -304,32 +298,22 @@ class _BankAccountListScreenState extends State<BankAccountListScreen> {
               color: AppColors.primary,
             ),
           ),
-          title: Text(
+          title: AppText.bodyLarge(
             account.accountName,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
-            ),
+            fontWeight: FontWeight.w600,
           ),
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               AppSpacing.verticalSpacing(SpacingSize.xs),
-              Text(
+              AppText.bodyMedium(
                 account.bankName,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade700,
-                ),
+                color: Colors.grey.shade700,
               ),
               AppSpacing.verticalSpacing(SpacingSize.xs),
-              Text(
+              AppText.bodyMedium(
                 account.maskedAccountNumber,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade600,
-                  fontFamily: 'monospace',
-                ),
+                color: Colors.grey.shade600,
               ),
               if (isDefault) ...[
                 AppSpacing.verticalSpacing(SpacingSize.xs),
@@ -342,13 +326,12 @@ class _BankAccountListScreenState extends State<BankAccountListScreen> {
                     color: Colors.green.shade100,
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  child: Text(
+                  child: AppText(
                     'DEFAULT',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green.shade800,
-                    ),
+                    variant: TextVariant.bodySmall,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green.shade800,
                   ),
                 ),
               ],

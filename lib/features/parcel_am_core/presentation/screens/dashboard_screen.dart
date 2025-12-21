@@ -171,7 +171,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             Icon(icon, color: Colors.white),
             const SizedBox(width: 12),
-            Expanded(child: Text(notification.message)),
+            Expanded(child: AppText.bodyMedium(notification.message, color: Colors.white)),
           ],
         ),
         backgroundColor: backgroundColor,
@@ -251,7 +251,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             }
                             if (state.isError) {
                               return Center(
-                                child: Text(
+                                child: AppText.bodyMedium(
                                   'Error: ${state.errorMessage ?? "Unknown error"}',
                                 ),
                               );

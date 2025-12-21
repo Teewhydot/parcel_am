@@ -141,10 +141,10 @@ class _WalletFundingPaymentScreenState
             },
             onReceivedError: (controller, request, error) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Failed to load payment page. Please try again.'),
+                SnackBar(
+                  content: AppText.bodyMedium('Failed to load payment page. Please try again.', color: Colors.white),
                   backgroundColor: AppColors.error,
-                  duration: Duration(seconds: 4),
+                  duration: const Duration(seconds: 4),
                 ),
               );
             },

@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../domain/entities/message.dart';
 import '../../domain/entities/message_type.dart';
 import '../../../../core/helpers/user_extensions.dart';
+import '../../../../core/widgets/app_text.dart';
 
 class MessageInput extends StatefulWidget {
   final Function(String) onSend;
@@ -172,12 +173,11 @@ class _MessageInputState extends State<MessageInput> {
             child: Icon(icon, color: color, size: 30),
           ),
           const SizedBox(height: 8),
-          Text(
+          AppText(
             label,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey.shade700,
-            ),
+            variant: TextVariant.bodySmall,
+            fontSize: 12,
+            color: Colors.grey.shade700,
           ),
         ],
       ),
@@ -215,23 +215,21 @@ class _MessageInputState extends State<MessageInput> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      AppText(
                         'Replying to ${widget.replyToMessage!.senderName}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue,
-                        ),
+                        variant: TextVariant.bodySmall,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue,
                       ),
                       const SizedBox(height: 2),
-                      Text(
+                      AppText(
                         widget.replyToMessage!.type == MessageType.text
                             ? widget.replyToMessage!.content
                             : _getMediaTypeLabel(widget.replyToMessage!.type),
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey.shade700,
-                        ),
+                        variant: TextVariant.bodySmall,
+                        fontSize: 13,
+                        color: Colors.grey.shade700,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),

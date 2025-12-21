@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:parcel_am/core/theme/app_colors.dart';
+import 'package:parcel_am/core/widgets/app_text.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -33,7 +34,7 @@ extension UserExtensions on BuildContext {
   void showErrorMessage(String message) {
     ScaffoldMessenger.of(this).showSnackBar(
       SnackBar(
-        content: Text(message, style: const TextStyle(color: Colors.white)),
+        content: AppText.bodyMedium(message, color: Colors.white),
         backgroundColor: Colors.red,
       ),
     );
@@ -135,7 +136,7 @@ extension SnackbarExtensions on BuildContext {
   }) {
     ScaffoldMessenger.of(this).showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: AppText.bodyMedium(message, color: Colors.white),
         duration: Duration(seconds: duration),
         backgroundColor: color,
       ),

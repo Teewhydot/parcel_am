@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_spacing.dart';
+import '../../../../core/widgets/app_text.dart';
 import '../bloc/passkey_bloc.dart';
 import '../bloc/passkey_data.dart';
 import '../bloc/passkey_event.dart';
@@ -65,12 +66,11 @@ class PasskeyLoginButton extends StatelessWidget {
                         ),
                       )
                     : const Icon(Icons.fingerprint, size: 24),
-                label: Text(
+                label: AppText(
                   state.isLoading ? 'Authenticating...' : 'Sign in with Passkey',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  variant: TextVariant.bodyLarge,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
                 ),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.primary,
@@ -98,12 +98,11 @@ class PasskeyLoginButton extends StatelessWidget {
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
+          child: AppText(
             'or',
-            style: TextStyle(
-              color: AppColors.onSurfaceVariant,
-              fontSize: 14,
-            ),
+            variant: TextVariant.bodyMedium,
+            fontSize: 14,
+            color: AppColors.onSurfaceVariant,
           ),
         ),
         const Expanded(

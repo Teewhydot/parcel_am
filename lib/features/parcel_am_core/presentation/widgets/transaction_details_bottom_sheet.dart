@@ -4,6 +4,7 @@ import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
 import 'package:parcel_am/core/routes/routes.dart';
 import 'package:parcel_am/core/services/navigation_service/nav_config.dart';
+import 'package:parcel_am/core/widgets/app_text.dart';
 import 'package:parcel_am/features/parcel_am_core/domain/repositories/withdrawal_repository.dart';
 import '../bloc/wallet/wallet_data.dart';
 
@@ -136,11 +137,9 @@ class _TransactionDetailsBottomSheetState
             ),
           ),
           const SizedBox(height: 16),
-          Text(
+          AppText.titleLarge(
             'Transaction Details',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+            fontWeight: FontWeight.w600,
           ),
         ],
       ),
@@ -151,12 +150,11 @@ class _TransactionDetailsBottomSheetState
     return Center(
       child: Column(
         children: [
-          Text(
+          AppText(
             '${_getAmountPrefix()}${_formatAmount(widget.transaction.amount)}',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: _getAmountColor(),
-                ),
+            variant: TextVariant.headlineSmall,
+            fontWeight: FontWeight.bold,
+            color: _getAmountColor(),
           ),
           const SizedBox(height: 8),
           Container(
@@ -165,13 +163,10 @@ class _TransactionDetailsBottomSheetState
               color: _getStatusColor().withOpacity(0.1),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: Text(
+            child: AppText.bodyMedium(
               _getStatusText(),
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: _getStatusColor(),
-              ),
+              fontWeight: FontWeight.w500,
+              color: _getStatusColor(),
             ),
           ),
         ],
@@ -189,20 +184,16 @@ class _TransactionDetailsBottomSheetState
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
+        AppText.bodyMedium(
           label,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[600],
-              ),
+          color: Colors.grey[600],
         ),
         const SizedBox(width: 16),
         Flexible(
-          child: Text(
+          child: AppText.bodyMedium(
             value,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                  color: valueColor,
-                ),
+            fontWeight: FontWeight.w500,
+            color: valueColor,
             textAlign: TextAlign.right,
           ),
         ),
@@ -219,11 +210,9 @@ class _TransactionDetailsBottomSheetState
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
+        AppText.bodyMedium(
           label,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[600],
-              ),
+          color: Colors.grey[600],
         ),
         const SizedBox(width: 16),
         Flexible(
@@ -231,9 +220,9 @@ class _TransactionDetailsBottomSheetState
             onTap: () {
               Clipboard.setData(ClipboardData(text: value));
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Reference ID copied to clipboard'),
-                  duration: Duration(seconds: 2),
+                SnackBar(
+                  content: AppText.bodyMedium('Reference ID copied to clipboard', color: Colors.white),
+                  duration: const Duration(seconds: 2),
                 ),
               );
             },
@@ -241,12 +230,10 @@ class _TransactionDetailsBottomSheetState
               mainAxisSize: MainAxisSize.min,
               children: [
                 Flexible(
-                  child: Text(
+                  child: AppText.bodyMedium(
                     value,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w500,
-                          color: Theme.of(context).primaryColor,
-                        ),
+                    fontWeight: FontWeight.w500,
+                    color: Theme.of(context).primaryColor,
                     textAlign: TextAlign.right,
                   ),
                 ),
@@ -268,11 +255,9 @@ class _TransactionDetailsBottomSheetState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        AppText.titleMedium(
           'Additional Information',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+          fontWeight: FontWeight.w600,
         ),
         const SizedBox(height: 12),
         ...widget.transaction.metadata!.entries.map((entry) {
@@ -314,7 +299,7 @@ class _TransactionDetailsBottomSheetState
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Failed to load withdrawal details: $e'),
+                  content: AppText.bodyMedium('Failed to load withdrawal details: $e', color: Colors.white),
                   backgroundColor: Colors.red,
                 ),
               );
@@ -322,7 +307,7 @@ class _TransactionDetailsBottomSheetState
           }
         },
         icon: const Icon(Icons.arrow_forward),
-        label: const Text('View Withdrawal Details'),
+        label: AppText.bodyMedium('View Withdrawal Details'),
         style: OutlinedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 12),
         ),

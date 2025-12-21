@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
 import 'package:parcel_am/core/widgets/app_button.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/app_text.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../bloc/parcel/parcel_bloc.dart';
 import '../bloc/parcel/parcel_event.dart';
@@ -61,7 +62,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Request Details'),
+        title: AppText.titleLarge('Request Details'),
       ),
       body: BlocConsumer<ParcelBloc, BaseState<ParcelData>>(
         listener: (context, state) {
@@ -102,27 +103,24 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                     color: AppColors.error,
                   ),
                   const SizedBox(height: 16),
-                  const Text(
+                  const AppText(
                     'Failed to load request details',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    variant: TextVariant.titleMedium,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
                   ),
                   const SizedBox(height: 8),
-                  Text(
+                  AppText.bodyMedium(
                     state.errorMessage,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: AppColors.onSurfaceVariant,
-                    ),
+                    color: AppColors.onSurfaceVariant,
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: () {
                       context.read<ParcelBloc>().add(ParcelLoadRequested(widget.requestId));
                     },
-                    child: const Text('Retry'),
+                    child: AppText.bodyMedium('Retry', color: Colors.white),
                   ),
                 ],
               ),
@@ -133,7 +131,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
           if (state is LoadedState<ParcelData>) {
             final parcel = state.data?.currentParcel;
             if (parcel == null) {
-              return const Center(child: Text('Parcel not found'));
+              return Center(child: AppText.bodyMedium('Parcel not found'));
             }
             return _buildParcelDetails(parcel);
           }
@@ -169,7 +167,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                         valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     )
-                  : const Text('Accept Request'),
+                  : AppText.bodyMedium('Accept Request', color: Colors.white),
             ),
           );
         }, child: Container(),
@@ -218,12 +216,10 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                   const Icon(Icons.warning, color: Colors.white),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text(
+                    child: AppText.bodyMedium(
                       'Urgent delivery needed by $deliveryText',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
@@ -257,31 +253,24 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          AppText(
                             parcel.category ?? 'Package',
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            variant: TextVariant.titleLarge,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
                           ),
                           const SizedBox(height: 4),
-                          Text(
+                          AppText.headlineSmall(
                             '₦${(parcel.price ?? 0.0).toStringAsFixed(0)}',
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primary,
-                            ),
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
                           ),
                           const SizedBox(height: 4),
-                          Text(
+                          AppText.bodySmall(
                             (parcel.escrowId != null && parcel.escrowId!.isNotEmpty)
                                 ? 'Payment via escrow'
                                 : 'Direct payment',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.onSurfaceVariant,
-                            ),
+                            color: AppColors.onSurfaceVariant,
                           ),
                         ],
                       ),
@@ -292,33 +281,26 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                 const SizedBox(height: 24),
 
                 // Package Description
-                Text(
+                AppText.bodyLarge(
                   parcel.description ?? 'No description provided',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    height: 1.5,
-                  ),
+                  height: 1.5,
                 ),
 
                 const SizedBox(height: 24),
 
                 // Sender Info
                 if (parcel.sender.name.isNotEmpty) ...[
-                  const Text(
+                  AppText.bodyLarge(
                     'Sender',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    fontWeight: FontWeight.bold,
                   ),
                   const SizedBox(height: 8),
                   Row(
                     children: [
                       const Icon(Icons.person, size: 20, color: AppColors.primary),
                       const SizedBox(width: 8),
-                      Text(
+                      AppText.bodyMedium(
                         parcel.sender.name,
-                        style: const TextStyle(fontSize: 14),
                       ),
                     ],
                   ),
@@ -328,9 +310,8 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                       children: [
                         const Icon(Icons.phone, size: 20, color: AppColors.primary),
                         const SizedBox(width: 8),
-                        Text(
+                        AppText.bodyMedium(
                           parcel.sender.phoneNumber,
-                          style: const TextStyle(fontSize: 14),
                         ),
                       ],
                     ),
@@ -371,34 +352,22 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          AppText.bodySmall(
                             'From',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.onSurfaceVariant,
-                            ),
+                            color: AppColors.onSurfaceVariant,
                           ),
-                          Text(
+                          AppText.bodyLarge(
                             parcel.route.origin,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            fontWeight: FontWeight.w600,
                           ),
                           const SizedBox(height: 24),
-                          const Text(
+                          AppText.bodySmall(
                             'To',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.onSurfaceVariant,
-                            ),
+                            color: AppColors.onSurfaceVariant,
                           ),
-                          Text(
+                          AppText.bodyLarge(
                             parcel.route.destination,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            fontWeight: FontWeight.w600,
                           ),
                         ],
                       ),
@@ -440,21 +409,17 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                 const SizedBox(height: 24),
 
                 // Receiver Info
-                const Text(
+                AppText.bodyLarge(
                   'Receiver',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  fontWeight: FontWeight.bold,
                 ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
                     const Icon(Icons.person, size: 20, color: AppColors.secondary),
                     const SizedBox(width: 8),
-                    Text(
+                    AppText.bodyMedium(
                       parcel.receiver.name,
-                      style: const TextStyle(fontSize: 14),
                     ),
                   ],
                 ),
@@ -464,9 +429,8 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                     children: [
                       const Icon(Icons.phone, size: 20, color: AppColors.secondary),
                       const SizedBox(width: 8),
-                      Text(
+                      AppText.bodyMedium(
                         parcel.receiver.phoneNumber,
-                        style: const TextStyle(fontSize: 14),
                       ),
                     ],
                   ),
@@ -479,9 +443,8 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                       const Icon(Icons.location_on, size: 20, color: AppColors.secondary),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: Text(
+                        child: AppText.bodyMedium(
                           parcel.receiver.address,
-                          style: const TextStyle(fontSize: 14),
                         ),
                       ),
                     ],
@@ -507,20 +470,14 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          AppText.bodySmall(
             label,
-            style: const TextStyle(
-              fontSize: 12,
-              color: AppColors.onSurfaceVariant,
-            ),
+            color: AppColors.onSurfaceVariant,
           ),
           const SizedBox(height: 4),
-          Text(
+          AppText.bodyMedium(
             value,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
+            fontWeight: FontWeight.w600,
           ),
         ],
       ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/widgets/app_text.dart';
 import '../../domain/value_objects/transaction_filter.dart';
 
 class TransactionFilterBar extends StatelessWidget {
@@ -21,12 +22,10 @@ class TransactionFilterBar extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text(
+              AppText.bodySmall(
                 'Filter by:',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.w500,
-                    ),
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -94,26 +93,25 @@ class TransactionFilterBar extends StatelessWidget {
                   : Colors.grey[700],
             ),
             const SizedBox(width: 4),
-            Text(
+            AppText(
               currentFilter.status != null
                   ? _formatStatus(currentFilter.status!)
                   : 'Status',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: currentFilter.status != null
-                    ? Theme.of(context).primaryColor
-                    : Colors.grey[700],
-              ),
+              variant: TextVariant.bodySmall,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: currentFilter.status != null
+                  ? Theme.of(context).primaryColor
+                  : Colors.grey[700],
             ),
           ],
         ),
       ),
       itemBuilder: (context) => [
-        const PopupMenuItem(value: 'all', child: Text('All')),
-        const PopupMenuItem(value: 'success', child: Text('Completed')),
-        const PopupMenuItem(value: 'pending', child: Text('Pending')),
-        const PopupMenuItem(value: 'failed', child: Text('Failed')),
+        PopupMenuItem(value: 'all', child: AppText.bodyMedium('All')),
+        PopupMenuItem(value: 'success', child: AppText.bodyMedium('Completed')),
+        PopupMenuItem(value: 'pending', child: AppText.bodyMedium('Pending')),
+        PopupMenuItem(value: 'failed', child: AppText.bodyMedium('Failed')),
       ],
     );
   }
@@ -155,15 +153,14 @@ class TransactionFilterBar extends StatelessWidget {
                   : Colors.grey[700],
             ),
             const SizedBox(width: 4),
-            Text(
+            AppText(
               _getDateRangeText(),
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: (currentFilter.startDate != null || currentFilter.endDate != null)
-                    ? Theme.of(context).primaryColor
-                    : Colors.grey[700],
-              ),
+              variant: TextVariant.bodySmall,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: (currentFilter.startDate != null || currentFilter.endDate != null)
+                  ? Theme.of(context).primaryColor
+                  : Colors.grey[700],
             ),
           ],
         ),
@@ -171,19 +168,19 @@ class TransactionFilterBar extends StatelessWidget {
       itemBuilder: (context) => [
         PopupMenuItem(
           value: TransactionDateRange.last7Days,
-          child: Text(TransactionDateRange.last7Days.label),
+          child: AppText.bodyMedium(TransactionDateRange.last7Days.label),
         ),
         PopupMenuItem(
           value: TransactionDateRange.last30Days,
-          child: Text(TransactionDateRange.last30Days.label),
+          child: AppText.bodyMedium(TransactionDateRange.last30Days.label),
         ),
         PopupMenuItem(
           value: TransactionDateRange.last90Days,
-          child: Text(TransactionDateRange.last90Days.label),
+          child: AppText.bodyMedium(TransactionDateRange.last90Days.label),
         ),
         PopupMenuItem(
           value: TransactionDateRange.custom,
-          child: Text(TransactionDateRange.custom.label),
+          child: AppText.bodyMedium(TransactionDateRange.custom.label),
         ),
       ],
     );
@@ -208,13 +205,12 @@ class TransactionFilterBar extends StatelessWidget {
               color: Colors.red.shade700,
             ),
             const SizedBox(width: 4),
-            Text(
+            AppText(
               'Clear All',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: Colors.red.shade700,
-              ),
+              variant: TextVariant.bodySmall,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: Colors.red.shade700,
             ),
           ],
         ),
@@ -256,12 +252,9 @@ class TransactionFilterBar extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
+          AppText.bodySmall(
             label,
-            style: TextStyle(
-              fontSize: 12,
-              color: Theme.of(context).primaryColor,
-            ),
+            color: Theme.of(context).primaryColor,
           ),
           const SizedBox(width: 4),
           InkWell(

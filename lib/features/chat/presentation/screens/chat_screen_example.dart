@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
+import '../../../../core/widgets/app_text.dart';
 import '../../../../injection_container.dart';
 
 /// Example of how to navigate to ChatScreen with proper BLoC setup
@@ -12,7 +13,7 @@ class ChatScreenExample extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Chat Example')),
+      appBar: AppBar(title: AppText.titleLarge('Chat Example')),
       body: Center(
         child: ElevatedButton(
           onPressed: () {
@@ -27,7 +28,7 @@ class ChatScreenExample extends StatelessWidget {
               },
             );
           },
-          child: const Text('Open Chat'),
+          child: AppText.bodyMedium('Open Chat'),
         ),
       ),
     );
@@ -61,20 +62,22 @@ class ChatListExample extends StatelessWidget {
     ];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Chats')),
+      appBar: AppBar(title: AppText.titleLarge('Chats')),
       body: ListView.builder(
         itemCount: chats.length,
         itemBuilder: (context, index) {
           final chat = chats[index];
           return ListTile(
             leading: CircleAvatar(
-              child: Text((chat['name'] as String)[0]),
+              child: AppText.bodyMedium((chat['name'] as String)[0]),
             ),
-            title: Text(chat['name'] as String),
-            subtitle: Text(chat['lastMessage'] as String),
-            trailing: Text(
+            title: AppText.bodyMedium(chat['name'] as String),
+            subtitle: AppText.bodySmall(chat['lastMessage'] as String),
+            trailing: AppText(
               chat['time'] as String,
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
+              variant: TextVariant.bodySmall,
+              fontSize: 12,
+              color: Colors.grey,
             ),
             onTap: () {
               sl<NavigationService>().navigateTo(

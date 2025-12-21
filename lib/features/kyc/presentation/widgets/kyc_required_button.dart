@@ -4,6 +4,7 @@ import '../../../../core/services/auth/kyc_guard.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_text.dart';
 import '../../../../injection_container.dart';
 
 /// Reactive button that automatically updates based on realtime KYC status changes
@@ -43,7 +44,7 @@ class KycRequiredButton extends StatelessWidget {
 
         return AppButton.primary(
           onPressed: canProceed ? onPressed : () => _handleKycBlocked(context, status),
-          child: Text(text),
+          child: AppText.bodyMedium(text),
         );
       },
     );

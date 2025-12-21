@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/app_text.dart';
 import '../../data/seeder_registry.dart';
 import '../../domain/seeder.dart';
 import '../../domain/seeder_service.dart';
@@ -109,7 +110,7 @@ class _DatabaseSeederScreenState extends State<DatabaseSeederScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Database Seeder'),
+        title: AppText.titleLarge('Database Seeder'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -128,16 +129,14 @@ class _DatabaseSeederScreenState extends State<DatabaseSeederScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                AppText.titleLarge(
                   'Database Seeders',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  fontWeight: FontWeight.bold,
                 ),
                 const SizedBox(height: 4),
-                Text(
+                AppText.bodyMedium(
                   '${seeders.length} seeders available',
-                  style: TextStyle(color: Colors.grey.shade700),
+                  color: Colors.grey.shade700,
                 ),
               ],
             ),
@@ -188,7 +187,7 @@ class _DatabaseSeederScreenState extends State<DatabaseSeederScreen> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.play_arrow),
-                  label: Text(_isRunningAll ? 'Running...' : 'Run All Seeders'),
+                  label: AppText.bodyMedium(_isRunningAll ? 'Running...' : 'Run All Seeders'),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
@@ -253,19 +252,15 @@ class _SeederCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      AppText.bodyLarge(
                         seeder.name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
+                        fontWeight: FontWeight.bold,
                       ),
-                      Text(
+                      AppText(
                         seeder.description,
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 13,
-                        ),
+                        variant: TextVariant.bodySmall,
+                        fontSize: 13,
+                        color: Colors.grey.shade600,
                       ),
                     ],
                   ),
@@ -311,9 +306,9 @@ class _SeederCard extends StatelessWidget {
               const SizedBox(height: 12),
               LinearProgressIndicator(value: status.progress / 100),
               const SizedBox(height: 4),
-              Text(
+              AppText.bodySmall(
                 '${status.progress}% - ${status.currentItem}',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                color: Colors.grey.shade600,
               ),
             ],
 
@@ -338,11 +333,9 @@ class _SeederCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(
+                      child: AppText.bodyMedium(
                         status.result!.message,
-                        style: TextStyle(
-                          color: isSuccessResult ? Colors.green.shade800 : Colors.red.shade800,
-                        ),
+                        color: isSuccessResult ? Colors.green.shade800 : Colors.red.shade800,
                       ),
                     ),
                   ],
@@ -365,7 +358,7 @@ class _SeederCard extends StatelessWidget {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.play_arrow, size: 18),
-                    label: Text(hasData ? 'Already Seeded' : 'Seed'),
+                    label: AppText.bodyMedium(hasData ? 'Already Seeded' : 'Seed'),
                   ),
                 ),
                 if (hasData) ...[
@@ -373,7 +366,7 @@ class _SeederCard extends StatelessWidget {
                   OutlinedButton.icon(
                     onPressed: isDisabled || status.isRunning ? null : onForceReseed,
                     icon: const Icon(Icons.refresh, size: 18),
-                    label: const Text('Reseed'),
+                    label: AppText.bodyMedium('Reseed'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.orange,
                     ),
@@ -394,13 +387,10 @@ class _SeederCard extends StatelessWidget {
         color: hasData ? Colors.green.shade100 : Colors.orange.shade100,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Text(
+      child: AppText.bodySmall(
         hasData ? 'Seeded' : 'Empty',
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: hasData ? Colors.green.shade800 : Colors.orange.shade800,
-        ),
+        fontWeight: FontWeight.w600,
+        color: hasData ? Colors.green.shade800 : Colors.orange.shade800,
       ),
     );
   }
@@ -414,15 +404,17 @@ class _SeederCard extends StatelessWidget {
             children: [
               Icon(icon, size: 14, color: Colors.grey.shade600),
               const SizedBox(width: 4),
-              Text(
+              AppText.bodyMedium(
                 value,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                fontWeight: FontWeight.bold,
               ),
             ],
           ),
-          Text(
+          AppText(
             label,
-            style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+            variant: TextVariant.bodySmall,
+            fontSize: 11,
+            color: Colors.grey.shade500,
           ),
         ],
       ),

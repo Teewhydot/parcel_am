@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/services/notification_service.dart';
+import '../../../../core/widgets/app_text.dart';
 import '../../../../injection_container.dart' as di;
 import '../../domain/entities/message.dart';
 import '../../domain/entities/message_type.dart';
@@ -98,26 +99,25 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Row(
+          title: Row(
             children: [
-              Icon(Icons.notifications_active, color: Colors.blue),
-              SizedBox(width: 12),
-              Text('Enable Notifications'),
+              const Icon(Icons.notifications_active, color: Colors.blue),
+              const SizedBox(width: 12),
+              AppText.titleMedium('Enable Notifications'),
             ],
           ),
-          content: const Text(
+          content: AppText.bodyLarge(
             'Stay connected with your conversations! Enable notifications to receive instant alerts when you receive new messages, even when the app is closed.',
-            style: TextStyle(fontSize: 16),
           ),
           actions: <Widget>[
             TextButton(
-              child: const Text('Not Now'),
+              child: AppText.bodyMedium('Not Now'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
             ElevatedButton(
-              child: const Text('Enable'),
+              child: AppText.bodyMedium('Enable', color: Colors.white),
               onPressed: () {
                 Navigator.of(context).pop();
               },
@@ -281,7 +281,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           children: [
             ListTile(
               leading: const Icon(Icons.reply),
-              title: const Text('Reply'),
+              title: AppText.bodyLarge('Reply'),
               onTap: () {
                 Navigator.pop(context);
                 context.read<ChatBloc>().add(SetReplyToMessage(message));
@@ -290,7 +290,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
             if (message.senderId == _currentUserId)
               ListTile(
                 leading: const Icon(Icons.delete, color: Colors.red),
-                title: const Text('Delete', style: TextStyle(color: Colors.red)),
+                title: AppText.bodyLarge('Delete', color: Colors.red),
                 onTap: () {
                   Navigator.pop(context);
                   context.read<ChatBloc>().add(DeleteMessage(message.id));
@@ -349,9 +349,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                   ? NetworkImage(widget.otherUserAvatar!)
                   : null,
               child: widget.otherUserAvatar == null
-                  ? Text(
+                  ? AppText.bodyMedium(
                       widget.otherUserName[0].toUpperCase(),
-                      style: const TextStyle(color: Colors.white),
+                      color: Colors.white,
                     )
                   : null,
             ),
@@ -360,25 +360,16 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    widget.otherUserName,
-                    style: const TextStyle(fontSize: 16),
-                  ),
+                  AppText.bodyLarge(widget.otherUserName),
                   BlocBuilder<ChatBloc, ChatState>(
                     builder: (context, state) {
                       if (state is MessagesLoaded) {
                         final status = _getOnlineStatus(state);
-                        return Text(
+                        return AppText.bodySmall(
                           status,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: status == 'online' || status == 'typing...'
-                                ? Colors.green
-                                : Colors.grey.shade600,
-                            fontStyle: status == 'typing...'
-                                ? FontStyle.italic
-                                : FontStyle.normal,
-                          ),
+                          color: status == 'online' || status == 'typing...'
+                              ? Colors.green
+                              : Colors.grey.shade600,
                         );
                       }
                       return const SizedBox.shrink();
@@ -426,20 +417,14 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                                 color: Colors.grey.shade400,
                               ),
                               const SizedBox(height: 16),
-                              Text(
+                              AppText.bodyLarge(
                                 'No messages yet',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey.shade600,
-                                ),
+                                color: Colors.grey.shade600,
                               ),
                               const SizedBox(height: 8),
-                              Text(
+                              AppText.bodyMedium(
                                 'Start the conversation!',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey.shade500,
-                                ),
+                                color: Colors.grey.shade500,
                               ),
                             ],
                           ),
@@ -487,7 +472,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
             );
           }
 
-          return const Center(child: Text('Failed to load messages'));
+          return Center(child: AppText.bodyMedium('Failed to load messages'));
         },
       ),
     );

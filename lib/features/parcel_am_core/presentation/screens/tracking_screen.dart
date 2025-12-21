@@ -70,7 +70,7 @@ ETA: ${_formatETA(package.estimatedArrival)}
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not launch phone dialer')),
+          SnackBar(content: AppText.bodyMedium('Could not launch phone dialer', color: Colors.white)),
         );
       }
     }
@@ -131,23 +131,19 @@ ETA: ${_formatETA(package.estimatedArrival)}
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            AppText.bodyLarge(
                               'Package #${state.package!.id.substring(0, 8)}',
-                              style: const TextStyle(fontSize: 16),
                             ),
-                            Text(
+                            AppText.bodySmall(
                               _getStatusText(state.package!.status),
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: _getStatusColor(state.package!.status),
-                              ),
+                              color: _getStatusColor(state.package!.status),
                             ),
                           ],
                         ),
                       ),
                     ],
                   )
-                : const Text('Package Tracking'),
+                : AppText.titleLarge('Package Tracking'),
             actions: [
               IconButton(
                 icon: const Icon(Icons.share),
@@ -202,19 +198,15 @@ ETA: ${_formatETA(package.estimatedArrival)}
                               color: Colors.white.withOpacity(0.8),
                             ),
                             const SizedBox(height: 16),
-                            Text(
+                            AppText.titleLarge(
                               'No package data',
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
                             ),
                             const SizedBox(height: 8),
-                            Text(
+                            AppText.bodyMedium(
                               'Package information could not be loaded',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Colors.white.withOpacity(0.8),
-                                  ),
+                              color: Colors.white.withOpacity(0.8),
                               textAlign: TextAlign.center,
                             ),
                           ],

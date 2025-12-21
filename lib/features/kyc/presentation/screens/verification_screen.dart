@@ -165,7 +165,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
               border: OutlineInputBorder(),
             ),
             items: VerificationConstants.genderOptions.map((gender) {
-              return DropdownMenuItem(value: gender, child: Text(gender));
+              return DropdownMenuItem(value: gender, child: AppText.bodyMedium(gender));
             }).toList(),
             onChanged: (value) => setState(() => _selectedGender = value!),
           ),
@@ -303,7 +303,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
               border: OutlineInputBorder(),
             ),
             items: VerificationConstants.nigerianStates.map((state) {
-              return DropdownMenuItem(value: state, child: Text(state));
+              return DropdownMenuItem(value: state, child: AppText.bodyMedium(state));
             }).toList(),
             onChanged: (value) => _stateController.text = value!,
           ),

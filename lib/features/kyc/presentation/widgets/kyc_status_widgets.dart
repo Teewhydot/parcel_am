@@ -48,13 +48,12 @@ class KycStatusBadge extends StatelessWidget {
             color: _getStatusColor(status),
           ),
           SizedBox(width: compact ? 4 : 6),
-          Text(
+          AppText(
             status.displayName,
-            style: TextStyle(
-              fontSize: compact ? 11 : 12,
-              fontWeight: FontWeight.w600,
-              color: _getStatusColor(status),
-            ),
+            variant: TextVariant.bodySmall,
+            fontSize: compact ? 11 : 12,
+            fontWeight: FontWeight.w600,
+            color: _getStatusColor(status),
           ),
         ],
       ),
@@ -369,12 +368,10 @@ class KycStatusCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: Text(
+                    child: AppText.bodyMedium(
                       _getActionButtonText(status),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),

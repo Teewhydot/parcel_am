@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../widgets/app_text.dart';
 import '../../../features/parcel_am_core/presentation/bloc/auth/auth_bloc.dart';
 import '../../../features/parcel_am_core/presentation/bloc/auth/auth_data.dart';
 import '../../../core/bloc/base/base_state.dart';
@@ -297,21 +298,19 @@ class _KycNotificationToastState extends State<_KycNotificationToast>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(
+                              AppText(
                                 widget.data.title,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                variant: TextVariant.bodyLarge,
+                                fontSize: 16,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
                               ),
                               const SizedBox(height: 4),
-                              Text(
+                              AppText(
                                 widget.data.message,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 13,
-                                ),
+                                variant: TextVariant.bodySmall,
+                                fontSize: 13,
+                                color: Colors.white,
                               ),
                             ],
                           ),
@@ -368,22 +367,19 @@ class _KycStatusChangeDialog extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          Text(
+          AppText(
             data.title,
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            ),
+            variant: TextVariant.titleLarge,
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),
-          Text(
+          AppText(
             data.message,
-            style: const TextStyle(
-              fontSize: 15,
-              color: Colors.grey,
-              height: 1.4,
-            ),
+            variant: TextVariant.bodyMedium,
+            fontSize: 15,
+            color: Colors.grey,
             textAlign: TextAlign.center,
           ),
           if (isApproved) ...[
@@ -399,12 +395,11 @@ class _KycStatusChangeDialog extends StatelessWidget {
                   Icon(Icons.check_circle, color: AppColors.success, size: 20),
                   SizedBox(width: 8),
                   Expanded(
-                    child: Text(
+                    child: AppText(
                       'You can now access wallet, payments, and all features',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.success,
-                      ),
+                      variant: TextVariant.bodySmall,
+                      fontSize: 13,
+                      color: AppColors.success,
                     ),
                   ),
                 ],
@@ -420,7 +415,7 @@ class _KycStatusChangeDialog extends StatelessWidget {
               Navigator.of(context).pop();
               sl<NavigationService>().navigateTo(data.actionRoute!);
             },
-            child: Text(data.actionText!),
+            child: AppText.bodyMedium(data.actionText!),
           ),
         ElevatedButton(
           onPressed: () => Navigator.of(context).pop(),
@@ -431,9 +426,9 @@ class _KycStatusChangeDialog extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
             ),
           ),
-          child: const Text(
+          child: AppText.bodyMedium(
             'Got it',
-            style: TextStyle(color: Colors.white),
+            color: Colors.white,
           ),
         ),
       ],

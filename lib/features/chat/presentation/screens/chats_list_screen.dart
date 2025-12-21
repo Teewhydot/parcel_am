@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
+import '../../../../core/widgets/app_text.dart';
 import '../../../../injection_container.dart';
 import '../../domain/entities/chat.dart';
 import '../bloc/chats_list_bloc.dart';
@@ -69,7 +70,7 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chats'),
+        title: AppText.titleLarge('Chats', color: Colors.white),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
@@ -84,17 +85,17 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
                 separatorBuilder: (context, index) => const Divider(height: 1),
                 itemBuilder: (context, index) {
                   return ListTile(
-                    leading: const CircleAvatar(
+                    leading: CircleAvatar(
                       backgroundColor: AppColors.primary,
-                      child: Text('L'),
+                      child: AppText.bodyMedium('L', color: Colors.white),
                     ),
-                    title: const Text('Loading User Name'),
-                    subtitle: const Text('Loading message content here...'),
+                    title: AppText.bodyLarge('Loading User Name'),
+                    subtitle: AppText.bodyMedium('Loading message content here...'),
                     trailing: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        const Text('12:00'),
+                        AppText.bodySmall('12:00'),
                         const SizedBox(height: 4),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -102,7 +103,7 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
                             color: AppColors.primary,
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Text('3'),
+                          child: AppText.bodySmall('3', color: Colors.white),
                         ),
                       ],
                     ),
@@ -119,14 +120,10 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
                 children: [
                   const Icon(Icons.error_outline, size: 64, color: AppColors.error),
                   const SizedBox(height: 16),
-                  Text(
-                    'Error loading chats',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
+                  AppText.titleLarge('Error loading chats'),
                   const SizedBox(height: 8),
-                  Text(
+                  AppText.bodyMedium(
                     state.errorMessage,
-                    style: Theme.of(context).textTheme.bodyMedium,
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
@@ -134,7 +131,7 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
                     onPressed: () {
                       _chatsListBloc.add(LoadChats(widget.currentUserId));
                     },
-                    child: const Text('Retry'),
+                    child: AppText.bodyMedium('Retry', color: Colors.white),
                   ),
                 ],
               ),
@@ -163,19 +160,15 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
                         color: Colors.white.withOpacity(0.8),
                       ),
                       const SizedBox(height: 16),
-                      Text(
+                      AppText.titleLarge(
                         'No chats yet',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
                       ),
                       const SizedBox(height: 8),
-                      Text(
+                      AppText.bodyMedium(
                         'Start a conversation with someone',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.white.withOpacity(0.8),
-                            ),
+                        color: Colors.white.withOpacity(0.8),
                       ),
                     ],
                   ),
@@ -212,28 +205,23 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
                                   ? NetworkImage(otherParticipantAvatar)
                                   : null,
                               child: otherParticipantAvatar == null
-                                  ? Text(
+                                  ? AppText.bodyMedium(
                                       otherParticipantName.isNotEmpty
                                           ? otherParticipantName[0].toUpperCase()
                                           : '?',
-                                      style: const TextStyle(color: Colors.white),
+                                      color: Colors.white,
                                     )
                                   : null,
                             ),
-                            title: Text(
+                            title: AppText.bodyLarge(
                               otherParticipantName,
-                              style: TextStyle(
-                                fontWeight: unreadCount > 0 ? FontWeight.bold : FontWeight.normal,
-                              ),
+                              fontWeight: unreadCount > 0 ? FontWeight.bold : FontWeight.normal,
                             ),
-                            subtitle: Text(
+                            subtitle: AppText.bodyMedium(
                               isTyping
                                   ? 'typing...'
                                   : chat.lastMessage?.content ?? 'No messages yet',
-                              style: TextStyle(
-                                color: isTyping ? AppColors.primary : Colors.grey[600],
-                                fontStyle: isTyping ? FontStyle.italic : FontStyle.normal,
-                              ),
+                              color: isTyping ? AppColors.primary : Colors.grey[600],
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -242,12 +230,9 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 if (chat.lastMessageTime != null)
-                                  Text(
+                                  AppText.bodySmall(
                                     _formatTime(chat.lastMessageTime!),
-                                    style: TextStyle(
-                                      color: Colors.grey[600],
-                                      fontSize: 12,
-                                    ),
+                                    color: Colors.grey[600],
                                   ),
                                 if (unreadCount > 0) ...[
                                   const SizedBox(height: 4),
@@ -260,13 +245,10 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
                                       color: AppColors.primary,
                                       borderRadius: BorderRadius.circular(12),
                                     ),
-                                    child: Text(
+                                    child: AppText.bodySmall(
                                       unreadCount > 99 ? '99+' : '$unreadCount',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                 ],
