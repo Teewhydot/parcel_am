@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../domain/entities/message.dart';
 import '../../domain/entities/message_type.dart';
@@ -38,7 +39,7 @@ class MessageBubble extends StatelessWidget {
               if (message.replyToMessage != null)
                 _buildReplyPreview(context),
               _buildMessageContent(context),
-              const SizedBox(height: 4),
+              AppSpacing.verticalSpacing(SpacingSize.xs),
               _buildMessageInfo(context),
             ],
           ),
@@ -221,7 +222,7 @@ class MessageBubble extends StatelessWidget {
               size: 24,
             ),
           ),
-          const SizedBox(width: 12),
+          AppSpacing.horizontalSpacing(SpacingSize.md),
           Flexible(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -241,7 +242,7 @@ class MessageBubble extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          AppSpacing.horizontalSpacing(SpacingSize.sm),
           Icon(
             Icons.download,
             color: isMe ? Colors.white : Colors.grey.shade700,
@@ -263,7 +264,7 @@ class MessageBubble extends StatelessWidget {
           color: Colors.grey.shade600,
         ),
         if (isMe) ...[
-          const SizedBox(width: 4),
+          AppSpacing.horizontalSpacing(SpacingSize.xs),
           _buildStatusIcon(),
         ],
       ],

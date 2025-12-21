@@ -7,6 +7,8 @@ import '../../../../core/bloc/base/base_state.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../core/widgets/app_text.dart';
+import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_spacing.dart';
 import '../../../../injection_container.dart';
 import '../../domain/entities/chat.dart';
 import '../bloc/chats_list_bloc.dart';
@@ -96,7 +98,7 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         AppText.bodySmall('12:00'),
-                        const SizedBox(height: 4),
+                        AppSpacing.verticalSpacing(SpacingSize.xs),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
@@ -119,15 +121,15 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Icon(Icons.error_outline, size: 64, color: AppColors.error),
-                  const SizedBox(height: 16),
+                  AppSpacing.verticalSpacing(SpacingSize.lg),
                   AppText.titleLarge('Error loading chats'),
-                  const SizedBox(height: 8),
+                  AppSpacing.verticalSpacing(SpacingSize.sm),
                   AppText.bodyMedium(
                     state.errorMessage,
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
+                  AppSpacing.verticalSpacing(SpacingSize.lg),
+                  AppButton.primary(
                     onPressed: () {
                       _chatsListBloc.add(LoadChats(widget.currentUserId));
                     },
@@ -159,13 +161,13 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
                         size: 64,
                         color: Colors.white.withOpacity(0.8),
                       ),
-                      const SizedBox(height: 16),
+                      AppSpacing.verticalSpacing(SpacingSize.lg),
                       AppText.titleLarge(
                         'No chats yet',
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(height: 8),
+                      AppSpacing.verticalSpacing(SpacingSize.sm),
                       AppText.bodyMedium(
                         'Start a conversation with someone',
                         color: Colors.white.withOpacity(0.8),
@@ -235,7 +237,7 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
                                     color: Colors.grey[600],
                                   ),
                                 if (unreadCount > 0) ...[
-                                  const SizedBox(height: 4),
+                                  AppSpacing.verticalSpacing(SpacingSize.xs),
                                   Container(
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 8,

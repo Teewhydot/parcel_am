@@ -4,6 +4,7 @@ import '../../domain/entities/message.dart';
 import '../../domain/entities/message_type.dart';
 import '../../../../core/helpers/user_extensions.dart';
 import '../../../../core/widgets/app_text.dart';
+import '../../../../core/widgets/app_spacing.dart';
 
 class MessageInput extends StatefulWidget {
   final Function(String) onSend;
@@ -172,7 +173,7 @@ class _MessageInputState extends State<MessageInput> {
             ),
             child: Icon(icon, color: color, size: 30),
           ),
-          const SizedBox(height: 8),
+          AppSpacing.verticalSpacing(SpacingSize.sm),
           AppText(
             label,
             variant: TextVariant.bodySmall,
@@ -285,7 +286,7 @@ class _MessageInputState extends State<MessageInput> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                AppSpacing.horizontalSpacing(SpacingSize.sm),
                 GestureDetector(
                   onTap: widget.isUploading ? null : _handleSend,
                   child: Container(

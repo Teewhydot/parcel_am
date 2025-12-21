@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../core/widgets/app_text.dart';
+import '../../../../core/widgets/app_button.dart';
 import '../../../../injection_container.dart';
 
 /// Example of how to navigate to ChatScreen with proper BLoC setup
@@ -15,7 +16,7 @@ class ChatScreenExample extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: AppText.titleLarge('Chat Example')),
       body: Center(
-        child: ElevatedButton(
+        child: AppButton.primary(
           onPressed: () {
             // Example: Navigate to chat screen using navigation service
             sl<NavigationService>().navigateTo(

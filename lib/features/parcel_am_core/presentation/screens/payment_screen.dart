@@ -3,6 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
+import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_card.dart';
+import '../../../../core/widgets/app_input.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../../../escrow/domain/entities/escrow_status.dart';
 import '../widgets/bottom_navigation.dart';
@@ -247,24 +250,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   top: BorderSide(color: AppColors.outline),
                 ),
               ),
-              child: SizedBox(
-                width: double.infinity,
-                height: SpacingSize.massive.value,
-                child: ElevatedButton(
-                  onPressed: nextStep,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: AppText.bodyLarge(
-                    currentStep == 0 ? 'Proceed to Payment' :
-                    currentStep == 1 ? 'Confirm Payment Method' :
-                    'Complete Payment',
-                    color: Colors.white,
-                  ),
+              child: AppButton.primary(
+                onPressed: nextStep,
+                fullWidth: true,
+                child: AppText.bodyLarge(
+                  currentStep == 0 ? 'Proceed to Payment' :
+                  currentStep == 1 ? 'Confirm Payment Method' :
+                  'Complete Payment',
+                  color: Colors.white,
                 ),
               ),
             ),
@@ -295,127 +288,121 @@ class _PaymentScreenState extends State<PaymentScreen> {
     return Column(
       children: [
         // Order Summary Card
-        Card(
-          child: Padding(
-            padding: AppSpacing.paddingLG,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const AppText(
-                  'Order Summary',
-                  variant: TextVariant.titleMedium,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-                AppSpacing.verticalSpacing(SpacingSize.lg),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: SpacingSize.massive.value,
-                      height: SpacingSize.massive.value,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.description,
-                        color: AppColors.primary,
-                        size: 24,
-                      ),
+        AppCard.elevated(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const AppText(
+                'Order Summary',
+                variant: TextVariant.titleMedium,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+              AppSpacing.verticalSpacing(SpacingSize.lg),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: SpacingSize.massive.value,
+                    height: SpacingSize.massive.value,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    AppSpacing.horizontalSpacing(SpacingSize.md),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          AppText.bodyLarge(
-                            packageDetails['title']!,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          AppText.bodyMedium(
-                            packageDetails['route']!,
-                            color: AppColors.onSurfaceVariant,
-                          ),
-                          AppText.bodyMedium(
-                            'Traveler: ${packageDetails['traveler']}',
-                            color: AppColors.onSurfaceVariant,
-                          ),
-                        ],
-                      ),
-                    ),
-                    AppText(
-                      packageDetails['price']!,
-                      variant: TextVariant.titleMedium,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                    child: const Icon(
+                      Icons.description,
                       color: AppColors.primary,
+                      size: 24,
                     ),
-                  ],
-                ),
-              ],
-            ),
+                  ),
+                  AppSpacing.horizontalSpacing(SpacingSize.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AppText.bodyLarge(
+                          packageDetails['title']!,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        AppText.bodyMedium(
+                          packageDetails['route']!,
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                        AppText.bodyMedium(
+                          'Traveler: ${packageDetails['traveler']}',
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ],
+                    ),
+                  ),
+                  AppText(
+                    packageDetails['price']!,
+                    variant: TextVariant.titleMedium,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
 
         AppSpacing.verticalSpacing(SpacingSize.lg),
 
         // Price Breakdown Card
-        Card(
-          child: Padding(
-            padding: AppSpacing.paddingLG,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const AppText(
-                  'Price Breakdown',
-                  variant: TextVariant.titleMedium,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-                AppSpacing.verticalSpacing(SpacingSize.lg),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    AppText.bodyMedium(
-                      'Delivery Fee',
-                      color: AppColors.onSurfaceVariant,
-                    ),
-                    AppText.bodyMedium(packageDetails['deliveryFee']!),
-                  ],
-                ),
-                AppSpacing.verticalSpacing(SpacingSize.sm),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    AppText.bodyMedium(
-                      'Service Fee',
-                      color: AppColors.onSurfaceVariant,
-                    ),
-                    AppText.bodyMedium(packageDetails['serviceFee']!),
-                  ],
-                ),
-                const Divider(),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const AppText(
-                      'Total',
-                      variant: TextVariant.titleMedium,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    AppText(
-                      packageDetails['total']!,
-                      variant: TextVariant.titleMedium,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
-                    ),
-                  ],
-                ),
-              ],
-            ),
+        AppCard.elevated(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const AppText(
+                'Price Breakdown',
+                variant: TextVariant.titleMedium,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+              AppSpacing.verticalSpacing(SpacingSize.lg),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  AppText.bodyMedium(
+                    'Delivery Fee',
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                  AppText.bodyMedium(packageDetails['deliveryFee']!),
+                ],
+              ),
+              AppSpacing.verticalSpacing(SpacingSize.sm),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  AppText.bodyMedium(
+                    'Service Fee',
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                  AppText.bodyMedium(packageDetails['serviceFee']!),
+                ],
+              ),
+              const Divider(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const AppText(
+                    'Total',
+                    variant: TextVariant.titleMedium,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  AppText(
+                    packageDetails['total']!,
+                    variant: TextVariant.titleMedium,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
 
@@ -466,124 +453,112 @@ class _PaymentScreenState extends State<PaymentScreen> {
   Widget _buildSelectPaymentStep() {
     return Column(
       children: [
-        Card(
-          child: Padding(
-            padding: AppSpacing.paddingLG,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const AppText(
-                  'Select Payment Method',
-                  variant: TextVariant.titleMedium,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-                AppSpacing.verticalSpacing(SpacingSize.lg),
-                for (var method in paymentMethods) ...
-                  [
-                    GestureDetector(
-                      onTap: () => setState(() => paymentMethod = method['id']),
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        padding: AppSpacing.paddingLG,
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: paymentMethod == method['id']
-                                ? AppColors.primary
-                                : AppColors.outline,
-                            width: 2,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
+        AppCard.elevated(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const AppText(
+                'Select Payment Method',
+                variant: TextVariant.titleMedium,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+              AppSpacing.verticalSpacing(SpacingSize.lg),
+              for (var method in paymentMethods) ...
+                [
+                  GestureDetector(
+                    onTap: () => setState(() => paymentMethod = method['id']),
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: AppSpacing.paddingLG,
+                      decoration: BoxDecoration(
+                        border: Border.all(
                           color: paymentMethod == method['id']
-                              ? AppColors.primary.withValues(alpha: 0.05)
-                              : null,
+                              ? AppColors.primary
+                              : AppColors.outline,
+                          width: 2,
                         ),
-                        child: Row(
-                          children: [
-                            Radio<String>(
-                              value: method['id'],
-                              groupValue: paymentMethod,
-                              onChanged: (value) =>
-                                  setState(() => paymentMethod = value!),
+                        borderRadius: BorderRadius.circular(12),
+                        color: paymentMethod == method['id']
+                            ? AppColors.primary.withValues(alpha: 0.05)
+                            : null,
+                      ),
+                      child: Row(
+                        children: [
+                          Radio<String>(
+                            value: method['id'],
+                            groupValue: paymentMethod,
+                            onChanged: (value) =>
+                                setState(() => paymentMethod = value!),
+                          ),
+                          Icon(
+                            method['icon'] as IconData,
+                            color: AppColors.onSurfaceVariant,
+                            size: 24,
+                          ),
+                          AppSpacing.horizontalSpacing(SpacingSize.md),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                AppText.bodyLarge(
+                                  method['name'],
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                AppText.bodyMedium(
+                                  method['description'],
+                                  color: AppColors.onSurfaceVariant,
+                                ),
+                              ],
                             ),
-                            Icon(
-                              method['icon'] as IconData,
-                              color: AppColors.onSurfaceVariant,
-                              size: 24,
-                            ),
-                            AppSpacing.horizontalSpacing(SpacingSize.md),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  AppText.bodyLarge(
-                                    method['name'],
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  AppText.bodyMedium(
-                                    method['description'],
-                                    color: AppColors.onSurfaceVariant,
-                                  ),
-                                ],
+                          ),
+                          if (method['popular'])
+                            Container(
+                              padding: AppSpacing.verticalPaddingXS + AppSpacing.horizontalPaddingSM,
+                              decoration: BoxDecoration(
+                                color: AppColors.accent,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: AppText.bodySmall(
+                                'Popular',
+                                color: Colors.white,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
-                            if (method['popular'])
-                              Container(
-                                padding: AppSpacing.verticalPaddingXS + AppSpacing.horizontalPaddingSM,
-                                decoration: BoxDecoration(
-                                  color: AppColors.accent,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: AppText.bodySmall(
-                                  'Popular',
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                          ],
-                        ),
+                        ],
                       ),
                     ),
-                  ]
-              ],
-            ),
+                  ),
+                ]
+            ],
           ),
         ),
 
         if (paymentMethod == 'bank') ...
           [
             AppSpacing.verticalSpacing(SpacingSize.lg),
-            Card(
-              child: Padding(
-                padding: AppSpacing.paddingLG,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    AppText.bodyLarge(
-                      'Bank Account Details',
-                      fontWeight: FontWeight.bold,
-                    ),
-                    AppSpacing.verticalSpacing(SpacingSize.lg),
-                    TextFormField(
-                      controller: _accountNumberController,
-                      decoration: const InputDecoration(
-                        labelText: 'Account Number',
-                        hintText: '0123456789',
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.number,
-                    ),
-                    AppSpacing.verticalSpacing(SpacingSize.lg),
-                    TextFormField(
-                      controller: _bankNameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Bank Name',
-                        hintText: 'Select your bank',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ],
-                ),
+            AppCard.elevated(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AppText.bodyLarge(
+                    'Bank Account Details',
+                    fontWeight: FontWeight.bold,
+                  ),
+                  AppSpacing.verticalSpacing(SpacingSize.lg),
+                  AppInput(
+                    controller: _accountNumberController,
+                    label: 'Account Number',
+                    hintText: '0123456789',
+                    keyboardType: TextInputType.number,
+                  ),
+                  AppSpacing.verticalSpacing(SpacingSize.lg),
+                  AppInput(
+                    controller: _bankNameController,
+                    label: 'Bank Name',
+                    hintText: 'Select your bank',
+                  ),
+                ],
               ),
             ),
           ]
@@ -600,151 +575,143 @@ class _PaymentScreenState extends State<PaymentScreen> {
             return Column(
               children: [
                 if (walletState is LoadedState<WalletData> && walletState.data != null) ...[
-                  Card(
-                    child: Padding(
-                      padding: AppSpacing.paddingLG,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              AppText.bodyLarge(
-                                'Wallet Balance',
-                                fontWeight: FontWeight.bold,
-                              ),
-                              const Spacer(),
-                              Icon(
-                                _getEscrowStatusIcon(escrowStatus),
-                                color: _getEscrowStatusColor(escrowStatus),
-                                size: 20,
-                              ),
-                              const SizedBox(width: 4),
-                              AppText(
-                                _getEscrowStatusLabel(escrowStatus),
-                                variant: TextVariant.bodySmall,
-                                fontWeight: FontWeight.w600,
-                                color: _getEscrowStatusColor(escrowStatus),
-                              ),
-                            ],
-                          ),
-                          AppSpacing.verticalSpacing(SpacingSize.lg),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              AppText.bodyMedium(
-                                'Available Balance',
-                                color: AppColors.onSurfaceVariant,
-                              ),
-                              AppText.bodyLarge(
-                                '₦${walletState.data!.availableBalance.toStringAsFixed(2)}',
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ],
-                          ),
-                          AppSpacing.verticalSpacing(SpacingSize.sm),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              AppText.bodyMedium(
-                                'Pending (Escrow)',
-                                color: AppColors.onSurfaceVariant,
-                              ),
-                              AppText.bodyLarge(
-                                '₦${walletState.data!.pendingBalance.toStringAsFixed(2)}',
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.accent,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                  AppCard.elevated(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            AppText.bodyLarge(
+                              'Wallet Balance',
+                              fontWeight: FontWeight.bold,
+                            ),
+                            const Spacer(),
+                            Icon(
+                              _getEscrowStatusIcon(escrowStatus),
+                              color: _getEscrowStatusColor(escrowStatus),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 4),
+                            AppText(
+                              _getEscrowStatusLabel(escrowStatus),
+                              variant: TextVariant.bodySmall,
+                              fontWeight: FontWeight.w600,
+                              color: _getEscrowStatusColor(escrowStatus),
+                            ),
+                          ],
+                        ),
+                        AppSpacing.verticalSpacing(SpacingSize.lg),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            AppText.bodyMedium(
+                              'Available Balance',
+                              color: AppColors.onSurfaceVariant,
+                            ),
+                            AppText.bodyLarge(
+                              '₦${walletState.data!.availableBalance.toStringAsFixed(2)}',
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ],
+                        ),
+                        AppSpacing.verticalSpacing(SpacingSize.sm),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            AppText.bodyMedium(
+                              'Pending (Escrow)',
+                              color: AppColors.onSurfaceVariant,
+                            ),
+                            AppText.bodyLarge(
+                              '₦${walletState.data!.pendingBalance.toStringAsFixed(2)}',
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.accent,
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                   AppSpacing.verticalSpacing(SpacingSize.lg),
                 ],
-            Card(
-              child: Padding(
-                padding: AppSpacing.paddingXXL,
-                child: Column(
-                  children: [
-                    Container(
-                      width: 64,
-                      height: 64,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(32),
-                      ),
-                      child: const Icon(
-                        Icons.lock,
-                        color: Colors.white,
-                        size: 32,
-                      ),
+            AppCard.elevated(
+              padding: AppSpacing.paddingXXL,
+              child: Column(
+                children: [
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(32),
                     ),
-                    AppSpacing.verticalSpacing(SpacingSize.lg),
-                    const AppText(
-                      'Securing Your Payment',
-                      variant: TextVariant.titleMedium,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                    child: const Icon(
+                      Icons.lock,
+                      color: Colors.white,
+                      size: 32,
                     ),
-                    AppSpacing.verticalSpacing(SpacingSize.sm),
-                    AppText.bodyMedium(
-                      'Your ${packageDetails['total']} is being deposited into our secure escrow system',
-                      textAlign: TextAlign.center,
-                      color: AppColors.onSurfaceVariant,
-                    ),
-                    AppSpacing.verticalSpacing(SpacingSize.xxl),
-                    LinearProgressIndicator(
-                      value: 0.75,
-                      backgroundColor: AppColors.surfaceVariant,
-                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
-                    ),
-                    AppSpacing.verticalSpacing(SpacingSize.lg),
-                    AppText.bodySmall(
-                      'Processing payment...',
-                      color: AppColors.onSurfaceVariant,
-                    ),
-              ],
-            ),
+                  ),
+                  AppSpacing.verticalSpacing(SpacingSize.lg),
+                  const AppText(
+                    'Securing Your Payment',
+                    variant: TextVariant.titleMedium,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  AppSpacing.verticalSpacing(SpacingSize.sm),
+                  AppText.bodyMedium(
+                    'Your ${packageDetails['total']} is being deposited into our secure escrow system',
+                    textAlign: TextAlign.center,
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                  AppSpacing.verticalSpacing(SpacingSize.xxl),
+                  LinearProgressIndicator(
+                    value: 0.75,
+                    backgroundColor: AppColors.surfaceVariant,
+                    valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                  ),
+                  AppSpacing.verticalSpacing(SpacingSize.lg),
+                  AppText.bodySmall(
+                    'Processing payment...',
+                    color: AppColors.onSurfaceVariant,
+                  ),
+            ],
           ),
         ),
 
         AppSpacing.verticalSpacing(SpacingSize.lg),
 
         // How Escrow Works Card
-        Card(
-          child: Padding(
-            padding: AppSpacing.paddingLG,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AppText.bodyLarge(
-                  'How Escrow Protection Works',
-                  fontWeight: FontWeight.bold,
-                ),
-                AppSpacing.verticalSpacing(SpacingSize.lg),
-                _buildEscrowStep(
-                  1,
-                  'Payment Secured',
-                  'Your money is held safely in escrow',
-                  AppColors.primary,
-                ),
-                AppSpacing.verticalSpacing(SpacingSize.lg),
-                _buildEscrowStep(
-                  2,
-                  'Package Delivered',
-                  'Traveler delivers your package',
-                  AppColors.secondary,
-                ),
-                AppSpacing.verticalSpacing(SpacingSize.lg),
-                _buildEscrowStep(
-                  3,
-                  'Payment Released',
-                  'Money is released to traveler',
-                  AppColors.accent,
-                ),
-              ],
-            ),
+        AppCard.elevated(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AppText.bodyLarge(
+                'How Escrow Protection Works',
+                fontWeight: FontWeight.bold,
+              ),
+              AppSpacing.verticalSpacing(SpacingSize.lg),
+              _buildEscrowStep(
+                1,
+                'Payment Secured',
+                'Your money is held safely in escrow',
+                AppColors.primary,
+              ),
+              AppSpacing.verticalSpacing(SpacingSize.lg),
+              _buildEscrowStep(
+                2,
+                'Package Delivered',
+                'Traveler delivers your package',
+                AppColors.secondary,
+              ),
+              AppSpacing.verticalSpacing(SpacingSize.lg),
+              _buildEscrowStep(
+                3,
+                'Payment Released',
+                'Money is released to traveler',
+                AppColors.accent,
+              ),
+            ],
           ),
         ),
           ],
@@ -877,84 +844,81 @@ class _PaymentScreenState extends State<PaymentScreen> {
         ),
         AppSpacing.verticalSpacing(SpacingSize.xxl),
 
-        Card(
-          child: Padding(
-            padding: AppSpacing.paddingLG,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AppText.bodyLarge(
-                  'What\'s Next?',
-                  fontWeight: FontWeight.bold,
+        AppCard.elevated(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AppText.bodyLarge(
+                'What\'s Next?',
+                fontWeight: FontWeight.bold,
+              ),
+              AppSpacing.verticalSpacing(SpacingSize.lg),
+              Container(
+                padding: AppSpacing.paddingMD,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                AppSpacing.verticalSpacing(SpacingSize.lg),
-                Container(
-                  padding: AppSpacing.paddingMD,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.schedule,
-                        color: AppColors.primary,
-                        size: 20,
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.schedule,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
+                    AppSpacing.horizontalSpacing(SpacingSize.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          AppText.bodyMedium(
+                            'Waiting for traveler confirmation',
+                            fontWeight: FontWeight.w500,
+                          ),
+                          AppText.bodySmall(
+                            'You\'ll be notified when accepted',
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ],
                       ),
-                      AppSpacing.horizontalSpacing(SpacingSize.md),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            AppText.bodyMedium(
-                              'Waiting for traveler confirmation',
-                              fontWeight: FontWeight.w500,
-                            ),
-                            AppText.bodySmall(
-                              'You\'ll be notified when accepted',
-                              color: AppColors.onSurfaceVariant,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                AppSpacing.verticalSpacing(SpacingSize.md),
-                Container(
-                  padding: AppSpacing.paddingMD,
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceVariant,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.info,
-                        color: AppColors.onSurfaceVariant,
-                        size: 20,
-                      ),
-                      AppSpacing.horizontalSpacing(SpacingSize.md),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            AppText.bodyMedium(
-                              'Track your package',
-                              fontWeight: FontWeight.w500,
-                            ),
-                            AppText.bodySmall(
-                              'Real-time updates via SMS & app',
-                              color: AppColors.onSurfaceVariant,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+              ),
+              AppSpacing.verticalSpacing(SpacingSize.md),
+              Container(
+                padding: AppSpacing.paddingMD,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceVariant,
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              ],
-            ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.info,
+                      color: AppColors.onSurfaceVariant,
+                      size: 20,
+                    ),
+                    AppSpacing.horizontalSpacing(SpacingSize.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          AppText.bodyMedium(
+                            'Track your package',
+                            fontWeight: FontWeight.w500,
+                          ),
+                          AppText.bodySmall(
+                            'Real-time updates via SMS & app',
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
 
@@ -962,45 +926,25 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
         Column(
           children: [
-            SizedBox(
-              width: double.infinity,
-              height: SpacingSize.massive.value,
-              child: ElevatedButton(
-                onPressed: () {
-                  // Navigate to tracking screen
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: AppText.bodyLarge(
-                  'Track Package',
-                  color: Colors.white,
-                ),
+            AppButton.primary(
+              onPressed: () {
+                // Navigate to tracking screen
+              },
+              fullWidth: true,
+              child: AppText.bodyLarge(
+                'Track Package',
+                color: Colors.white,
               ),
             ),
             AppSpacing.verticalSpacing(SpacingSize.md),
-            SizedBox(
-              width: double.infinity,
-              height: SpacingSize.massive.value,
-              child: OutlinedButton(
-                onPressed: () {
-                  // Message traveler
-                },
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppColors.primary),
-                  foregroundColor: AppColors.primary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: AppText.bodyLarge(
-                  'Message Traveler',
-                  color: AppColors.primary,
-                ),
+            AppButton.outline(
+              onPressed: () {
+                // Message traveler
+              },
+              fullWidth: true,
+              child: AppText.bodyLarge(
+                'Message Traveler',
+                color: AppColors.primary,
               ),
             ),
           ],

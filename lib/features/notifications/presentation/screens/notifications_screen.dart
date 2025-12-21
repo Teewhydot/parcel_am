@@ -12,6 +12,8 @@ import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../injection_container.dart';
 import '../../domain/entities/notification_entity.dart';
 import '../../../../core/widgets/app_text.dart';
+import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_spacing.dart';
 import '../bloc/notification_bloc.dart';
 import '../bloc/notification_event.dart';
 import '../bloc/notification_state.dart';
@@ -71,10 +73,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Icon(Icons.error_outline, size: 64, color: AppColors.error),
-                  const SizedBox(height: 16),
+                  AppSpacing.verticalSpacing(SpacingSize.lg),
                   AppText.bodyMedium(state.errorMessage ?? 'An error occurred'),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
+                  AppSpacing.verticalSpacing(SpacingSize.lg),
+                  AppButton.primary(
                     onPressed: () {
                       context.read<NotificationBloc>().add(LoadNotifications(widget.userId));
                     },
@@ -99,12 +101,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       size: 64,
                       color: AppColors.onSurfaceVariant,
                     ),
-                    const SizedBox(height: 16),
+                    AppSpacing.verticalSpacing(SpacingSize.lg),
                     AppText.titleMedium(
                       'No notifications yet',
                       color: AppColors.onSurfaceVariant,
                     ),
-                    const SizedBox(height: 8),
+                    AppSpacing.verticalSpacing(SpacingSize.sm),
                     AppText.bodyMedium(
                       'You\'ll see notifications here',
                       color: AppColors.textSecondary,
@@ -237,7 +239,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildNotificationIcon(notification.type),
-              const SizedBox(width: 12),
+              AppSpacing.horizontalSpacing(SpacingSize.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -262,14 +264,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           ),
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    AppSpacing.verticalSpacing(SpacingSize.xs),
                     AppText.bodyMedium(
                       notification.body,
                       color: AppColors.textSecondary,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
+                    AppSpacing.verticalSpacing(SpacingSize.xs),
                     AppText.bodySmall(
                       timeago.format(notification.timestamp),
                       color: AppColors.onSurfaceVariant,
@@ -350,16 +352,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         title: AppText.titleMedium('Delete Notification', fontWeight: FontWeight.w600),
         content: AppText.bodyMedium('Are you sure you want to delete this notification?'),
         actions: [
-          TextButton(
+          AppButton.text(
             onPressed: () => Navigator.pop(dialogContext),
             child: AppText.bodyMedium('Cancel', color: AppColors.primary),
           ),
-          TextButton(
+          AppButton.text(
             onPressed: () {
               context.read<NotificationBloc>().add(DeleteNotification(notification.id));
               Navigator.pop(dialogContext);
             },
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
             child: AppText.bodyMedium('Delete', color: AppColors.error),
           ),
         ],
@@ -374,16 +375,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         title: AppText.titleMedium('Clear All Notifications', fontWeight: FontWeight.w600),
         content: AppText.bodyMedium('Are you sure you want to clear all notifications? This action cannot be undone.'),
         actions: [
-          TextButton(
+          AppButton.text(
             onPressed: () => Navigator.pop(dialogContext),
             child: AppText.bodyMedium('Cancel', color: AppColors.primary),
           ),
-          TextButton(
+          AppButton.text(
             onPressed: () {
               context.read<NotificationBloc>().add(ClearAll(widget.userId));
               Navigator.pop(dialogContext);
             },
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
             child: AppText.bodyMedium('Clear All', color: AppColors.error),
           ),
         ],

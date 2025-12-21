@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_text.dart';
+import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../injection_container.dart';
@@ -75,30 +77,30 @@ class _DeliveryCardState extends State<DeliveryCard> {
                 children: [
                   // Task 3.3.1 & 3.3.3: Header row with package icon and status badge
                   _buildHeaderSection(context),
-                  const SizedBox(height: 16),
+                  AppSpacing.verticalSpacing(SpacingSize.lg),
 
                   // Task 3.3.2: Parcel information section
                   _buildParcelInfoSection(context),
-                  const SizedBox(height: 16),
+                  AppSpacing.verticalSpacing(SpacingSize.lg),
 
                   // Task 3.3.5: Sender information section
                   _buildSenderSection(context),
-                  const SizedBox(height: 12),
+                  AppSpacing.verticalSpacing(SpacingSize.md),
 
                   const Divider(),
-                  const SizedBox(height: 12),
+                  AppSpacing.verticalSpacing(SpacingSize.md),
 
                   // Task 3.3.4: Receiver contact section
                   _buildReceiverSection(context),
 
                   // Task 3.3.6: Delivery urgency indicator
                   if (widget.parcel.hasUrgentDelivery) ...[
-                    const SizedBox(height: 12),
+                    AppSpacing.verticalSpacing(SpacingSize.md),
                     _buildUrgencyIndicator(),
                   ],
 
                   // Task 3.3.7: Update Status button
-                  const SizedBox(height: 16),
+                  AppSpacing.verticalSpacing(SpacingSize.lg),
                   _buildUpdateStatusButton(context),
                 ],
               ),
@@ -128,7 +130,7 @@ class _DeliveryCardState extends State<DeliveryCard> {
             size: 28,
           ),
         ),
-        const SizedBox(width: 12),
+        AppSpacing.horizontalSpacing(SpacingSize.md),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -147,7 +149,7 @@ class _DeliveryCardState extends State<DeliveryCard> {
                   _buildStatusBadge(),
                 ],
               ),
-              const SizedBox(height: 4),
+              AppSpacing.verticalSpacing(SpacingSize.xs),
               AppText(
                 '${widget.parcel.currency ?? '₦'}${(widget.parcel.price ?? 0.0).toStringAsFixed(0)}',
                 variant: TextVariant.titleMedium,
@@ -199,7 +201,7 @@ class _DeliveryCardState extends State<DeliveryCard> {
               size: 14,
               color: widget.parcel.status.statusColor,
             ),
-            const SizedBox(width: 4),
+            AppSpacing.horizontalSpacing(SpacingSize.xs),
             AppText.bodySmall(
               widget.parcel.status.displayName,
               fontWeight: FontWeight.w600,
@@ -272,7 +274,7 @@ class _DeliveryCardState extends State<DeliveryCard> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        AppSpacing.verticalSpacing(SpacingSize.md),
 
         // Package details
         Wrap(
@@ -286,7 +288,7 @@ class _DeliveryCardState extends State<DeliveryCard> {
 
         // Package description (truncated if long)
         if (widget.parcel.description != null && widget.parcel.description!.isNotEmpty) ...[
-          const SizedBox(height: 8),
+          AppSpacing.verticalSpacing(SpacingSize.sm),
           AppText(
             widget.parcel.description!,
             variant: TextVariant.bodySmall,
@@ -319,7 +321,7 @@ class _DeliveryCardState extends State<DeliveryCard> {
               size: 20,
             ),
           ),
-          const SizedBox(width: 12),
+          AppSpacing.horizontalSpacing(SpacingSize.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -383,7 +385,7 @@ class _DeliveryCardState extends State<DeliveryCard> {
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        AppSpacing.verticalSpacing(SpacingSize.sm),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -521,44 +523,35 @@ class _DeliveryCardState extends State<DeliveryCard> {
     final isDelivered = widget.parcel.status == ParcelStatus.delivered;
     final nextStatus = widget.parcel.status.nextDeliveryStatus;
 
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: isDelivered || nextStatus == null
-            ? null
-            : () {
-                // Task Group 3.4: Open status update action sheet
-                StatusUpdateActionSheet.show(context, widget.parcel);
-              },
-        icon: Icon(
-          isDelivered ? Icons.check_circle : Icons.update,
-          size: 20,
-        ),
-        label: AppText(
-          isDelivered
-              ? 'Delivered'
-              : nextStatus != null
-                  ? 'Update to ${nextStatus.displayName}'
-                  : 'Update Status',
-          variant: TextVariant.bodyMedium,
-          fontSize: 15,
-          fontWeight: FontWeight.w600,
-        ),
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          backgroundColor: isDelivered
-              ? Colors.green.withValues(alpha: 0.2)
-              : null,
-          foregroundColor: isDelivered
-              ? Colors.green.shade700
-              : null,
-          disabledBackgroundColor: isDelivered
-              ? Colors.green.withValues(alpha: 0.2)
-              : null,
-          disabledForegroundColor: isDelivered
-              ? Colors.green.shade700
-              : null,
-        ),
+    return AppButton.primary(
+      onPressed: isDelivered || nextStatus == null
+          ? null
+          : () {
+              // Task Group 3.4: Open status update action sheet
+              StatusUpdateActionSheet.show(context, widget.parcel);
+            },
+      fullWidth: true,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            isDelivered ? Icons.check_circle : Icons.update,
+            size: 20,
+            color: isDelivered ? Colors.green.shade700 : Colors.white,
+          ),
+          AppSpacing.horizontalSpacing(SpacingSize.sm),
+          AppText(
+            isDelivered
+                ? 'Delivered'
+                : nextStatus != null
+                    ? 'Update to ${nextStatus.displayName}'
+                    : 'Update Status',
+            variant: TextVariant.bodyMedium,
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: isDelivered ? Colors.green.shade700 : Colors.white,
+          ),
+        ],
       ),
     );
   }
@@ -612,7 +605,7 @@ class _DeliveryCardState extends State<DeliveryCard> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 14, color: AppColors.onSurfaceVariant),
-          const SizedBox(width: 4),
+          AppSpacing.horizontalSpacing(SpacingSize.xs),
           AppText.bodySmall(
             value,
             color: AppColors.onSurfaceVariant,
@@ -728,13 +721,13 @@ class _DeliveryCardSkeletonState extends State<DeliveryCardSkeleton>
                 Row(
                   children: [
                     _buildShimmerBox(56, 56, borderRadius: 12),
-                    const SizedBox(width: 12),
+                    AppSpacing.horizontalSpacing(SpacingSize.md),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildShimmerBox(120, 18),
-                          const SizedBox(height: 8),
+                          AppSpacing.verticalSpacing(SpacingSize.sm),
                           _buildShimmerBox(80, 18),
                         ],
                       ),
@@ -742,38 +735,38 @@ class _DeliveryCardSkeletonState extends State<DeliveryCardSkeleton>
                     _buildShimmerBox(80, 28, borderRadius: 12),
                   ],
                 ),
-                const SizedBox(height: 16),
+                AppSpacing.verticalSpacing(SpacingSize.lg),
 
                 // Route information
                 _buildShimmerBox(double.infinity, 16),
-                const SizedBox(height: 8),
+                AppSpacing.verticalSpacing(SpacingSize.sm),
                 _buildShimmerBox(200, 16),
-                const SizedBox(height: 12),
+                AppSpacing.verticalSpacing(SpacingSize.md),
 
                 // Package details chips
                 Row(
                   children: [
                     _buildShimmerBox(80, 24, borderRadius: 8),
-                    const SizedBox(width: 16),
+                    AppSpacing.horizontalSpacing(SpacingSize.lg),
                     _buildShimmerBox(100, 24, borderRadius: 8),
                   ],
                 ),
-                const SizedBox(height: 16),
+                AppSpacing.verticalSpacing(SpacingSize.lg),
 
                 // Sender section
                 _buildShimmerBox(double.infinity, 60, borderRadius: 12),
-                const SizedBox(height: 12),
+                AppSpacing.verticalSpacing(SpacingSize.md),
 
                 const Divider(),
-                const SizedBox(height: 12),
+                AppSpacing.verticalSpacing(SpacingSize.md),
 
                 // Receiver section
                 _buildShimmerBox(120, 14),
-                const SizedBox(height: 8),
+                AppSpacing.verticalSpacing(SpacingSize.sm),
                 _buildShimmerBox(double.infinity, 16),
                 const SizedBox(height: 6),
                 _buildShimmerBox(180, 16),
-                const SizedBox(height: 16),
+                AppSpacing.verticalSpacing(SpacingSize.lg),
 
                 // Update status button
                 _buildShimmerBox(double.infinity, 48, borderRadius: 8),

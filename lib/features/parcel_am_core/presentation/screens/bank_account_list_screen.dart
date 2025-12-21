@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
+import '../../../../core/widgets/app_button.dart';
 import '../../domain/entities/user_bank_account_entity.dart';
 import '../bloc/bank_account/bank_account_bloc.dart';
 import '../bloc/bank_account/bank_account_data.dart';
@@ -55,13 +57,12 @@ class _BankAccountListScreenState extends State<BankAccountListScreen> {
           'Are you sure you want to delete ${account.bankName} - ${account.maskedAccountNumber}?',
         ),
         actions: [
-          TextButton(
+          AppButton.text(
             onPressed: () => Navigator.pop(context, false),
             child: AppText.bodyMedium('Cancel', color: AppColors.primary),
           ),
-          TextButton(
+          AppButton.text(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: AppText.bodyMedium('Delete', color: Colors.red),
           ),
         ],
@@ -124,7 +125,7 @@ class _BankAccountListScreenState extends State<BankAccountListScreen> {
                   AppSpacing.verticalSpacing(SpacingSize.md),
                   AppText.bodyMedium(state.errorMessage ?? 'Failed to load bank accounts'),
                   AppSpacing.verticalSpacing(SpacingSize.md),
-                  ElevatedButton(
+                  AppButton.primary(
                     onPressed: () {
                       context.read<BankAccountBloc>().add(
                             BankAccountLoadRequested(userId: widget.userId),
@@ -240,9 +241,9 @@ class _BankAccountListScreenState extends State<BankAccountListScreen> {
   }
 
   Widget _buildAccountCard(UserBankAccountEntity account, bool isDefault) {
-    return Card(
+    return AppCard.elevated(
       margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
+      padding: EdgeInsets.zero,
       child: Dismissible(
         key: Key(account.id),
         direction: DismissDirection.endToStart,
@@ -268,13 +269,12 @@ class _BankAccountListScreenState extends State<BankAccountListScreen> {
                 'Are you sure you want to delete ${account.bankName} - ${account.maskedAccountNumber}?',
               ),
               actions: [
-                TextButton(
+                AppButton.text(
                   onPressed: () => Navigator.pop(context, false),
                   child: AppText.bodyMedium('Cancel', color: AppColors.primary),
                 ),
-                TextButton(
+                AppButton.text(
                   onPressed: () => Navigator.pop(context, true),
-                  style: TextButton.styleFrom(foregroundColor: Colors.red),
                   child: AppText.bodyMedium('Delete', color: Colors.red),
                 ),
               ],

@@ -8,6 +8,7 @@ import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_card.dart';
+import '../../../../core/widgets/app_input.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../injection_container.dart';
@@ -126,7 +127,7 @@ ETA: ${_formatETA(package.estimatedArrival)}
                           size: 24,
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      AppSpacing.horizontalSpacing(SpacingSize.md),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -197,13 +198,13 @@ ETA: ${_formatETA(package.estimatedArrival)}
                               size: 64,
                               color: Colors.white.withOpacity(0.8),
                             ),
-                            const SizedBox(height: 16),
+                            AppSpacing.verticalSpacing(SpacingSize.lg),
                             AppText.titleLarge(
                               'No package data',
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
                             ),
-                            const SizedBox(height: 8),
+                            AppSpacing.verticalSpacing(SpacingSize.sm),
                             AppText.bodyMedium(
                               'Package information could not be loaded',
                               color: Colors.white.withOpacity(0.8),
@@ -649,13 +650,10 @@ ETA: ${_formatETA(package.estimatedArrival)}
                       AppSpacing.verticalSpacing(SpacingSize.md),
                       AppText.bodySmall('Enter the confirmation code to release escrow funds.', color: AppColors.onSurfaceVariant),
                       AppSpacing.verticalSpacing(SpacingSize.md),
-                      TextField(
+                      AppInput(
                         controller: _confirmationCodeController,
-                        decoration: const InputDecoration(
-                          labelText: 'Confirmation Code',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.verified_user),
-                        ),
+                        label: 'Confirmation Code',
+                        prefixIcon: const Icon(Icons.verified_user),
                       ),
                       AppSpacing.verticalSpacing(SpacingSize.md),
                       SizedBox(
@@ -725,14 +723,11 @@ ETA: ${_formatETA(package.estimatedArrival)}
                       AppSpacing.verticalSpacing(SpacingSize.md),
                       AppText.bodySmall('If there\'s an issue with the delivery, you can file a dispute.', color: AppColors.onSurfaceVariant),
                       AppSpacing.verticalSpacing(SpacingSize.md),
-                      TextField(
+                      AppInput.multiline(
                         controller: _disputeReasonController,
+                        label: 'Reason for Dispute',
+                        hintText: 'Please explain the issue...',
                         maxLines: 3,
-                        decoration: const InputDecoration(
-                          labelText: 'Dispute Reason',
-                          border: OutlineInputBorder(),
-                          hintText: 'Explain the issue with the delivery...',
-                        ),
                       ),
                       AppSpacing.verticalSpacing(SpacingSize.md),
                       SizedBox(

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/app_input.dart';
 
 class TransactionSearchBar extends StatefulWidget {
   final Function(String) onSearchChanged;
@@ -25,6 +26,9 @@ class _TransactionSearchBarState extends State<TransactionSearchBar> {
     if (widget.initialValue != null) {
       _controller.text = widget.initialValue!;
     }
+    _controller.addListener(() {
+      setState(() {});
+    });
   }
 
   @override
@@ -43,43 +47,22 @@ class _TransactionSearchBarState extends State<TransactionSearchBar> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: TextField(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: AppInput(
         controller: _controller,
+        hintText: 'Search by reference, amount, or description',
+        prefixIcon: const Icon(Icons.search),
+        suffixIcon: _controller.text.isNotEmpty
+            ? IconButton(
+                icon: const Icon(Icons.clear),
+                onPressed: () {
+                  _controller.clear();
+                  widget.onSearchChanged('');
+                },
+              )
+            : null,
         onChanged: _onSearchChanged,
-        decoration: InputDecoration(
-          hintText: 'Search by reference, amount, or description',
-          hintStyle: TextStyle(
-            fontSize: 14,
-            color: Colors.grey[500],
-          ),
-          prefixIcon: Icon(
-            Icons.search,
-            color: Colors.grey[600],
-          ),
-          suffixIcon: _controller.text.isNotEmpty
-              ? IconButton(
-                  icon: Icon(
-                    Icons.clear,
-                    color: Colors.grey[600],
-                  ),
-                  onPressed: () {
-                    _controller.clear();
-                    widget.onSearchChanged('');
-                  },
-                )
-              : null,
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 12,
-          ),
-        ),
       ),
     );
   }

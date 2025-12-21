@@ -8,6 +8,8 @@ import '../bloc/parcel/parcel_event.dart';
 import '../bloc/parcel/parcel_state.dart';
 import '../../domain/entities/parcel_entity.dart';
 import '../../../../core/widgets/app_text.dart';
+import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_spacing.dart';
 import 'delivery_card.dart';
 
 /// My Deliveries tab showing parcels accepted by the current user as courier.
@@ -120,21 +122,21 @@ class _MyDeliveriesTabState extends State<MyDeliveriesTab> {
                   size: 64,
                   color: AppColors.error,
                 ),
-                const SizedBox(height: 16),
+                AppSpacing.verticalSpacing(SpacingSize.lg),
                 AppText(
                   'Failed to load deliveries',
                   variant: TextVariant.titleMedium,
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                 ),
-                const SizedBox(height: 8),
+                AppSpacing.verticalSpacing(SpacingSize.sm),
                 AppText.bodyMedium(
                   state.errorMessage,
                   textAlign: TextAlign.center,
                   color: AppColors.onSurfaceVariant,
                 ),
-                const SizedBox(height: 24),
-                ElevatedButton(
+                AppSpacing.verticalSpacing(SpacingSize.xxl),
+                AppButton.primary(
                   onPressed: () {
                     // Retry loading accepted parcels
                     // Note: Would need userId from auth context
@@ -242,13 +244,13 @@ class _MyDeliveriesTabState extends State<MyDeliveriesTab> {
             size: 20,
             color: AppColors.onSurfaceVariant,
           ),
-          const SizedBox(width: 8),
+          AppSpacing.horizontalSpacing(SpacingSize.sm),
           AppText.bodyMedium(
             'Filter:',
             fontWeight: FontWeight.w500,
             color: AppColors.onSurfaceVariant,
           ),
-          const SizedBox(width: 12),
+          AppSpacing.horizontalSpacing(SpacingSize.md),
           Expanded(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -299,14 +301,14 @@ class _MyDeliveriesTabState extends State<MyDeliveriesTab> {
             size: 64,
             color: AppColors.onSurfaceVariant,
           ),
-          const SizedBox(height: 16),
+          AppSpacing.verticalSpacing(SpacingSize.lg),
           AppText(
             title,
             variant: TextVariant.titleMedium,
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
-          const SizedBox(height: 8),
+          AppSpacing.verticalSpacing(SpacingSize.sm),
           AppText.bodyMedium(
             subtitle,
             color: AppColors.onSurfaceVariant,
@@ -349,14 +351,14 @@ class _StatusUpdateBottomSheet extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 24),
+          AppSpacing.verticalSpacing(SpacingSize.xxl),
           AppText(
             'Update Delivery Status',
             variant: TextVariant.titleLarge,
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
-          const SizedBox(height: 16),
+          AppSpacing.verticalSpacing(SpacingSize.lg),
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -372,7 +374,7 @@ class _StatusUpdateBottomSheet extends StatelessWidget {
                       color: AppColors.primary,
                       size: 20,
                     ),
-                    const SizedBox(width: 12),
+                    AppSpacing.horizontalSpacing(SpacingSize.md),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -381,7 +383,7 @@ class _StatusUpdateBottomSheet extends StatelessWidget {
                             'Current: ${currentStatus.displayName}',
                             color: AppColors.onSurfaceVariant,
                           ),
-                          const SizedBox(height: 4),
+                          AppSpacing.verticalSpacing(SpacingSize.xs),
                           AppText.bodyLarge(
                             'Next: ${nextStatus.displayName}',
                             fontWeight: FontWeight.w600,
@@ -394,27 +396,24 @@ class _StatusUpdateBottomSheet extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          AppSpacing.verticalSpacing(SpacingSize.lg),
           AppText.bodyMedium(
             'Package: ${parcel.category ?? 'Package'} #${parcel.id.substring(0, 8)}',
             color: AppColors.onSurfaceVariant,
           ),
-          const SizedBox(height: 24),
+          AppSpacing.verticalSpacing(SpacingSize.xxl),
           Row(
             children: [
               Expanded(
-                child: OutlinedButton(
+                child: AppButton.outline(
                   onPressed: () => Navigator.pop(context),
                   child: AppText.bodyMedium('Cancel', color: AppColors.primary),
                 ),
               ),
-              const SizedBox(width: 16),
+              AppSpacing.horizontalSpacing(SpacingSize.lg),
               Expanded(
-                child: ElevatedButton(
+                child: AppButton.primary(
                   onPressed: onConfirm,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                  ),
                   child: AppText.bodyMedium(
                     'Confirm',
                     color: Colors.white,
@@ -423,7 +422,7 @@ class _StatusUpdateBottomSheet extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          AppSpacing.verticalSpacing(SpacingSize.lg),
         ],
       ),
     );

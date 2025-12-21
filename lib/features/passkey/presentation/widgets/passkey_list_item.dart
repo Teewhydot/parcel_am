@@ -3,6 +3,7 @@ import 'package:timeago/timeago.dart' as timeago;
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
+import '../../../../core/widgets/app_button.dart';
 import '../../domain/entities/passkey_entity.dart';
 
 /// Widget displaying a single passkey in a list
@@ -105,18 +106,15 @@ class PasskeyListItem extends StatelessWidget {
           'You will need to add it again to use passkey authentication on this device.',
         ),
         actions: [
-          TextButton(
+          AppButton.text(
             onPressed: () => Navigator.of(context).pop(),
             child: AppText.bodyMedium('Cancel'),
           ),
-          TextButton(
+          AppButton.text(
             onPressed: () {
               Navigator.of(context).pop();
               onRemove();
             },
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.error,
-            ),
             child: AppText.bodyMedium('Remove', color: AppColors.error),
           ),
         ],

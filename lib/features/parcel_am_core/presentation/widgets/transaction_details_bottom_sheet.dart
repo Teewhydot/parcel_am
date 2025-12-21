@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 import 'package:parcel_am/core/routes/routes.dart';
 import 'package:parcel_am/core/services/navigation_service/nav_config.dart';
 import 'package:parcel_am/core/widgets/app_text.dart';
+import 'package:parcel_am/core/widgets/app_button.dart';
+import 'package:parcel_am/core/widgets/app_spacing.dart';
 import 'package:parcel_am/features/parcel_am_core/domain/repositories/withdrawal_repository.dart';
 import '../bloc/wallet/wallet_data.dart';
 
@@ -57,7 +59,7 @@ class _TransactionDetailsBottomSheetState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildAmountSection(context),
-                    const SizedBox(height: 24),
+                    AppSpacing.verticalSpacing(SpacingSize.xxl),
                     _buildDetailRow(
                       context,
                       'Status',
@@ -93,13 +95,13 @@ class _TransactionDetailsBottomSheetState
                     ),
                     if (widget.transaction.metadata != null &&
                         widget.transaction.metadata!.isNotEmpty) ...[
-                      const SizedBox(height: 24),
+                      AppSpacing.verticalSpacing(SpacingSize.xxl),
                       _buildMetadataSection(context),
                     ],
                     // Add withdrawal details button for withdrawal transactions
                     if (widget.transaction.type.toLowerCase() == 'withdrawal' &&
                         widget.transaction.referenceId != null) ...[
-                      const SizedBox(height: 24),
+                      AppSpacing.verticalSpacing(SpacingSize.xxl),
                       _buildViewWithdrawalDetailsButton(context),
                     ],
                   ],
@@ -136,7 +138,7 @@ class _TransactionDetailsBottomSheetState
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          const SizedBox(height: 16),
+          AppSpacing.verticalSpacing(SpacingSize.lg),
           AppText.titleLarge(
             'Transaction Details',
             fontWeight: FontWeight.w600,
@@ -156,7 +158,7 @@ class _TransactionDetailsBottomSheetState
             fontWeight: FontWeight.bold,
             color: _getAmountColor(),
           ),
-          const SizedBox(height: 8),
+          AppSpacing.verticalSpacing(SpacingSize.sm),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
@@ -188,7 +190,7 @@ class _TransactionDetailsBottomSheetState
           label,
           color: Colors.grey[600],
         ),
-        const SizedBox(width: 16),
+        AppSpacing.horizontalSpacing(SpacingSize.lg),
         Flexible(
           child: AppText.bodyMedium(
             value,
@@ -214,7 +216,7 @@ class _TransactionDetailsBottomSheetState
           label,
           color: Colors.grey[600],
         ),
-        const SizedBox(width: 16),
+        AppSpacing.horizontalSpacing(SpacingSize.lg),
         Flexible(
           child: GestureDetector(
             onTap: () {
@@ -237,7 +239,7 @@ class _TransactionDetailsBottomSheetState
                     textAlign: TextAlign.right,
                   ),
                 ),
-                const SizedBox(width: 4),
+                AppSpacing.horizontalSpacing(SpacingSize.xs),
                 Icon(
                   Icons.copy,
                   size: 16,
@@ -259,7 +261,7 @@ class _TransactionDetailsBottomSheetState
           'Additional Information',
           fontWeight: FontWeight.w600,
         ),
-        const SizedBox(height: 12),
+        AppSpacing.verticalSpacing(SpacingSize.md),
         ...widget.transaction.metadata!.entries.map((entry) {
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
@@ -276,41 +278,42 @@ class _TransactionDetailsBottomSheetState
 
   /// Builds button to view full withdrawal details
   Widget _buildViewWithdrawalDetailsButton(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: OutlinedButton.icon(
-        onPressed: () async {
-          // Close the bottom sheet first
-          Navigator.of(context).pop();
+    return AppButton.outline(
+      onPressed: () async {
+        // Close the bottom sheet first
+        Navigator.of(context).pop();
 
-          // Navigate to withdrawal detail screen
-          try {
-            final withdrawalRepo = sl<WithdrawalRepository>();
-            final withdrawalOrder = await withdrawalRepo
-                .getWithdrawalOrder(widget.transaction.referenceId!);
+        // Navigate to withdrawal detail screen
+        try {
+          final withdrawalRepo = sl<WithdrawalRepository>();
+          final withdrawalOrder = await withdrawalRepo
+              .getWithdrawalOrder(widget.transaction.referenceId!);
 
-            if (context.mounted) {
-              sl<NavigationService>().navigateTo(
-                Routes.withdrawalTransactionDetail,
-                arguments: {'withdrawalOrder': withdrawalOrder},
-              );
-            }
-          } catch (e) {
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: AppText.bodyMedium('Failed to load withdrawal details: $e', color: Colors.white),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            }
+          if (context.mounted) {
+            sl<NavigationService>().navigateTo(
+              Routes.withdrawalTransactionDetail,
+              arguments: {'withdrawalOrder': withdrawalOrder},
+            );
           }
-        },
-        icon: const Icon(Icons.arrow_forward),
-        label: AppText.bodyMedium('View Withdrawal Details'),
-        style: OutlinedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-        ),
+        } catch (e) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: AppText.bodyMedium('Failed to load withdrawal details: $e', color: Colors.white),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      },
+      fullWidth: true,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.arrow_forward),
+          AppSpacing.horizontalSpacing(SpacingSize.sm),
+          AppText.bodyMedium('View Withdrawal Details'),
+        ],
       ),
     );
   }

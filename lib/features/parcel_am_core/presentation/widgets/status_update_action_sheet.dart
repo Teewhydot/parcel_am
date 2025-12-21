@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/helpers/haptic_helper.dart';
 import '../../../../core/utils/app_utils.dart';
 import '../../../../core/widgets/app_text.dart';
+import '../../../../core/widgets/app_button.dart';
 import '../../domain/entities/parcel_entity.dart';
 import '../bloc/parcel/parcel_bloc.dart';
 import '../bloc/parcel/parcel_event.dart';
@@ -64,19 +66,19 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
             children: [
               // Task 3.4.1: Drag handle
               _buildDragHandle(),
-              const SizedBox(height: 16),
+              AppSpacing.verticalSpacing(SpacingSize.lg),
 
               // Task 3.4.2: Current status section
               _buildCurrentStatusSection(),
-              const SizedBox(height: 24),
+              AppSpacing.verticalSpacing(SpacingSize.xxl),
 
               // Task 3.4.4: Status progression indicator
               _buildStatusProgressionIndicator(),
-              const SizedBox(height: 24),
+              AppSpacing.verticalSpacing(SpacingSize.xxl),
 
               // Task 3.4.3: Next status action button
               _buildNextStatusButton(),
-              const SizedBox(height: 12),
+              AppSpacing.verticalSpacing(SpacingSize.md),
 
               // Cancel button
               _buildCancelButton(),
@@ -129,7 +131,7 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
               size: 28,
             ),
           ),
-          const SizedBox(width: 16),
+          AppSpacing.horizontalSpacing(SpacingSize.lg),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -139,7 +141,7 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
                   color: AppColors.onSurfaceVariant,
                   fontWeight: FontWeight.w500,
                 ),
-                const SizedBox(height: 4),
+                AppSpacing.verticalSpacing(SpacingSize.xs),
                 AppText(
                   widget.parcel.status.displayName,
                   variant: TextVariant.titleLarge,
@@ -147,7 +149,7 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
                   fontWeight: FontWeight.bold,
                   color: widget.parcel.status.statusColor,
                 ),
-                const SizedBox(height: 4),
+                AppSpacing.verticalSpacing(SpacingSize.xs),
                 AppText.bodySmall(
                   _getStatusDescription(widget.parcel.status),
                   color: AppColors.onSurfaceVariant,
@@ -180,7 +182,7 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
           fontWeight: FontWeight.w600,
           color: AppColors.onSurface,
         ),
-        const SizedBox(height: 16),
+        AppSpacing.verticalSpacing(SpacingSize.lg),
         Row(
           children: List.generate(
             allStatuses.length,
@@ -218,7 +220,7 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
             },
           ),
         ),
-        const SizedBox(height: 12),
+        AppSpacing.verticalSpacing(SpacingSize.md),
         // Status labels
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -305,57 +307,33 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
   /// Task 3.4.3: Build next status action button
   Widget _buildNextStatusButton() {
     final nextStatus = widget.parcel.status.nextDeliveryStatus;
-    final isDisabled = nextStatus == null || _isUpdating;
+    final isDisabled = nextStatus == null;
 
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: isDisabled ? null : () => _handleStatusUpdate(nextStatus),
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          backgroundColor: nextStatus?.statusColor ?? AppColors.primary,
-          disabledBackgroundColor: AppColors.outline,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        child: _isUpdating
-            ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
-                ),
-              )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    nextStatus != null ? _getStatusIcon(nextStatus) : Icons.block,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  AppText.bodyLarge(
-                    nextStatus != null
-                        ? 'Mark as ${nextStatus.displayName}'
-                        : 'Already at Final Status',
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ],
-              ),
+    return AppButton.primary(
+      onPressed: isDisabled ? null : () => _handleStatusUpdate(nextStatus),
+      fullWidth: true,
+      loading: _isUpdating,
+      leadingIcon: !_isUpdating && nextStatus != null
+          ? Icon(
+              _getStatusIcon(nextStatus),
+              size: 20,
+              color: Colors.white,
+            )
+          : null,
+      child: AppText.bodyLarge(
+        nextStatus != null
+            ? 'Mark as ${nextStatus.displayName}'
+            : 'Already at Final Status',
+        fontWeight: FontWeight.w600,
+        color: Colors.white,
       ),
     );
   }
 
   /// Build cancel button
   Widget _buildCancelButton() {
-    return TextButton(
+    return AppButton.text(
       onPressed: _isUpdating ? null : () => Navigator.of(context).pop(),
-      style: TextButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-      ),
       child: AppText(
         'Cancel',
         variant: TextVariant.bodyMedium,
@@ -441,7 +419,7 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
               variant: TextVariant.bodyMedium,
               fontSize: 15,
             ),
-            const SizedBox(height: 12),
+            AppSpacing.verticalSpacing(SpacingSize.md),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -455,7 +433,7 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
                     size: 18,
                     color: AppColors.onSurfaceVariant,
                   ),
-                  const SizedBox(width: 8),
+                  AppSpacing.horizontalSpacing(SpacingSize.sm),
                   Expanded(
                     child: AppText.bodySmall(
                       _getStatusDescription(nextStatus),
@@ -468,21 +446,18 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
           ],
         ),
         actions: [
-          TextButton(
+          AppButton.text(
             onPressed: () {
               HapticHelper.lightImpact();
               Navigator.of(context).pop(false);
             },
             child: AppText.bodyMedium('Cancel'),
           ),
-          ElevatedButton(
+          AppButton.primary(
             onPressed: () {
               HapticHelper.mediumImpact();
               Navigator.of(context).pop(true);
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: nextStatus.statusColor,
-            ),
             child: AppText.bodyMedium('Confirm', color: Colors.white),
           ),
         ],

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart' hide Transition;
 import 'package:get/get.dart';
 import '../../widgets/app_text.dart';
+import '../../widgets/app_button.dart';
+import '../../widgets/app_spacing.dart';
 import '../../../features/parcel_am_core/presentation/bloc/auth/auth_bloc.dart';
 import '../../../features/parcel_am_core/presentation/bloc/auth/auth_data.dart';
 import '../../../core/bloc/base/base_state.dart';
@@ -201,22 +203,22 @@ class _DefaultUnauthenticatedWidget extends StatelessWidget {
               size: 64,
               color: Colors.grey,
             ),
-            const SizedBox(height: 16),
+            AppSpacing.verticalSpacing(SpacingSize.lg),
             AppText(
               'Authentication Required',
               variant: TextVariant.titleMedium,
               fontSize: 18,
               fontWeight: FontWeight.w600,
             ),
-            const SizedBox(height: 8),
+            AppSpacing.verticalSpacing(SpacingSize.sm),
             AppText(
               'Please log in to access this feature',
               variant: TextVariant.bodyMedium,
               fontSize: 14,
               color: Colors.grey,
             ),
-            const SizedBox(height: 24),
-            ElevatedButton(
+            AppSpacing.verticalSpacing(SpacingSize.xxl),
+            AppButton.primary(
               onPressed: () {
                 sl<NavigationService>().navigateAndReplaceAll(Routes.login);
               },

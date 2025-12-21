@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../bloc/wallet/wallet_data.dart';
 
@@ -22,7 +23,7 @@ class TransactionListItem extends StatelessWidget {
         child: Row(
           children: [
             _buildTransactionIcon(),
-            const SizedBox(width: 12),
+            AppSpacing.horizontalSpacing(SpacingSize.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -31,7 +32,7 @@ class TransactionListItem extends StatelessWidget {
                     transaction.description,
                     fontWeight: FontWeight.w500,
                   ),
-                  const SizedBox(height: 4),
+                  AppSpacing.verticalSpacing(SpacingSize.xs),
                   Row(
                     children: [
                       AppText.bodySmall(
@@ -39,7 +40,7 @@ class TransactionListItem extends StatelessWidget {
                         color: Colors.grey[600],
                       ),
                       if (transaction.referenceId != null) ...[
-                        const SizedBox(width: 8),
+                        AppSpacing.horizontalSpacing(SpacingSize.sm),
                         AppText.bodySmall(
                           '• ${transaction.referenceId!.substring(0, 8)}',
                           color: Colors.grey[600],
@@ -50,7 +51,7 @@ class TransactionListItem extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: 8),
+            AppSpacing.horizontalSpacing(SpacingSize.sm),
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -59,7 +60,7 @@ class TransactionListItem extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                   color: _getAmountColor(),
                 ),
-                const SizedBox(height: 4),
+                AppSpacing.verticalSpacing(SpacingSize.xs),
                 _buildStatusChip(),
               ],
             ),

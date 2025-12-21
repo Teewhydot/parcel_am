@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../../core/widgets/app_text.dart';
+import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_card.dart';
+import '../../../../core/widgets/app_spacing.dart';
 import '../../data/seeder_registry.dart';
 import '../../domain/seeder.dart';
 import '../../domain/seeder_service.dart';
@@ -133,7 +136,7 @@ class _DatabaseSeederScreenState extends State<DatabaseSeederScreen> {
                   'Database Seeders',
                   fontWeight: FontWeight.bold,
                 ),
-                const SizedBox(height: 4),
+                AppSpacing.verticalSpacing(SpacingSize.xs),
                 AppText.bodyMedium(
                   '${seeders.length} seeders available',
                   color: Colors.grey.shade700,
@@ -176,22 +179,11 @@ class _DatabaseSeederScreenState extends State<DatabaseSeederScreen> {
               ],
             ),
             child: SafeArea(
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _isRunningAll ? null : _runAllSeeders,
-                  icon: _isRunningAll
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.play_arrow),
-                  label: AppText.bodyMedium(_isRunningAll ? 'Running...' : 'Run All Seeders'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                ),
+              child: AppButton.primary(
+                onPressed: _isRunningAll ? null : _runAllSeeders,
+                loading: _isRunningAll,
+                fullWidth: true,
+                child: AppText.bodyMedium(_isRunningAll ? 'Running...' : 'Run All Seeders'),
               ),
             ),
           ),
@@ -233,13 +225,11 @@ class _SeederCard extends StatelessWidget {
     final hasData = (status.existingCount ?? 0) > 0;
     final isSuccessResult = status.result?.success == true;
 
-    return Card(
+    return AppCard.elevated(
       margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
             // Header Row
             Row(
               children: [
@@ -247,7 +237,7 @@ class _SeederCard extends StatelessWidget {
                   backgroundColor: Colors.blue.shade100,
                   child: Icon(seeder.icon, color: Colors.blue.shade700),
                 ),
-                const SizedBox(width: 12),
+                AppSpacing.horizontalSpacing(SpacingSize.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -269,7 +259,7 @@ class _SeederCard extends StatelessWidget {
               ],
             ),
 
-            const SizedBox(height: 12),
+            AppSpacing.verticalSpacing(SpacingSize.md),
 
             // Info Row
             Container(
@@ -285,13 +275,13 @@ class _SeederCard extends StatelessWidget {
                     seeder.collectionName,
                     'Collection',
                   ),
-                  const SizedBox(width: 16),
+                  AppSpacing.horizontalSpacing(SpacingSize.lg),
                   _buildInfoChip(
                     Icons.data_array,
                     '${seeder.itemCount}',
                     'Items to seed',
                   ),
-                  const SizedBox(width: 16),
+                  AppSpacing.horizontalSpacing(SpacingSize.lg),
                   _buildInfoChip(
                     Icons.check_circle,
                     status.isChecking ? '...' : '${status.existingCount ?? 0}',
@@ -303,9 +293,9 @@ class _SeederCard extends StatelessWidget {
 
             // Progress (if running)
             if (status.isRunning) ...[
-              const SizedBox(height: 12),
+              AppSpacing.verticalSpacing(SpacingSize.md),
               LinearProgressIndicator(value: status.progress / 100),
-              const SizedBox(height: 4),
+              AppSpacing.verticalSpacing(SpacingSize.xs),
               AppText.bodySmall(
                 '${status.progress}% - ${status.currentItem}',
                 color: Colors.grey.shade600,
@@ -314,7 +304,7 @@ class _SeederCard extends StatelessWidget {
 
             // Result
             if (status.result != null && !status.isRunning) ...[
-              const SizedBox(height: 12),
+              AppSpacing.verticalSpacing(SpacingSize.md),
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -331,7 +321,7 @@ class _SeederCard extends StatelessWidget {
                       color: isSuccessResult ? Colors.green : Colors.red,
                       size: 20,
                     ),
-                    const SizedBox(width: 8),
+                    AppSpacing.horizontalSpacing(SpacingSize.sm),
                     Expanded(
                       child: AppText.bodyMedium(
                         status.result!.message,
@@ -343,40 +333,29 @@ class _SeederCard extends StatelessWidget {
               ),
             ],
 
-            const SizedBox(height: 12),
+            AppSpacing.verticalSpacing(SpacingSize.md),
 
             // Action Buttons
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: AppButton.outline(
                     onPressed: isDisabled || status.isRunning ? null : onRun,
-                    icon: status.isRunning
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.play_arrow, size: 18),
-                    label: AppText.bodyMedium(hasData ? 'Already Seeded' : 'Seed'),
+                    loading: status.isRunning,
+                    child: AppText.bodyMedium(hasData ? 'Already Seeded' : 'Seed'),
                   ),
                 ),
                 if (hasData) ...[
-                  const SizedBox(width: 8),
-                  OutlinedButton.icon(
+                  AppSpacing.horizontalSpacing(SpacingSize.sm),
+                  AppButton.outline(
                     onPressed: isDisabled || status.isRunning ? null : onForceReseed,
-                    icon: const Icon(Icons.refresh, size: 18),
-                    label: AppText.bodyMedium('Reseed'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.orange,
-                    ),
+                    child: AppText.bodyMedium('Reseed'),
                   ),
                 ],
               ],
             ),
           ],
         ),
-      ),
     );
   }
 
@@ -403,7 +382,7 @@ class _SeederCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(icon, size: 14, color: Colors.grey.shade600),
-              const SizedBox(width: 4),
+              AppSpacing.horizontalSpacing(SpacingSize.xs),
               AppText.bodyMedium(
                 value,
                 fontWeight: FontWeight.bold,

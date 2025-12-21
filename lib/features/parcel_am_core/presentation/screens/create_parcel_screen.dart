@@ -3,6 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/wallet/wallet_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_card.dart';
+import '../../../../core/widgets/app_input.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/bloc/base/base_state.dart';
@@ -322,23 +325,17 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
             fontWeight: FontWeight.bold,
           ),
           AppSpacing.verticalSpacing(SpacingSize.lg),
-          TextField(
+          AppInput(
             controller: _titleController,
-            decoration: const InputDecoration(
-              labelText: 'Parcel Title',
-              border: OutlineInputBorder(),
-              hintText: 'e.g., Business Documents',
-            ),
+            label: 'Parcel Title',
+            hintText: 'e.g., Business Documents',
           ),
           AppSpacing.verticalSpacing(SpacingSize.md),
-          TextField(
+          AppInput.multiline(
             controller: _descriptionController,
+            label: 'Description',
+            hintText: 'Provide details about your parcel',
             maxLines: 3,
-            decoration: const InputDecoration(
-              labelText: 'Description',
-              border: OutlineInputBorder(),
-              hintText: 'Provide details about your parcel',
-            ),
           ),
           AppSpacing.verticalSpacing(SpacingSize.md),
           DropdownButtonFormField<String>(
@@ -356,24 +353,18 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
             onChanged: (value) => setState(() => _packageType = value!),
           ),
           AppSpacing.verticalSpacing(SpacingSize.md),
-          TextField(
+          AppInput(
             controller: _weightController,
+            label: 'Weight (kg)',
+            hintText: 'Enter weight',
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              labelText: 'Weight (kg)',
-              border: OutlineInputBorder(),
-              hintText: 'Enter weight',
-            ),
           ),
           AppSpacing.verticalSpacing(SpacingSize.md),
-          TextField(
+          AppInput(
             controller: _priceController,
+            label: 'Offered Price (₦)',
+            hintText: 'Enter price',
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              labelText: 'Offered Price (₦)',
-              border: OutlineInputBorder(),
-              hintText: 'Enter price',
-            ),
           ),
           AppSpacing.verticalSpacing(SpacingSize.md),
           DropdownButtonFormField<String>(
@@ -413,23 +404,17 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
             fontWeight: FontWeight.w600,
           ),
           AppSpacing.verticalSpacing(SpacingSize.md),
-          TextField(
+          AppInput(
             controller: _originNameController,
-            decoration: const InputDecoration(
-              labelText: 'Location Name',
-              border: OutlineInputBorder(),
-              hintText: 'e.g., My Office',
-            ),
+            label: 'Location Name',
+            hintText: 'e.g., My Office',
           ),
           AppSpacing.verticalSpacing(SpacingSize.md),
-          TextField(
+          AppInput.multiline(
             controller: _originAddressController,
+            label: 'Address',
+            hintText: 'Enter full address',
             maxLines: 2,
-            decoration: const InputDecoration(
-              labelText: 'Address',
-              border: OutlineInputBorder(),
-              hintText: 'Enter full address',
-            ),
           ),
           AppSpacing.verticalSpacing(SpacingSize.lg),
           const AppText(
@@ -439,33 +424,23 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
             fontWeight: FontWeight.w600,
           ),
           AppSpacing.verticalSpacing(SpacingSize.md),
-          TextField(
+          AppInput(
             controller: _destNameController,
-            decoration: const InputDecoration(
-              labelText: 'Location Name',
-              border: OutlineInputBorder(),
-              hintText: 'e.g., Client Office',
-            ),
+            label: 'Location Name',
+            hintText: 'e.g., Client Office',
           ),
           AppSpacing.verticalSpacing(SpacingSize.md),
-          TextField(
+          AppInput.phone(
             controller: _destPhoneController,
-            keyboardType: TextInputType.phone,
-            decoration: const InputDecoration(
-              labelText: 'Receiver Phone',
-              border: OutlineInputBorder(),
-              hintText: 'e.g., +234...',
-            ),
+            label: 'Receiver Phone',
+            hintText: 'e.g., +234...',
           ),
           AppSpacing.verticalSpacing(SpacingSize.md),
-          TextField(
+          AppInput.multiline(
             controller: _destAddressController,
+            label: 'Address',
+            hintText: 'Enter full address',
             maxLines: 2,
-            decoration: const InputDecoration(
-              labelText: 'Address',
-              border: OutlineInputBorder(),
-              hintText: 'Enter full address',
-            ),
           ),
         ],
       ),
@@ -509,43 +484,37 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
                 fontWeight: FontWeight.bold,
               ),
               AppSpacing.verticalSpacing(SpacingSize.lg),
-              Card(
-                child: Padding(
-                  padding: AppSpacing.paddingLG,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildReviewItem('Title', _titleController.text),
-                      _buildReviewItem(
-                          'Description', _descriptionController.text),
-                      _buildReviewItem('Type', _packageType),
-                      _buildReviewItem('Weight', '${_weightController.text} kg'),
-                      _buildReviewItem('Price', '₦${_priceController.text}'),
-                      _buildReviewItem('Urgency', _urgency),
-                    ],
-                  ),
+              AppCard.elevated(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildReviewItem('Title', _titleController.text),
+                    _buildReviewItem(
+                        'Description', _descriptionController.text),
+                    _buildReviewItem('Type', _packageType),
+                    _buildReviewItem('Weight', '${_weightController.text} kg'),
+                    _buildReviewItem('Price', '₦${_priceController.text}'),
+                    _buildReviewItem('Urgency', _urgency),
+                  ],
                 ),
               ),
               AppSpacing.verticalSpacing(SpacingSize.md),
-              Card(
-                child: Padding(
-                  padding: AppSpacing.paddingLG,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      AppText.bodyLarge(
-                        'Locations',
-                        fontWeight: FontWeight.w600,
-                      ),
-                      AppSpacing.verticalSpacing(SpacingSize.md),
-                      _buildReviewItem(
-                          'Pickup', _originNameController.text),
-                      _buildReviewItem(
-                          'Delivery', _destNameController.text),
-                      _buildReviewItem(
-                          'Receiver Phone', _destPhoneController.text),
-                    ],
-                  ),
+              AppCard.elevated(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AppText.bodyLarge(
+                      'Locations',
+                      fontWeight: FontWeight.w600,
+                    ),
+                    AppSpacing.verticalSpacing(SpacingSize.md),
+                    _buildReviewItem(
+                        'Pickup', _originNameController.text),
+                    _buildReviewItem(
+                        'Delivery', _destNameController.text),
+                    _buildReviewItem(
+                        'Receiver Phone', _destPhoneController.text),
+                  ],
                 ),
               ),
             ],
@@ -605,22 +574,19 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
               ),
               AppSpacing.verticalSpacing(SpacingSize.lg),
               if (_createdParcel != null)
-                Card(
-                  child: Padding(
-                    padding: AppSpacing.paddingLG,
-                    child: Column(
-                      children: [
-                        _buildPaymentRow(
-                            'Delivery Fee', '₦${_createdParcel!.price}'),
-                        _buildPaymentRow('Service Fee', '₦150'),
-                        const Divider(),
-                        _buildPaymentRow(
-                          'Total',
-                          '₦${(_createdParcel!.price ?? 0) + 150}',
-                          isBold: true,
-                        ),
-                      ],
-                    ),
+                AppCard.elevated(
+                  child: Column(
+                    children: [
+                      _buildPaymentRow(
+                          'Delivery Fee', '₦${_createdParcel!.price}'),
+                      _buildPaymentRow('Service Fee', '₦150'),
+                      const Divider(),
+                      _buildPaymentRow(
+                        'Total',
+                        '₦${(_createdParcel!.price ?? 0) + 150}',
+                        isBold: true,
+                      ),
+                    ],
                   ),
                 ),
               AppSpacing.verticalSpacing(SpacingSize.lg),
@@ -666,35 +632,25 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
                 ),
               ),
               AppSpacing.verticalSpacing(SpacingSize.lg),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: escrowState.data?.currentEscrow?.status == EscrowStatus.pending ||
-                          escrowState.data?.currentEscrow?.status == EscrowStatus.error
-                      ? () {
-                          if (_createdParcel != null) {
-                            // Navigate to existing payment screen
-                            sl<NavigationService>().navigateTo(Routes.payment);
-                          }
+              AppButton.primary(
+                onPressed: escrowState.data?.currentEscrow?.status == EscrowStatus.pending ||
+                        escrowState.data?.currentEscrow?.status == EscrowStatus.error
+                    ? () {
+                        if (_createdParcel != null) {
+                          // Navigate to existing payment screen
+                          sl<NavigationService>().navigateTo(Routes.payment);
                         }
-                      : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: AppText.bodyMedium('Proceed to Payment', color: Colors.white),
-                ),
+                      }
+                    : null,
+                fullWidth: true,
+                child: AppText.bodyMedium('Proceed to Payment', color: Colors.white),
               ),
               if (escrowState.data?.currentEscrow?.status == EscrowStatus.held) ...[
                 AppSpacing.verticalSpacing(SpacingSize.md),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: AppText.bodyMedium('Done', color: AppColors.primary),
-                  ),
+                AppButton.outline(
+                  onPressed: () => Navigator.of(context).pop(),
+                  fullWidth: true,
+                  child: AppText.bodyMedium('Done', color: AppColors.primary),
                 ),
               ],
             ],
@@ -800,14 +756,14 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
             children: [
               if (_currentStep > 0)
                 Expanded(
-                  child: OutlinedButton(
+                  child: AppButton.outline(
                     onPressed: isCreating ? null : _previousStep,
                     child: AppText.bodyMedium('Back', color: AppColors.primary),
                   ),
                 ),
               if (_currentStep > 0) AppSpacing.horizontalSpacing(SpacingSize.md),
               Expanded(
-                child: ElevatedButton(
+                child: AppButton.primary(
                   onPressed: isCreating
                       ? null
                       : () {
@@ -820,28 +776,8 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
                             _nextStep();
                           }
                         },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: isCreating && _currentStep == 2
-                      ? Row(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            ),
-                            AppSpacing.horizontalSpacing(SpacingSize.sm),
-                            AppText.bodyMedium('Creating...', color: Colors.white),
-                          ],
-                        )
-                      : AppText.bodyMedium(_currentStep == 2 ? 'Create Parcel' : 'Next', color: Colors.white),
+                  loading: isCreating && _currentStep == 2,
+                  child: AppText.bodyMedium(_currentStep == 2 ? 'Create Parcel' : 'Next', color: Colors.white),
                 ),
               ),
             ],

@@ -13,6 +13,7 @@ import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_data.dart';
 import '../../../parcel_am_core/domain/entities/parcel_entity.dart';
 import '../../../../core/helpers/user_extensions.dart';
+import '../../../../core/widgets/app_spacing.dart';
 
 class RequestDetailsScreen extends StatefulWidget {
   const RequestDetailsScreen({super.key, required this.requestId});
@@ -102,21 +103,21 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                     size: 64,
                     color: AppColors.error,
                   ),
-                  const SizedBox(height: 16),
+                  AppSpacing.verticalSpacing(SpacingSize.lg),
                   const AppText(
                     'Failed to load request details',
                     variant: TextVariant.titleMedium,
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                   ),
-                  const SizedBox(height: 8),
+                  AppSpacing.verticalSpacing(SpacingSize.sm),
                   AppText.bodyMedium(
                     state.errorMessage,
                     textAlign: TextAlign.center,
                     color: AppColors.onSurfaceVariant,
                   ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
+                  AppSpacing.verticalSpacing(SpacingSize.xxl),
+                  AppButton.primary(
                     onPressed: () {
                       context.read<ParcelBloc>().add(ParcelLoadRequested(widget.requestId));
                     },
@@ -151,23 +152,14 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
           return Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: AppButton(
-              enabled: true,
-              loading: state is LoadingState<ParcelData>,
+            child: AppButton.primary(
+              fullWidth: true,
+              loading: _isAccepting,
               requiresKyc: true,
               onPressed: (){
                 _acceptRequest(parcel);
               },
-              child: _isAccepting
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : AppText.bodyMedium('Accept Request', color: Colors.white),
+              child: AppText.bodyMedium('Accept Request', color: Colors.white),
             ),
           );
         }, child: Container(),
@@ -214,7 +206,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
               child: Row(
                 children: [
                   const Icon(Icons.warning, color: Colors.white),
-                  const SizedBox(width: 8),
+                  AppSpacing.horizontalSpacing(SpacingSize.sm),
                   Expanded(
                     child: AppText.bodyMedium(
                       'Urgent delivery needed by $deliveryText',
@@ -248,7 +240,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                         size: 30,
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    AppSpacing.horizontalSpacing(SpacingSize.lg),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -259,13 +251,13 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
-                          const SizedBox(height: 4),
+                          AppSpacing.verticalSpacing(SpacingSize.xs),
                           AppText.headlineSmall(
                             '₦${(parcel.price ?? 0.0).toStringAsFixed(0)}',
                             fontWeight: FontWeight.bold,
                             color: AppColors.primary,
                           ),
-                          const SizedBox(height: 4),
+                          AppSpacing.verticalSpacing(SpacingSize.xs),
                           AppText.bodySmall(
                             (parcel.escrowId != null && parcel.escrowId!.isNotEmpty)
                                 ? 'Payment via escrow'
@@ -278,7 +270,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                   ],
                 ),
 
-                const SizedBox(height: 24),
+                AppSpacing.verticalSpacing(SpacingSize.xxl),
 
                 // Package Description
                 AppText.bodyLarge(
@@ -286,7 +278,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                   height: 1.5,
                 ),
 
-                const SizedBox(height: 24),
+                AppSpacing.verticalSpacing(SpacingSize.xxl),
 
                 // Sender Info
                 if (parcel.sender.name.isNotEmpty) ...[
@@ -294,29 +286,29 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                     'Sender',
                     fontWeight: FontWeight.bold,
                   ),
-                  const SizedBox(height: 8),
+                  AppSpacing.verticalSpacing(SpacingSize.sm),
                   Row(
                     children: [
                       const Icon(Icons.person, size: 20, color: AppColors.primary),
-                      const SizedBox(width: 8),
+                      AppSpacing.horizontalSpacing(SpacingSize.sm),
                       AppText.bodyMedium(
                         parcel.sender.name,
                       ),
                     ],
                   ),
                   if (parcel.sender.phoneNumber.isNotEmpty) ...[
-                    const SizedBox(height: 4),
+                    AppSpacing.verticalSpacing(SpacingSize.xs),
                     Row(
                       children: [
                         const Icon(Icons.phone, size: 20, color: AppColors.primary),
-                        const SizedBox(width: 8),
+                        AppSpacing.horizontalSpacing(SpacingSize.sm),
                         AppText.bodyMedium(
                           parcel.sender.phoneNumber,
                         ),
                       ],
                     ),
                   ],
-                  const SizedBox(height: 24),
+                  AppSpacing.verticalSpacing(SpacingSize.xxl),
                 ],
 
                 // Route Info
@@ -347,7 +339,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(width: 16),
+                    AppSpacing.horizontalSpacing(SpacingSize.lg),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -360,7 +352,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                             parcel.route.origin,
                             fontWeight: FontWeight.w600,
                           ),
-                          const SizedBox(height: 24),
+                          AppSpacing.verticalSpacing(SpacingSize.xxl),
                           AppText.bodySmall(
                             'To',
                             color: AppColors.onSurfaceVariant,
@@ -375,7 +367,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                   ],
                 ),
 
-                const SizedBox(height: 24),
+                AppSpacing.verticalSpacing(SpacingSize.xxl),
 
                 // Package Details
                 Row(
@@ -383,7 +375,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                     Expanded(
                       child: _buildDetailCard('Weight', '${parcel.weight ?? 0.0}kg'),
                     ),
-                    const SizedBox(width: 12),
+                    AppSpacing.horizontalSpacing(SpacingSize.md),
                     Expanded(
                       child: _buildDetailCard(
                         'Dimensions',
@@ -393,7 +385,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                   ],
                 ),
 
-                const SizedBox(height: 16),
+                AppSpacing.verticalSpacing(SpacingSize.lg),
 
                 Row(
                   children: [
@@ -406,29 +398,29 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                   ],
                 ),
 
-                const SizedBox(height: 24),
+                AppSpacing.verticalSpacing(SpacingSize.xxl),
 
                 // Receiver Info
                 AppText.bodyLarge(
                   'Receiver',
                   fontWeight: FontWeight.bold,
                 ),
-                const SizedBox(height: 8),
+                AppSpacing.verticalSpacing(SpacingSize.sm),
                 Row(
                   children: [
                     const Icon(Icons.person, size: 20, color: AppColors.secondary),
-                    const SizedBox(width: 8),
+                    AppSpacing.horizontalSpacing(SpacingSize.sm),
                     AppText.bodyMedium(
                       parcel.receiver.name,
                     ),
                   ],
                 ),
                 if (parcel.receiver.phoneNumber.isNotEmpty) ...[
-                  const SizedBox(height: 4),
+                  AppSpacing.verticalSpacing(SpacingSize.xs),
                   Row(
                     children: [
                       const Icon(Icons.phone, size: 20, color: AppColors.secondary),
-                      const SizedBox(width: 8),
+                      AppSpacing.horizontalSpacing(SpacingSize.sm),
                       AppText.bodyMedium(
                         parcel.receiver.phoneNumber,
                       ),
@@ -436,12 +428,12 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                   ),
                 ],
                 if (parcel.receiver.address.isNotEmpty) ...[
-                  const SizedBox(height: 4),
+                  AppSpacing.verticalSpacing(SpacingSize.xs),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Icon(Icons.location_on, size: 20, color: AppColors.secondary),
-                      const SizedBox(width: 8),
+                      AppSpacing.horizontalSpacing(SpacingSize.sm),
                       Expanded(
                         child: AppText.bodyMedium(
                           parcel.receiver.address,
@@ -474,7 +466,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
             label,
             color: AppColors.onSurfaceVariant,
           ),
-          const SizedBox(height: 4),
+          AppSpacing.verticalSpacing(SpacingSize.xs),
           AppText.bodyMedium(
             value,
             fontWeight: FontWeight.w600,

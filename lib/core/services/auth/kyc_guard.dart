@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart' hide Transition;
 import 'package:get/get.dart';
 import 'package:parcel_am/core/helpers/user_extensions.dart';
+import 'package:parcel_am/core/widgets/app_button.dart';
 import '../../../features/parcel_am_core/presentation/bloc/auth/auth_bloc.dart';
 import '../../../features/parcel_am_core/presentation/bloc/auth/auth_data.dart';
 import '../../../core/bloc/base/base_state.dart';
@@ -154,14 +155,13 @@ class KycButton extends StatelessWidget {
       builder: (context, snapshot) {
         final hasAccess = snapshot.data ?? false;
 
-        return ElevatedButton(
+        return AppButton.primary(
           onPressed: hasAccess
               ? onPressed
               : () {
                   // Show snackbar when clicked while disabled
                   KycGuard.instance.showKycBlockedSnackbar();
                 },
-          style: style,
           child: child,
         );
       },

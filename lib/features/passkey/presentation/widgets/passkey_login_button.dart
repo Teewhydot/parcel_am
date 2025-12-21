@@ -4,6 +4,7 @@ import '../../../../core/bloc/base/base_state.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
+import '../../../../core/widgets/app_button.dart';
 import '../bloc/passkey_bloc.dart';
 import '../bloc/passkey_data.dart';
 import '../bloc/passkey_event.dart';
@@ -43,45 +44,23 @@ class PasskeyLoginButton extends StatelessWidget {
             AppSpacing.verticalSpacing(SpacingSize.md),
             _buildDivider(),
             AppSpacing.verticalSpacing(SpacingSize.md),
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: OutlinedButton.icon(
-                onPressed: state.isLoading
-                    ? null
-                    : () {
-                        context.read<PasskeyBloc>().add(
-                              const PasskeySignInRequested(),
-                            );
-                      },
-                icon: state.isLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            AppColors.primary,
-                          ),
-                        ),
-                      )
-                    : const Icon(Icons.fingerprint, size: 24),
-                label: AppText(
-                  state.isLoading ? 'Authenticating...' : 'Sign in with Passkey',
-                  variant: TextVariant.bodyLarge,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.primary,
-                  side: const BorderSide(
-                    color: AppColors.primary,
-                    width: 1.5,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
+            AppButton.outline(
+              onPressed: state.isLoading
+                  ? null
+                  : () {
+                      context.read<PasskeyBloc>().add(
+                            const PasskeySignInRequested(),
+                          );
+                    },
+              fullWidth: true,
+              loading: state.isLoading,
+              borderRadius: BorderRadius.circular(12),
+              leadingIcon: const Icon(Icons.fingerprint, size: 24),
+              child: AppText(
+                state.isLoading ? 'Authenticating...' : 'Sign in with Passkey',
+                variant: TextVariant.bodyLarge,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],

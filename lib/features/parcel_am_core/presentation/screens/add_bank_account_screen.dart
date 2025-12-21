@@ -6,6 +6,7 @@ import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../injection_container.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_input.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../domain/entities/bank_info_entity.dart';
@@ -217,28 +218,15 @@ class _AddBankAccountScreenState extends State<AddBankAccountScreen> {
 
                   AppSpacing.verticalSpacing(SpacingSize.lg),
 
-                  // Account Number Input
-                  AppText.bodyMedium(
-                    'Account Number',
-                    fontWeight: FontWeight.w500,
-                  ),
-                  AppSpacing.verticalSpacing(SpacingSize.sm),
-                  TextFormField(
+                  AppInput(
                     controller: _accountNumberController,
+                    label: 'Account Number',
+                    hintText: 'Enter 10-digit account number',
                     keyboardType: TextInputType.number,
                     maxLength: 10,
                     inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly,
                     ],
-                    decoration: InputDecoration(
-                      hintText: 'Enter 10-digit account number',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      filled: true,
-                      fillColor: AppColors.surfaceVariant,
-                      counterText: '',
-                    ),
                     onChanged: (value) {
                       if (_isVerified) {
                         setState(() {

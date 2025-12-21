@@ -14,6 +14,10 @@ import '../../../parcel_am_core/domain/entities/parcel_entity.dart';
 import '../bloc/auth/auth_bloc.dart';
 import '../widgets/my_deliveries_tab.dart';
 import '../../../../core/widgets/app_text.dart';
+import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_card.dart';
+import '../../../../core/widgets/app_spacing.dart';
+import '../../../../core/widgets/app_input.dart';
 
 class BrowseRequestsScreen extends StatefulWidget {
   const BrowseRequestsScreen({super.key});
@@ -131,26 +135,18 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> with Ticker
         // Search Bar
         Padding(
           padding: const EdgeInsets.all(16),
-          child: TextField(
+          child: AppInput(
             controller: _searchController,
-            decoration: InputDecoration(
-              hintText: 'Search by route or package type...',
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: _searchQuery.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        _searchController.clear();
-                      },
-                    )
-                  : null,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              filled: true,
-              fillColor: AppColors.surfaceVariant,
-            ),
+            hintText: 'Search by route or package type...',
+            prefixIcon: const Icon(Icons.search),
+            suffixIcon: _searchQuery.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.clear),
+                    onPressed: () {
+                      _searchController.clear();
+                    },
+                  )
+                : null,
           ),
         ),
 
@@ -201,21 +197,21 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> with Ticker
                         size: 64,
                         color: AppColors.error,
                       ),
-                      const SizedBox(height: 16),
+                      AppSpacing.verticalSpacing(SpacingSize.lg),
                       AppText(
                         'Failed to load requests',
                         variant: TextVariant.titleMedium,
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
                       ),
-                      const SizedBox(height: 8),
+                      AppSpacing.verticalSpacing(SpacingSize.sm),
                       AppText.bodyMedium(
                         state.errorMessage,
                         textAlign: TextAlign.center,
                         color: AppColors.onSurfaceVariant,
                       ),
-                      const SizedBox(height: 24),
-                      ElevatedButton(
+                      AppSpacing.verticalSpacing(SpacingSize.xxl),
+                      AppButton.primary(
                         onPressed: () {
                           context.read<ParcelBloc>().add(const ParcelWatchAvailableParcelsRequested());
                         },
@@ -239,14 +235,14 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> with Ticker
                         size: 64,
                         color: AppColors.onSurfaceVariant,
                       ),
-                      const SizedBox(height: 16),
+                      AppSpacing.verticalSpacing(SpacingSize.lg),
                       AppText(
                         'No requests available',
                         variant: TextVariant.titleMedium,
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
                       ),
-                      const SizedBox(height: 8),
+                      AppSpacing.verticalSpacing(SpacingSize.sm),
                       AppText.bodyMedium(
                         'Check back later for new delivery requests',
                         color: AppColors.onSurfaceVariant,
@@ -266,14 +262,14 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> with Ticker
                         size: 64,
                         color: AppColors.onSurfaceVariant,
                       ),
-                      const SizedBox(height: 16),
+                      AppSpacing.verticalSpacing(SpacingSize.lg),
                       AppText(
                         'No matching requests',
                         variant: TextVariant.titleMedium,
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
                       ),
-                      const SizedBox(height: 8),
+                      AppSpacing.verticalSpacing(SpacingSize.sm),
                       AppText.bodyMedium(
                         'Try adjusting your filters or search',
                         color: AppColors.onSurfaceVariant,
@@ -358,118 +354,113 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> with Ticker
     final price = '₦${(parcel.price ?? 0.0).toStringAsFixed(0)}';
     final weight = '${parcel.weight ?? 0.0}kg';
 
-    return Card(
+    return AppCard.elevated(
       margin: const EdgeInsets.only(bottom: 16),
-      child: InkWell(
-        onTap: () {
-          sl<NavigationService>().navigateTo(
-            Routes.requestDetails,
-            arguments: parcel.id,
-          );
-        },
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
+      onTap: () {
+        sl<NavigationService>().navigateTo(
+          Routes.requestDetails,
+          arguments: parcel.id,
+        );
+      },
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      Icons.inventory_2_outlined,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: AppText.bodyLarge(
-                                parcel.category ?? 'Package',
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            AppText(
-                              price,
-                              variant: TextVariant.titleMedium,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primary,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        AppText.bodyMedium(
-                          parcel.description ?? 'No description',
-                          color: AppColors.onSurfaceVariant,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.inventory_2_outlined,
+                  color: AppColors.primary,
+                ),
               ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Icon(Icons.location_on, size: 16, color: AppColors.onSurfaceVariant),
-                  const SizedBox(width: 4),
-                  AppText.bodyMedium(parcel.route.origin),
-                  const SizedBox(width: 8),
-                  Container(
-                    width: 20,
-                    height: 1,
-                    color: AppColors.outline,
-                  ),
-                  const SizedBox(width: 8),
-                  Icon(Icons.flag, size: 16, color: AppColors.onSurfaceVariant),
-                  const SizedBox(width: 4),
-                  AppText.bodyMedium(parcel.route.destination),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildInfoChip(Icons.scale, 'Weight', weight),
-                        const SizedBox(height: 8),
-                        _buildInfoChip(Icons.schedule, 'Delivery', deliveryText),
-                      ],
-                    ),
-                  ),
-                  if (parcel.sender.name.isNotEmpty)
+              AppSpacing.horizontalSpacing(SpacingSize.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Row(
                       children: [
-                        const Icon(Icons.person, size: 16, color: AppColors.accent),
-                        const SizedBox(width: 4),
-                        AppText.bodyMedium(
-                          parcel.sender.name.split(' ').first,
-                          fontWeight: FontWeight.w500,
+                        Expanded(
+                          child: AppText.bodyLarge(
+                            parcel.category ?? 'Package',
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        AppText(
+                          price,
+                          variant: TextVariant.titleMedium,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
                         ),
                       ],
                     ),
-                ],
+                    AppSpacing.verticalSpacing(SpacingSize.sm),
+                    AppText.bodyMedium(
+                      parcel.description ?? 'No description',
+                      color: AppColors.onSurfaceVariant,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
-        ),
+          AppSpacing.verticalSpacing(SpacingSize.lg),
+          Row(
+            children: [
+              Icon(Icons.location_on, size: 16, color: AppColors.onSurfaceVariant),
+              AppSpacing.horizontalSpacing(SpacingSize.xs),
+              AppText.bodyMedium(parcel.route.origin),
+              AppSpacing.horizontalSpacing(SpacingSize.sm),
+              Container(
+                width: 20,
+                height: 1,
+                color: AppColors.outline,
+              ),
+              AppSpacing.horizontalSpacing(SpacingSize.sm),
+              Icon(Icons.flag, size: 16, color: AppColors.onSurfaceVariant),
+              AppSpacing.horizontalSpacing(SpacingSize.xs),
+              AppText.bodyMedium(parcel.route.destination),
+            ],
+          ),
+          AppSpacing.verticalSpacing(SpacingSize.md),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildInfoChip(Icons.scale, 'Weight', weight),
+                    AppSpacing.verticalSpacing(SpacingSize.sm),
+                    _buildInfoChip(Icons.schedule, 'Delivery', deliveryText),
+                  ],
+                ),
+              ),
+              if (parcel.sender.name.isNotEmpty)
+                Row(
+                  children: [
+                    const Icon(Icons.person, size: 16, color: AppColors.accent),
+                    AppSpacing.horizontalSpacing(SpacingSize.xs),
+                    AppText.bodyMedium(
+                      parcel.sender.name.split(' ').first,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ],
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -479,7 +470,7 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> with Ticker
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, size: 14, color: AppColors.onSurfaceVariant),
-        const SizedBox(width: 4),
+        AppSpacing.horizontalSpacing(SpacingSize.xs),
         AppText.bodySmall(
           '$label: $value',
           color: AppColors.onSurfaceVariant,

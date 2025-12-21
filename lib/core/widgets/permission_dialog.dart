@@ -4,6 +4,7 @@ import 'package:parcel_am/core/widgets/app_text.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../services/permission_service/permission_service.dart';
+import 'app_spacing.dart';
 import '../utils/logger.dart';
 import '../helpers/user_extensions.dart';
 import '../theme/app_colors.dart';
@@ -52,15 +53,15 @@ class PermissionDialog extends StatelessWidget {
         children: [
           // Icon
           Image.asset(icon, height: 60, width: 60),
-          const SizedBox(height: 16),
+          AppSpacing.verticalSpacing(SpacingSize.lg),
 
           // Title
           AppText.centered(title, fontWeight: FontWeight.bold),
-          const SizedBox(height: 12),
+          AppSpacing.verticalSpacing(SpacingSize.md),
 
           // Description
           AppText.titleMedium(description),
-          const SizedBox(height: 24),
+          AppSpacing.verticalSpacing(SpacingSize.xxl),
 
           // Buttons
           Row(
@@ -78,7 +79,7 @@ class PermissionDialog extends StatelessWidget {
                     child: AppText.centered("Reject"),
                   ),
                 ),
-              if (!isMandatory) const SizedBox(width: 16),
+              if (!isMandatory) AppSpacing.horizontalSpacing(SpacingSize.lg),
               Expanded(
                 child: AppButton(
                   child: AppText.centered("Grant"),

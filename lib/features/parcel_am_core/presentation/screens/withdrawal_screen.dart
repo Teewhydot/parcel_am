@@ -8,6 +8,8 @@ import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../injection_container.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_card.dart';
+import '../../../../core/widgets/app_input.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../domain/entities/user_bank_account_entity.dart';
@@ -71,7 +73,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
             AppSpacing.verticalSpacing(SpacingSize.md),
             ...accounts.map((account) => _buildAccountOption(account)),
             AppSpacing.verticalSpacing(SpacingSize.md),
-            TextButton(
+            AppButton.text(
               onPressed: () {
                 sl<NavigationService>().goBack();
                 sl<NavigationService>().navigateTo(
@@ -154,11 +156,11 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
           ],
         ),
         actions: [
-          TextButton(
+          AppButton.text(
             onPressed: () => Navigator.pop(context),
             child: AppText.bodyMedium('Cancel', color: AppColors.primary),
           ),
-          ElevatedButton(
+          AppButton.primary(
             onPressed: () {
               Navigator.pop(context);
               _initiateWithdrawal(amount, bankAccount);
@@ -236,7 +238,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                       children: [
                         // Available Balance Card
                         Center(
-                          child: Card(
+                          child: AppCard.elevated(
                             color: AppColors.primary.withOpacity(0.1),
                             child: Padding(
                               padding: AppSpacing.paddingLG,
@@ -265,22 +267,14 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                         // Amount Input
                         AppText.titleMedium('Withdrawal Amount', fontWeight: FontWeight.w600),
                         AppSpacing.verticalSpacing(SpacingSize.sm),
-                        TextFormField(
+                        AppInput(
                           controller: _amountController,
+                          hintText: 'Enter amount',
                           keyboardType: const TextInputType.numberWithOptions(decimal: true),
                           inputFormatters: [
                             FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
                           ],
-                          decoration: InputDecoration(
-                            hintText: 'Enter amount',
-                            prefixText: '₦ ',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            filled: true,
-                            fillColor: AppColors.surfaceVariant,
-                            errorText: withdrawalData.amountError,
-                          ),
+                          errorText: withdrawalData.amountError,
                           onChanged: (value) {
                             context.read<WithdrawalBloc>().add(
                                   WithdrawalAmountChanged(amount: value),
@@ -313,7 +307,8 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                         AppText.titleMedium('Bank Account', fontWeight: FontWeight.w600),
                         AppSpacing.verticalSpacing(SpacingSize.sm),
                         if (withdrawalData.selectedBankAccount != null)
-                          Card(
+                          AppCard.elevated(
+                            padding: EdgeInsets.zero,
                             child: ListTile(
                               leading: CircleAvatar(
                                 backgroundColor: AppColors.primary.withOpacity(0.1),
@@ -337,17 +332,15 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                             ),
                           )
                         else
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton.icon(
-                              onPressed: bankAccountData.userBankAccounts.isNotEmpty
-                                  ? () => _showBankAccountSelection(
-                                        bankAccountData.userBankAccounts,
-                                      )
-                                  : null,
-                              icon: const Icon(Icons.account_balance),
-                              label: AppText.bodyMedium('Select Bank Account', color: AppColors.primary),
-                            ),
+                          AppButton.outline(
+                            onPressed: bankAccountData.userBankAccounts.isNotEmpty
+                                ? () => _showBankAccountSelection(
+                                      bankAccountData.userBankAccounts,
+                                    )
+                                : null,
+                            fullWidth: true,
+                            leadingIcon: const Icon(Icons.account_balance),
+                            child: AppText.bodyMedium('Select Bank Account', color: AppColors.primary),
                           ),
 
                         if (bankAccountData.userBankAccounts.isEmpty) ...[

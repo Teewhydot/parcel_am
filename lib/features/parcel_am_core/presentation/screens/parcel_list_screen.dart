@@ -14,6 +14,8 @@ import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_data.dart';
 import '../../domain/entities/parcel_entity.dart';
 import '../widgets/bottom_navigation.dart';
+import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_card.dart';
 
 class ParcelListScreen extends StatefulWidget {
   const ParcelListScreen({super.key});
@@ -86,7 +88,7 @@ class _ParcelListScreenState extends State<ParcelListScreen> {
                     AppSpacing.verticalSpacing(SpacingSize.md),
                     AppText.bodyLarge(state.errorMessage),
                     AppSpacing.verticalSpacing(SpacingSize.lg),
-                    ElevatedButton(
+                    AppButton.primary(
                       onPressed: _refreshParcels,
                       child: AppText.bodyMedium('Retry', color: Colors.white),
                     ),
@@ -120,20 +122,12 @@ class _ParcelListScreenState extends State<ParcelListScreen> {
                       color: AppColors.onSurfaceVariant,
                     ),
                     AppSpacing.verticalSpacing(SpacingSize.lg),
-                    ElevatedButton.icon(
+                    AppButton.primary(
                       onPressed: () {
                         sl<NavigationService>().navigateTo(Routes.createParcel);
                       },
-                      icon: const Icon(Icons.add),
-                      label: AppText.bodyMedium('Create Parcel', color: Colors.white),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
-                      ),
+                      leadingIcon: const Icon(Icons.add, color: Colors.white),
+                      child: AppText.bodyMedium('Create Parcel', color: Colors.white),
                     ),
                   ],
                 ),
@@ -176,114 +170,108 @@ class _ParcelCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return AppCard.elevated(
       margin: const EdgeInsets.only(bottom: 16),
-      child: InkWell(
-        onTap: () {
-          // Navigate to parcel details
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: AppSpacing.paddingLG,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      onTap: () {
+        // Navigate to parcel details
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: _getStatusColor(parcel.status).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      _getPackageIcon(parcel.status),
-                      color: _getStatusColor(parcel.status),
-                    ),
-                  ),
-                  AppSpacing.horizontalSpacing(SpacingSize.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        AppText.bodyLarge(
-                          parcel.description ?? 'Parcel #${parcel.id.substring(0, 8)}',
-                          fontWeight: FontWeight.w600,
-                        ),
-                        AppText.bodyMedium(
-                          '${parcel.route.origin} → ${parcel.route.destination}',
-                          color: AppColors.onSurfaceVariant,
-                        ),
-                      ],
-                    ),
-                  ),
-                  _buildStatusChip(parcel.status),
-                ],
-              ),
-              AppSpacing.verticalSpacing(SpacingSize.md),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildInfoItem(
-                      Icons.scale,
-                      parcel.weight != null ? '${parcel.weight} kg' : 'N/A',
-                    ),
-                  ),
-                  Expanded(
-                    child: _buildInfoItem(
-                      Icons.category,
-                      parcel.category ?? 'General',
-                    ),
-                  ),
-                  Expanded(
-                    child: _buildInfoItem(
-                      Icons.payments,
-                      parcel.price != null ? '₦${parcel.price!.toStringAsFixed(0)}' : 'TBD',
-                    ),
-                  ),
-                ],
-              ),
-              if (parcel.escrowId != null) ...[
-                AppSpacing.verticalSpacing(SpacingSize.md),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: _getStatusColor(parcel.status)
-                        .withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: _getStatusColor(parcel.status)
-                          .withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.security,
-                        size: 16,
-                        color: _getStatusColor(parcel.status),
-                      ),
-                      AppSpacing.horizontalSpacing(SpacingSize.sm),
-                      AppText.bodySmall(
-                        'Escrow Protected',
-                        fontWeight: FontWeight.w500,
-                        color: _getStatusColor(parcel.status),
-                      ),
-                      const Spacer(),
-                      if (parcel.price != null)
-                        AppText.bodySmall(
-                          '₦${parcel.price!.toStringAsFixed(2)}',
-                          fontWeight: FontWeight.w600,
-                          color: _getStatusColor(parcel.status),
-                        ),
-                    ],
-                  ),
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: _getStatusColor(parcel.status).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              ],
+                child: Icon(
+                  _getPackageIcon(parcel.status),
+                  color: _getStatusColor(parcel.status),
+                ),
+              ),
+              AppSpacing.horizontalSpacing(SpacingSize.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AppText.bodyLarge(
+                      parcel.description ?? 'Parcel #${parcel.id.substring(0, 8)}',
+                      fontWeight: FontWeight.w600,
+                    ),
+                    AppText.bodyMedium(
+                      '${parcel.route.origin} → ${parcel.route.destination}',
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  ],
+                ),
+              ),
+              _buildStatusChip(parcel.status),
             ],
           ),
-        ),
+          AppSpacing.verticalSpacing(SpacingSize.md),
+          Row(
+            children: [
+              Expanded(
+                child: _buildInfoItem(
+                  Icons.scale,
+                  parcel.weight != null ? '${parcel.weight} kg' : 'N/A',
+                ),
+              ),
+              Expanded(
+                child: _buildInfoItem(
+                  Icons.category,
+                  parcel.category ?? 'General',
+                ),
+              ),
+              Expanded(
+                child: _buildInfoItem(
+                  Icons.payments,
+                  parcel.price != null ? '₦${parcel.price!.toStringAsFixed(0)}' : 'TBD',
+                ),
+              ),
+            ],
+          ),
+          if (parcel.escrowId != null) ...[
+            AppSpacing.verticalSpacing(SpacingSize.md),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: _getStatusColor(parcel.status)
+                    .withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: _getStatusColor(parcel.status)
+                      .withValues(alpha: 0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.security,
+                    size: 16,
+                    color: _getStatusColor(parcel.status),
+                  ),
+                  AppSpacing.horizontalSpacing(SpacingSize.sm),
+                  AppText.bodySmall(
+                    'Escrow Protected',
+                    fontWeight: FontWeight.w500,
+                    color: _getStatusColor(parcel.status),
+                  ),
+                  const Spacer(),
+                  if (parcel.price != null)
+                    AppText.bodySmall(
+                      '₦${parcel.price!.toStringAsFixed(2)}',
+                      fontWeight: FontWeight.w600,
+                      color: _getStatusColor(parcel.status),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

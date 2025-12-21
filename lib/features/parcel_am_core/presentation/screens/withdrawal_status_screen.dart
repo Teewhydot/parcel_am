@@ -7,6 +7,7 @@ import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../injection_container.dart';
@@ -130,7 +131,7 @@ class _WithdrawalStatusScreenState extends State<WithdrawalStatusScreen> {
                   AppSpacing.verticalSpacing(SpacingSize.md),
                   AppText.bodyMedium(state.errorMessage ?? 'Failed to load withdrawal status'),
                   AppSpacing.verticalSpacing(SpacingSize.md),
-                  ElevatedButton(
+                  AppButton.primary(
                     onPressed: () {
                       context.read<WithdrawalBloc>().add(
                             WithdrawalStatusWatchRequested(withdrawalId: widget.withdrawalId),
@@ -197,23 +198,20 @@ class _WithdrawalStatusScreenState extends State<WithdrawalStatusScreen> {
                 AppSpacing.verticalSpacing(SpacingSize.xl),
 
                 // Amount Card
-                Card(
-                  child: Padding(
-                    padding: AppSpacing.paddingLG,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        AppText.bodyLarge(
-                          'Amount',
-                          color: AppColors.onSurfaceVariant,
-                        ),
-                        AppText.headlineSmall(
-                          _currencyFormat.format(withdrawalOrder.amount),
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primary,
-                        ),
-                      ],
-                    ),
+                AppCard.elevated(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      AppText.bodyLarge(
+                        'Amount',
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                      AppText.headlineSmall(
+                        _currencyFormat.format(withdrawalOrder.amount),
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
+                    ],
                   ),
                 ),
 
@@ -222,19 +220,16 @@ class _WithdrawalStatusScreenState extends State<WithdrawalStatusScreen> {
                 // Bank Account Details
                 AppText.titleMedium('Bank Account Details', fontWeight: FontWeight.w600),
                 AppSpacing.verticalSpacing(SpacingSize.sm),
-                Card(
-                  child: Padding(
-                    padding: AppSpacing.paddingLG,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildDetailRow('Bank Name', withdrawalOrder.bankAccount.bankName),
-                        AppSpacing.verticalSpacing(SpacingSize.sm),
-                        _buildDetailRow('Account Name', withdrawalOrder.bankAccount.accountName),
-                        AppSpacing.verticalSpacing(SpacingSize.sm),
-                        _buildDetailRow('Account Number', withdrawalOrder.bankAccount.accountNumber),
-                      ],
-                    ),
+                AppCard.elevated(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildDetailRow('Bank Name', withdrawalOrder.bankAccount.bankName),
+                      AppSpacing.verticalSpacing(SpacingSize.sm),
+                      _buildDetailRow('Account Name', withdrawalOrder.bankAccount.accountName),
+                      AppSpacing.verticalSpacing(SpacingSize.sm),
+                      _buildDetailRow('Account Number', withdrawalOrder.bankAccount.accountNumber),
+                    ],
                   ),
                 ),
 
@@ -243,30 +238,27 @@ class _WithdrawalStatusScreenState extends State<WithdrawalStatusScreen> {
                 // Transaction Details
                 AppText.titleMedium('Transaction Details', fontWeight: FontWeight.w600),
                 AppSpacing.verticalSpacing(SpacingSize.sm),
-                Card(
-                  child: Padding(
-                    padding: AppSpacing.paddingLG,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildDetailRowWithCopy(
-                          'Reference',
-                          withdrawalOrder.id,
-                          () => _copyToClipboard(withdrawalOrder.id, 'Reference'),
-                        ),
+                AppCard.elevated(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildDetailRowWithCopy(
+                        'Reference',
+                        withdrawalOrder.id,
+                        () => _copyToClipboard(withdrawalOrder.id, 'Reference'),
+                      ),
+                      AppSpacing.verticalSpacing(SpacingSize.sm),
+                      _buildDetailRow('Created', _dateFormat.format(withdrawalOrder.createdAt)),
+                      AppSpacing.verticalSpacing(SpacingSize.sm),
+                      _buildDetailRow(
+                        'Expected Arrival',
+                        _getExpectedArrivalTime(withdrawalOrder.status, withdrawalOrder.createdAt),
+                      ),
+                      if (withdrawalOrder.processedAt != null) ...[
                         AppSpacing.verticalSpacing(SpacingSize.sm),
-                        _buildDetailRow('Created', _dateFormat.format(withdrawalOrder.createdAt)),
-                        AppSpacing.verticalSpacing(SpacingSize.sm),
-                        _buildDetailRow(
-                          'Expected Arrival',
-                          _getExpectedArrivalTime(withdrawalOrder.status, withdrawalOrder.createdAt),
-                        ),
-                        if (withdrawalOrder.processedAt != null) ...[
-                          AppSpacing.verticalSpacing(SpacingSize.sm),
-                          _buildDetailRow('Processed', _dateFormat.format(withdrawalOrder.processedAt!)),
-                        ],
+                        _buildDetailRow('Processed', _dateFormat.format(withdrawalOrder.processedAt!)),
                       ],
-                    ),
+                    ],
                   ),
                 ),
 
@@ -347,26 +339,22 @@ class _WithdrawalStatusScreenState extends State<WithdrawalStatusScreen> {
 
                 // Action Buttons
                 if (withdrawalOrder.status == WithdrawalStatus.success)
-                  SizedBox(
-                    width: double.infinity,
-                    child: AppButton.primary(
-                      onPressed: () {
-                        sl<NavigationService>().navigateAndReplaceAll(Routes.home);
-                      },
-                      child: const AppText('Back to Wallet', color: AppColors.white),
-                    ),
+                  AppButton.primary(
+                    onPressed: () {
+                      sl<NavigationService>().navigateAndReplaceAll(Routes.home);
+                    },
+                    fullWidth: true,
+                    child: const AppText('Back to Wallet', color: AppColors.white),
                   ),
 
                 if (withdrawalOrder.status == WithdrawalStatus.failed)
-                  SizedBox(
-                    width: double.infinity,
-                    child: AppButton.primary(
-                      onPressed: () {
-                        // Navigate back to wallet with retry option
-                        sl<NavigationService>().navigateAndReplaceAll(Routes.home);
-                      },
-                      child: const AppText('Try Again', color: AppColors.white),
-                    ),
+                  AppButton.primary(
+                    onPressed: () {
+                      // Navigate back to wallet with retry option
+                      sl<NavigationService>().navigateAndReplaceAll(Routes.home);
+                    },
+                    fullWidth: true,
+                    child: const AppText('Try Again', color: AppColors.white),
                   ),
               ],
             ),

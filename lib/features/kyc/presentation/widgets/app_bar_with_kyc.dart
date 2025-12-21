@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/domain/entities/kyc_status.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/bloc/base/base_state.dart';
+import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../parcel_am_core/presentation/bloc/auth/auth_bloc.dart';
 import '../../../parcel_am_core/presentation/bloc/auth/auth_data.dart';
@@ -109,14 +110,14 @@ class ProfileHeaderWithKyc extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              AppSpacing.verticalSpacing(SpacingSize.lg),
               AppText(
                 displayName,
                 variant: TextVariant.titleLarge,
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
               ),
-              const SizedBox(height: 4),
+              AppSpacing.verticalSpacing(SpacingSize.xs),
               AppText(
                 email,
                 variant: TextVariant.bodyMedium,

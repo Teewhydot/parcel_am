@@ -9,6 +9,8 @@ import 'package:parcel_am/core/widgets/app_button.dart';
 import 'package:parcel_am/core/widgets/app_text.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/app_card.dart';
+import '../../../../core/widgets/app_input.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../payments/domain/use_cases/paystack_payment_usecase.dart';
 import '../../domain/value_objects/transaction_filter.dart';
@@ -89,7 +91,7 @@ class _WalletScreenState extends State<WalletScreen> {
                   AppSpacing.verticalSpacing(SpacingSize.md),
                   AppText.bodyMedium(state.errorMessage ?? 'Failed to load wallet'),
                   AppSpacing.verticalSpacing(SpacingSize.md),
-                  ElevatedButton(
+                  AppButton.primary(
                     onPressed: () {
                       context.read<WalletBloc>().add(WalletRefreshRequested(widget.userId));
                     },
@@ -135,56 +137,54 @@ class _WalletScreenState extends State<WalletScreen> {
                         ],
                       ),
                     ),
-                  Card(
-                    child: Padding(
-                      padding: AppSpacing.paddingXXL,
-                      child: Column(
-                        children: [
-                          AppText.bodyLarge(
-                            'Available Balance',
-                            color: AppColors.onSurfaceVariant,
-                          ),
-                          AppSpacing.verticalSpacing(SpacingSize.sm),
-                          AppText(
-                            '${walletData.currency} ${walletData.availableBalance.toStringAsFixed(2)}',
-                            variant: TextVariant.headlineLarge,
-                            fontSize: 36,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
-                          ),
-                          AppSpacing.verticalSpacing(SpacingSize.lg),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              Column(
-                                children: [
-                                  AppText.bodySmall(
-                                    'Total Balance',
-                                    color: AppColors.onSurfaceVariant,
-                                  ),
-                                  AppText.bodyLarge(
-                                    '${walletData.currency} ${walletData.balance.toStringAsFixed(2)}',
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ],
-                              ),
-                              Column(
-                                children: [
-                                  AppText.bodySmall(
-                                    'Pending Balance',
-                                    color: AppColors.onSurfaceVariant,
-                                  ),
-                                  AppText.bodyLarge(
-                                    '${walletData.currency} ${walletData.escrowBalance.toStringAsFixed(2)}',
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.orange,
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                  AppCard.elevated(
+                    padding: AppSpacing.paddingXXL,
+                    child: Column(
+                      children: [
+                        AppText.bodyLarge(
+                          'Available Balance',
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                        AppSpacing.verticalSpacing(SpacingSize.sm),
+                        AppText(
+                          '${walletData.currency} ${walletData.availableBalance.toStringAsFixed(2)}',
+                          variant: TextVariant.headlineLarge,
+                          fontSize: 36,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
+                        AppSpacing.verticalSpacing(SpacingSize.lg),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            Column(
+                              children: [
+                                AppText.bodySmall(
+                                  'Total Balance',
+                                  color: AppColors.onSurfaceVariant,
+                                ),
+                                AppText.bodyLarge(
+                                  '${walletData.currency} ${walletData.balance.toStringAsFixed(2)}',
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ],
+                            ),
+                            Column(
+                              children: [
+                                AppText.bodySmall(
+                                  'Pending Balance',
+                                  color: AppColors.onSurfaceVariant,
+                                ),
+                                AppText.bodyLarge(
+                                  '${walletData.currency} ${walletData.escrowBalance.toStringAsFixed(2)}',
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.orange,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                   AppSpacing.verticalSpacing(SpacingSize.lg),
@@ -300,7 +300,8 @@ class _WalletScreenState extends State<WalletScreen> {
                       ),
                     )
                   else
-                    Card(
+                    AppCard.elevated(
+                      padding: EdgeInsets.zero,
                       child: ListView.separated(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
@@ -330,16 +331,15 @@ class _WalletScreenState extends State<WalletScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       child: Center(
-                        child: walletData.wallet?.isLoadingMore ?? false
-                            ? const CircularProgressIndicator()
-                            : OutlinedButton(
-                                onPressed: () {
-                                  context.read<WalletBloc>().add(
-                                        const WalletTransactionLoadMoreRequested(),
-                                      );
-                                },
-                                child: AppText.bodyMedium('Load More', color: AppColors.primary),
-                              ),
+                        child: AppButton.outline(
+                          onPressed: () {
+                            context.read<WalletBloc>().add(
+                                  const WalletTransactionLoadMoreRequested(),
+                                );
+                          },
+                          loading: walletData.wallet?.isLoadingMore ?? false,
+                          child: AppText.bodyMedium('Load More', color: AppColors.primary),
+                        ),
                       ),
                     ),
 
@@ -554,45 +554,13 @@ class _FundingModalContentState extends State<_FundingModalContent> {
 
                     AppSpacing.verticalSpacing(SpacingSize.lg),
 
-                    // Amount input
-                    TextFormField(
+                    AppInput(
                       controller: _amountController,
+                      label: 'Amount',
+                      hintText: 'Enter amount to add (${walletData.currency})',
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: InputDecoration(
-                        labelText: 'Amount',
-                        hintText: 'Enter amount to add',
-                        prefixText: '${walletData.currency} ',
-                        prefixStyle: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.onSurface,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(
-                            color: AppColors.outline,
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(
-                            color: AppColors.primary,
-                            width: 2,
-                          ),
-                        ),
-                        errorBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(
-                            color: AppColors.error,
-                          ),
-                        ),
-                      ),
                       validator: _validateAmount,
                       enabled: !_isLoading,
-                      autofocus: true,
                     ),
 
                     AppSpacing.verticalSpacing(SpacingSize.sm),

@@ -6,6 +6,7 @@ import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_icon.dart';
 import '../../../../core/widgets/app_container.dart';
+import '../../../../core/widgets/app_button.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../bloc/wallet/wallet_bloc.dart';
 import '../bloc/wallet/wallet_data.dart';
@@ -202,7 +203,7 @@ class _WalletBalanceCardState extends State<WalletBalanceCard> {
                   textAlign: TextAlign.center,
                 ),
                 AppSpacing.verticalSpacing(SpacingSize.sm),
-                TextButton(
+                AppButton.text(
                   onPressed: () {
                     if (userId.isNotEmpty) {
                       context.read<WalletBloc>().add(WalletStarted(userId));

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../domain/entities/chat_entity.dart';
 
@@ -49,7 +50,7 @@ class ChatListItem extends StatelessWidget {
                     )
                   : null,
             ),
-            const SizedBox(width: 12),
+            AppSpacing.horizontalSpacing(SpacingSize.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -72,7 +73,7 @@ class ChatListItem extends StatelessWidget {
                         ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  AppSpacing.verticalSpacing(SpacingSize.xs),
                   Row(
                     children: [
                       if (chat.isMuted)
@@ -94,7 +95,7 @@ class ChatListItem extends StatelessWidget {
                         ),
                       ),
                       if (unreadCount > 0) ...[
-                        const SizedBox(width: 8),
+                        AppSpacing.horizontalSpacing(SpacingSize.sm),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(

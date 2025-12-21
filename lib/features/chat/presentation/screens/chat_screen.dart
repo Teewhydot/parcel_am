@@ -6,6 +6,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../../core/widgets/app_text.dart';
+import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_spacing.dart';
 import '../../../../injection_container.dart' as di;
 import '../../domain/entities/message.dart';
 import '../../domain/entities/message_type.dart';
@@ -102,7 +104,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           title: Row(
             children: [
               const Icon(Icons.notifications_active, color: Colors.blue),
-              const SizedBox(width: 12),
+              AppSpacing.horizontalSpacing(SpacingSize.md),
               AppText.titleMedium('Enable Notifications'),
             ],
           ),
@@ -110,13 +112,13 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
             'Stay connected with your conversations! Enable notifications to receive instant alerts when you receive new messages, even when the app is closed.',
           ),
           actions: <Widget>[
-            TextButton(
+            AppButton.text(
               child: AppText.bodyMedium('Not Now'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
-            ElevatedButton(
+            AppButton.primary(
               child: AppText.bodyMedium('Enable', color: Colors.white),
               onPressed: () {
                 Navigator.of(context).pop();
@@ -355,7 +357,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                     )
                   : null,
             ),
-            const SizedBox(width: 12),
+            AppSpacing.horizontalSpacing(SpacingSize.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -416,12 +418,12 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                                 size: 64,
                                 color: Colors.grey.shade400,
                               ),
-                              const SizedBox(height: 16),
+                              AppSpacing.verticalSpacing(SpacingSize.lg),
                               AppText.bodyLarge(
                                 'No messages yet',
                                 color: Colors.grey.shade600,
                               ),
-                              const SizedBox(height: 8),
+                              AppSpacing.verticalSpacing(SpacingSize.sm),
                               AppText.bodyMedium(
                                 'Start the conversation!',
                                 color: Colors.grey.shade500,

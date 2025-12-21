@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../domain/value_objects/transaction_filter.dart';
 
@@ -27,17 +28,17 @@ class TransactionFilterBar extends StatelessWidget {
                 color: Colors.grey[600],
                 fontWeight: FontWeight.w500,
               ),
-              const SizedBox(width: 8),
+              AppSpacing.horizontalSpacing(SpacingSize.sm),
               Expanded(
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
                       _buildStatusFilter(context),
-                      const SizedBox(width: 8),
+                      AppSpacing.horizontalSpacing(SpacingSize.sm),
                       _buildDateRangeFilter(context),
                       if (currentFilter.hasActiveFilters) ...[
-                        const SizedBox(width: 8),
+                        AppSpacing.horizontalSpacing(SpacingSize.sm),
                         _buildClearAllButton(context),
                       ],
                     ],
@@ -92,7 +93,7 @@ class TransactionFilterBar extends StatelessWidget {
                   ? Theme.of(context).primaryColor
                   : Colors.grey[700],
             ),
-            const SizedBox(width: 4),
+            AppSpacing.horizontalSpacing(SpacingSize.xs),
             AppText(
               currentFilter.status != null
                   ? _formatStatus(currentFilter.status!)
@@ -152,7 +153,7 @@ class TransactionFilterBar extends StatelessWidget {
                   ? Theme.of(context).primaryColor
                   : Colors.grey[700],
             ),
-            const SizedBox(width: 4),
+            AppSpacing.horizontalSpacing(SpacingSize.xs),
             AppText(
               _getDateRangeText(),
               variant: TextVariant.bodySmall,
@@ -204,7 +205,7 @@ class TransactionFilterBar extends StatelessWidget {
               size: 16,
               color: Colors.red.shade700,
             ),
-            const SizedBox(width: 4),
+            AppSpacing.horizontalSpacing(SpacingSize.xs),
             AppText(
               'Clear All',
               variant: TextVariant.bodySmall,
@@ -256,7 +257,7 @@ class TransactionFilterBar extends StatelessWidget {
             label,
             color: Theme.of(context).primaryColor,
           ),
-          const SizedBox(width: 4),
+          AppSpacing.horizontalSpacing(SpacingSize.xs),
           InkWell(
             onTap: onRemove,
             child: Icon(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/app_spacing.dart';
 
 class TypingIndicator extends StatefulWidget {
   const TypingIndicator({super.key});
@@ -39,9 +40,9 @@ class _TypingIndicatorState extends State<TypingIndicator>
         mainAxisSize: MainAxisSize.min,
         children: [
           _buildDot(0),
-          const SizedBox(width: 4),
+          AppSpacing.horizontalSpacing(SpacingSize.xs),
           _buildDot(1),
-          const SizedBox(width: 4),
+          AppSpacing.horizontalSpacing(SpacingSize.xs),
           _buildDot(2),
         ],
       ),

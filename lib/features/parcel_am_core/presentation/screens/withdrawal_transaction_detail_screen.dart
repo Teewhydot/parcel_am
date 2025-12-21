@@ -5,8 +5,10 @@ import 'package:intl/intl.dart';
 import 'package:parcel_am/core/routes/routes.dart';
 import 'package:parcel_am/core/services/navigation_service/nav_config.dart';
 import 'package:parcel_am/core/theme/app_colors.dart';
+import 'package:parcel_am/core/widgets/app_card.dart';
 import 'package:parcel_am/core/widgets/app_spacing.dart';
 import 'package:parcel_am/core/widgets/app_text.dart';
+import 'package:parcel_am/core/widgets/app_button.dart';
 import 'package:parcel_am/features/parcel_am_core/domain/entities/withdrawal_order_entity.dart';
 
 /// Screen displaying detailed information about a withdrawal transaction
@@ -65,28 +67,24 @@ class WithdrawalTransactionDetailScreen extends StatelessWidget {
 
   /// Builds the amount display card
   Widget _buildAmountCard(BuildContext context) {
-    return Card(
-      elevation: 2,
-      child: Container(
-        width: double.infinity,
-        padding: AppSpacing.paddingXXL,
-        child: Column(
-          children: [
-            AppText.bodyMedium(
-              'Withdrawal Amount',
-              color: AppColors.onSurfaceVariant,
-            ),
-            AppSpacing.verticalSpacing(SpacingSize.sm),
-            AppText(
-              '₦${_formatAmount(withdrawalOrder.amount)}',
-              variant: TextVariant.headlineLarge,
-              fontWeight: FontWeight.bold,
-              color: AppColors.error,
-            ),
-            AppSpacing.verticalSpacing(SpacingSize.md),
-            _buildStatusChip(context),
-          ],
-        ),
+    return AppCard.elevated(
+      padding: AppSpacing.paddingXXL,
+      child: Column(
+        children: [
+          AppText.bodyMedium(
+            'Withdrawal Amount',
+            color: AppColors.onSurfaceVariant,
+          ),
+          AppSpacing.verticalSpacing(SpacingSize.sm),
+          AppText(
+            '₦${_formatAmount(withdrawalOrder.amount)}',
+            variant: TextVariant.headlineLarge,
+            fontWeight: FontWeight.bold,
+            color: AppColors.error,
+          ),
+          AppSpacing.verticalSpacing(SpacingSize.md),
+          _buildStatusChip(context),
+        ],
       ),
     );
   }
@@ -123,46 +121,43 @@ class WithdrawalTransactionDetailScreen extends StatelessWidget {
 
   /// Builds the status timeline showing withdrawal progress
   Widget _buildStatusTimeline(BuildContext context) {
-    return Card(
-      elevation: 1,
-      child: Padding(
-        padding: AppSpacing.paddingXL,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AppText.titleMedium(
-              'Transaction Timeline',
-              fontWeight: FontWeight.w600,
-            ),
-            AppSpacing.verticalSpacing(SpacingSize.md),
-            _buildTimelineItem(
-              context,
-              'Initiated',
-              _formatDateTime(withdrawalOrder.createdAt),
-              isCompleted: true,
-            ),
-            _buildTimelineItem(
-              context,
-              'Processing',
-              withdrawalOrder.status != WithdrawalStatus.pending
-                  ? _formatDateTime(withdrawalOrder.updatedAt)
-                  : 'Waiting...',
-              isCompleted: withdrawalOrder.status != WithdrawalStatus.pending,
-              isActive: withdrawalOrder.status == WithdrawalStatus.processing,
-            ),
-            _buildTimelineItem(
-              context,
-              _getFinalStepLabel(),
-              withdrawalOrder.processedAt != null
-                  ? _formatDateTime(withdrawalOrder.processedAt!)
-                  : 'Pending...',
-              isCompleted: withdrawalOrder.status == WithdrawalStatus.success ||
-                  withdrawalOrder.status == WithdrawalStatus.failed ||
-                  withdrawalOrder.status == WithdrawalStatus.reversed,
-              isLast: true,
-            ),
-          ],
-        ),
+    return AppCard.elevated(
+      padding: AppSpacing.paddingXL,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppText.titleMedium(
+            'Transaction Timeline',
+            fontWeight: FontWeight.w600,
+          ),
+          AppSpacing.verticalSpacing(SpacingSize.md),
+          _buildTimelineItem(
+            context,
+            'Initiated',
+            _formatDateTime(withdrawalOrder.createdAt),
+            isCompleted: true,
+          ),
+          _buildTimelineItem(
+            context,
+            'Processing',
+            withdrawalOrder.status != WithdrawalStatus.pending
+                ? _formatDateTime(withdrawalOrder.updatedAt)
+                : 'Waiting...',
+            isCompleted: withdrawalOrder.status != WithdrawalStatus.pending,
+            isActive: withdrawalOrder.status == WithdrawalStatus.processing,
+          ),
+          _buildTimelineItem(
+            context,
+            _getFinalStepLabel(),
+            withdrawalOrder.processedAt != null
+                ? _formatDateTime(withdrawalOrder.processedAt!)
+                : 'Pending...',
+            isCompleted: withdrawalOrder.status == WithdrawalStatus.success ||
+                withdrawalOrder.status == WithdrawalStatus.failed ||
+                withdrawalOrder.status == WithdrawalStatus.reversed,
+            isLast: true,
+          ),
+        ],
       ),
     );
   }
@@ -217,7 +212,7 @@ class WithdrawalTransactionDetailScreen extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(width: 12),
+          AppSpacing.horizontalSpacing(SpacingSize.md),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.only(bottom: 20),
@@ -247,164 +242,152 @@ class WithdrawalTransactionDetailScreen extends StatelessWidget {
 
   /// Builds the bank account information card
   Widget _buildBankAccountCard(BuildContext context) {
-    return Card(
-      elevation: 1,
-      child: Padding(
-        padding: AppSpacing.paddingXL,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AppText.titleMedium(
-              'Bank Account',
-              fontWeight: FontWeight.w600,
-            ),
-            AppSpacing.verticalSpacing(SpacingSize.md),
-            _buildDetailRow(
-              context,
-              'Account Name',
-              withdrawalOrder.bankAccount.accountName,
-            ),
-            const Divider(height: 20),
-            _buildDetailRow(
-              context,
-              'Account Number',
-              _maskAccountNumber(withdrawalOrder.bankAccount.accountNumber),
-            ),
-            const Divider(height: 20),
-            _buildDetailRow(
-              context,
-              'Bank',
-              withdrawalOrder.bankAccount.bankName,
-            ),
-          ],
-        ),
+    return AppCard.elevated(
+      padding: AppSpacing.paddingXL,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppText.titleMedium(
+            'Bank Account',
+            fontWeight: FontWeight.w600,
+          ),
+          AppSpacing.verticalSpacing(SpacingSize.md),
+          _buildDetailRow(
+            context,
+            'Account Name',
+            withdrawalOrder.bankAccount.accountName,
+          ),
+          const Divider(height: 20),
+          _buildDetailRow(
+            context,
+            'Account Number',
+            _maskAccountNumber(withdrawalOrder.bankAccount.accountNumber),
+          ),
+          const Divider(height: 20),
+          _buildDetailRow(
+            context,
+            'Bank',
+            withdrawalOrder.bankAccount.bankName,
+          ),
+        ],
       ),
     );
   }
 
   /// Builds the transaction details card
   Widget _buildDetailsCard(BuildContext context) {
-    return Card(
-      elevation: 1,
-      child: Padding(
-        padding: AppSpacing.paddingXL,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AppText.titleMedium(
-              'Transaction Details',
-              fontWeight: FontWeight.w600,
+    return AppCard.elevated(
+      padding: AppSpacing.paddingXL,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppText.titleMedium(
+            'Transaction Details',
+            fontWeight: FontWeight.w600,
+          ),
+          AppSpacing.verticalSpacing(SpacingSize.md),
+          _buildCopyableDetailRow(
+            context,
+            'Reference ID',
+            withdrawalOrder.id,
+          ),
+          const Divider(height: 20),
+          _buildDetailRow(
+            context,
+            'Created',
+            _formatDateTime(withdrawalOrder.createdAt),
+          ),
+          const Divider(height: 20),
+          _buildDetailRow(
+            context,
+            'Last Updated',
+            _formatDateTime(withdrawalOrder.updatedAt),
+          ),
+          if (withdrawalOrder.processedAt != null) ...[
+            const Divider(height: 20),
+            _buildDetailRow(
+              context,
+              'Processed',
+              _formatDateTime(withdrawalOrder.processedAt!),
             ),
-            AppSpacing.verticalSpacing(SpacingSize.md),
+          ],
+          if (withdrawalOrder.transferCode != null) ...[
+            const Divider(height: 20),
             _buildCopyableDetailRow(
               context,
-              'Reference ID',
-              withdrawalOrder.id,
+              'Transfer Code',
+              withdrawalOrder.transferCode!,
             ),
-            const Divider(height: 20),
-            _buildDetailRow(
-              context,
-              'Created',
-              _formatDateTime(withdrawalOrder.createdAt),
-            ),
-            const Divider(height: 20),
-            _buildDetailRow(
-              context,
-              'Last Updated',
-              _formatDateTime(withdrawalOrder.updatedAt),
-            ),
-            if (withdrawalOrder.processedAt != null) ...[
-              const Divider(height: 20),
-              _buildDetailRow(
-                context,
-                'Processed',
-                _formatDateTime(withdrawalOrder.processedAt!),
-              ),
-            ],
-            if (withdrawalOrder.transferCode != null) ...[
-              const Divider(height: 20),
-              _buildCopyableDetailRow(
-                context,
-                'Transfer Code',
-                withdrawalOrder.transferCode!,
-              ),
-            ],
           ],
-        ),
+        ],
       ),
     );
   }
 
   /// Builds the failure reason card
   Widget _buildFailureReasonCard(BuildContext context) {
-    return Card(
-      elevation: 1,
+    return AppCard.elevated(
       color: AppColors.error.withOpacity(0.05),
-      child: Padding(
-        padding: AppSpacing.paddingXL,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(
-                  Icons.error_outline,
-                  color: AppColors.error,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                AppText(
-                  'Failure Reason',
-                  variant: TextVariant.titleSmall,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.error,
-                ),
-              ],
-            ),
-            AppSpacing.verticalSpacing(SpacingSize.sm),
-            AppText.bodyMedium(
-              withdrawalOrder.failureReason!,
-              color: AppColors.onSurface,
-            ),
-          ],
-        ),
+      padding: AppSpacing.paddingXL,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.error_outline,
+                color: AppColors.error,
+                size: 20,
+              ),
+              AppSpacing.horizontalSpacing(SpacingSize.sm),
+              AppText(
+                'Failure Reason',
+                variant: TextVariant.titleSmall,
+                fontWeight: FontWeight.w600,
+                color: AppColors.error,
+              ),
+            ],
+          ),
+          AppSpacing.verticalSpacing(SpacingSize.sm),
+          AppText.bodyMedium(
+            withdrawalOrder.failureReason!,
+            color: AppColors.onSurface,
+          ),
+        ],
       ),
     );
   }
 
   /// Builds the reversal reason card
   Widget _buildReversalReasonCard(BuildContext context) {
-    return Card(
-      elevation: 1,
+    return AppCard.elevated(
       color: Colors.orange.shade50,
-      child: Padding(
-        padding: AppSpacing.paddingXL,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.info_outline,
-                  color: Colors.orange.shade700,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                AppText(
-                  'Reversal Reason',
-                  variant: TextVariant.titleSmall,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.orange.shade700,
-                ),
-              ],
-            ),
-            AppSpacing.verticalSpacing(SpacingSize.sm),
-            AppText.bodyMedium(
-              withdrawalOrder.reversalReason!,
-              color: AppColors.onSurface,
-            ),
-          ],
-        ),
+      padding: AppSpacing.paddingXL,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.info_outline,
+                color: Colors.orange.shade700,
+                size: 20,
+              ),
+              AppSpacing.horizontalSpacing(SpacingSize.sm),
+              AppText(
+                'Reversal Reason',
+                variant: TextVariant.titleSmall,
+                fontWeight: FontWeight.w600,
+                color: Colors.orange.shade700,
+              ),
+            ],
+          ),
+          AppSpacing.verticalSpacing(SpacingSize.sm),
+          AppText.bodyMedium(
+            withdrawalOrder.reversalReason!,
+            color: AppColors.onSurface,
+          ),
+        ],
       ),
     );
   }
@@ -419,7 +402,7 @@ class WithdrawalTransactionDetailScreen extends StatelessWidget {
           label,
           color: AppColors.onSurfaceVariant,
         ),
-        const SizedBox(width: 16),
+        AppSpacing.horizontalSpacing(SpacingSize.lg),
         Flexible(
           child: AppText.bodyMedium(
             value,
@@ -442,7 +425,7 @@ class WithdrawalTransactionDetailScreen extends StatelessWidget {
           label,
           color: AppColors.onSurfaceVariant,
         ),
-        const SizedBox(width: 16),
+        AppSpacing.horizontalSpacing(SpacingSize.lg),
         Flexible(
           child: GestureDetector(
             onTap: () {
@@ -465,7 +448,7 @@ class WithdrawalTransactionDetailScreen extends StatelessWidget {
                     textAlign: TextAlign.right,
                   ),
                 ),
-                const SizedBox(width: 4),
+                AppSpacing.horizontalSpacing(SpacingSize.xs),
                 const Icon(
                   Icons.copy,
                   size: 16,
@@ -481,30 +464,26 @@ class WithdrawalTransactionDetailScreen extends StatelessWidget {
 
   /// Builds retry button for failed withdrawals
   Widget _buildRetryButton(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: () {
-          // Navigate to withdrawal screen with pre-filled data
-          sl<NavigationService>().navigateTo(
-            Routes.withdrawal,
-            arguments: {
-              'prefillAmount': withdrawalOrder.amount,
-              'prefillBankAccount': withdrawalOrder.bankAccount,
-              'originalReference': withdrawalOrder.id,
-            },
-          );
-        },
-        icon: const Icon(Icons.refresh),
-        label: AppText.bodyMedium('Retry Withdrawal', color: Colors.white),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
+    return AppButton.primary(
+      onPressed: () {
+        // Navigate to withdrawal screen with pre-filled data
+        sl<NavigationService>().navigateTo(
+          Routes.withdrawal,
+          arguments: {
+            'prefillAmount': withdrawalOrder.amount,
+            'prefillBankAccount': withdrawalOrder.bankAccount,
+            'originalReference': withdrawalOrder.id,
+          },
+        );
+      },
+      fullWidth: true,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.refresh, color: Colors.white),
+          AppSpacing.horizontalSpacing(SpacingSize.sm),
+          AppText.bodyMedium('Retry Withdrawal', color: Colors.white),
+        ],
       ),
     );
   }

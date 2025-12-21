@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../widgets/app_text.dart';
+import '../../widgets/app_button.dart';
+import '../../widgets/app_spacing.dart';
 import '../../../features/parcel_am_core/presentation/bloc/auth/auth_bloc.dart';
 import '../../../features/parcel_am_core/presentation/bloc/auth/auth_data.dart';
 import '../../../core/bloc/base/base_state.dart';
@@ -292,7 +294,7 @@ class _KycNotificationToastState extends State<_KycNotificationToast>
                           color: Colors.white,
                           size: 32,
                         ),
-                        const SizedBox(width: 12),
+                        AppSpacing.horizontalSpacing(SpacingSize.md),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -305,7 +307,7 @@ class _KycNotificationToastState extends State<_KycNotificationToast>
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                               ),
-                              const SizedBox(height: 4),
+                              AppSpacing.verticalSpacing(SpacingSize.xs),
                               AppText(
                                 widget.data.message,
                                 variant: TextVariant.bodySmall,
@@ -366,7 +368,7 @@ class _KycStatusChangeDialog extends StatelessWidget {
               color: data.backgroundColor,
             ),
           ),
-          const SizedBox(height: 20),
+          AppSpacing.verticalSpacing(SpacingSize.xl),
           AppText(
             data.title,
             variant: TextVariant.titleLarge,
@@ -374,7 +376,7 @@ class _KycStatusChangeDialog extends StatelessWidget {
             fontWeight: FontWeight.bold,
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 12),
+          AppSpacing.verticalSpacing(SpacingSize.md),
           AppText(
             data.message,
             variant: TextVariant.bodyMedium,
@@ -383,7 +385,7 @@ class _KycStatusChangeDialog extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           if (isApproved) ...[
-            const SizedBox(height: 16),
+            AppSpacing.verticalSpacing(SpacingSize.lg),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -391,10 +393,10 @@ class _KycStatusChangeDialog extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
-                children: const [
-                  Icon(Icons.check_circle, color: AppColors.success, size: 20),
-                  SizedBox(width: 8),
-                  Expanded(
+                children: [
+                  const Icon(Icons.check_circle, color: AppColors.success, size: 20),
+                  AppSpacing.horizontalSpacing(SpacingSize.sm),
+                  const Expanded(
                     child: AppText(
                       'You can now access wallet, payments, and all features',
                       variant: TextVariant.bodySmall,
@@ -410,7 +412,7 @@ class _KycStatusChangeDialog extends StatelessWidget {
       ),
       actions: [
         if (data.actionText != null && data.actionRoute != null)
-          TextButton(
+          AppButton.text(
             onPressed: () {
               Navigator.of(context).pop();
               sl<NavigationService>().navigateTo(data.actionRoute!);

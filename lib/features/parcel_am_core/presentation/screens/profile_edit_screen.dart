@@ -270,7 +270,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           },
         ),
         AppSpacing.verticalSpacing(SpacingSize.sm),
-        TextButton(
+        AppButton.text(
           key: const Key('changePhotoButton'),
           onPressed: () {
             final result = fileUploadService.pickImageFromGallery(

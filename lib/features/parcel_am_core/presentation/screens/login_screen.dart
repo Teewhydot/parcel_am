@@ -14,6 +14,7 @@ import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_container.dart';
+import '../../../../core/widgets/app_input.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../injection_container.dart';
@@ -37,7 +38,6 @@ class _LoginScreenState extends State<LoginScreen>
   final _displayNameController = TextEditingController();
   final _resetEmailController = TextEditingController();
   late TabController _tabController;
-  bool _obscurePassword = true;
   bool _showPasswordReset = false;
 
   // Real-time validation states
@@ -395,72 +395,37 @@ class _LoginScreenState extends State<LoginScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AppText.bodyMedium('Email', fontWeight: FontWeight.w500),
-              AppSpacing.verticalSpacing(SpacingSize.sm),
-              TextFormField(
+              AppInput.email(
                 controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
+                label: 'Email',
+                hintText: 'your.email@example.com',
+                errorText: _emailError,
                 enabled: !state.isLoading,
                 onTap: () {
                   if (!_emailTouched) {
                     setState(() => _emailTouched = true);
                   }
                 },
-                decoration: InputDecoration(
-                  hintText: 'your.email@example.com',
-                  prefixIcon: const Icon(Icons.email_outlined),
-                  errorText: _emailError,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
-                  ),
-                ),
               ),
               AppSpacing.verticalSpacing(SpacingSize.md),
-              AppText.bodyMedium('Password', fontWeight: FontWeight.w500),
-              AppSpacing.verticalSpacing(SpacingSize.sm),
-              TextFormField(
+              AppInput.password(
                 controller: _passwordController,
-                obscureText: _obscurePassword,
+                label: 'Password',
+                hintText: '••••••••',
+                errorText: _passwordError,
                 enabled: !state.isLoading,
                 onTap: () {
                   if (!_passwordTouched) {
                     setState(() => _passwordTouched = true);
                   }
                 },
-                decoration: InputDecoration(
-                  hintText: '••••••••',
-                  prefixIcon: const Icon(Icons.lock_outline),
-                  errorText: _passwordError,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _obscurePassword = !_obscurePassword;
-                      });
-                    },
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
-                  ),
-                ),
               ),
               AppSpacing.verticalSpacing(SpacingSize.sm),
               Align(
                 alignment: Alignment.centerRight,
-                child: TextButton(
+                child: AppButton.text(
                   onPressed: state.isLoading ? null : _togglePasswordResetView,
+                  size: ButtonSize.small,
                   child: AppText.bodySmall(
                     'Forgot Password?',
                     color: AppColors.primary,
@@ -468,31 +433,14 @@ class _LoginScreenState extends State<LoginScreen>
                 ),
               ),
               AppSpacing.verticalSpacing(SpacingSize.lg),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: state.isLoading ? null : _login,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: state.isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : AppText.bodyLarge(
-                          'Sign In',
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
+              AppButton.primary(
+                onPressed: state.isLoading ? null : _login,
+                fullWidth: true,
+                loading: state.isLoading,
+                child: AppText.bodyLarge(
+                  'Sign In',
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
               // Passkey Login Option
@@ -538,44 +486,21 @@ class _LoginScreenState extends State<LoginScreen>
               ],
             ),
             AppSpacing.verticalSpacing(SpacingSize.md),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: OutlinedButton.icon(
-                onPressed: isLoading
-                    ? null
-                    : () {
-                        context.read<PasskeyBloc>().add(
-                              const PasskeySignInRequested(),
-                            );
-                      },
-                icon: passkeyState.isLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            AppColors.primary,
-                          ),
-                        ),
-                      )
-                    : const Icon(Icons.fingerprint, size: 24),
-                label: AppText.bodyLarge(
-                  passkeyState.isLoading ? 'Authenticating...' : 'Sign in with Passkey',
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w600,
-                ),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.primary,
-                  side: const BorderSide(
-                    color: AppColors.primary,
-                    width: 1.5,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
+            AppButton.outline(
+              onPressed: isLoading
+                  ? null
+                  : () {
+                      context.read<PasskeyBloc>().add(
+                            const PasskeySignInRequested(),
+                          );
+                    },
+              fullWidth: true,
+              loading: passkeyState.isLoading,
+              leadingIcon: const Icon(Icons.fingerprint, size: 24),
+              child: AppText.bodyLarge(
+                passkeyState.isLoading ? 'Authenticating...' : 'Sign in with Passkey',
+                color: AppColors.primary,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],
@@ -591,72 +516,26 @@ class _LoginScreenState extends State<LoginScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AppText.bodyMedium('Display Name', fontWeight: FontWeight.w500),
-              AppSpacing.verticalSpacing(SpacingSize.sm),
-              TextFormField(
+              AppInput(
                 controller: _displayNameController,
+                label: 'Display Name',
+                hintText: 'John Doe',
+                prefixIcon: const Icon(Icons.person_outline),
                 enabled: !state.isLoading,
-                decoration: InputDecoration(
-                  hintText: 'John Doe',
-                  prefixIcon: const Icon(Icons.person_outline),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
-                  ),
-                ),
               ),
               AppSpacing.verticalSpacing(SpacingSize.md),
-              AppText.bodyMedium('Email', fontWeight: FontWeight.w500),
-              AppSpacing.verticalSpacing(SpacingSize.sm),
-              TextFormField(
+              AppInput.email(
                 controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
+                label: 'Email',
+                hintText: 'your.email@example.com',
                 enabled: !state.isLoading,
-                decoration: InputDecoration(
-                  hintText: 'your.email@example.com',
-                  prefixIcon: const Icon(Icons.email_outlined),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
-                  ),
-                ),
               ),
               AppSpacing.verticalSpacing(SpacingSize.md),
-              AppText.bodyMedium('Password', fontWeight: FontWeight.w500),
-              AppSpacing.verticalSpacing(SpacingSize.sm),
-              TextFormField(
+              AppInput.password(
                 controller: _passwordController,
-                obscureText: _obscurePassword,
+                label: 'Password',
+                hintText: '••••••••',
                 enabled: !state.isLoading,
-                decoration: InputDecoration(
-                  hintText: '••••••••',
-                  prefixIcon: const Icon(Icons.lock_outline),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _obscurePassword = !_obscurePassword;
-                      });
-                    },
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
-                  ),
-                ),
               ),
               AppSpacing.verticalSpacing(SpacingSize.sm),
               AppText.bodySmall(
@@ -664,31 +543,14 @@ class _LoginScreenState extends State<LoginScreen>
                 color: Colors.grey,
               ),
               AppSpacing.verticalSpacing(SpacingSize.xl),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: state.isLoading ? null : _register,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: state.isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : AppText.bodyLarge(
-                          'Create Account',
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
+              AppButton.primary(
+                onPressed: state.isLoading ? null : _register,
+                fullWidth: true,
+                loading: state.isLoading,
+                child: AppText.bodyLarge(
+                  'Create Account',
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
@@ -718,23 +580,11 @@ class _LoginScreenState extends State<LoginScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AppText.bodyMedium('Email', fontWeight: FontWeight.w500),
-              AppSpacing.verticalSpacing(SpacingSize.sm),
-              TextFormField(
+              AppInput.email(
                 controller: _resetEmailController,
-                keyboardType: TextInputType.emailAddress,
+                label: 'Email',
+                hintText: 'your.email@example.com',
                 enabled: !state.isLoading,
-                decoration: InputDecoration(
-                  hintText: 'your.email@example.com',
-                  prefixIcon: const Icon(Icons.email_outlined),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
-                  ),
-                ),
               ),
               AppSpacing.verticalSpacing(SpacingSize.md),
               AppText.bodySmall(
@@ -742,37 +592,21 @@ class _LoginScreenState extends State<LoginScreen>
                 color: Colors.grey,
               ),
               AppSpacing.verticalSpacing(SpacingSize.xl),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: state.isLoading ? null : _resetPassword,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: state.isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : AppText.bodyLarge(
-                          'Send Reset Link',
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
+              AppButton.primary(
+                onPressed: state.isLoading ? null : _resetPassword,
+                fullWidth: true,
+                loading: state.isLoading,
+                child: AppText.bodyLarge(
+                  'Send Reset Link',
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
               AppSpacing.verticalSpacing(SpacingSize.md),
               Center(
-                child: TextButton(
+                child: AppButton.text(
                   onPressed: state.isLoading ? null : _togglePasswordResetView,
+                  size: ButtonSize.small,
                   child: AppText.bodySmall(
                     'Back to Sign In',
                     color: AppColors.primary,
