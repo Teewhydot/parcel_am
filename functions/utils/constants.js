@@ -73,7 +73,8 @@ const PAYSTACK = {
 // Firebase Functions configuration
 const FUNCTIONS_CONFIG = {
   REGION: 'us-central1',
-  TIMEOUT_SECONDS: 560,
+  TIMEOUT_SECONDS: 560, // For HTTP callable functions (max 3600)
+  TRIGGER_TIMEOUT_SECONDS: 540, // For Firestore/event triggers (max 540)
   MEMORY: '512MB', // Increased from 256MB to speed up cold starts
   CPU: 1, // Allocate 1 CPU to speed up initialization
   MIN_INSTANCES: 0, // Set to 1 to keep functions warm (costs more)

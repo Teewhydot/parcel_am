@@ -22,7 +22,7 @@ const onParcelAwaitingConfirmation = onDocumentUpdated(
   {
     document: 'parcels/{parcelId}',
     region: FUNCTIONS_CONFIG.REGION,
-    timeoutSeconds: FUNCTIONS_CONFIG.TIMEOUT_SECONDS,
+    timeoutSeconds: FUNCTIONS_CONFIG.TRIGGER_TIMEOUT_SECONDS, // Max 540s for Firestore triggers
     memory: FUNCTIONS_CONFIG.MEMORY,
     cpu: FUNCTIONS_CONFIG.CPU,
     maxInstances: FUNCTIONS_CONFIG.MAX_INSTANCES
