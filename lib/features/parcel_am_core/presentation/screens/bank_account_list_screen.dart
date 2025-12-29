@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
+import '../../../../core/theme/app_font_size.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
@@ -63,7 +65,7 @@ class _BankAccountListScreenState extends State<BankAccountListScreen> {
           ),
           AppButton.text(
             onPressed: () => Navigator.pop(context, true),
-            child: AppText.bodyMedium('Delete', color: Colors.red),
+            child: AppText.bodyMedium('Delete', color: AppColors.error),
           ),
         ],
       ),
@@ -102,8 +104,8 @@ class _BankAccountListScreenState extends State<BankAccountListScreen> {
           if (state is AsyncErrorState<BankAccountData>) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: AppText.bodyMedium(state.errorMessage, color: Colors.white),
-                backgroundColor: Colors.red,
+                content: AppText.bodyMedium(state.errorMessage, color: AppColors.white),
+                backgroundColor: AppColors.error,
                 duration: const Duration(seconds: 4),
               ),
             );
@@ -121,7 +123,7 @@ class _BankAccountListScreenState extends State<BankAccountListScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const Icon(Icons.error_outline, size: 48, color: AppColors.error),
                   AppSpacing.verticalSpacing(SpacingSize.md),
                   AppText.bodyMedium(state.errorMessage ?? 'Failed to load bank accounts'),
                   AppSpacing.verticalSpacing(SpacingSize.md),
@@ -131,7 +133,7 @@ class _BankAccountListScreenState extends State<BankAccountListScreen> {
                             BankAccountLoadRequested(userId: widget.userId),
                           );
                     },
-                    child: AppText.bodyMedium('Retry', color: Colors.white),
+                    child: AppText.bodyMedium('Retry', color: AppColors.white),
                   ),
                 ],
               ),
@@ -160,9 +162,9 @@ class _BankAccountListScreenState extends State<BankAccountListScreen> {
 
           return FloatingActionButton.extended(
             onPressed: canAddMore ? _showAddAccountModal : null,
-            backgroundColor: canAddMore ? AppColors.primary : Colors.grey,
+            backgroundColor: canAddMore ? AppColors.primary : AppColors.textSecondary,
             icon: const Icon(Icons.add),
-            label: AppText.bodyMedium('Add Account', color: Colors.white),
+            label: AppText.bodyMedium('Add Account', color: AppColors.white),
           );
         },
       ),
@@ -179,14 +181,14 @@ class _BankAccountListScreenState extends State<BankAccountListScreen> {
             Icon(
               Icons.account_balance,
               size: 80,
-              color: Colors.grey.shade400,
+              color: AppColors.onSurfaceVariant,
             ),
             AppSpacing.verticalSpacing(SpacingSize.lg),
             AppText.titleLarge('No Bank Accounts', fontWeight: FontWeight.w600),
             AppSpacing.verticalSpacing(SpacingSize.sm),
             AppText.bodyLarge(
               'Add a bank account to enable withdrawals',
-              color: Colors.grey.shade600,
+              color: AppColors.textSecondary,
               textAlign: TextAlign.center,
             ),
             AppSpacing.verticalSpacing(SpacingSize.xl),
@@ -212,20 +214,20 @@ class _BankAccountListScreenState extends State<BankAccountListScreen> {
             child: Container(
               padding: AppSpacing.paddingMD,
               decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.shade200),
+                color: AppColors.infoLight,
+                borderRadius: AppRadius.sm,
+                border: Border.all(color: AppColors.info),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline, color: Colors.blue.shade700),
+                  Icon(Icons.info_outline, color: AppColors.infoDark),
                   AppSpacing.horizontalSpacing(SpacingSize.sm),
                   Expanded(
                     child: AppText.bodyMedium(
                       data.hasReachedMaxAccounts
                           ? 'Maximum of 5 bank accounts reached'
                           : 'You can add ${data.remainingAccountSlots} more account(s)',
-                      color: Colors.blue.shade900,
+                      color: AppColors.infoDark,
                     ),
                   ),
                 ],
@@ -251,12 +253,12 @@ class _BankAccountListScreenState extends State<BankAccountListScreen> {
           alignment: Alignment.centerRight,
           padding: const EdgeInsets.only(right: 20),
           decoration: BoxDecoration(
-            color: Colors.red,
-            borderRadius: BorderRadius.circular(8),
+            color: AppColors.error,
+            borderRadius: AppRadius.sm,
           ),
           child: const Icon(
             Icons.delete,
-            color: Colors.white,
+            color: AppColors.white,
             size: 32,
           ),
         ),
@@ -275,7 +277,7 @@ class _BankAccountListScreenState extends State<BankAccountListScreen> {
                 ),
                 AppButton.text(
                   onPressed: () => Navigator.pop(context, true),
-                  child: AppText.bodyMedium('Delete', color: Colors.red),
+                  child: AppText.bodyMedium('Delete', color: AppColors.error),
                 ),
               ],
             ),
@@ -308,12 +310,12 @@ class _BankAccountListScreenState extends State<BankAccountListScreen> {
               AppSpacing.verticalSpacing(SpacingSize.xs),
               AppText.bodyMedium(
                 account.bankName,
-                color: Colors.grey.shade700,
+                color: AppColors.onSurfaceVariant,
               ),
               AppSpacing.verticalSpacing(SpacingSize.xs),
               AppText.bodyMedium(
                 account.maskedAccountNumber,
-                color: Colors.grey.shade600,
+                color: AppColors.textSecondary,
               ),
               if (isDefault) ...[
                 AppSpacing.verticalSpacing(SpacingSize.xs),
@@ -323,22 +325,22 @@ class _BankAccountListScreenState extends State<BankAccountListScreen> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.green.shade100,
-                    borderRadius: BorderRadius.circular(4),
+                    color: AppColors.successLight,
+                    borderRadius: AppRadius.xs,
                   ),
                   child: AppText(
                     'DEFAULT',
                     variant: TextVariant.bodySmall,
-                    fontSize: 11,
+                    fontSize: AppFontSize.sm,
                     fontWeight: FontWeight.bold,
-                    color: Colors.green.shade800,
+                    color: AppColors.successDark,
                   ),
                 ),
               ],
             ],
           ),
           trailing: IconButton(
-            icon: const Icon(Icons.delete_outline, color: Colors.red),
+            icon: const Icon(Icons.delete_outline, color: AppColors.error),
             onPressed: () => _confirmDeleteAccount(account),
           ),
         ),

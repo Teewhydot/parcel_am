@@ -13,7 +13,7 @@ class BottomNavigation extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: AppColors.white,
         border: Border(
           top: BorderSide(color: AppColors.outline, width: 1),
         ),
@@ -21,7 +21,7 @@ class BottomNavigation extends StatelessWidget {
       child: BottomNavigationBar(
         currentIndex: currentIndex,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.white,
         selectedItemColor: AppColors.primary,
         unselectedItemColor: AppColors.onSurfaceVariant,
         selectedLabelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),

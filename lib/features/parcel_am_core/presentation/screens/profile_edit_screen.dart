@@ -11,6 +11,7 @@ import 'package:parcel_am/features/parcel_am_core/data/models/user_model.dart';
 import 'package:parcel_am/injection_container.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/widgets/app_scaffold.dart';
 import '../../../../core/widgets/app_container.dart';
 import '../../../../core/widgets/app_text.dart';
@@ -167,7 +168,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         },
                         child: AppText.labelMedium(
                           'Save Changes',
-                          color: Colors.white,
+                          color: AppColors.white,
                         ),
                       ),
                     ),
@@ -177,7 +178,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 AppContainer(
                   padding: AppSpacing.paddingMD,
                   variant: ContainerVariant.outlined,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: AppRadius.md,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -318,7 +319,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             AppButton.primary(
               key: const Key('confirmSignoutButton'),
               onPressed: () => Navigator.of(context).pop(true),
-              child: AppText.labelMedium('Sign Out', color: Colors.white),
+              child: AppText.labelMedium('Sign Out', color: AppColors.white),
             ),
           ],
         );

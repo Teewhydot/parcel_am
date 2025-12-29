@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
+import 'app_radius.dart';
+import 'app_font_size.dart';
 
 class AppTheme {
   static ThemeData get lightTheme {
@@ -26,7 +28,7 @@ class AppTheme {
         iconTheme: IconThemeData(color: AppColors.onSurface),
         titleTextStyle: TextStyle(
           color: AppColors.onBackground,
-          fontSize: 18,
+          fontSize: AppFontSize.xl,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -36,11 +38,11 @@ class AppTheme {
           foregroundColor: AppColors.onPrimary,
           minimumSize: const Size(double.infinity, 52),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: AppRadius.md,
           ),
           elevation: 0,
           textStyle: const TextStyle(
-            fontSize: 16,
+            fontSize: AppFontSize.bodyLarge,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -50,11 +52,11 @@ class AppTheme {
           foregroundColor: AppColors.primary,
           minimumSize: const Size(double.infinity, 52),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: AppRadius.md,
           ),
           side: const BorderSide(color: AppColors.primary, width: 1.5),
           textStyle: const TextStyle(
-            fontSize: 16,
+            fontSize: AppFontSize.bodyLarge,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -63,7 +65,7 @@ class AppTheme {
         style: TextButton.styleFrom(
           foregroundColor: AppColors.primary,
           textStyle: const TextStyle(
-            fontSize: 16,
+            fontSize: AppFontSize.bodyLarge,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -72,23 +74,23 @@ class AppTheme {
         filled: true,
         fillColor: AppColors.surfaceVariant,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppRadius.md,
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppRadius.md,
           borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppRadius.md,
           borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppRadius.md,
           borderSide: const BorderSide(color: AppColors.error, width: 1),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppRadius.md,
           borderSide: const BorderSide(color: AppColors.error, width: 2),
         ),
         contentPadding: const EdgeInsets.all(16),
@@ -98,7 +100,7 @@ class AppTheme {
         color: AppColors.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: AppRadius.lg,
           side: const BorderSide(color: AppColors.outline, width: 1),
         ),
       ),

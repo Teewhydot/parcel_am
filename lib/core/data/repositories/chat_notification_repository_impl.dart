@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
 import '../../domain/repositories/chat_notification_repository.dart';
+import '../../utils/logger.dart';
 
 class ChatNotificationRepositoryImpl implements ChatNotificationRepository {
   final FirebaseFirestore _firestore;
@@ -14,12 +14,9 @@ class ChatNotificationRepositoryImpl implements ChatNotificationRepository {
         .where('participants', arrayContains: userId)
         .snapshots()
         .handleError((error) {
-      debugPrint('❌ Firestore Error (ChatNotifications): $error');
+      Logger.logError('Firestore Error (ChatNotifications): $error', tag: 'ChatNotificationRepositoryImpl');
       if (error.toString().contains('index')) {
-        debugPrint('🔍 INDEX REQUIRED: Create a composite index for:');
-        debugPrint('   Collection: chats');
-        debugPrint('   Fields: participants (Array), [add other indexed fields]');
-        debugPrint('   Or visit the Firebase Console to create the index automatically.');
+        Logger.logWarning('INDEX REQUIRED: Create a composite index for:\n   Collection: chats\n   Fields: participants (Array), [add other indexed fields]\n   Or visit the Firebase Console to create the index automatically.', tag: 'ChatNotificationRepositoryImpl');
       }
     });
   }
@@ -30,7 +27,7 @@ class ChatNotificationRepositoryImpl implements ChatNotificationRepository {
       final userDoc = await _firestore.collection('users').doc(userId).get();
       return userDoc.data();
     } catch (e) {
-      debugPrint('Error fetching user data: $e');
+      Logger.logError('Error fetching user data: $e', tag: 'ChatNotificationRepositoryImpl');
       return null;
     }
   }

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart' hide Transition;
 import 'package:get/get.dart';
 import 'package:parcel_am/core/helpers/user_extensions.dart';
 import 'package:parcel_am/core/widgets/app_button.dart';
+import 'package:parcel_am/core/theme/app_colors.dart';
 import '../../../features/parcel_am_core/presentation/bloc/auth/auth_bloc.dart';
 import '../../../features/parcel_am_core/presentation/bloc/auth/auth_data.dart';
 import '../../../core/bloc/base/base_state.dart';
@@ -88,11 +89,11 @@ class KycGuard {
       'Please complete your KYC verification to access this feature.',
       snackPosition: SnackPosition.BOTTOM,
       backgroundColor: const Color(0xFFFF9800),
-      colorText: Colors.white,
+      colorText: AppColors.white,
       duration: const Duration(seconds: 3),
       margin: const EdgeInsets.all(16),
       borderRadius: 8,
-      icon: const Icon(Icons.hourglass_empty, color: Colors.white),
+      icon: const Icon(Icons.hourglass_empty, color: AppColors.white),
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
@@ -72,9 +73,9 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: AppText.titleLarge('Chats', color: Colors.white),
+        title: AppText.titleLarge('Chats', color: AppColors.white),
         backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+        foregroundColor: AppColors.white,
       ),
       body: BlocBuilder<ChatsListBloc, BaseState<List<Chat>>>(
         bloc: _chatsListBloc,
@@ -89,7 +90,7 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
                   return ListTile(
                     leading: CircleAvatar(
                       backgroundColor: AppColors.primary,
-                      child: AppText.bodyMedium('L', color: Colors.white),
+                      child: AppText.bodyMedium('L', color: AppColors.white),
                     ),
                     title: AppText.bodyLarge('Loading User Name'),
                     subtitle: AppText.bodyMedium('Loading message content here...'),
@@ -103,9 +104,9 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
                             color: AppColors.primary,
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: AppRadius.md,
                           ),
-                          child: AppText.bodySmall('3', color: Colors.white),
+                          child: AppText.bodySmall('3', color: AppColors.white),
                         ),
                       ],
                     ),
@@ -133,7 +134,7 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
                     onPressed: () {
                       _chatsListBloc.add(LoadChats(widget.currentUserId));
                     },
-                    child: AppText.bodyMedium('Retry', color: Colors.white),
+                    child: AppText.bodyMedium('Retry', color: AppColors.white),
                   ),
                 ],
               ),
@@ -159,18 +160,18 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
                       Icon(
                         Icons.chat_bubble_outline,
                         size: 64,
-                        color: Colors.white.withOpacity(0.8),
+                        color: AppColors.white.withOpacity(0.8),
                       ),
                       AppSpacing.verticalSpacing(SpacingSize.lg),
                       AppText.titleLarge(
                         'No chats yet',
-                        color: Colors.white,
+                        color: AppColors.white,
                         fontWeight: FontWeight.bold,
                       ),
                       AppSpacing.verticalSpacing(SpacingSize.sm),
                       AppText.bodyMedium(
                         'Start a conversation with someone',
-                        color: Colors.white.withOpacity(0.8),
+                        color: AppColors.white.withOpacity(0.8),
                       ),
                     ],
                   ),
@@ -211,7 +212,7 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
                                       otherParticipantName.isNotEmpty
                                           ? otherParticipantName[0].toUpperCase()
                                           : '?',
-                                      color: Colors.white,
+                                      color: AppColors.white,
                                     )
                                   : null,
                             ),
@@ -223,7 +224,7 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
                               isTyping
                                   ? 'typing...'
                                   : chat.lastMessage?.content ?? 'No messages yet',
-                              color: isTyping ? AppColors.primary : Colors.grey[600],
+                              color: isTyping ? AppColors.primary : AppColors.textSecondary,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -234,7 +235,7 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
                                 if (chat.lastMessageTime != null)
                                   AppText.bodySmall(
                                     _formatTime(chat.lastMessageTime!),
-                                    color: Colors.grey[600],
+                                    color: AppColors.textSecondary,
                                   ),
                                 if (unreadCount > 0) ...[
                                   AppSpacing.verticalSpacing(SpacingSize.xs),
@@ -245,11 +246,11 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
                                     ),
                                     decoration: BoxDecoration(
                                       color: AppColors.primary,
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: AppRadius.md,
                                     ),
                                     child: AppText.bodySmall(
                                       unreadCount > 99 ? '99+' : '$unreadCount',
-                                      color: Colors.white,
+                                      color: AppColors.white,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),

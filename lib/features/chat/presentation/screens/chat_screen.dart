@@ -4,10 +4,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_spacing.dart';
+import '../../../../core/utils/logger.dart';
 import '../../../../injection_container.dart' as di;
 import '../../domain/entities/message.dart';
 import '../../domain/entities/message_type.dart';
@@ -90,7 +92,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       _hasRequestedPermissions = true;
     } catch (e) {
       // Silently fail - permissions are optional
-      debugPrint('Error requesting notification permissions: $e');
+      Logger.logError('Error requesting notification permissions: $e', tag: 'ChatScreen');
     }
   }
 
@@ -103,7 +105,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         return AlertDialog(
           title: Row(
             children: [
-              const Icon(Icons.notifications_active, color: Colors.blue),
+              const Icon(Icons.notifications_active, color: AppColors.info),
               AppSpacing.horizontalSpacing(SpacingSize.md),
               AppText.titleMedium('Enable Notifications'),
             ],
@@ -119,7 +121,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
               },
             ),
             AppButton.primary(
-              child: AppText.bodyMedium('Enable', color: Colors.white),
+              child: AppText.bodyMedium('Enable', color: AppColors.white),
               onPressed: () {
                 Navigator.of(context).pop();
               },
@@ -232,10 +234,10 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) => Scaffold(
-            backgroundColor: Colors.black,
+            backgroundColor: AppColors.black,
             appBar: AppBar(
-              backgroundColor: Colors.black,
-              iconTheme: const IconThemeData(color: Colors.white),
+              backgroundColor: AppColors.black,
+              iconTheme: const IconThemeData(color: AppColors.white),
             ),
             body: Center(
               child: InteractiveViewer(
@@ -244,7 +246,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                   placeholder: (context, url) =>
                       const CircularProgressIndicator(),
                   errorWidget: (context, url, error) =>
-                      const Icon(Icons.error, color: Colors.white),
+                      const Icon(Icons.error, color: AppColors.white),
                 ),
               ),
             ),
@@ -291,8 +293,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
             ),
             if (message.senderId == _currentUserId)
               ListTile(
-                leading: const Icon(Icons.delete, color: Colors.red),
-                title: AppText.bodyLarge('Delete', color: Colors.red),
+                leading: const Icon(Icons.delete, color: AppColors.error),
+                title: AppText.bodyLarge('Delete', color: AppColors.error),
                 onTap: () {
                   Navigator.pop(context);
                   context.read<ChatBloc>().add(DeleteMessage(message.id));
@@ -346,14 +348,14 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         title: Row(
           children: [
             CircleAvatar(
-              backgroundColor: Colors.grey.shade300,
+              backgroundColor: AppColors.surfaceVariant,
               backgroundImage: widget.otherUserAvatar != null
                   ? NetworkImage(widget.otherUserAvatar!)
                   : null,
               child: widget.otherUserAvatar == null
                   ? AppText.bodyMedium(
                       widget.otherUserName[0].toUpperCase(),
-                      color: Colors.white,
+                      color: AppColors.white,
                     )
                   : null,
             ),
@@ -370,8 +372,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                         return AppText.bodySmall(
                           status,
                           color: status == 'online' || status == 'typing...'
-                              ? Colors.green
-                              : Colors.grey.shade600,
+                              ? AppColors.success
+                              : AppColors.textSecondary,
                         );
                       }
                       return const SizedBox.shrink();
@@ -416,17 +418,17 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                               Icon(
                                 Icons.chat_bubble_outline,
                                 size: 64,
-                                color: Colors.grey.shade400,
+                                color: AppColors.disabled,
                               ),
                               AppSpacing.verticalSpacing(SpacingSize.lg),
                               AppText.bodyLarge(
                                 'No messages yet',
-                                color: Colors.grey.shade600,
+                                color: AppColors.textSecondary,
                               ),
                               AppSpacing.verticalSpacing(SpacingSize.sm),
                               AppText.bodyMedium(
                                 'Start the conversation!',
-                                color: Colors.grey.shade500,
+                                color: AppColors.textDisabled,
                               ),
                             ],
                           ),

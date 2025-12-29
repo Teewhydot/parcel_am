@@ -7,6 +7,7 @@ import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../injection_container.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_input.dart';
@@ -136,18 +137,18 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
             Container(
               padding: AppSpacing.paddingMD,
               decoration: BoxDecoration(
-                color: Colors.orange.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.orange.shade200),
+                color: AppColors.warningLight,
+                borderRadius: AppRadius.sm,
+                border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline, color: Colors.orange.shade700, size: 20),
+                  Icon(Icons.info_outline, color: AppColors.warning, size: 20),
                   AppSpacing.horizontalSpacing(SpacingSize.sm),
                   Expanded(
                     child: AppText.bodySmall(
                       'Funds will be transferred to your account within 24 hours',
-                      color: Colors.orange.shade900,
+                      color: AppColors.warningDark,
                     ),
                   ),
                 ],
@@ -165,7 +166,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
               Navigator.pop(context);
               _initiateWithdrawal(amount, bankAccount);
             },
-            child: AppText.bodyMedium('Confirm', color: Colors.white),
+            child: AppText.bodyMedium('Confirm', color: AppColors.white),
           ),
         ],
       ),
@@ -208,8 +209,8 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
               if (state is AsyncErrorState<WithdrawalData>) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: AppText.bodyMedium(state.errorMessage, color: Colors.white),
-                    backgroundColor: Colors.red,
+                    content: AppText.bodyMedium(state.errorMessage, color: AppColors.white),
+                    backgroundColor: AppColors.error,
                     duration: const Duration(seconds: 4),
                   ),
                 );
@@ -249,10 +250,8 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                                     color: AppColors.onSurfaceVariant,
                                   ),
                                   AppSpacing.verticalSpacing(SpacingSize.sm),
-                                  AppText(
+                                  AppText.headlineMedium(
                                     _currencyFormat.format(widget.availableBalance),
-                                    variant: TextVariant.headlineMedium,
-                                    fontSize: 32,
                                     fontWeight: FontWeight.bold,
                                     color: AppColors.primary,
                                   ),
@@ -298,7 +297,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                         AppSpacing.verticalSpacing(SpacingSize.sm),
                         AppText.bodySmall(
                           'Min: ₦100 • Max: ₦500,000',
-                          color: Colors.grey.shade600,
+                          color: AppColors.textSecondary,
                         ),
 
                         AppSpacing.verticalSpacing(SpacingSize.xl),
@@ -348,18 +347,18 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                           Container(
                             padding: AppSpacing.paddingMD,
                             decoration: BoxDecoration(
-                              color: Colors.orange.shade50,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.orange.shade200),
+                              color: AppColors.warningLight,
+                              borderRadius: AppRadius.sm,
+                              border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
                             ),
                             child: Row(
                               children: [
-                                Icon(Icons.info_outline, color: Colors.orange.shade700),
+                                Icon(Icons.info_outline, color: AppColors.warning),
                                 AppSpacing.horizontalSpacing(SpacingSize.sm),
                                 Expanded(
                                   child: AppText.bodyMedium(
                                     'Please add a bank account first',
-                                    color: Colors.orange.shade900,
+                                    color: AppColors.warningDark,
                                   ),
                                 ),
                               ],
@@ -375,7 +374,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                                   arguments: {'userId': widget.userId},
                                 );
                               },
-                              leadingIcon: const Icon(Icons.add, color: Colors.white),
+                              leadingIcon: Icon(Icons.add, color: AppColors.white),
                               child: const AppText('Add Bank Account', color: AppColors.white),
                             ),
                           ),

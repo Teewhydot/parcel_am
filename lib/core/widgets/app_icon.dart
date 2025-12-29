@@ -36,7 +36,7 @@ class AppIcon extends StatelessWidget {
     Key? key,
     required IconData icon,
     IconSize size = IconSize.medium,
-    Color? color = Colors.white,
+    Color? color = AppColors.white,
     Color? backgroundColor = AppColors.primary,
     BorderRadius? borderRadius,
     VoidCallback? onTap,
@@ -97,7 +97,7 @@ class AppIcon extends StatelessWidget {
     Key? key,
     required IconData icon,
     IconSize size = IconSize.medium,
-    Color? color = Colors.white,
+    Color? color = AppColors.white,
     BorderRadius? borderRadius,
     VoidCallback? onTap,
   }) {
@@ -167,7 +167,7 @@ class AppIcon extends StatelessWidget {
     switch (variant) {
       case IconVariant.filled:
       case IconVariant.gradient:
-        return Colors.white;
+        return AppColors.white;
       case IconVariant.outlined:
       case IconVariant.ghost:
         return AppColors.primary;
@@ -179,7 +179,7 @@ class AppIcon extends StatelessWidget {
       case IconVariant.filled:
         return AppColors.primary;
       case IconVariant.outlined:
-        return Colors.transparent;
+        return AppColors.transparent;
       case IconVariant.ghost:
         return null;
       case IconVariant.gradient:

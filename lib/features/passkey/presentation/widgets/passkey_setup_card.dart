@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_font_size.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
@@ -26,7 +27,7 @@ class PasskeySetupCard extends StatelessWidget {
         if (state.isSuccess) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: AppText.bodyMedium(state.successMessage ?? 'Passkey added successfully!', color: Colors.white),
+              content: AppText.bodyMedium(state.successMessage ?? 'Passkey added successfully!', color: AppColors.white),
               backgroundColor: AppColors.success,
             ),
           );
@@ -34,7 +35,7 @@ class PasskeySetupCard extends StatelessWidget {
         } else if (state.isError) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: AppText.bodyMedium(state.errorMessage ?? 'Failed to add passkey', color: Colors.white),
+              content: AppText.bodyMedium(state.errorMessage ?? 'Failed to add passkey', color: AppColors.white),
               backgroundColor: AppColors.error,
             ),
           );
@@ -91,7 +92,7 @@ class PasskeySetupCard extends StatelessWidget {
                         AppText(
                           'Enable Passkey Login',
                           variant: TextVariant.titleMedium,
-                          fontSize: 18,
+                          fontSize: AppFontSize.xl,
                           fontWeight: FontWeight.bold,
                           color: AppColors.onBackground,
                         ),
@@ -122,7 +123,7 @@ class PasskeySetupCard extends StatelessWidget {
                 loading: state.isLoading,
                 fullWidth: true,
                 leadingIcon: const Icon(Icons.add, size: 20),
-                child: AppText.bodyMedium('Add Passkey', color: Colors.white),
+                child: AppText.bodyMedium('Add Passkey', color: AppColors.white),
               ),
             ],
           ),

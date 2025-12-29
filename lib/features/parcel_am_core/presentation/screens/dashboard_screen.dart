@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
 import 'package:parcel_am/core/services/auth/kyc_guard.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/widgets/app_scaffold.dart';
 import '../../../../core/widgets/app_container.dart';
 import '../../../../core/widgets/app_text.dart';
@@ -155,7 +156,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         icon = Icons.warning;
         break;
       case 'cancelled':
-        backgroundColor = Colors.grey;
+        backgroundColor = AppColors.textSecondary;
         icon = Icons.cancel;
         break;
       default:
@@ -169,16 +170,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
       SnackBar(
         content: Row(
           children: [
-            Icon(icon, color: Colors.white),
-            const SizedBox(width: 12),
-            Expanded(child: AppText.bodyMedium(notification.message, color: Colors.white)),
+            Icon(icon, color: AppColors.white),
+            AppSpacing.horizontalSpacing(SpacingSize.md),
+            Expanded(child: AppText.bodyMedium(notification.message, color: AppColors.white)),
           ],
         ),
         backgroundColor: backgroundColor,
         duration: const Duration(seconds: 4),
         action: SnackBarAction(
           label: 'View',
-          textColor: Colors.white,
+          textColor: AppColors.white,
           onPressed: () {
             sl<NavigationService>().navigateTo(
               Routes.tracking,
@@ -313,7 +314,7 @@ class _HeaderSection extends StatelessWidget {
                         AppSpacing.verticalSpacing(SpacingSize.xs),
                         AppText.bodyMedium(
                           'Ready to send or deliver today?',
-                          color: Colors.black,
+                          color: AppColors.black,
                         ),
                       ],
                     ),
@@ -375,7 +376,7 @@ class _NotificationButton extends StatelessWidget {
             width: 8,
             height: 8,
             color: AppColors.accent,
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: AppRadius.xs,
           ),
         ),
       ],
@@ -401,9 +402,9 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppContainer(
       variant: ContainerVariant.filled,
-      color: Colors.white.withValues(alpha: 0.2),
+      color: AppColors.white.withValues(alpha: 0.2),
       padding: AppSpacing.paddingMD,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: AppRadius.md,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -411,18 +412,18 @@ class _StatCard extends StatelessWidget {
             icon: icon,
             size: IconSize.small,
             backgroundColor: color.withValues(alpha: 0.2),
-            color: Colors.white,
+            color: AppColors.white,
           ),
           AppSpacing.verticalSpacing(SpacingSize.sm),
           AppText.labelSmall(
             title,
-            color: Colors.white.withValues(alpha: 0.8),
+            color: AppColors.white.withValues(alpha: 0.8),
             textAlign: TextAlign.center,
           ),
           AppSpacing.verticalSpacing(SpacingSize.xs),
           AppText.titleMedium(
             value,
-            color: Colors.white,
+            color: AppColors.white,
             fontWeight: FontWeight.bold,
             textAlign: TextAlign.center,
           ),
@@ -496,7 +497,7 @@ class _ActionCard extends StatelessWidget {
       color: color,
       height: 170,
       padding: AppSpacing.paddingSM,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: AppRadius.lg,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -504,7 +505,7 @@ class _ActionCard extends StatelessWidget {
             icon: icon,
             size: IconSize.medium,
             backgroundColor: AppColors.white.withValues(alpha: 0.3),
-            color: Colors.white,
+            color: AppColors.white,
           ),
           AppSpacing.verticalSpacing(SpacingSize.md),
           AppText.titleMedium(
@@ -610,7 +611,7 @@ class _RecentActivitySection extends StatelessWidget {
       case 'cancelled':
         return AppColors.error;
       default:
-        return Colors.grey;
+        return AppColors.textSecondary;
     }
   }
 
@@ -666,7 +667,7 @@ class _ActivityItem extends StatelessWidget {
       case 'disputed':
         return AppColors.error;
       case 'cancelled':
-        return Colors.grey;
+        return AppColors.textSecondary;
       default:
         return AppColors.primary;
     }
@@ -709,11 +710,11 @@ class _ActivityItem extends StatelessWidget {
                   height: 40,
                   variant: ContainerVariant.surface,
                   color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: AppRadius.xl,
                   alignment: Alignment.center,
                   child: AppText.labelSmall(
                     avatarText,
-                    color: Colors.white,
+                    color: AppColors.white,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -734,7 +735,7 @@ class _ActivityItem extends StatelessWidget {
                 variant: ContainerVariant.filled,
                 color: statusColor.withValues(alpha: 0.1),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: AppRadius.md,
                 child: AppText.labelSmall(
                   status,
                   color: statusColor,
@@ -750,7 +751,7 @@ class _ActivityItem extends StatelessWidget {
               color: _getEscrowStatusColor(
                 escrowStatus!,
               ).withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: AppRadius.sm,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [

@@ -80,7 +80,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     onPressed: () {
                       context.read<NotificationBloc>().add(LoadNotifications(widget.userId));
                     },
-                    child: AppText.bodyMedium('Retry', color: Colors.white),
+                    child: AppText.bodyMedium('Retry', color: AppColors.white),
                   ),
                 ],
               ),
@@ -216,7 +216,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               _showDeleteConfirmation(this.context, notification);
             },
             backgroundColor: AppColors.error,
-            foregroundColor: Colors.white,
+            foregroundColor: AppColors.white,
             icon: Icons.delete,
             label: 'Delete',
           ),
@@ -227,7 +227,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: notification.isRead ? Colors.transparent : AppColors.surfaceVariant,
+            color: notification.isRead ? AppColors.transparent : AppColors.surfaceVariant,
             border: Border(
               bottom: BorderSide(
                 color: AppColors.outline,

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
+import '../../../../core/theme/app_font_size.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../bloc/parcel/parcel_bloc.dart';
 import '../bloc/parcel/parcel_event.dart';
@@ -57,7 +59,7 @@ class _MyDeliveriesTabState extends State<MyDeliveriesTab> {
         SnackBar(
           content: AppText.bodyMedium(
             'Cannot update status from ${currentStatus.displayName}',
-            color: Colors.white,
+            color: AppColors.white,
           ),
           backgroundColor: AppColors.error,
         ),
@@ -68,7 +70,7 @@ class _MyDeliveriesTabState extends State<MyDeliveriesTab> {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: AppRadius.topLg,
       ),
       builder: (context) => _StatusUpdateBottomSheet(
         parcel: parcel,
@@ -126,7 +128,7 @@ class _MyDeliveriesTabState extends State<MyDeliveriesTab> {
                 AppText(
                   'Failed to load deliveries',
                   variant: TextVariant.titleMedium,
-                  fontSize: 18,
+                  fontSize: AppFontSize.xl,
                   fontWeight: FontWeight.w600,
                 ),
                 AppSpacing.verticalSpacing(SpacingSize.sm),
@@ -141,7 +143,7 @@ class _MyDeliveriesTabState extends State<MyDeliveriesTab> {
                     // Retry loading accepted parcels
                     // Note: Would need userId from auth context
                   },
-                  child: AppText.bodyMedium('Retry', color: Colors.white),
+                  child: AppText.bodyMedium('Retry', color: AppColors.white),
                 ),
               ],
             ),
@@ -256,7 +258,7 @@ class _MyDeliveriesTabState extends State<MyDeliveriesTab> {
               padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
                 color: AppColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: AppRadius.sm,
               ),
               child: DropdownButton<String>(
                 value: _selectedFilter,
@@ -305,7 +307,7 @@ class _MyDeliveriesTabState extends State<MyDeliveriesTab> {
           AppText(
             title,
             variant: TextVariant.titleMedium,
-            fontSize: 18,
+            fontSize: AppFontSize.xl,
             fontWeight: FontWeight.w600,
           ),
           AppSpacing.verticalSpacing(SpacingSize.sm),
@@ -346,8 +348,8 @@ class _StatusUpdateBottomSheet extends StatelessWidget {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
+                color: AppColors.outline,
+                borderRadius: AppRadius.xs,
               ),
             ),
           ),
@@ -355,7 +357,7 @@ class _StatusUpdateBottomSheet extends StatelessWidget {
           AppText(
             'Update Delivery Status',
             variant: TextVariant.titleLarge,
-            fontSize: 20,
+            fontSize: AppFontSize.xxl,
             fontWeight: FontWeight.bold,
           ),
           AppSpacing.verticalSpacing(SpacingSize.lg),
@@ -363,7 +365,7 @@ class _StatusUpdateBottomSheet extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: AppColors.surfaceVariant,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: AppRadius.md,
             ),
             child: Column(
               children: [
@@ -416,7 +418,7 @@ class _StatusUpdateBottomSheet extends StatelessWidget {
                   onPressed: onConfirm,
                   child: AppText.bodyMedium(
                     'Confirm',
-                    color: Colors.white,
+                    color: AppColors.white,
                   ),
                 ),
               ),

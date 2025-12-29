@@ -6,6 +6,8 @@ import '../../../../core/bloc/base/base_state.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
+import '../../../../core/theme/app_font_size.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_spacing.dart';
@@ -42,18 +44,13 @@ class _WithdrawalStatusScreenState extends State<WithdrawalStatusScreen> {
   }
 
   Color _getStatusColor(WithdrawalStatus status) {
-    switch (status) {
-      case WithdrawalStatus.pending:
-        return Colors.orange;
-      case WithdrawalStatus.processing:
-        return Colors.blue;
-      case WithdrawalStatus.success:
-        return Colors.green;
-      case WithdrawalStatus.failed:
-        return Colors.red;
-      case WithdrawalStatus.reversed:
-        return Colors.purple;
-    }
+    return switch (status) {
+      WithdrawalStatus.pending => AppColors.pending,
+      WithdrawalStatus.processing => AppColors.processing,
+      WithdrawalStatus.success => AppColors.success,
+      WithdrawalStatus.failed => AppColors.error,
+      WithdrawalStatus.reversed => AppColors.reversed,
+    };
   }
 
   IconData _getStatusIcon(WithdrawalStatus status) {
@@ -127,7 +124,7 @@ class _WithdrawalStatusScreenState extends State<WithdrawalStatusScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  Icon(Icons.error_outline, size: 48, color: AppColors.error),
                   AppSpacing.verticalSpacing(SpacingSize.md),
                   AppText.bodyMedium(state.errorMessage ?? 'Failed to load withdrawal status'),
                   AppSpacing.verticalSpacing(SpacingSize.md),
@@ -175,7 +172,7 @@ class _WithdrawalStatusScreenState extends State<WithdrawalStatusScreen> {
                         AppText(
                           withdrawalOrder.status.name.toUpperCase(),
                           variant: TextVariant.titleLarge,
-                          fontSize: 20,
+                          fontSize: AppFontSize.xxl,
                           fontWeight: FontWeight.bold,
                           color: statusColor,
                         ),
@@ -183,7 +180,7 @@ class _WithdrawalStatusScreenState extends State<WithdrawalStatusScreen> {
                         AppText.bodyMedium(
                           _getStatusMessage(withdrawalOrder.status),
                           textAlign: TextAlign.center,
-                          color: Colors.grey.shade700,
+                          color: AppColors.onSurfaceVariant,
                         ),
                         if (withdrawalOrder.status == WithdrawalStatus.pending ||
                             withdrawalOrder.status == WithdrawalStatus.processing) ...[
@@ -268,14 +265,14 @@ class _WithdrawalStatusScreenState extends State<WithdrawalStatusScreen> {
                   Container(
                     padding: AppSpacing.paddingMD,
                     decoration: BoxDecoration(
-                      color: Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.red.shade200),
+                      color: AppColors.errorLight,
+                      borderRadius: AppRadius.sm,
+                      border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.error_outline, color: Colors.red.shade700),
+                        Icon(Icons.error_outline, color: AppColors.error),
                         AppSpacing.horizontalSpacing(SpacingSize.sm),
                         Expanded(
                           child: Column(
@@ -284,12 +281,12 @@ class _WithdrawalStatusScreenState extends State<WithdrawalStatusScreen> {
                               AppText.bodyMedium(
                                 'Failure Reason',
                                 fontWeight: FontWeight.bold,
-                                color: Colors.red.shade900,
+                                color: AppColors.errorDark,
                               ),
                               AppSpacing.verticalSpacing(SpacingSize.xs),
                               AppText.bodyMedium(
                                 withdrawalOrder.failureReason!,
-                                color: Colors.red.shade900,
+                                color: AppColors.errorDark,
                               ),
                             ],
                           ),
@@ -304,14 +301,14 @@ class _WithdrawalStatusScreenState extends State<WithdrawalStatusScreen> {
                   Container(
                     padding: AppSpacing.paddingMD,
                     decoration: BoxDecoration(
-                      color: Colors.purple.shade50,
+                      color: AppColors.reversedLight,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.purple.shade200),
+                      border: Border.all(color: AppColors.reversed.withValues(alpha: 0.3)),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.info_outline, color: Colors.purple.shade700),
+                        Icon(Icons.info_outline, color: AppColors.reversed),
                         AppSpacing.horizontalSpacing(SpacingSize.sm),
                         Expanded(
                           child: Column(
@@ -320,12 +317,12 @@ class _WithdrawalStatusScreenState extends State<WithdrawalStatusScreen> {
                               AppText.bodyMedium(
                                 'Reversal Reason',
                                 fontWeight: FontWeight.bold,
-                                color: Colors.purple.shade900,
+                                color: AppColors.reversedDark,
                               ),
                               AppSpacing.verticalSpacing(SpacingSize.xs),
                               AppText.bodyMedium(
                                 withdrawalOrder.reversalReason!,
-                                color: Colors.purple.shade900,
+                                color: AppColors.reversedDark,
                               ),
                             ],
                           ),
@@ -371,7 +368,7 @@ class _WithdrawalStatusScreenState extends State<WithdrawalStatusScreen> {
       children: [
         AppText.bodyMedium(
           label,
-          color: Colors.grey.shade700,
+          color: AppColors.onSurfaceVariant,
         ),
         Flexible(
           child: AppText.bodyMedium(
@@ -391,7 +388,7 @@ class _WithdrawalStatusScreenState extends State<WithdrawalStatusScreen> {
       children: [
         AppText.bodyMedium(
           label,
-          color: Colors.grey.shade700,
+          color: AppColors.onSurfaceVariant,
         ),
         Flexible(
           child: Row(

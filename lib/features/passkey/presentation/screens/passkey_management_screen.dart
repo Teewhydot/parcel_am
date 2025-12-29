@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_font_size.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
@@ -44,14 +45,14 @@ class _PasskeyManagementScreenState extends State<PasskeyManagementScreen> {
           if (state.isSuccess) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: AppText.bodyMedium(state.successMessage ?? 'Success!', color: Colors.white),
+                content: AppText.bodyMedium(state.successMessage ?? 'Success!', color: AppColors.white),
                 backgroundColor: AppColors.success,
               ),
             );
           } else if (state.isError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: AppText.bodyMedium(state.errorMessage ?? 'An error occurred', color: Colors.white),
+                content: AppText.bodyMedium(state.errorMessage ?? 'An error occurred', color: AppColors.white),
                 backgroundColor: AppColors.error,
               ),
             );
@@ -112,7 +113,7 @@ class _PasskeyManagementScreenState extends State<PasskeyManagementScreen> {
             AppText(
               'Passkeys Not Supported',
               variant: TextVariant.titleLarge,
-              fontSize: 20,
+              fontSize: AppFontSize.xxl,
               fontWeight: FontWeight.bold,
               color: AppColors.onBackground,
             ),
@@ -161,7 +162,7 @@ class _PasskeyManagementScreenState extends State<PasskeyManagementScreen> {
                   'Passkeys replace passwords with secure biometric authentication. '
                   'Sign in with your fingerprint, face, or device screen lock.',
                   variant: TextVariant.bodySmall,
-                  fontSize: 13,
+                  fontSize: AppFontSize.md,
                   color: AppColors.onSurfaceVariant,
                 ),
               ],
@@ -182,7 +183,7 @@ class _PasskeyManagementScreenState extends State<PasskeyManagementScreen> {
             AppText(
               'Your Passkeys',
               variant: TextVariant.titleMedium,
-              fontSize: 18,
+              fontSize: AppFontSize.xl,
               fontWeight: FontWeight.bold,
               color: AppColors.onBackground,
             ),
@@ -274,8 +275,8 @@ class _PasskeyManagementScreenState extends State<PasskeyManagementScreen> {
             },
       loading: isLoading,
       fullWidth: true,
-      leadingIcon: const Icon(Icons.add, color: Colors.white, size: 20),
-      child: AppText.bodyMedium('Add New Passkey', color: Colors.white),
+      leadingIcon: const Icon(Icons.add, color: AppColors.white, size: 20),
+      child: AppText.bodyMedium('Add New Passkey', color: AppColors.white),
     );
   }
 }

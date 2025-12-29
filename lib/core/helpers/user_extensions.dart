@@ -34,8 +34,8 @@ extension UserExtensions on BuildContext {
   void showErrorMessage(String message) {
     ScaffoldMessenger.of(this).showSnackBar(
       SnackBar(
-        content: AppText.bodyMedium(message, color: Colors.white),
-        backgroundColor: Colors.red,
+        content: AppText.bodyMedium(message, color: AppColors.white),
+        backgroundColor: AppColors.error,
       ),
     );
   }
@@ -136,7 +136,7 @@ extension SnackbarExtensions on BuildContext {
   }) {
     ScaffoldMessenger.of(this).showSnackBar(
       SnackBar(
-        content: AppText.bodyMedium(message, color: Colors.white),
+        content: AppText.bodyMedium(message, color: AppColors.white),
         duration: Duration(seconds: duration),
         backgroundColor: color,
       ),

@@ -1,15 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
+import '../../../../core/theme/app_font_size.dart';
+import '../../../../core/bloc/base/base_state.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
+import '../../../../core/utils/logger.dart';
 import '../../../../injection_container.dart';
 import '../../domain/entities/parcel_entity.dart';
+import '../bloc/parcel/parcel_bloc.dart';
+import '../bloc/parcel/parcel_state.dart';
 import 'status_update_action_sheet.dart';
 
 /// Delivery card widget for displaying accepted parcel information.
@@ -56,7 +63,7 @@ class _DeliveryCardState extends State<DeliveryCard> {
           margin: const EdgeInsets.only(bottom: 16),
           elevation: _isHovered ? 6 : 2,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: AppRadius.lg,
           ),
           child: InkWell(
             // Task 3.6.2: Ripple effect on tap
@@ -67,7 +74,7 @@ class _DeliveryCardState extends State<DeliveryCard> {
                 arguments: widget.parcel.id,
               );
             },
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: AppRadius.lg,
             splashColor: AppColors.primary.withValues(alpha: 0.1),
             highlightColor: AppColors.primary.withValues(alpha: 0.05),
             child: Padding(
@@ -122,7 +129,7 @@ class _DeliveryCardState extends State<DeliveryCard> {
           height: 56,
           decoration: BoxDecoration(
             color: AppColors.primary.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: AppRadius.md,
           ),
           child: Icon(
             _getCategoryIcon(),
@@ -141,7 +148,7 @@ class _DeliveryCardState extends State<DeliveryCard> {
                     child: AppText(
                       widget.parcel.category ?? 'Package',
                       variant: TextVariant.titleMedium,
-                      fontSize: 18,
+                      fontSize: AppFontSize.xl,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -153,7 +160,7 @@ class _DeliveryCardState extends State<DeliveryCard> {
               AppText(
                 '${widget.parcel.currency ?? '₦'}${(widget.parcel.price ?? 0.0).toStringAsFixed(0)}',
                 variant: TextVariant.titleMedium,
-                fontSize: 18,
+                fontSize: AppFontSize.xl,
                 fontWeight: FontWeight.bold,
                 color: AppColors.primary,
               ),
@@ -187,7 +194,7 @@ class _DeliveryCardState extends State<DeliveryCard> {
         ),
         decoration: BoxDecoration(
           color: widget.parcel.status.statusColor.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppRadius.md,
           border: Border.all(
             color: widget.parcel.status.statusColor.withValues(alpha: 0.3),
             width: 1,
@@ -292,7 +299,7 @@ class _DeliveryCardState extends State<DeliveryCard> {
           AppText(
             widget.parcel.description!,
             variant: TextVariant.bodySmall,
-            fontSize: 13,
+            fontSize: AppFontSize.md,
             color: AppColors.onSurfaceVariant,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -308,7 +315,7 @@ class _DeliveryCardState extends State<DeliveryCard> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.surfaceVariant.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppRadius.md,
       ),
       child: Row(
         children: [
@@ -329,7 +336,7 @@ class _DeliveryCardState extends State<DeliveryCard> {
                 AppText(
                   'Sender',
                   variant: TextVariant.bodySmall,
-                  fontSize: 11,
+                  fontSize: AppFontSize.sm,
                   color: AppColors.onSurfaceVariant,
                   fontWeight: FontWeight.w500,
                 ),
@@ -446,7 +453,7 @@ class _DeliveryCardState extends State<DeliveryCard> {
                         child: AppText(
                           widget.parcel.receiver.address,
                           variant: TextVariant.bodySmall,
-                          fontSize: 13,
+                          fontSize: AppFontSize.md,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -476,10 +483,10 @@ class _DeliveryCardState extends State<DeliveryCard> {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: Colors.orange.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(10),
+          color: AppColors.pending.withValues(alpha: 0.15),
+          borderRadius: AppRadius.sm,
           border: Border.all(
-            color: Colors.orange.withValues(alpha: 0.3),
+            color: AppColors.pending.withValues(alpha: 0.3),
             width: 1,
           ),
         ),
@@ -488,7 +495,7 @@ class _DeliveryCardState extends State<DeliveryCard> {
             Icon(
               Icons.warning_amber_rounded,
               size: 20,
-              color: Colors.orange.shade700,
+              color: AppColors.pendingDark,
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -498,14 +505,14 @@ class _DeliveryCardState extends State<DeliveryCard> {
                   AppText.bodySmall(
                     'Urgent Delivery',
                     fontWeight: FontWeight.w600,
-                    color: Colors.orange.shade700,
+                    color: AppColors.pendingDark,
                   ),
                   const SizedBox(height: 2),
                   AppText(
                     'Deliver by $formattedDate',
                     variant: TextVariant.bodySmall,
-                    fontSize: 11,
-                    color: Colors.orange.shade800,
+                    fontSize: AppFontSize.sm,
+                    color: AppColors.pendingDark,
                   ),
                 ],
               ),
@@ -519,40 +526,82 @@ class _DeliveryCardState extends State<DeliveryCard> {
   }
 
   /// Task 3.3.7 & 3.4: Build Update Status button - now opens StatusUpdateActionSheet
+  /// Shows loading state when this parcel's status is being updated.
   Widget _buildUpdateStatusButton(BuildContext context) {
     final isDelivered = widget.parcel.status == ParcelStatus.delivered;
+    final isAwaitingConfirmation = widget.parcel.status == ParcelStatus.awaitingConfirmation;
     final nextStatus = widget.parcel.status.nextDeliveryStatus;
 
-    return AppButton.primary(
-      onPressed: isDelivered || nextStatus == null
-          ? null
-          : () {
-              // Task Group 3.4: Open status update action sheet
-              StatusUpdateActionSheet.show(context, widget.parcel);
-            },
-      fullWidth: true,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            isDelivered ? Icons.check_circle : Icons.update,
-            size: 20,
-            color: isDelivered ? Colors.green.shade700 : Colors.white,
+    return BlocBuilder<ParcelBloc, BaseState<ParcelData>>(
+      buildWhen: (previous, current) {
+        // Only rebuild when the updating parcel ID changes
+        final prevUpdating = previous.data?.updatingParcelId;
+        final currUpdating = current.data?.updatingParcelId;
+        return prevUpdating != currUpdating;
+      },
+      builder: (context, state) {
+        final isUpdating = state.data?.updatingParcelId == widget.parcel.id;
+
+        // Determine button state and text
+        final bool isDisabled = isDelivered || isAwaitingConfirmation || nextStatus == null || isUpdating;
+
+        String buttonText;
+        IconData buttonIcon;
+        Color buttonTextColor;
+
+        if (isUpdating) {
+          buttonText = 'Updating...';
+          buttonIcon = Icons.update;
+          buttonTextColor = AppColors.white;
+        } else if (isDelivered) {
+          buttonText = 'Delivered';
+          buttonIcon = Icons.check_circle;
+          buttonTextColor = AppColors.successDark;
+        } else if (isAwaitingConfirmation) {
+          buttonText = 'Awaiting Sender Confirmation';
+          buttonIcon = Icons.hourglass_empty;
+          buttonTextColor = AppColors.warning;
+        } else if (nextStatus != null) {
+          buttonText = 'Update to ${nextStatus.displayName}';
+          buttonIcon = Icons.update;
+          buttonTextColor = AppColors.white;
+        } else {
+          buttonText = 'Update Status';
+          buttonIcon = Icons.update;
+          buttonTextColor = AppColors.white;
+        }
+
+        return AppButton.primary(
+          onPressed: isDisabled
+              ? null
+              : () {
+                  // Task Group 3.4: Open status update action sheet
+                  StatusUpdateActionSheet.show(context, widget.parcel);
+                },
+          fullWidth: true,
+          loading: isUpdating,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (!isUpdating) ...[
+                Icon(
+                  buttonIcon,
+                  size: 20,
+                  color: buttonTextColor,
+                ),
+                AppSpacing.horizontalSpacing(SpacingSize.sm),
+              ],
+              AppText(
+                buttonText,
+                variant: TextVariant.bodyMedium,
+                fontSize: AppFontSize.lg,
+                fontWeight: FontWeight.w600,
+                color: buttonTextColor,
+              ),
+            ],
           ),
-          AppSpacing.horizontalSpacing(SpacingSize.sm),
-          AppText(
-            isDelivered
-                ? 'Delivered'
-                : nextStatus != null
-                    ? 'Update to ${nextStatus.displayName}'
-                    : 'Update Status',
-            variant: TextVariant.bodyMedium,
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: isDelivered ? Colors.green.shade700 : Colors.white,
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -582,6 +631,8 @@ class _DeliveryCardState extends State<DeliveryCard> {
         return Icons.local_shipping;
       case ParcelStatus.arrived:
         return Icons.place;
+      case ParcelStatus.awaitingConfirmation:
+        return Icons.hourglass_empty;
       case ParcelStatus.delivered:
         return Icons.check_circle;
       case ParcelStatus.cancelled:
@@ -599,7 +650,7 @@ class _DeliveryCardState extends State<DeliveryCard> {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: AppColors.surfaceVariant.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: AppRadius.sm,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -623,7 +674,7 @@ class _DeliveryCardState extends State<DeliveryCard> {
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: AppText.bodyMedium('Please sign in to chat', color: Colors.white)),
+          SnackBar(content: AppText.bodyMedium('Please sign in to chat', color: AppColors.white)),
         );
         return;
       }
@@ -646,7 +697,7 @@ class _DeliveryCardState extends State<DeliveryCard> {
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: AppText.bodyMedium('Failed to open chat: $e', color: Colors.white)),
+        SnackBar(content: AppText.bodyMedium('Failed to open chat: $e', color: AppColors.white)),
       );
     }
   }
@@ -668,7 +719,7 @@ class _DeliveryCardState extends State<DeliveryCard> {
       }
     } catch (e) {
       // Silently fail - phone link may not be supported on all platforms
-      debugPrint('Failed to launch phone call: $e');
+      Logger.logError('Failed to launch phone call: $e', tag: 'DeliveryCard');
     }
   }
 }
@@ -710,7 +761,7 @@ class _DeliveryCardSkeletonState extends State<DeliveryCardSkeleton>
           margin: const EdgeInsets.only(bottom: 16),
           elevation: 2,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: AppRadius.lg,
           ),
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -800,7 +851,7 @@ class _DeliveryCardSkeletonState extends State<DeliveryCardSkeleton>
       height: height,
       decoration: BoxDecoration(
         gradient: shimmerGradient,
-        borderRadius: BorderRadius.circular(borderRadius),
+        borderRadius: BorderRadius.circular(borderRadius), // Keep dynamic for skeleton
       ),
     );
   }

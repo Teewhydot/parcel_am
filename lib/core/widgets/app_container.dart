@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/app_radius.dart';
 
 enum ContainerVariant { surface, elevated, outlined, filled, gradient }
 
@@ -53,7 +54,7 @@ class AppContainer extends StatelessWidget {
     if (onTap != null) {
       container = InkWell(
         onTap: onTap,
-        borderRadius: borderRadius ?? BorderRadius.circular(16),
+        borderRadius: borderRadius ?? AppRadius.lg,
         child: container,
       );
     }
@@ -66,7 +67,7 @@ class AppContainer extends StatelessWidget {
       case ContainerVariant.surface:
         return BoxDecoration(
           color: color ?? AppColors.surface,
-          borderRadius: borderRadius ?? BorderRadius.circular(16),
+          borderRadius: borderRadius ?? AppRadius.lg,
           border: border,
           boxShadow: shadows,
         );
@@ -74,13 +75,13 @@ class AppContainer extends StatelessWidget {
       case ContainerVariant.elevated:
         return BoxDecoration(
           color: color ?? AppColors.surface,
-          borderRadius: borderRadius ?? BorderRadius.circular(16),
+          borderRadius: borderRadius ?? AppRadius.lg,
           border: border,
           boxShadow:
               shadows ??
               [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: AppColors.black.withOpacity(0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
@@ -89,8 +90,8 @@ class AppContainer extends StatelessWidget {
 
       case ContainerVariant.outlined:
         return BoxDecoration(
-          color: color ?? Colors.transparent,
-          borderRadius: borderRadius ?? BorderRadius.circular(16),
+          color: color ?? AppColors.transparent,
+          borderRadius: borderRadius ?? AppRadius.lg,
           border: border ?? Border.all(color: AppColors.outline, width: 1),
           boxShadow: shadows,
         );
@@ -98,7 +99,7 @@ class AppContainer extends StatelessWidget {
       case ContainerVariant.filled:
         return BoxDecoration(
           color: color ?? AppColors.surfaceVariant,
-          borderRadius: borderRadius ?? BorderRadius.circular(16),
+          borderRadius: borderRadius ?? AppRadius.lg,
           border: border,
           boxShadow: shadows,
         );
@@ -106,7 +107,7 @@ class AppContainer extends StatelessWidget {
       case ContainerVariant.gradient:
         return BoxDecoration(
           gradient: gradient ?? AppColors.primaryGradient,
-          borderRadius: borderRadius ?? BorderRadius.circular(16),
+          borderRadius: borderRadius ?? AppRadius.lg,
           border: border,
           boxShadow: shadows,
         );

@@ -13,9 +13,11 @@ import 'parcel_event.dart';
 import 'parcel_state.dart';
 import '../../../domain/entities/parcel_entity.dart';
 import '../../../domain/usecases/parcel_usecase.dart';
+import '../../../domain/usecases/escrow_usecase.dart';
 
 class ParcelBloc extends BaseBloC<ParcelEvent, BaseState<ParcelData>> {
   final _parcelUseCase = ParcelUseCase();
+  final _escrowUseCase = EscrowUseCase();
   StreamSubscription<dynamic>? _parcelStatusSubscription;
   StreamSubscription<dynamic>? _userParcelsSubscription;
   StreamSubscription<dynamic>? _availableParcelsSubscription;
@@ -40,6 +42,7 @@ class ParcelBloc extends BaseBloC<ParcelEvent, BaseState<ParcelData>> {
     on<ParcelAssignTravelerRequested>(_onAssignTravelerRequested);
     on<ParcelWatchAcceptedParcelsRequested>(_onWatchAcceptedParcelsRequested);
     on<ParcelAcceptedListUpdated>(_onAcceptedListUpdated);
+    on<ParcelConfirmDeliveryRequested>(_onConfirmDeliveryRequested);
 
     // Task Group 4.2.1: Start connectivity monitoring
     // _initConnectivityMonitoring();
@@ -168,8 +171,10 @@ class ParcelBloc extends BaseBloC<ParcelEvent, BaseState<ParcelData>> {
       return;
     }
 
-    // Show loading state while preserving current data
-    emit(AsyncLoadingState<ParcelData>(data: currentData));
+    // Show loading state while preserving current data and tracking which parcel is updating
+    emit(AsyncLoadingState<ParcelData>(
+      data: currentData.copyWith(updatingParcelId: event.parcelId),
+    ));
 
     // Task Group 4.2.4: Optimistic update - create updated parcel entity
     ParcelEntity? optimisticParcel;
@@ -203,10 +208,10 @@ class ParcelBloc extends BaseBloC<ParcelEvent, BaseState<ParcelData>> {
 
     result.fold(
       (failure) {
-        // Task Group 4.2.4: Rollback optimistic update
+        // Task Group 4.2.4: Rollback optimistic update and clear loading state
         emit(AsyncErrorState<ParcelData>(
           errorMessage: failure.failureMessage,
-          data: currentData,
+          data: currentData.copyWith(clearUpdatingParcelId: true),
         ));
 
         DFoodUtils.showSnackBar(
@@ -215,8 +220,9 @@ class ParcelBloc extends BaseBloC<ParcelEvent, BaseState<ParcelData>> {
         );
       },
       (updatedParcel) {
-        // Replace optimistic update with actual data
-        final updatedData = _applyOptimisticUpdate(currentData, updatedParcel);
+        // Replace optimistic update with actual data and clear loading state
+        final updatedData = _applyOptimisticUpdate(currentData, updatedParcel)
+            .copyWith(clearUpdatingParcelId: true);
         emit(LoadedState<ParcelData>(
           data: updatedData,
           lastUpdated: DateTime.now(),
@@ -581,6 +587,104 @@ class ParcelBloc extends BaseBloC<ParcelEvent, BaseState<ParcelData>> {
         ));
       },
     );
+  }
+
+  /// Handles sender confirmation of delivery.
+  ///
+  /// Flow:
+  /// 1. Validates the parcel is in awaitingConfirmation status
+  /// 2. Updates parcel status to 'delivered'
+  /// 3. Sets confirmedAt and confirmedBy fields
+  /// 4. Releases escrow payment to courier
+  /// 5. Shows success/error feedback to user
+  Future<void> _onConfirmDeliveryRequested(
+    ParcelConfirmDeliveryRequested event,
+    Emitter<BaseState<ParcelData>> emit,
+  ) async {
+    final currentData = state.data ?? const ParcelData();
+
+    // Set loading state with parcel ID tracking
+    emit(AsyncLoadingState<ParcelData>(
+      data: currentData.copyWith(updatingParcelId: event.parcelId),
+    ));
+
+    // Find the parcel being confirmed
+    ParcelEntity? parcelToConfirm;
+    if (currentData.currentParcel?.id == event.parcelId) {
+      parcelToConfirm = currentData.currentParcel;
+    } else {
+      parcelToConfirm = currentData.userParcels
+          .where((p) => p.id == event.parcelId)
+          .firstOrNull;
+    }
+
+    // Validate parcel status
+    if (parcelToConfirm != null &&
+        parcelToConfirm.status != ParcelStatus.awaitingConfirmation) {
+      emit(AsyncErrorState<ParcelData>(
+        errorMessage: 'Parcel is not awaiting confirmation',
+        data: currentData.copyWith(clearUpdatingParcelId: true),
+      ));
+      return;
+    }
+
+    try {
+      // 1. Update parcel status to delivered
+      final parcelResult = await _parcelUseCase.updateParcelStatus(
+        event.parcelId,
+        ParcelStatus.delivered,
+      );
+
+      await parcelResult.fold(
+        (failure) async {
+          emit(AsyncErrorState<ParcelData>(
+            errorMessage: failure.failureMessage,
+            data: currentData.copyWith(clearUpdatingParcelId: true),
+          ));
+          DFoodUtils.showSnackBar(
+            'Failed to confirm delivery: ${failure.failureMessage}',
+            AppColors.error,
+          );
+        },
+        (updatedParcel) async {
+          // 2. Release escrow payment
+          final escrowResult = await _escrowUseCase.releaseEscrow(event.escrowId);
+
+          escrowResult.fold(
+            (failure) {
+              // Log escrow failure but delivery is confirmed
+              DFoodUtils.showSnackBar(
+                'Delivery confirmed! Payment release pending.',
+                AppColors.warning,
+              );
+            },
+            (escrow) {
+              DFoodUtils.showSnackBar(
+                'Delivery confirmed! Payment released to courier.',
+                AppColors.success,
+              );
+            },
+          );
+
+          // Update state with confirmed parcel
+          final updatedData = _applyOptimisticUpdate(currentData, updatedParcel)
+              .copyWith(clearUpdatingParcelId: true);
+          emit(LoadedState<ParcelData>(
+            data: updatedData,
+            lastUpdated: DateTime.now(),
+          ));
+        },
+      );
+    } catch (e) {
+      emit(AsyncErrorState<ParcelData>(
+        errorMessage: e.toString(),
+        data: currentData.copyWith(clearUpdatingParcelId: true),
+      ));
+      DFoodUtils.showSnackBar(
+        'Error confirming delivery: $e',
+        AppColors.error,
+      );
+    }
   }
 
   @override

@@ -482,7 +482,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                 _currentStep == VerificationStep.steps.length - 1
                     ? 'Submit'
                     : 'Next',
-                color: Colors.white,
+                color: AppColors.white,
               ),
             ),
           ),

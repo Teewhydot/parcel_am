@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/wallet/wallet_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_font_size.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_input.dart';
@@ -400,7 +401,7 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
           const AppText(
             'Pickup Location',
             variant: TextVariant.titleMedium,
-            fontSize: 18,
+            fontSize: AppFontSize.xl,
             fontWeight: FontWeight.w600,
           ),
           AppSpacing.verticalSpacing(SpacingSize.md),
@@ -420,7 +421,7 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
           const AppText(
             'Delivery Location',
             variant: TextVariant.titleMedium,
-            fontSize: 18,
+            fontSize: AppFontSize.xl,
             fontWeight: FontWeight.w600,
           ),
           AppSpacing.verticalSpacing(SpacingSize.md),
@@ -669,12 +670,12 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
           AppText(
             label,
             fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-            fontSize: isBold ? 18 : 14,
+            fontSize: isBold ? AppFontSize.xl : null,
           ),
           AppText(
             amount,
             fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
-            fontSize: isBold ? 18 : 14,
+            fontSize: isBold ? AppFontSize.xl : null,
             color: isBold ? AppColors.primary : null,
           ),
         ],

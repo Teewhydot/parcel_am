@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_font_size.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_card.dart';
@@ -128,7 +130,7 @@ class _DatabaseSeederScreenState extends State<DatabaseSeederScreen> {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
-            color: Colors.blue.shade50,
+            color: AppColors.infoLight,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -139,7 +141,7 @@ class _DatabaseSeederScreenState extends State<DatabaseSeederScreen> {
                 AppSpacing.verticalSpacing(SpacingSize.xs),
                 AppText.bodyMedium(
                   '${seeders.length} seeders available',
-                  color: Colors.grey.shade700,
+                  color: AppColors.onSurfaceVariant,
                 ),
               ],
             ),
@@ -169,10 +171,10 @@ class _DatabaseSeederScreenState extends State<DatabaseSeederScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: AppColors.black.withOpacity(0.1),
                   blurRadius: 4,
                   offset: const Offset(0, -2),
                 ),
@@ -234,8 +236,8 @@ class _SeederCard extends StatelessWidget {
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: Colors.blue.shade100,
-                  child: Icon(seeder.icon, color: Colors.blue.shade700),
+                  backgroundColor: AppColors.infoLight,
+                  child: Icon(seeder.icon, color: AppColors.infoDark),
                 ),
                 AppSpacing.horizontalSpacing(SpacingSize.md),
                 Expanded(
@@ -249,8 +251,8 @@ class _SeederCard extends StatelessWidget {
                       AppText(
                         seeder.description,
                         variant: TextVariant.bodySmall,
-                        fontSize: 13,
-                        color: Colors.grey.shade600,
+                        fontSize: AppFontSize.md,
+                        color: AppColors.textSecondary,
                       ),
                     ],
                   ),
@@ -265,7 +267,7 @@ class _SeederCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                color: AppColors.surfaceVariant,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -298,7 +300,7 @@ class _SeederCard extends StatelessWidget {
               AppSpacing.verticalSpacing(SpacingSize.xs),
               AppText.bodySmall(
                 '${status.progress}% - ${status.currentItem}',
-                color: Colors.grey.shade600,
+                color: AppColors.onSurfaceVariant,
               ),
             ],
 
@@ -308,24 +310,24 @@ class _SeederCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: isSuccessResult ? Colors.green.shade50 : Colors.red.shade50,
+                  color: isSuccessResult ? AppColors.successLight : AppColors.errorLight,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: isSuccessResult ? Colors.green.shade200 : Colors.red.shade200,
+                    color: isSuccessResult ? AppColors.success.withOpacity(0.3) : AppColors.error.withOpacity(0.3),
                   ),
                 ),
                 child: Row(
                   children: [
                     Icon(
                       isSuccessResult ? Icons.check_circle : Icons.error,
-                      color: isSuccessResult ? Colors.green : Colors.red,
+                      color: isSuccessResult ? AppColors.success : AppColors.error,
                       size: 20,
                     ),
                     AppSpacing.horizontalSpacing(SpacingSize.sm),
                     Expanded(
                       child: AppText.bodyMedium(
                         status.result!.message,
-                        color: isSuccessResult ? Colors.green.shade800 : Colors.red.shade800,
+                        color: isSuccessResult ? AppColors.successDark : AppColors.errorDark,
                       ),
                     ),
                   ],
@@ -363,13 +365,13 @@ class _SeederCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: hasData ? Colors.green.shade100 : Colors.orange.shade100,
+        color: hasData ? AppColors.successLight : AppColors.warningLight,
         borderRadius: BorderRadius.circular(12),
       ),
       child: AppText.bodySmall(
         hasData ? 'Seeded' : 'Empty',
         fontWeight: FontWeight.w600,
-        color: hasData ? Colors.green.shade800 : Colors.orange.shade800,
+        color: hasData ? AppColors.successDark : AppColors.warningDark,
       ),
     );
   }
@@ -381,7 +383,7 @@ class _SeederCard extends StatelessWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 14, color: Colors.grey.shade600),
+              Icon(icon, size: 14, color: AppColors.onSurfaceVariant),
               AppSpacing.horizontalSpacing(SpacingSize.xs),
               AppText.bodyMedium(
                 value,
@@ -392,8 +394,8 @@ class _SeederCard extends StatelessWidget {
           AppText(
             label,
             variant: TextVariant.bodySmall,
-            fontSize: 11,
-            color: Colors.grey.shade500,
+            fontSize: AppFontSize.sm,
+            color: AppColors.textSecondary,
           ),
         ],
       ),

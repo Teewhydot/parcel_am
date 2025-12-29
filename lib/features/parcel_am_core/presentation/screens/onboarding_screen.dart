@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/widgets/app_container.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_spacing.dart';
@@ -73,7 +74,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final screen = _onboardingScreens[_currentScreen];
     
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.white,
       body: SafeArea(
         child: Column(
           children: [
@@ -88,7 +89,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     child: Icon(
                       Icons.chevron_left,
                       size: 20,
-                      color: _currentScreen == 0 ? Colors.grey.withValues(alpha: 0.5) : Colors.grey,
+                      color: _currentScreen == 0 ? AppColors.textSecondary.withValues(alpha: 0.5) : AppColors.textSecondary,
                     ),
                   ),
                   Row(
@@ -98,10 +99,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         height: 8,
                         margin: const EdgeInsets.symmetric(horizontal: 2),
                         variant: ContainerVariant.filled,
-                        color: index == _currentScreen 
-                            ? AppColors.primary 
-                            : Colors.grey.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(4),
+                        color: index == _currentScreen
+                            ? AppColors.primary
+                            : AppColors.textSecondary.withValues(alpha: 0.2),
+                        borderRadius: AppRadius.xs,
                       );
                     }),
                   ),
@@ -111,7 +112,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     },
                     child: AppText.bodyMedium(
                       'Skip',
-                      color: Colors.grey,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                 ],
@@ -133,12 +134,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         height: 128,
                         variant: ContainerVariant.filled,
                         color: screen.color,
-                        borderRadius: BorderRadius.circular(64),
+                        borderRadius: AppRadius.pill,
                         alignment: Alignment.center,
                         child: Icon(
                           screen.icon,
                           size: 64,
-                          color: Colors.white,
+                          color: AppColors.white,
                         ),
                       ),
                     ),
@@ -152,7 +153,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         screen.title,
                         fontWeight: FontWeight.bold,
                         textAlign: TextAlign.center,
-                        color: Colors.black,
+                        color: AppColors.black,
                       ),
                     ),
                     
@@ -164,7 +165,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         key: ValueKey('${_currentScreen}_desc'),
                         screen.description,
                         textAlign: TextAlign.center,
-                        color: Colors.grey.withValues(alpha: 0.8),
+                        color: AppColors.textSecondary.withValues(alpha: 0.8),
                         height: 1.5,
                       ),
                     ),
@@ -189,7 +190,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       },
                       child: AppText.bodyLarge(
                         'Get Started',
-                        color: Colors.white,
+                        color: AppColors.white,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -219,14 +220,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               children: [
                                 AppText.bodyLarge(
                                   'Continue',
-                                  color: Colors.white,
+                                  color: AppColors.white,
                                   fontWeight: FontWeight.w600,
                                 ),
                                 AppSpacing.horizontalSpacing(SpacingSize.sm),
                                 const Icon(
                                   Icons.chevron_right,
                                   size: 20,
-                                  color: Colors.white,
+                                  color: AppColors.white,
                                 ),
                               ],
                             ),

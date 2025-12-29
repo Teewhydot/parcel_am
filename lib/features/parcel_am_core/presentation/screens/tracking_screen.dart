@@ -71,7 +71,7 @@ ETA: ${_formatETA(package.estimatedArrival)}
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: AppText.bodyMedium('Could not launch phone dialer', color: Colors.white)),
+          SnackBar(content: AppText.bodyMedium('Could not launch phone dialer', color: AppColors.white)),
         );
       }
     }
@@ -163,7 +163,7 @@ ETA: ${_formatETA(package.estimatedArrival)}
                   )
                 : null,
             child: state.isLoading && state.package == null
-                ? const Center(child: CircularProgressIndicator(color: Colors.white))
+                ? const Center(child: CircularProgressIndicator(color: AppColors.white))
                 : state.package != null
                     ? Column(
                         children: [
@@ -196,18 +196,18 @@ ETA: ${_formatETA(package.estimatedArrival)}
                             Icon(
                               Icons.inventory_2_outlined,
                               size: 64,
-                              color: Colors.white.withOpacity(0.8),
+                              color: AppColors.white.withValues(alpha: 0.8),
                             ),
                             AppSpacing.verticalSpacing(SpacingSize.lg),
                             AppText.titleLarge(
                               'No package data',
-                              color: Colors.white,
+                              color: AppColors.white,
                               fontWeight: FontWeight.bold,
                             ),
                             AppSpacing.verticalSpacing(SpacingSize.sm),
                             AppText.bodyMedium(
                               'Package information could not be loaded',
-                              color: Colors.white.withOpacity(0.8),
+                              color: AppColors.white.withValues(alpha: 0.8),
                               textAlign: TextAlign.center,
                             ),
                           ],
@@ -247,7 +247,7 @@ ETA: ${_formatETA(package.estimatedArrival)}
                             ),
                             child: AppText.labelSmall(
                               _getStatusText(package.status),
-                              color: Colors.white,
+                              color: AppColors.white,
                             ),
                           ),
                         ],
@@ -285,7 +285,7 @@ ETA: ${_formatETA(package.estimatedArrival)}
                   AppSpacing.verticalSpacing(SpacingSize.xs),
                   LinearProgressIndicator(
                     value: package.progress / 100,
-                    backgroundColor: Colors.grey.withValues(alpha: 0.3),
+                    backgroundColor: AppColors.textSecondary.withValues(alpha: 0.3),
                     valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
                   ),
                 ],
@@ -324,7 +324,7 @@ ETA: ${_formatETA(package.estimatedArrival)}
         statusText = 'Escrow Disputed - Under Review';
         break;
       case 'cancelled':
-        statusColor = Colors.grey;
+        statusColor = AppColors.textSecondary;
         statusIcon = Icons.cancel;
         statusText = 'Escrow Cancelled';
         break;
@@ -372,7 +372,7 @@ ETA: ${_formatETA(package.estimatedArrival)}
           AppContainer(
             height: 250,
             variant: ContainerVariant.filled,
-            color: Colors.grey.withValues(alpha: 0.1),
+            color: AppColors.textSecondary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
             child: Stack(
               children: [
@@ -401,10 +401,10 @@ ETA: ${_formatETA(package.estimatedArrival)}
                         Container(
                           width: 8,
                           height: 8,
-                          decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                          decoration: const BoxDecoration(color: AppColors.white, shape: BoxShape.circle),
                         ),
                         AppSpacing.horizontalSpacing(SpacingSize.xs),
-                        AppText.labelSmall('Live', color: Colors.white),
+                        AppText.labelSmall('Live', color: AppColors.white),
                       ],
                     ),
                   ),
@@ -459,7 +459,7 @@ ETA: ${_formatETA(package.estimatedArrival)}
                 CircleAvatar(
                   radius: 20,
                   backgroundColor: AppColors.primary,
-                  child: AppText.titleMedium(package.carrier.name.split(' ').map((e) => e[0]).join(), color: Colors.white),
+                  child: AppText.titleMedium(package.carrier.name.split(' ').map((e) => e[0]).join(), color: AppColors.white),
                 ),
                 AppSpacing.horizontalSpacing(SpacingSize.md),
                 Expanded(
@@ -531,7 +531,7 @@ ETA: ${_formatETA(package.estimatedArrival)}
                         child: Icon(
                           _getEventIcon(event.title),
                           size: 16,
-                          color: Colors.white,
+                          color: AppColors.white,
                         ),
                       ),
                       if (!isLast)
@@ -678,8 +678,8 @@ ETA: ${_formatETA(package.estimatedArrival)}
                                   }
                                 },
                           child: state.escrowReleaseStatus == EscrowReleaseStatus.processing
-                              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                              : const AppText('Confirm & Release Escrow', color: Colors.white),
+                              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.white))
+                              : const AppText('Confirm & Release Escrow', color: AppColors.white),
                         ),
                       ),
                       if (state.escrowReleaseStatus == EscrowReleaseStatus.released) ...[
@@ -794,7 +794,7 @@ ETA: ${_formatETA(package.estimatedArrival)}
                       width: 24,
                       height: 24,
                       decoration: const BoxDecoration(color: AppColors.success, shape: BoxShape.circle),
-                      child: const Icon(Icons.circle, size: 8, color: Colors.white),
+                      child: const Icon(Icons.circle, size: 8, color: AppColors.white),
                     ),
                     AppSpacing.horizontalSpacing(SpacingSize.md),
                     Expanded(
@@ -822,7 +822,7 @@ ETA: ${_formatETA(package.estimatedArrival)}
                       width: 24,
                       height: 24,
                       decoration: const BoxDecoration(color: AppColors.error, shape: BoxShape.circle),
-                      child: const Icon(Icons.location_on, size: 12, color: Colors.white),
+                      child: const Icon(Icons.location_on, size: 12, color: AppColors.white),
                     ),
                     AppSpacing.horizontalSpacing(SpacingSize.md),
                     Expanded(
@@ -851,7 +851,7 @@ ETA: ${_formatETA(package.estimatedArrival)}
                     CircleAvatar(
                       radius: 24,
                       backgroundColor: AppColors.primary,
-                      child: AppText.titleMedium(package.carrier.name.split(' ').map((e) => e[0]).join(), color: Colors.white),
+                      child: AppText.titleMedium(package.carrier.name.split(' ').map((e) => e[0]).join(), color: AppColors.white),
                     ),
                     AppSpacing.horizontalSpacing(SpacingSize.md),
                     Expanded(
@@ -887,9 +887,9 @@ ETA: ${_formatETA(package.estimatedArrival)}
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.phone, size: 16, color: Colors.white),
+                            const Icon(Icons.phone, size: 16, color: AppColors.white),
                             AppSpacing.horizontalSpacing(SpacingSize.xs),
-                            AppText.labelMedium('Call Carrier', color: Colors.white),
+                            AppText.labelMedium('Call Carrier', color: AppColors.white),
                           ],
                         ),
                       ),
@@ -943,7 +943,7 @@ ETA: ${_formatETA(package.estimatedArrival)}
       case 'cancelled':
         return AppColors.error;
       default:
-        return Colors.grey;
+        return AppColors.textSecondary;
     }
   }
 
@@ -973,7 +973,7 @@ ETA: ${_formatETA(package.estimatedArrival)}
       case 'disputed':
         return AppColors.error;
       case 'cancelled':
-        return Colors.grey;
+        return AppColors.textSecondary;
       default:
         return AppColors.primary;
     }

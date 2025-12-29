@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
+import '../../../../core/theme/app_font_size.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/helpers/haptic_helper.dart';
 import '../../../../core/utils/app_utils.dart';
@@ -53,9 +55,9 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: AppRadius.topXxl,
       ),
       child: SafeArea(
         child: Padding(
@@ -97,7 +99,7 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
         height: 4,
         decoration: BoxDecoration(
           color: AppColors.outline,
-          borderRadius: BorderRadius.circular(2),
+          borderRadius: AppRadius.xs,
         ),
       ),
     );
@@ -109,7 +111,7 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: widget.parcel.status.statusColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: AppRadius.lg,
         border: Border.all(
           color: widget.parcel.status.statusColor.withValues(alpha: 0.3),
           width: 2,
@@ -145,7 +147,7 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
                 AppText(
                   widget.parcel.status.displayName,
                   variant: TextVariant.titleLarge,
-                  fontSize: 20,
+                  fontSize: AppFontSize.xxl,
                   fontWeight: FontWeight.bold,
                   color: widget.parcel.status.statusColor,
                 ),
@@ -169,6 +171,7 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
       ParcelStatus.pickedUp,
       ParcelStatus.inTransit,
       ParcelStatus.arrived,
+      ParcelStatus.awaitingConfirmation,
       ParcelStatus.delivered,
     ];
 
@@ -233,7 +236,7 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
               child: AppText(
                 _getShortStatusName(status),
                 variant: TextVariant.bodySmall,
-                fontSize: 9,
+                fontSize: AppFontSize.xxs,
                 textAlign: TextAlign.center,
                 color: isCompleted || isCurrent
                     ? status.statusColor
@@ -317,7 +320,7 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
           ? Icon(
               _getStatusIcon(nextStatus),
               size: 20,
-              color: Colors.white,
+              color: AppColors.white,
             )
           : null,
       child: AppText.bodyLarge(
@@ -325,7 +328,7 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
             ? 'Mark as ${nextStatus.displayName}'
             : 'Already at Final Status',
         fontWeight: FontWeight.w600,
-        color: Colors.white,
+        color: AppColors.white,
       ),
     );
   }
@@ -337,7 +340,7 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
       child: AppText(
         'Cancel',
         variant: TextVariant.bodyMedium,
-        fontSize: 15,
+        fontSize: AppFontSize.lg,
         fontWeight: FontWeight.w500,
       ),
     );
@@ -407,7 +410,7 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: AppRadius.lg,
         ),
         title: AppText.titleMedium('Confirm Status Update'),
         content: Column(
@@ -417,14 +420,14 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
             AppText(
               'Are you sure you want to mark this delivery as ${nextStatus.displayName}?',
               variant: TextVariant.bodyMedium,
-              fontSize: 15,
+              fontSize: AppFontSize.lg,
             ),
             AppSpacing.verticalSpacing(SpacingSize.md),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: AppColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: AppRadius.sm,
               ),
               child: Row(
                 children: [
@@ -458,7 +461,7 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
               HapticHelper.mediumImpact();
               Navigator.of(context).pop(true);
             },
-            child: AppText.bodyMedium('Confirm', color: Colors.white),
+            child: AppText.bodyMedium('Confirm', color: AppColors.white),
           ),
         ],
       ),
@@ -476,7 +479,7 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     final snackBarController = scaffoldMessenger.showSnackBar(
       SnackBar(
-        content: AppText.bodyMedium('Failed to update status: $errorMessage', color: Colors.white),
+        content: AppText.bodyMedium('Failed to update status: $errorMessage', color: AppColors.white),
         backgroundColor: AppColors.error,
         duration: const Duration(seconds: 5),
         action: SnackBarAction(
@@ -506,6 +509,8 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
         return 'Package is on the way';
       case ParcelStatus.arrived:
         return 'Package has reached destination';
+      case ParcelStatus.awaitingConfirmation:
+        return 'Waiting for sender to confirm delivery & release payment';
       case ParcelStatus.delivered:
         return 'Package successfully delivered';
       case ParcelStatus.cancelled:
@@ -528,6 +533,8 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
         return 'In Transit';
       case ParcelStatus.arrived:
         return 'Arrived';
+      case ParcelStatus.awaitingConfirmation:
+        return 'Confirm';
       case ParcelStatus.delivered:
         return 'Delivered';
       default:
@@ -546,6 +553,8 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
         return Icons.local_shipping;
       case ParcelStatus.arrived:
         return Icons.place;
+      case ParcelStatus.awaitingConfirmation:
+        return Icons.hourglass_empty;
       case ParcelStatus.delivered:
         return Icons.check_circle;
       case ParcelStatus.cancelled:

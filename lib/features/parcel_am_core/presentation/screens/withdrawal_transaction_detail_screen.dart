@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:parcel_am/core/routes/routes.dart';
 import 'package:parcel_am/core/services/navigation_service/nav_config.dart';
 import 'package:parcel_am/core/theme/app_colors.dart';
+import 'package:parcel_am/core/theme/app_radius.dart';
 import 'package:parcel_am/core/widgets/app_card.dart';
 import 'package:parcel_am/core/widgets/app_spacing.dart';
 import 'package:parcel_am/core/widgets/app_text.dart';
@@ -97,7 +98,7 @@ class WithdrawalTransactionDetailScreen extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: statusInfo['color'].withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: AppRadius.xl,
         border: Border.all(color: statusInfo['color']),
       ),
       child: Row(
@@ -188,7 +189,7 @@ class WithdrawalTransactionDetailScreen extends StatelessWidget {
                 height: 24,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: isCompleted || isActive ? color : Colors.transparent,
+                  color: isCompleted || isActive ? color : AppColors.transparent,
                   border: Border.all(
                     color: color,
                     width: 2,
@@ -198,7 +199,7 @@ class WithdrawalTransactionDetailScreen extends StatelessWidget {
                     ? const Icon(
                         Icons.check,
                         size: 14,
-                        color: Colors.white,
+                        color: AppColors.white,
                       )
                     : null,
               ),
@@ -361,16 +362,16 @@ class WithdrawalTransactionDetailScreen extends StatelessWidget {
   /// Builds the reversal reason card
   Widget _buildReversalReasonCard(BuildContext context) {
     return AppCard.elevated(
-      color: Colors.orange.shade50,
+      color: AppColors.pendingLight,
       padding: AppSpacing.paddingXL,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.info_outline,
-                color: Colors.orange.shade700,
+                color: AppColors.pendingDark,
                 size: 20,
               ),
               AppSpacing.horizontalSpacing(SpacingSize.sm),
@@ -378,7 +379,7 @@ class WithdrawalTransactionDetailScreen extends StatelessWidget {
                 'Reversal Reason',
                 variant: TextVariant.titleSmall,
                 fontWeight: FontWeight.w600,
-                color: Colors.orange.shade700,
+                color: AppColors.pendingDark,
               ),
             ],
           ),
@@ -432,7 +433,7 @@ class WithdrawalTransactionDetailScreen extends StatelessWidget {
               Clipboard.setData(ClipboardData(text: value));
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: AppText.bodyMedium('Reference ID copied to clipboard', color: Colors.white),
+                  content: AppText.bodyMedium('Reference ID copied to clipboard', color: AppColors.white),
                   duration: const Duration(seconds: 2),
                 ),
               );
@@ -480,9 +481,9 @@ class WithdrawalTransactionDetailScreen extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.refresh, color: Colors.white),
+          const Icon(Icons.refresh, color: AppColors.white),
           AppSpacing.horizontalSpacing(SpacingSize.sm),
-          AppText.bodyMedium('Retry Withdrawal', color: Colors.white),
+          AppText.bodyMedium('Retry Withdrawal', color: AppColors.white),
         ],
       ),
     );
@@ -510,7 +511,7 @@ class WithdrawalTransactionDetailScreen extends StatelessWidget {
     switch (withdrawalOrder.status) {
       case WithdrawalStatus.pending:
         return {
-          'color': Colors.orange,
+          'color': AppColors.pending,
           'icon': Icons.pending_outlined,
           'text': 'Pending',
         };
@@ -534,7 +535,7 @@ class WithdrawalTransactionDetailScreen extends StatelessWidget {
         };
       case WithdrawalStatus.reversed:
         return {
-          'color': Colors.grey,
+          'color': AppColors.onSurfaceVariant,
           'icon': Icons.replay_outlined,
           'text': 'Reversed',
         };

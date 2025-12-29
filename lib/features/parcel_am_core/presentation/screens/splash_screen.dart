@@ -6,6 +6,7 @@ import 'package:parcel_am/core/widgets/app_scaffold.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/widgets/app_container.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
@@ -94,8 +95,8 @@ class _SplashScreenState extends State<SplashScreen>
                               width: 96,
                               height: 96,
                               variant: ContainerVariant.filled,
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(48),
+                              color: AppColors.white,
+                              borderRadius: AppRadius.pill,
                               child: Stack(
                                 alignment: Alignment.center,
                                 children: [
@@ -121,14 +122,14 @@ class _SplashScreenState extends State<SplashScreen>
                         // App Name
                         AppText.headlineLarge(
                           'ParcelAm',
-                          color: Colors.white,
+                          color: AppColors.white,
                           fontWeight: FontWeight.bold,
                           textAlign: TextAlign.center,
                         ),
                         AppSpacing.verticalSpacing(SpacingSize.sm),
                         AppText.bodyLarge(
                           'Secure package delivery across Nigeria',
-                          color: Colors.white.withValues(alpha: 0.8),
+                          color: AppColors.white.withValues(alpha: 0.8),
                           textAlign: TextAlign.center,
                         ),
         
@@ -168,7 +169,7 @@ class _SplashScreenState extends State<SplashScreen>
                     padding: AppSpacing.paddingLG,
                     child: AppText.bodySmall(
                       'Connecting Nigeria, One Package at a Time',
-                      color: Colors.white.withValues(alpha: 0.6),
+                      color: AppColors.white.withValues(alpha: 0.6),
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -197,14 +198,14 @@ class _FeatureIcon extends StatelessWidget {
           width: 48,
           height: 48,
           variant: ContainerVariant.filled,
-          color: Colors.white.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(24),
-          child: Icon(icon, color: Colors.white, size: 24),
+          color: AppColors.white.withValues(alpha: 0.2),
+          borderRadius: AppRadius.pill,
+          child: Icon(icon, color: AppColors.white, size: 24),
         ),
         AppSpacing.verticalSpacing(SpacingSize.sm),
         AppText.labelSmall(
           title,
-          color: Colors.white.withValues(alpha: 0.8),
+          color: AppColors.white.withValues(alpha: 0.8),
           textAlign: TextAlign.center,
         ),
       ],
@@ -276,8 +277,8 @@ class _LoadingDotsState extends State<_LoadingDots>
                   width: 8,
                   height: 8,
                   variant: ContainerVariant.filled,
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(4),
+                  color: AppColors.white,
+                  borderRadius: AppRadius.xs,
                 ),
               ),
             );

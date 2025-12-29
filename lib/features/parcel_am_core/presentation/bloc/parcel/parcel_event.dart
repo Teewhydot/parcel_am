@@ -148,3 +148,27 @@ class ParcelAcceptedListUpdated extends ParcelEvent {
   @override
   List<Object?> get props => [acceptedParcels];
 }
+
+/// Event for sender to confirm delivery and release payment.
+///
+/// This event is triggered when the sender confirms that the receiver
+/// has received the parcel. Upon confirmation:
+/// 1. Parcel status is updated to 'delivered'
+/// 2. Escrow payment is released to the courier
+///
+/// Only the sender can trigger this event for their own parcels.
+class ParcelConfirmDeliveryRequested extends ParcelEvent {
+  /// The ID of the parcel to confirm delivery for
+  final String parcelId;
+
+  /// The ID of the escrow holding the payment
+  final String escrowId;
+
+  const ParcelConfirmDeliveryRequested({
+    required this.parcelId,
+    required this.escrowId,
+  });
+
+  @override
+  List<Object?> get props => [parcelId, escrowId];
+}

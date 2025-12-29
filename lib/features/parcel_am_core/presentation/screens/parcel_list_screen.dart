@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
+import '../../../../core/theme/app_font_size.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/bloc/base/base_state.dart';
@@ -14,6 +16,7 @@ import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_data.dart';
 import '../../domain/entities/parcel_entity.dart';
 import '../widgets/bottom_navigation.dart';
+import '../widgets/delivery_confirmation_card.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_card.dart';
 
@@ -80,10 +83,10 @@ class _ParcelListScreenState extends State<ParcelListScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.error_outline,
                       size: 64,
-                      color: Colors.red,
+                      color: AppColors.error,
                     ),
                     AppSpacing.verticalSpacing(SpacingSize.md),
                     AppText.bodyLarge(state.errorMessage),
@@ -113,7 +116,7 @@ class _ParcelListScreenState extends State<ParcelListScreen> {
                     AppText(
                       'No parcels yet',
                       variant: TextVariant.titleLarge,
-                      fontSize: 20,
+                      fontSize: AppFontSize.xxl,
                       fontWeight: FontWeight.w600,
                     ),
                     AppSpacing.verticalSpacing(SpacingSize.sm),
@@ -185,7 +188,7 @@ class _ParcelCard extends StatelessWidget {
                 height: 48,
                 decoration: BoxDecoration(
                   color: _getStatusColor(parcel.status).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: AppRadius.md,
                 ),
                 child: Icon(
                   _getPackageIcon(parcel.status),
@@ -241,7 +244,7 @@ class _ParcelCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: _getStatusColor(parcel.status)
                     .withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: AppRadius.sm,
                 border: Border.all(
                   color: _getStatusColor(parcel.status)
                       .withValues(alpha: 0.3),
@@ -271,6 +274,9 @@ class _ParcelCard extends StatelessWidget {
               ),
             ),
           ],
+          // Show delivery confirmation card when awaiting sender confirmation
+          if (parcel.status == ParcelStatus.awaitingConfirmation)
+            DeliveryConfirmationCard(parcel: parcel),
         ],
       ),
     );
@@ -280,7 +286,7 @@ class _ParcelCard extends StatelessWidget {
     return Row(
       children: [
         Icon(icon, size: 16, color: AppColors.onSurfaceVariant),
-        const SizedBox(width: 4),
+        AppSpacing.horizontalSpacing(SpacingSize.xs),
         Expanded(
           child: AppText.bodySmall(
             text,
@@ -297,7 +303,7 @@ class _ParcelCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: _getStatusColor(status).withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: AppRadius.sm,
         border: Border.all(
           color: _getStatusColor(status).withValues(alpha: 0.3),
         ),
@@ -305,7 +311,7 @@ class _ParcelCard extends StatelessWidget {
       child: AppText(
         status.displayName,
         variant: TextVariant.bodySmall,
-        fontSize: 11,
+        fontSize: AppFontSize.sm,
         fontWeight: FontWeight.w600,
         color: _getStatusColor(status),
       ),
@@ -313,40 +319,30 @@ class _ParcelCard extends StatelessWidget {
   }
 
   Color _getStatusColor(ParcelStatus status) {
-    switch (status) {
-      case ParcelStatus.created:
-        return Colors.orange;
-      case ParcelStatus.paid:
-        return Colors.blue;
-      case ParcelStatus.inTransit:
-        return Colors.purple;
-      case ParcelStatus.delivered:
-        return Colors.green;
-      case ParcelStatus.cancelled:
-        return Colors.red;
-      case ParcelStatus.disputed:
-        return Colors.amber;
-      default:
-        return Colors.grey;
-    }
+    return switch (status) {
+      ParcelStatus.created => AppColors.pending,
+      ParcelStatus.paid => AppColors.processing,
+      ParcelStatus.pickedUp => AppColors.info,
+      ParcelStatus.inTransit => AppColors.reversed,
+      ParcelStatus.arrived => AppColors.secondary,
+      ParcelStatus.awaitingConfirmation => AppColors.warning,
+      ParcelStatus.delivered => AppColors.success,
+      ParcelStatus.cancelled => AppColors.error,
+      ParcelStatus.disputed => AppColors.warning,
+    };
   }
 
   IconData _getPackageIcon(ParcelStatus status) {
-    switch (status) {
-      case ParcelStatus.created:
-        return Icons.description;
-      case ParcelStatus.paid:
-        return Icons.payment;
-      case ParcelStatus.inTransit:
-        return Icons.local_shipping;
-      case ParcelStatus.delivered:
-        return Icons.check_circle;
-      case ParcelStatus.cancelled:
-        return Icons.cancel;
-      case ParcelStatus.disputed:
-        return Icons.warning;
-      default:
-        return Icons.all_inbox;
-    }
+    return switch (status) {
+      ParcelStatus.created => Icons.description,
+      ParcelStatus.paid => Icons.payment,
+      ParcelStatus.pickedUp => Icons.shopping_bag,
+      ParcelStatus.inTransit => Icons.local_shipping,
+      ParcelStatus.arrived => Icons.place,
+      ParcelStatus.awaitingConfirmation => Icons.hourglass_empty,
+      ParcelStatus.delivered => Icons.check_circle,
+      ParcelStatus.cancelled => Icons.cancel,
+      ParcelStatus.disputed => Icons.warning,
+    };
   }
 }

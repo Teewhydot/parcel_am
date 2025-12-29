@@ -12,6 +12,7 @@ import 'package:parcel_am/features/passkey/presentation/bloc/passkey_event.dart'
 import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_container.dart';
 import '../../../../core/widgets/app_input.dart';
@@ -255,7 +256,7 @@ class _LoginScreenState extends State<LoginScreen>
                       _showPasswordReset ? 'Reset Password' : 'Welcome Back',
                       fontWeight: FontWeight.w600,
                     ),
-                    const SizedBox(width: 40),
+                    AppSpacing.horizontalSpacing(SpacingSize.huge),
                   ],
                 ),
               ),
@@ -264,10 +265,10 @@ class _LoginScreenState extends State<LoginScreen>
                 child: AppContainer(
                   height: 192,
                   variant: ContainerVariant.filled,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: AppRadius.lg,
                   child: AppContainer(
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: AppRadius.lg,
                       gradient: const LinearGradient(
                         begin: Alignment.centerLeft,
                         end: Alignment.centerRight,
@@ -280,7 +281,7 @@ class _LoginScreenState extends State<LoginScreen>
                           child: AppContainer(
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(16),
-                              color: Colors.black.withValues(alpha: 0.1),
+                              color: AppColors.black.withValues(alpha: 0.1),
                             ),
                           ),
                         ),
@@ -293,7 +294,7 @@ class _LoginScreenState extends State<LoginScreen>
                                     ? Icons.lock_reset
                                     : Icons.email,
                                 size: 48,
-                                color: Colors.white,
+                                color: AppColors.white,
                               ),
                               AppSpacing.verticalSpacing(SpacingSize.sm),
                               Padding(
@@ -302,7 +303,7 @@ class _LoginScreenState extends State<LoginScreen>
                                   _showPasswordReset
                                       ? 'Enter your email to receive a password reset link'
                                       : 'Secure access with your email and password',
-                                  color: Colors.white,
+                                  color: AppColors.white,
                                   textAlign: TextAlign.center,
                                 ),
                               ),
@@ -323,7 +324,7 @@ class _LoginScreenState extends State<LoginScreen>
                           children: [
                             AppContainer(
                               decoration: BoxDecoration(
-                                color: Colors.grey.withValues(alpha: 0.1),
+                                color: AppColors.textSecondary.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: TabBar(
@@ -334,9 +335,9 @@ class _LoginScreenState extends State<LoginScreen>
                                   color: AppColors.primary,
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                labelColor: Colors.white,
-                                unselectedLabelColor: Colors.black,
-                                dividerColor: Colors.transparent,
+                                labelColor: AppColors.white,
+                                unselectedLabelColor: AppColors.black,
+                                dividerColor: AppColors.transparent,
                                 tabs: const [
                                   Tab(text: 'Sign In'),
                                   Tab(text: 'Sign Up'),
@@ -360,7 +361,7 @@ class _LoginScreenState extends State<LoginScreen>
                                 text: TextSpan(
                                   style: const TextStyle(
                                     fontSize: 14,
-                                    color: Colors.grey,
+                                    color: AppColors.textSecondary,
                                   ),
                                   children: [
                                     const TextSpan(
@@ -439,7 +440,7 @@ class _LoginScreenState extends State<LoginScreen>
                 loading: state.isLoading,
                 child: AppText.bodyLarge(
                   'Sign In',
-                  color: Colors.white,
+                  color: AppColors.white,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -480,7 +481,7 @@ class _LoginScreenState extends State<LoginScreen>
                 const Expanded(child: Divider(color: AppColors.outline)),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: AppText.bodySmall('or', color: Colors.grey),
+                  child: AppText.bodySmall('or', color: AppColors.textSecondary),
                 ),
                 const Expanded(child: Divider(color: AppColors.outline)),
               ],
@@ -540,7 +541,7 @@ class _LoginScreenState extends State<LoginScreen>
               AppSpacing.verticalSpacing(SpacingSize.sm),
               AppText.bodySmall(
                 'Password must be at least 6 characters',
-                color: Colors.grey,
+                color: AppColors.textSecondary,
               ),
               AppSpacing.verticalSpacing(SpacingSize.xl),
               AppButton.primary(
@@ -549,7 +550,7 @@ class _LoginScreenState extends State<LoginScreen>
                 loading: state.isLoading,
                 child: AppText.bodyLarge(
                   'Create Account',
-                  color: Colors.white,
+                  color: AppColors.white,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -589,7 +590,7 @@ class _LoginScreenState extends State<LoginScreen>
               AppSpacing.verticalSpacing(SpacingSize.md),
               AppText.bodySmall(
                 'We\'ll send you a link to reset your password',
-                color: Colors.grey,
+                color: AppColors.textSecondary,
               ),
               AppSpacing.verticalSpacing(SpacingSize.xl),
               AppButton.primary(
@@ -598,7 +599,7 @@ class _LoginScreenState extends State<LoginScreen>
                 loading: state.isLoading,
                 child: AppText.bodyLarge(
                   'Send Reset Link',
-                  color: Colors.white,
+                  color: AppColors.white,
                   fontWeight: FontWeight.w600,
                 ),
               ),

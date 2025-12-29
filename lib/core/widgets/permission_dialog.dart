@@ -8,6 +8,7 @@ import 'app_spacing.dart';
 import '../utils/logger.dart';
 import '../helpers/user_extensions.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_radius.dart';
 
 /// A reusable dialog to request various app permissions
 class PermissionDialog extends StatelessWidget {
@@ -33,9 +34,9 @@ class PermissionDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.lg),
       elevation: 0,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppColors.transparent,
       child: contentBox(context),
     );
   }
@@ -45,8 +46,8 @@ class PermissionDialog extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         shape: BoxShape.rectangle,
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: AppColors.white,
+        borderRadius: AppRadius.lg,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,

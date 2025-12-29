@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
+import '../../../../core/theme/app_font_size.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_button.dart';
@@ -295,7 +297,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
               const AppText(
                 'Order Summary',
                 variant: TextVariant.titleMedium,
-                fontSize: 18,
+                fontSize: AppFontSize.xl,
                 fontWeight: FontWeight.bold,
               ),
               AppSpacing.verticalSpacing(SpacingSize.lg),
@@ -307,7 +309,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     height: SpacingSize.massive.value,
                     decoration: BoxDecoration(
                       color: AppColors.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: AppRadius.md,
                     ),
                     child: const Icon(
                       Icons.description,
@@ -338,7 +340,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   AppText(
                     packageDetails['price']!,
                     variant: TextVariant.titleMedium,
-                    fontSize: 18,
+                    fontSize: AppFontSize.xl,
                     fontWeight: FontWeight.bold,
                     color: AppColors.primary,
                   ),
@@ -358,7 +360,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
               const AppText(
                 'Price Breakdown',
                 variant: TextVariant.titleMedium,
-                fontSize: 18,
+                fontSize: AppFontSize.xl,
                 fontWeight: FontWeight.bold,
               ),
               AppSpacing.verticalSpacing(SpacingSize.lg),
@@ -390,13 +392,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   const AppText(
                     'Total',
                     variant: TextVariant.titleMedium,
-                    fontSize: 18,
+                    fontSize: AppFontSize.xl,
                     fontWeight: FontWeight.bold,
                   ),
                   AppText(
                     packageDetails['total']!,
                     variant: TextVariant.titleMedium,
-                    fontSize: 18,
+                    fontSize: AppFontSize.xl,
                     fontWeight: FontWeight.bold,
                     color: AppColors.primary,
                   ),
@@ -413,7 +415,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
           padding: AppSpacing.paddingLG,
           decoration: BoxDecoration(
             color: AppColors.primary.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: AppRadius.md,
             border: Border.all(
               color: AppColors.primary.withValues(alpha: 0.2),
             ),
@@ -460,7 +462,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
               const AppText(
                 'Select Payment Method',
                 variant: TextVariant.titleMedium,
-                fontSize: 18,
+                fontSize: AppFontSize.xl,
                 fontWeight: FontWeight.bold,
               ),
               AppSpacing.verticalSpacing(SpacingSize.lg),
@@ -478,7 +480,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                               : AppColors.outline,
                           width: 2,
                         ),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: AppRadius.md,
                         color: paymentMethod == method['id']
                             ? AppColors.primary.withValues(alpha: 0.05)
                             : null,
@@ -517,7 +519,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                               padding: AppSpacing.verticalPaddingXS + AppSpacing.horizontalPaddingSM,
                               decoration: BoxDecoration(
                                 color: AppColors.accent,
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: AppRadius.md,
                               ),
                               child: AppText.bodySmall(
                                 'Popular',
@@ -591,7 +593,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                               color: _getEscrowStatusColor(escrowStatus),
                               size: 20,
                             ),
-                            const SizedBox(width: 4),
+                            AppSpacing.horizontalSpacing(SpacingSize.xs),
                             AppText(
                               _getEscrowStatusLabel(escrowStatus),
                               variant: TextVariant.bodySmall,
@@ -643,7 +645,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     height: 64,
                     decoration: BoxDecoration(
                       color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(32),
+                      borderRadius: AppRadius.pill,
                     ),
                     child: const Icon(
                       Icons.lock,
@@ -655,7 +657,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   const AppText(
                     'Securing Your Payment',
                     variant: TextVariant.titleMedium,
-                    fontSize: 18,
+                    fontSize: AppFontSize.xl,
                     fontWeight: FontWeight.bold,
                   ),
                   AppSpacing.verticalSpacing(SpacingSize.sm),
@@ -742,20 +744,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   Color _getEscrowStatusColor(EscrowStatus? status) {
     if (status == null) return AppColors.onSurfaceVariant;
-    switch (status) {
-      case EscrowStatus.holding:
-        return Colors.orange;
-      case EscrowStatus.held:
-        return Colors.blue;
-      case EscrowStatus.releasing:
-        return Colors.purple;
-      case EscrowStatus.released:
-        return Colors.green;
-      case EscrowStatus.error:
-        return Colors.red;
-      default:
-        return AppColors.onSurfaceVariant;
-    }
+    return switch (status) {
+      EscrowStatus.holding => AppColors.pending,
+      EscrowStatus.held => AppColors.processing,
+      EscrowStatus.releasing => AppColors.reversed,
+      EscrowStatus.released => AppColors.success,
+      EscrowStatus.error => AppColors.error,
+      _ => AppColors.onSurfaceVariant,
+    };
   }
 
   String _getEscrowStatusLabel(EscrowStatus? status) {
@@ -785,12 +781,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
           height: 24,
           decoration: BoxDecoration(
             color: color,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: AppRadius.md,
           ),
           child: Center(
             child: AppText.bodySmall(
               step.toString(),
-              color: Colors.white,
+              color: AppColors.white,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -823,12 +819,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
           height: 80,
           margin: const EdgeInsets.only(bottom: 16),
           decoration: BoxDecoration(
-            color: Colors.green,
-            borderRadius: BorderRadius.circular(40),
+            color: AppColors.success,
+            borderRadius: AppRadius.pill,
           ),
-          child: const Icon(
+          child: Icon(
             Icons.check_circle,
-            color: Colors.white,
+            color: AppColors.white,
             size: 40,
           ),
         ),
@@ -857,7 +853,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 padding: AppSpacing.paddingMD,
                 decoration: BoxDecoration(
                   color: AppColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: AppRadius.sm,
                 ),
                 child: Row(
                   children: [
@@ -890,7 +886,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 padding: AppSpacing.paddingMD,
                 decoration: BoxDecoration(
                   color: AppColors.surfaceVariant,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: AppRadius.sm,
                 ),
                 child: Row(
                   children: [

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_font_size.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_button.dart';
@@ -29,7 +30,7 @@ class PasskeyListItem extends StatelessWidget {
         border: Border.all(color: AppColors.outline),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: AppColors.black.withOpacity(0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -64,7 +65,7 @@ class PasskeyListItem extends StatelessWidget {
             AppText(
               'Created ${timeago.format(passkey.createdAt)}',
               variant: TextVariant.bodySmall,
-              fontSize: 13,
+              fontSize: AppFontSize.md,
               color: AppColors.onSurfaceVariant,
             ),
             if (passkey.lastUsedAt != null) ...[

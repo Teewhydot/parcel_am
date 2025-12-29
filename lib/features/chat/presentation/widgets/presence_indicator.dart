@@ -21,7 +21,7 @@ class PresenceIndicator extends StatelessWidget {
         color: _getStatusColor(),
         shape: BoxShape.circle,
         border: Border.all(
-          color: Colors.white,
+          color: AppColors.white,
           width: 2,
         ),
       ),
@@ -32,7 +32,7 @@ class PresenceIndicator extends StatelessWidget {
                 height: size * 0.5,
                 child: const CircularProgressIndicator(
                   strokeWidth: 1.5,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
                 ),
               ),
             )

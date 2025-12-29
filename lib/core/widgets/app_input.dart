@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_radius.dart';
 import 'app_text.dart';
 import 'app_spacing.dart';
 
@@ -271,23 +272,23 @@ class _AppInputState extends State<AppInput> {
             filled: widget.filled,
             fillColor: widget.filled ? AppColors.surfaceVariant : null,
             border: OutlineInputBorder(
-              borderRadius: widget.borderRadius ?? BorderRadius.circular(12),
+              borderRadius: widget.borderRadius ?? AppRadius.input,
               borderSide: widget.filled ? BorderSide.none : const BorderSide(color: AppColors.outline),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: widget.borderRadius ?? BorderRadius.circular(12),
+              borderRadius: widget.borderRadius ?? AppRadius.input,
               borderSide: widget.filled ? BorderSide.none : const BorderSide(color: AppColors.outline),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: widget.borderRadius ?? BorderRadius.circular(12),
+              borderRadius: widget.borderRadius ?? AppRadius.input,
               borderSide: const BorderSide(color: AppColors.primary, width: 2),
             ),
             errorBorder: OutlineInputBorder(
-              borderRadius: widget.borderRadius ?? BorderRadius.circular(12),
+              borderRadius: widget.borderRadius ?? AppRadius.input,
               borderSide: const BorderSide(color: AppColors.error),
             ),
             focusedErrorBorder: OutlineInputBorder(
-              borderRadius: widget.borderRadius ?? BorderRadius.circular(12),
+              borderRadius: widget.borderRadius ?? AppRadius.input,
               borderSide: const BorderSide(color: AppColors.error, width: 2),
             ),
             contentPadding: widget.contentPadding ?? AppSpacing.paddingLG,

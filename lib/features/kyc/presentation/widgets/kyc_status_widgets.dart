@@ -6,6 +6,7 @@ import 'package:parcel_am/features/parcel_am_core/data/models/user_model.dart';
 import '../../../../core/domain/entities/kyc_status.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/routes/routes.dart';
@@ -28,12 +29,12 @@ class KycStatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: compact 
+      padding: compact
           ? const EdgeInsets.symmetric(horizontal: 8, vertical: 4)
           : const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: _getStatusColor(status).withOpacity(0.15),
-        borderRadius: BorderRadius.circular(compact ? 12 : 16),
+        borderRadius: compact ? AppRadius.md : AppRadius.lg,
         border: Border.all(
           color: _getStatusColor(status).withOpacity(0.5),
           width: 1,
@@ -64,10 +65,10 @@ class KycStatusBadge extends StatelessWidget {
     switch (status) {
       case KycStatus.notStarted:
       case KycStatus.incomplete:
-        return Colors.grey;
+        return AppColors.textSecondary;
       case KycStatus.pending:
       case KycStatus.underReview:
-        return Colors.orange;
+        return AppColors.warning;
       case KycStatus.approved:
         return AppColors.success;
       case KycStatus.rejected:
@@ -176,7 +177,7 @@ class _KycStatusBannerState extends State<KycStatusBanner> {
             decoration: BoxDecoration(
               color: _getStatusColor(status).withOpacity(0.1),
               border: Border.all(color: _getStatusColor(status), width: 1),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: AppRadius.md,
             ),
             child: Row(
               children: [
@@ -224,7 +225,7 @@ class _KycStatusBannerState extends State<KycStatusBanner> {
         return AppColors.error;
       case KycStatus.pending:
       case KycStatus.underReview:
-        return Colors.orange;
+        return AppColors.warning;
       case KycStatus.approved:
         return AppColors.success;
       case KycStatus.rejected:
@@ -307,11 +308,11 @@ class KycStatusCard extends StatelessWidget {
           margin: margin ?? AppSpacing.paddingMD,
           padding: padding ?? AppSpacing.paddingLG,
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            color: AppColors.white,
+            borderRadius: AppRadius.lg,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: AppColors.black.withOpacity(0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -326,7 +327,7 @@ class KycStatusCard extends StatelessWidget {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: _getStatusColor(status).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: AppRadius.md,
                     ),
                     child: Icon(
                       _getStatusIcon(status),
@@ -365,12 +366,12 @@ class KycStatusCard extends StatelessWidget {
                       backgroundColor: _getStatusColor(status),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: AppRadius.sm,
                       ),
                     ),
                     child: AppText.bodyMedium(
                       _getActionButtonText(status),
-                      color: Colors.white,
+                      color: AppColors.white,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -390,7 +391,7 @@ class KycStatusCard extends StatelessWidget {
         return AppColors.error;
       case KycStatus.pending:
       case KycStatus.underReview:
-        return Colors.orange;
+        return AppColors.warning;
       case KycStatus.approved:
         return AppColors.success;
       case KycStatus.rejected:
@@ -496,10 +497,10 @@ class KycStatusIcon extends StatelessWidget {
     switch (status) {
       case KycStatus.notStarted:
       case KycStatus.incomplete:
-        return Colors.grey;
+        return AppColors.textSecondary;
       case KycStatus.pending:
       case KycStatus.underReview:
-        return Colors.orange;
+        return AppColors.warning;
       case KycStatus.approved:
         return AppColors.success;
       case KycStatus.rejected:

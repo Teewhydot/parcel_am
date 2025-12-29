@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
 
 enum ParcelStatus {
   created,
@@ -7,6 +8,7 @@ enum ParcelStatus {
   pickedUp,
   inTransit,
   arrived,
+  awaitingConfirmation,
   delivered,
   cancelled,
   disputed;
@@ -23,6 +25,8 @@ enum ParcelStatus {
         return 'In Transit';
       case ParcelStatus.arrived:
         return 'Arrived';
+      case ParcelStatus.awaitingConfirmation:
+        return 'Awaiting Confirmation';
       case ParcelStatus.delivered:
         return 'Delivered';
       case ParcelStatus.cancelled:
@@ -44,6 +48,8 @@ enum ParcelStatus {
         return 'in_transit';
       case ParcelStatus.arrived:
         return 'arrived';
+      case ParcelStatus.awaitingConfirmation:
+        return 'awaiting_confirmation';
       case ParcelStatus.delivered:
         return 'delivered';
       case ParcelStatus.cancelled:
@@ -67,6 +73,9 @@ enum ParcelStatus {
         return ParcelStatus.inTransit;
       case 'arrived':
         return ParcelStatus.arrived;
+      case 'awaiting_confirmation':
+      case 'awaitingconfirmation':
+        return ParcelStatus.awaitingConfirmation;
       case 'delivered':
         return ParcelStatus.delivered;
       case 'cancelled':
@@ -79,19 +88,21 @@ enum ParcelStatus {
   }
 
   /// Returns true if this status is considered active (in-progress delivery).
-  /// Active statuses: paid, pickedUp, inTransit, arrived
+  /// Active statuses: paid, pickedUp, inTransit, arrived, awaitingConfirmation
   bool get isActive =>
       this == ParcelStatus.paid ||
       this == ParcelStatus.pickedUp ||
       this == ParcelStatus.inTransit ||
-      this == ParcelStatus.arrived;
+      this == ParcelStatus.arrived ||
+      this == ParcelStatus.awaitingConfirmation;
 
   bool get isCompleted => this == ParcelStatus.delivered;
   bool get isCancelled => this == ParcelStatus.cancelled;
   bool get isDisputed => this == ParcelStatus.disputed;
 
-  /// Returns true if the status can progress to the next valid status.
-  /// Returns false for terminal statuses: delivered, cancelled, disputed
+  /// Returns true if the status can progress to the next valid status by the courier.
+  /// Returns false for terminal statuses (delivered, cancelled, disputed)
+  /// and for awaitingConfirmation (only sender can confirm).
   bool get canProgressToNextStatus {
     switch (this) {
       case ParcelStatus.paid:
@@ -100,6 +111,7 @@ enum ParcelStatus {
       case ParcelStatus.arrived:
         return true;
       case ParcelStatus.created:
+      case ParcelStatus.awaitingConfirmation: // Only sender can confirm
       case ParcelStatus.delivered:
       case ParcelStatus.cancelled:
       case ParcelStatus.disputed:
@@ -110,7 +122,7 @@ enum ParcelStatus {
   /// Returns the next valid status in the delivery progression flow.
   /// Returns null if there is no valid next status (terminal state).
   ///
-  /// Status progression flow: paid -> pickedUp -> inTransit -> arrived -> delivered
+  /// Status progression flow: paid -> pickedUp -> inTransit -> arrived -> awaitingConfirmation -> delivered
   ParcelStatus? get nextDeliveryStatus {
     switch (this) {
       case ParcelStatus.paid:
@@ -120,6 +132,8 @@ enum ParcelStatus {
       case ParcelStatus.inTransit:
         return ParcelStatus.arrived;
       case ParcelStatus.arrived:
+        return ParcelStatus.awaitingConfirmation;
+      case ParcelStatus.awaitingConfirmation:
         return ParcelStatus.delivered;
       case ParcelStatus.created:
       case ParcelStatus.delivered:
@@ -134,23 +148,28 @@ enum ParcelStatus {
   Color get statusColor {
     switch (this) {
       case ParcelStatus.created:
-        return Colors.grey;
+        return AppColors.onSurfaceVariant;
       case ParcelStatus.paid:
-        return Colors.blue;
+        return AppColors.processing;
       case ParcelStatus.pickedUp:
-        return Colors.orange;
+        return AppColors.pending;
       case ParcelStatus.inTransit:
-        return Colors.purple;
+        return AppColors.reversed;
       case ParcelStatus.arrived:
-        return Colors.teal;
+        return AppColors.secondary;
+      case ParcelStatus.awaitingConfirmation:
+        return AppColors.warning;
       case ParcelStatus.delivered:
-        return Colors.green;
+        return AppColors.success;
       case ParcelStatus.cancelled:
-        return Colors.red;
+        return AppColors.error;
       case ParcelStatus.disputed:
-        return Colors.amber;
+        return AppColors.warning;
     }
   }
+
+  /// Returns true if this parcel is awaiting sender confirmation.
+  bool get isAwaitingConfirmation => this == ParcelStatus.awaitingConfirmation;
 }
 
 enum ParcelType {
@@ -325,6 +344,15 @@ class ParcelEntity extends Equatable {
   /// See class documentation for structure details.
   final Map<String, dynamic>? metadata;
 
+  /// Timestamp when status became awaitingConfirmation.
+  final DateTime? awaitingConfirmationAt;
+
+  /// Timestamp when sender confirmed delivery.
+  final DateTime? confirmedAt;
+
+  /// User ID who confirmed delivery (sender or 'system_auto_release').
+  final String? confirmedBy;
+
   const ParcelEntity({
     required this.id,
     required this.sender,
@@ -346,6 +374,9 @@ class ParcelEntity extends Equatable {
     this.lastStatusUpdate,
     this.courierNotes,
     this.metadata,
+    this.awaitingConfirmationAt,
+    this.confirmedAt,
+    this.confirmedBy,
   });
 
   ParcelEntity copyWith({
@@ -369,6 +400,9 @@ class ParcelEntity extends Equatable {
     DateTime? lastStatusUpdate,
     String? courierNotes,
     Map<String, dynamic>? metadata,
+    DateTime? awaitingConfirmationAt,
+    DateTime? confirmedAt,
+    String? confirmedBy,
   }) {
     return ParcelEntity(
       id: id ?? this.id,
@@ -391,6 +425,9 @@ class ParcelEntity extends Equatable {
       lastStatusUpdate: lastStatusUpdate ?? this.lastStatusUpdate,
       courierNotes: courierNotes ?? this.courierNotes,
       metadata: metadata ?? this.metadata,
+      awaitingConfirmationAt: awaitingConfirmationAt ?? this.awaitingConfirmationAt,
+      confirmedAt: confirmedAt ?? this.confirmedAt,
+      confirmedBy: confirmedBy ?? this.confirmedBy,
     );
   }
 
@@ -443,6 +480,7 @@ class ParcelEntity extends Equatable {
       ParcelStatus.pickedUp,
       ParcelStatus.inTransit,
       ParcelStatus.arrived,
+      ParcelStatus.awaitingConfirmation,
       ParcelStatus.delivered,
     ];
 
@@ -517,5 +555,8 @@ class ParcelEntity extends Equatable {
         lastStatusUpdate,
         courierNotes,
         metadata,
+        awaitingConfirmationAt,
+        confirmedAt,
+        confirmedBy,
       ];
 }

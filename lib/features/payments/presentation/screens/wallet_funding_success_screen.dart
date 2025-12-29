@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_font_size.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_spacing.dart';
@@ -133,13 +134,13 @@ class _WalletFundingSuccessScreenState
           width: 120,
           height: 120,
           decoration: BoxDecoration(
-            color: Colors.green.shade50,
+            color: AppColors.successLight,
             shape: BoxShape.circle,
           ),
-          child: Icon(
+          child: const Icon(
             Icons.check_circle,
             size: 80,
-            color: Colors.green.shade600,
+            color: AppColors.successDark,
           ),
         ),
       );
@@ -148,24 +149,24 @@ class _WalletFundingSuccessScreenState
         width: 120,
         height: 120,
         decoration: BoxDecoration(
-          color: Colors.orange.shade50,
+          color: AppColors.pendingLight,
           shape: BoxShape.circle,
         ),
         child: Stack(
           alignment: Alignment.center,
           children: [
-            SizedBox(
+            const SizedBox(
               width: 60,
               height: 60,
               child: CircularProgressIndicator(
                 strokeWidth: 4,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.orange.shade600),
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.pendingDark),
               ),
             ),
-            Icon(
+            const Icon(
               Icons.hourglass_empty,
               size: 40,
-              color: Colors.orange.shade600,
+              color: AppColors.pendingDark,
             ),
           ],
         ),
@@ -178,13 +179,13 @@ class _WalletFundingSuccessScreenState
           width: 120,
           height: 120,
           decoration: BoxDecoration(
-            color: Colors.red.shade50,
+            color: AppColors.errorLight,
             shape: BoxShape.circle,
           ),
-          child: Icon(
+          child: const Icon(
             Icons.error,
             size: 80,
-            color: Colors.red.shade600,
+            color: AppColors.errorDark,
           ),
         ),
       );
@@ -256,7 +257,7 @@ class _WalletFundingSuccessScreenState
                   // Status Message
                   AppText(
                     _getStatusMessage(),
-                    fontSize: 16,
+                    fontSize: AppFontSize.bodyLarge,
                     color: AppColors.onSurfaceVariant,
                     textAlign: TextAlign.center,
                   ),
@@ -279,7 +280,7 @@ class _WalletFundingSuccessScreenState
                         // Amount
                         const AppText(
                           'Amount',
-                          fontSize: 14,
+                          fontSize: AppFontSize.bodyMedium,
                           color: AppColors.onSurfaceVariant,
                         ),
                         AppSpacing.verticalSpacing(SpacingSize.xs),
@@ -306,12 +307,12 @@ class _WalletFundingSuccessScreenState
                             children: [
                               const AppText(
                                 'New Wallet Balance:',
-                                fontSize: 14,
+                                fontSize: AppFontSize.bodyMedium,
                                 color: AppColors.onSurfaceVariant,
                               ),
                               AppText(
                                 '${walletData.currency} ${walletData.availableBalance.toStringAsFixed(2)}',
-                                fontSize: 18,
+                                fontSize: AppFontSize.xl,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.onSurface,
                               ),
@@ -327,7 +328,7 @@ class _WalletFundingSuccessScreenState
                             children: [
                               const AppText(
                                 'Status:',
-                                fontSize: 12,
+                                fontSize: AppFontSize.bodySmall,
                                 color: AppColors.onSurfaceVariant,
                               ),
                               Container(
@@ -337,21 +338,21 @@ class _WalletFundingSuccessScreenState
                                 ),
                                 decoration: BoxDecoration(
                                   color: _isSuccessStatus()
-                                      ? Colors.green.withOpacity(0.1)
+                                      ? AppColors.success.withOpacity(0.1)
                                       : _isPendingStatus()
-                                          ? Colors.orange.withOpacity(0.1)
-                                          : Colors.red.withOpacity(0.1),
+                                          ? AppColors.pending.withOpacity(0.1)
+                                          : AppColors.error.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: AppText(
                                   _paymentStatus.toUpperCase(),
-                                  fontSize: 10,
+                                  fontSize: AppFontSize.xs,
                                   fontWeight: FontWeight.bold,
                                   color: _isSuccessStatus()
-                                      ? Colors.green.shade700
+                                      ? AppColors.successDark
                                       : _isPendingStatus()
-                                          ? Colors.orange.shade700
-                                          : Colors.red.shade700,
+                                          ? AppColors.pendingDark
+                                          : AppColors.errorDark,
                                 ),
                               ),
                             ],
@@ -365,12 +366,12 @@ class _WalletFundingSuccessScreenState
                           children: [
                             const AppText(
                               'Reference:',
-                              fontSize: 12,
+                              fontSize: AppFontSize.bodySmall,
                               color: AppColors.onSurfaceVariant,
                             ),
                             AppText(
                               widget.reference,
-                              fontSize: 12,
+                              fontSize: AppFontSize.bodySmall,
                               color: AppColors.onSurfaceVariant,
                               fontWeight: FontWeight.w500,
                             ),
@@ -392,7 +393,7 @@ class _WalletFundingSuccessScreenState
                       child: const AppText(
                         'Back to Wallet',
                         color: AppColors.white,
-                        fontSize: 16,
+                        fontSize: AppFontSize.bodyLarge,
                         fontWeight: FontWeight.w600,
                       ),
                     )
@@ -408,7 +409,7 @@ class _WalletFundingSuccessScreenState
                           child: const AppText(
                             'Try Again',
                             color: AppColors.white,
-                            fontSize: 16,
+                            fontSize: AppFontSize.bodyLarge,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -421,7 +422,7 @@ class _WalletFundingSuccessScreenState
                           child: const AppText(
                             'Back to Wallet',
                             color: AppColors.onSurface,
-                            fontSize: 16,
+                            fontSize: AppFontSize.bodyLarge,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -436,7 +437,7 @@ class _WalletFundingSuccessScreenState
                       child: const AppText(
                         'Back to Wallet',
                         color: AppColors.onSurface,
-                        fontSize: 16,
+                        fontSize: AppFontSize.bodyLarge,
                         fontWeight: FontWeight.w600,
                       ),
                     ),

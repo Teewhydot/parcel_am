@@ -130,7 +130,7 @@ class BlocManager<T extends BlocBase<S>, S extends BaseState>
             return LoadingOverlay(
               isLoading: true,
               color: AppColors.primary.withValues(alpha: 0.5),
-              progressIndicator: SpinKitCircle(color: AppColors.white, size: 50.0),
+              progressIndicator: const SpinKitCircle(color: AppColors.white, size: 50.0),
               child: contentWidget,
             );
           }

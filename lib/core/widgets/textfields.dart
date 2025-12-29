@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:parcel_am/core/theme/app_colors.dart';
 import 'package:parcel_am/core/widgets/app_text.dart';
+import '../theme/app_radius.dart';
+import '../theme/app_font_size.dart';
 
 class FTextField extends StatefulWidget {
   final String? label;
@@ -67,10 +69,10 @@ class FTextField extends StatefulWidget {
     this.validationMode = AutovalidateMode.disabled,
     this.labelSize = 16,
     this.fontWeight = FontWeight.w500,
-    this.focusedColor = const Color(0xFF1B8B5C),
-    this.enabledColor = Colors.grey,
-    this.fillColor = Colors.white,
-    this.borderColor = Colors.grey,
+    this.focusedColor = AppColors.primary,
+    this.enabledColor = AppColors.onSurfaceVariant,
+    this.fillColor = AppColors.white,
+    this.borderColor = AppColors.onSurfaceVariant,
     this.isDropDown,
     this.maxLine = 1,
     this.maxLength,
@@ -95,7 +97,7 @@ class _FTextFieldState extends State<FTextField> {
         widget.hasLabel
             ? AppText(
                 widget.label?.toUpperCase() ?? "",
-                fontSize: 13,
+                fontSize: AppFontSize.md,
                 fontWeight: FontWeight.w400,
               )
             : const SizedBox.shrink(),
@@ -103,7 +105,7 @@ class _FTextFieldState extends State<FTextField> {
         Container(
           height: widget.height.h,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12).r,
+            borderRadius: AppRadius.md.r,
             border: Border.all(color: widget.borderColor, width: 1.5),
           ),
           child: Center(

@@ -10,6 +10,8 @@ import '../../../core/bloc/base/base_state.dart';
 import '../../../core/domain/entities/kyc_status.dart';
 import '../../../core/services/navigation_service/nav_config.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_radius.dart';
+import '../../../core/theme/app_font_size.dart';
 import '../../../core/routes/routes.dart';
 import '../../../injection_container.dart';
 
@@ -110,7 +112,7 @@ class _KycNotificationListenerState extends State<KycNotificationListener> {
           return _NotificationData(
             title: 'Verification Submitted',
             message: 'Your documents are now under review. We\'ll notify you once complete.',
-            backgroundColor: Colors.blue,
+            backgroundColor: AppColors.info,
             icon: Icons.pending_outlined,
             actionText: null,
           );
@@ -280,18 +282,18 @@ class _KycNotificationToastState extends State<_KycNotificationToast>
                 onTap: _dismiss,
                 child: Material(
                   elevation: 8,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: AppRadius.md,
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: widget.data.backgroundColor,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: AppRadius.md,
                     ),
                     child: Row(
                       children: [
                         Icon(
                           widget.data.icon,
-                          color: Colors.white,
+                          color: AppColors.white,
                           size: 32,
                         ),
                         AppSpacing.horizontalSpacing(SpacingSize.md),
@@ -303,22 +305,22 @@ class _KycNotificationToastState extends State<_KycNotificationToast>
                               AppText(
                                 widget.data.title,
                                 variant: TextVariant.bodyLarge,
-                                fontSize: 16,
-                                color: Colors.white,
+                                fontSize: AppFontSize.bodyLarge,
+                                color: AppColors.white,
                                 fontWeight: FontWeight.bold,
                               ),
                               AppSpacing.verticalSpacing(SpacingSize.xs),
                               AppText(
                                 widget.data.message,
                                 variant: TextVariant.bodySmall,
-                                fontSize: 13,
-                                color: Colors.white,
+                                fontSize: AppFontSize.md,
+                                color: AppColors.white,
                               ),
                             ],
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.close, color: Colors.white),
+                          icon: const Icon(Icons.close, color: AppColors.white),
                           onPressed: _dismiss,
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
@@ -350,7 +352,7 @@ class _KycStatusChangeDialog extends StatelessWidget {
     
     return AlertDialog(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: AppRadius.xl,
       ),
       contentPadding: const EdgeInsets.all(24),
       content: Column(
@@ -372,7 +374,7 @@ class _KycStatusChangeDialog extends StatelessWidget {
           AppText(
             data.title,
             variant: TextVariant.titleLarge,
-            fontSize: 22,
+            fontSize: AppFontSize.titleLarge,
             fontWeight: FontWeight.bold,
             textAlign: TextAlign.center,
           ),
@@ -380,8 +382,8 @@ class _KycStatusChangeDialog extends StatelessWidget {
           AppText(
             data.message,
             variant: TextVariant.bodyMedium,
-            fontSize: 15,
-            color: Colors.grey,
+            fontSize: AppFontSize.lg,
+            color: AppColors.textSecondary,
             textAlign: TextAlign.center,
           ),
           if (isApproved) ...[
@@ -390,7 +392,7 @@ class _KycStatusChangeDialog extends StatelessWidget {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: AppColors.success.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: AppRadius.sm,
               ),
               child: Row(
                 children: [
@@ -400,7 +402,7 @@ class _KycStatusChangeDialog extends StatelessWidget {
                     child: AppText(
                       'You can now access wallet, payments, and all features',
                       variant: TextVariant.bodySmall,
-                      fontSize: 13,
+                      fontSize: AppFontSize.md,
                       color: AppColors.success,
                     ),
                   ),
@@ -425,12 +427,12 @@ class _KycStatusChangeDialog extends StatelessWidget {
             backgroundColor: data.backgroundColor,
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: AppRadius.sm,
             ),
           ),
           child: AppText.bodyMedium(
             'Got it',
-            color: Colors.white,
+            color: AppColors.white,
           ),
         ),
       ],

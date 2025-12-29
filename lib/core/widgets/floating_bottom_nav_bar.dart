@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:parcel_am/core/theme/app_colors.dart';
 import 'package:parcel_am/core/widgets/app_text.dart';
+import 'package:parcel_am/core/widgets/app_spacing.dart';
+import '../theme/app_radius.dart';
+import '../theme/app_font_size.dart';
 
 class FloatingBottomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -24,7 +27,7 @@ class FloatingBottomNavBar extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: AppRadius.xxl,
         boxShadow: [
           BoxShadow(
             color: AppColors.black.withOpacity(0.1),
@@ -69,7 +72,7 @@ class FloatingBottomNavBar extends StatelessWidget {
     return Expanded(
       child: InkWell(
         onTap: () => onTap(index),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: AppRadius.lg,
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Column(
@@ -85,8 +88,8 @@ class FloatingBottomNavBar extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: isActive
                           ? AppColors.primary.withOpacity(0.1)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(12),
+                          : AppColors.transparent,
+                      borderRadius: AppRadius.md,
                     ),
                     child: Icon(
                       isActive ? item.activeIcon : item.icon,
@@ -103,7 +106,7 @@ class FloatingBottomNavBar extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: AppColors.accent,
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
+                          border: Border.all(color: AppColors.white, width: 2),
                         ),
                         constraints: const BoxConstraints(
                           minWidth: 18,
@@ -113,8 +116,8 @@ class FloatingBottomNavBar extends StatelessWidget {
                           child: AppText(
                             item.badgeCount! > 99 ? '99+' : '${item.badgeCount}',
                             variant: TextVariant.bodySmall,
-                            fontSize: 10,
-                            color: Colors.white,
+                            fontSize: AppFontSize.xs,
+                            color: AppColors.white,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -122,11 +125,11 @@ class FloatingBottomNavBar extends StatelessWidget {
                     ),
                 ],
               ),
-              const SizedBox(height: 4),
+              AppSpacing.verticalSpacing(SpacingSize.xs),
               AppText(
                 item.label,
                 variant: TextVariant.bodySmall,
-                fontSize: 11,
+                fontSize: AppFontSize.sm,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
                 color: color,
                 maxLines: 1,

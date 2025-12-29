@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
+import '../../../../core/theme/app_font_size.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../bloc/wallet/wallet_data.dart';
@@ -37,13 +40,13 @@ class TransactionListItem extends StatelessWidget {
                     children: [
                       AppText.bodySmall(
                         _formatDate(transaction.date),
-                        color: Colors.grey[600],
+                        color: AppColors.textSecondary,
                       ),
                       if (transaction.referenceId != null) ...[
                         AppSpacing.horizontalSpacing(SpacingSize.sm),
                         AppText.bodySmall(
                           '• ${transaction.referenceId!.substring(0, 8)}',
-                          color: Colors.grey[600],
+                          color: AppColors.textSecondary,
                         ),
                       ],
                     ],
@@ -78,28 +81,28 @@ class TransactionListItem extends StatelessWidget {
     switch (transaction.type.toLowerCase()) {
       case 'deposit':
         iconData = Icons.arrow_downward;
-        backgroundColor = Colors.green.shade50;
-        iconColor = Colors.green.shade700;
+        backgroundColor = AppColors.successLight;
+        iconColor = AppColors.successDark;
         break;
       case 'withdrawal':
         iconData = Icons.arrow_upward;
-        backgroundColor = Colors.red.shade50;
-        iconColor = Colors.red.shade700;
+        backgroundColor = AppColors.errorLight;
+        iconColor = AppColors.errorDark;
         break;
       case 'payment':
         iconData = Icons.shopping_cart;
-        backgroundColor = Colors.blue.shade50;
-        iconColor = Colors.blue.shade700;
+        backgroundColor = AppColors.infoLight;
+        iconColor = AppColors.infoDark;
         break;
       case 'refund':
         iconData = Icons.refresh;
-        backgroundColor = Colors.orange.shade50;
-        iconColor = Colors.orange.shade700;
+        backgroundColor = AppColors.warningLight;
+        iconColor = AppColors.warningDark;
         break;
       default:
         iconData = Icons.swap_horiz;
-        backgroundColor = Colors.grey.shade50;
-        iconColor = Colors.grey.shade700;
+        backgroundColor = AppColors.surfaceVariant;
+        iconColor = AppColors.onSurfaceVariant;
     }
 
     return Container(
@@ -107,7 +110,7 @@ class TransactionListItem extends StatelessWidget {
       height: 40,
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: AppRadius.sm,
       ),
       child: Icon(
         iconData,
@@ -126,24 +129,24 @@ class TransactionListItem extends StatelessWidget {
     switch (transaction.status!.toLowerCase()) {
       case 'completed':
       case 'success':
-        chipColor = Colors.green;
+        chipColor = AppColors.success;
         statusText = 'Completed';
         break;
       case 'pending':
-        chipColor = Colors.orange;
+        chipColor = AppColors.pending;
         statusText = 'Pending';
         break;
       case 'failed':
       case 'expired':
-        chipColor = Colors.red;
+        chipColor = AppColors.error;
         statusText = 'Failed';
         break;
       case 'cancelled':
-        chipColor = Colors.grey;
+        chipColor = AppColors.onSurfaceVariant;
         statusText = 'Cancelled';
         break;
       default:
-        chipColor = Colors.grey;
+        chipColor = AppColors.onSurfaceVariant;
         statusText = transaction.status!;
     }
 
@@ -151,12 +154,12 @@ class TransactionListItem extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
         color: chipColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: AppRadius.xs,
       ),
       child: AppText(
         statusText,
         variant: TextVariant.bodySmall,
-        fontSize: 10,
+        fontSize: AppFontSize.xs,
         fontWeight: FontWeight.w500,
         color: chipColor,
       ),
@@ -180,12 +183,12 @@ class TransactionListItem extends StatelessWidget {
     switch (transaction.type.toLowerCase()) {
       case 'deposit':
       case 'refund':
-        return Colors.green.shade700;
+        return AppColors.successDark;
       case 'withdrawal':
       case 'payment':
-        return Colors.red.shade700;
+        return AppColors.errorDark;
       default:
-        return Colors.black87;
+        return AppColors.onSurface;
     }
   }
 

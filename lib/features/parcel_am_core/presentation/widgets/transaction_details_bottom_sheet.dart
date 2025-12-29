@@ -4,6 +4,8 @@ import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
 import 'package:parcel_am/core/routes/routes.dart';
 import 'package:parcel_am/core/services/navigation_service/nav_config.dart';
+import 'package:parcel_am/core/theme/app_colors.dart';
+import 'package:parcel_am/core/theme/app_radius.dart';
 import 'package:parcel_am/core/widgets/app_text.dart';
 import 'package:parcel_am/core/widgets/app_button.dart';
 import 'package:parcel_am/core/widgets/app_spacing.dart';
@@ -23,7 +25,7 @@ class TransactionDetailsBottomSheet extends StatefulWidget {
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: AppRadius.topXl,
       ),
       builder: (context) => TransactionDetailsBottomSheet(
         transaction: transaction,
@@ -118,11 +120,11 @@ class _TransactionDetailsBottomSheetState
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        color: AppColors.white,
+        borderRadius: AppRadius.topXl,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: AppColors.black.withOpacity(0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -134,8 +136,8 @@ class _TransactionDetailsBottomSheetState
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(2),
+              color: AppColors.outlineVariant,
+              borderRadius: AppRadius.xs,
             ),
           ),
           AppSpacing.verticalSpacing(SpacingSize.lg),
@@ -163,7 +165,7 @@ class _TransactionDetailsBottomSheetState
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color: _getStatusColor().withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: AppRadius.xl,
             ),
             child: AppText.bodyMedium(
               _getStatusText(),
@@ -188,7 +190,7 @@ class _TransactionDetailsBottomSheetState
       children: [
         AppText.bodyMedium(
           label,
-          color: Colors.grey[600],
+          color: AppColors.textSecondary,
         ),
         AppSpacing.horizontalSpacing(SpacingSize.lg),
         Flexible(
@@ -214,7 +216,7 @@ class _TransactionDetailsBottomSheetState
       children: [
         AppText.bodyMedium(
           label,
-          color: Colors.grey[600],
+          color: AppColors.textSecondary,
         ),
         AppSpacing.horizontalSpacing(SpacingSize.lg),
         Flexible(
@@ -223,7 +225,7 @@ class _TransactionDetailsBottomSheetState
               Clipboard.setData(ClipboardData(text: value));
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: AppText.bodyMedium('Reference ID copied to clipboard', color: Colors.white),
+                  content: AppText.bodyMedium('Reference ID copied to clipboard', color: AppColors.white),
                   duration: const Duration(seconds: 2),
                 ),
               );
@@ -299,8 +301,8 @@ class _TransactionDetailsBottomSheetState
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: AppText.bodyMedium('Failed to load withdrawal details: $e', color: Colors.white),
-                backgroundColor: Colors.red,
+                content: AppText.bodyMedium('Failed to load withdrawal details: $e', color: AppColors.white),
+                backgroundColor: AppColors.error,
               ),
             );
           }
@@ -338,13 +340,13 @@ class _TransactionDetailsBottomSheetState
       case 'deposit':
       case 'refund':
       case 'release':
-        return Colors.green.shade700;
+        return AppColors.successDark;
       case 'withdrawal':
       case 'payment':
       case 'hold':
-        return Colors.red.shade700;
+        return AppColors.errorDark;
       default:
-        return Colors.black87;
+        return AppColors.onSurface;
     }
   }
 
@@ -373,21 +375,21 @@ class _TransactionDetailsBottomSheetState
   }
 
   Color _getStatusColor() {
-    if (widget.transaction.status == null) return Colors.grey;
+    if (widget.transaction.status == null) return AppColors.onSurfaceVariant;
 
     switch (widget.transaction.status!.toLowerCase()) {
       case 'completed':
       case 'success':
-        return Colors.green;
+        return AppColors.success;
       case 'pending':
-        return Colors.orange;
+        return AppColors.pending;
       case 'failed':
       case 'expired':
-        return Colors.red;
+        return AppColors.error;
       case 'cancelled':
-        return Colors.grey;
+        return AppColors.onSurfaceVariant;
       default:
-        return Colors.grey;
+        return AppColors.onSurfaceVariant;
     }
   }
 

@@ -203,6 +203,15 @@ class ParcelModel {
   final String? courierNotes;
   final Map<String, dynamic>? metadata;
 
+  /// Timestamp when status became awaitingConfirmation.
+  final DateTime? awaitingConfirmationAt;
+
+  /// Timestamp when sender confirmed delivery.
+  final DateTime? confirmedAt;
+
+  /// User ID who confirmed delivery (sender or 'system_auto_release').
+  final String? confirmedBy;
+
   const ParcelModel({
     required this.id,
     required this.sender,
@@ -224,6 +233,9 @@ class ParcelModel {
     this.lastStatusUpdate,
     this.courierNotes,
     this.metadata,
+    this.awaitingConfirmationAt,
+    this.confirmedAt,
+    this.confirmedBy,
   });
 
   /// Creates a ParcelModel from a Firestore DocumentSnapshot.
@@ -270,6 +282,14 @@ class ParcelModel {
       courierNotes: data['courierNotes'] as String?,
       // Task 1.3.1: Handle metadata field deserialization
       metadata: data['metadata'] as Map<String, dynamic>?,
+      // Delivery confirmation fields
+      awaitingConfirmationAt: data['awaitingConfirmationAt'] is Timestamp
+          ? (data['awaitingConfirmationAt'] as Timestamp).toDate()
+          : null,
+      confirmedAt: data['confirmedAt'] is Timestamp
+          ? (data['confirmedAt'] as Timestamp).toDate()
+          : null,
+      confirmedBy: data['confirmedBy'] as String?,
     );
   }
 
@@ -302,6 +322,10 @@ class ParcelModel {
       courierNotes: entity.courierNotes,
       // Task 1.3.3: Include metadata for delivery tracking
       metadata: entity.metadata,
+      // Delivery confirmation fields
+      awaitingConfirmationAt: entity.awaitingConfirmationAt,
+      confirmedAt: entity.confirmedAt,
+      confirmedBy: entity.confirmedBy,
     );
   }
 
@@ -339,6 +363,14 @@ class ParcelModel {
       'courierNotes': courierNotes,
       // Task 1.3.2: Ensure metadata field properly serializes
       'metadata': metadata,
+      // Delivery confirmation fields
+      'awaitingConfirmationAt': awaitingConfirmationAt != null
+          ? Timestamp.fromDate(awaitingConfirmationAt!)
+          : null,
+      'confirmedAt': confirmedAt != null
+          ? Timestamp.fromDate(confirmedAt!)
+          : null,
+      'confirmedBy': confirmedBy,
     };
   }
 
@@ -371,6 +403,10 @@ class ParcelModel {
       courierNotes: courierNotes,
       // Task 1.3.3: Include metadata in entity
       metadata: metadata,
+      // Delivery confirmation fields
+      awaitingConfirmationAt: awaitingConfirmationAt,
+      confirmedAt: confirmedAt,
+      confirmedBy: confirmedBy,
     );
   }
 
@@ -395,6 +431,9 @@ class ParcelModel {
     DateTime? lastStatusUpdate,
     String? courierNotes,
     Map<String, dynamic>? metadata,
+    DateTime? awaitingConfirmationAt,
+    DateTime? confirmedAt,
+    String? confirmedBy,
   }) {
     return ParcelModel(
       id: id ?? this.id,
@@ -417,6 +456,9 @@ class ParcelModel {
       lastStatusUpdate: lastStatusUpdate ?? this.lastStatusUpdate,
       courierNotes: courierNotes ?? this.courierNotes,
       metadata: metadata ?? this.metadata,
+      awaitingConfirmationAt: awaitingConfirmationAt ?? this.awaitingConfirmationAt,
+      confirmedAt: confirmedAt ?? this.confirmedAt,
+      confirmedBy: confirmedBy ?? this.confirmedBy,
     );
   }
 }

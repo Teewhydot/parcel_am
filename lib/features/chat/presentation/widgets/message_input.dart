@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_font_size.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../domain/entities/message.dart';
 import '../../domain/entities/message_type.dart';
 import '../../../../core/helpers/user_extensions.dart';
@@ -111,8 +114,8 @@ class _MessageInputState extends State<MessageInput> {
               height: 4,
               margin: const EdgeInsets.only(bottom: 20),
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
+                color: AppColors.surfaceVariant,
+                borderRadius: AppRadius.xs,
               ),
             ),
             Row(
@@ -121,7 +124,7 @@ class _MessageInputState extends State<MessageInput> {
                 _buildAttachmentOption(
                   icon: Icons.photo_library,
                   label: 'Gallery',
-                  color: Colors.purple,
+                  color: AppColors.reversed,
                   onTap: () {
                     Navigator.pop(context);
                     _pickImage(ImageSource.gallery);
@@ -130,7 +133,7 @@ class _MessageInputState extends State<MessageInput> {
                 _buildAttachmentOption(
                   icon: Icons.camera_alt,
                   label: 'Camera',
-                  color: Colors.pink,
+                  color: AppColors.error,
                   onTap: () {
                     Navigator.pop(context);
                     _pickImage(ImageSource.camera);
@@ -139,7 +142,7 @@ class _MessageInputState extends State<MessageInput> {
                 _buildAttachmentOption(
                   icon: Icons.videocam,
                   label: 'Video',
-                  color: Colors.blue,
+                  color: AppColors.info,
                   onTap: () {
                     Navigator.pop(context);
                     _pickVideo();
@@ -147,7 +150,7 @@ class _MessageInputState extends State<MessageInput> {
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            AppSpacing.verticalSpacing(SpacingSize.xl),
           ],
         ),
       ),
@@ -177,8 +180,8 @@ class _MessageInputState extends State<MessageInput> {
           AppText(
             label,
             variant: TextVariant.bodySmall,
-            fontSize: 12,
-            color: Colors.grey.shade700,
+            fontSize: AppFontSize.bodySmall,
+            color: AppColors.textSecondary,
           ),
         ],
       ),
@@ -192,16 +195,16 @@ class _MessageInputState extends State<MessageInput> {
         if (widget.isUploading)
           LinearProgressIndicator(
             value: widget.uploadProgress,
-            backgroundColor: Colors.grey.shade200,
-            valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
+            backgroundColor: AppColors.surfaceVariant,
+            valueColor: const AlwaysStoppedAnimation<Color>(AppColors.info),
           ),
         if (widget.replyToMessage != null)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.grey.shade100,
+              color: AppColors.surfaceVariant,
               border: Border(
-                bottom: BorderSide(color: Colors.grey.shade300),
+                bottom: BorderSide(color: AppColors.outline),
               ),
             ),
             child: Row(
@@ -209,7 +212,7 @@ class _MessageInputState extends State<MessageInput> {
                 Container(
                   width: 3,
                   height: 40,
-                  color: Colors.blue,
+                  color: AppColors.info,
                   margin: const EdgeInsets.only(right: 12),
                 ),
                 Expanded(
@@ -219,9 +222,9 @@ class _MessageInputState extends State<MessageInput> {
                       AppText(
                         'Replying to ${widget.replyToMessage!.senderName}',
                         variant: TextVariant.bodySmall,
-                        fontSize: 12,
+                        fontSize: AppFontSize.bodySmall,
                         fontWeight: FontWeight.bold,
-                        color: Colors.blue,
+                        color: AppColors.info,
                       ),
                       const SizedBox(height: 2),
                       AppText(
@@ -229,8 +232,8 @@ class _MessageInputState extends State<MessageInput> {
                             ? widget.replyToMessage!.content
                             : _getMediaTypeLabel(widget.replyToMessage!.type),
                         variant: TextVariant.bodySmall,
-                        fontSize: 13,
-                        color: Colors.grey.shade700,
+                        fontSize: AppFontSize.md,
+                        color: AppColors.textSecondary,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -249,10 +252,10 @@ class _MessageInputState extends State<MessageInput> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.shade300,
+                color: AppColors.outline,
                 blurRadius: 4,
                 offset: const Offset(0, -2),
               ),
@@ -262,15 +265,15 @@ class _MessageInputState extends State<MessageInput> {
             child: Row(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.add_circle, color: Colors.blue),
+                  icon: const Icon(Icons.add_circle, color: AppColors.info),
                   onPressed: widget.isUploading ? null : _showAttachmentOptions,
                 ),
                 Expanded(
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(24),
+                      color: AppColors.surfaceVariant,
+                      borderRadius: AppRadius.xxl,
                     ),
                     child: TextField(
                       controller: _controller,
@@ -293,15 +296,15 @@ class _MessageInputState extends State<MessageInput> {
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: _controller.text.trim().isEmpty || widget.isUploading
-                          ? Colors.grey.shade300
-                          : Colors.blue,
+                          ? AppColors.surfaceVariant
+                          : AppColors.info,
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       Icons.send,
                       color: _controller.text.trim().isEmpty || widget.isUploading
-                          ? Colors.grey.shade500
-                          : Colors.white,
+                          ? AppColors.textSecondary
+                          : AppColors.white,
                       size: 20,
                     ),
                   ),

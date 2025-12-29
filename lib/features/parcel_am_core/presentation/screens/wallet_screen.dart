@@ -9,6 +9,8 @@ import 'package:parcel_am/core/widgets/app_button.dart';
 import 'package:parcel_am/core/widgets/app_text.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
+import '../../../../core/theme/app_font_size.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_input.dart';
 import '../../../../core/widgets/app_spacing.dart';
@@ -41,7 +43,7 @@ class _WalletScreenState extends State<WalletScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppColors.transparent,
       builder: (context) => _FundingModalContent(
         userId: widget.userId,
         email: context.user.email,
@@ -65,8 +67,8 @@ class _WalletScreenState extends State<WalletScreen> {
           if (state is AsyncErrorState<WalletData>) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: AppText.bodyMedium(state.errorMessage, color: Colors.white),
-                backgroundColor: Colors.red,
+                content: AppText.bodyMedium(state.errorMessage, color: AppColors.white),
+                backgroundColor: AppColors.error,
                 duration: const Duration(seconds: 4),
               ),
             );
@@ -87,7 +89,7 @@ class _WalletScreenState extends State<WalletScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const Icon(Icons.error_outline, size: 48, color: AppColors.error),
                   AppSpacing.verticalSpacing(SpacingSize.md),
                   AppText.bodyMedium(state.errorMessage ?? 'Failed to load wallet'),
                   AppSpacing.verticalSpacing(SpacingSize.md),
@@ -95,7 +97,7 @@ class _WalletScreenState extends State<WalletScreen> {
                     onPressed: () {
                       context.read<WalletBloc>().add(WalletRefreshRequested(widget.userId));
                     },
-                    child: AppText.bodyMedium('Retry', color: Colors.white),
+                    child: AppText.bodyMedium('Retry', color: AppColors.white),
                   ),
                 ],
               ),
@@ -120,18 +122,18 @@ class _WalletScreenState extends State<WalletScreen> {
                       margin: const EdgeInsets.only(bottom: 16),
                       padding: AppSpacing.paddingMD,
                       decoration: BoxDecoration(
-                        color: Colors.orange.shade100,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.orange.shade300),
+                        color: AppColors.warningLight,
+                        borderRadius: AppRadius.sm,
+                        border: Border.all(color: AppColors.warning),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.wifi_off, color: Colors.orange.shade700),
+                          Icon(Icons.wifi_off, color: AppColors.warningDark),
                           AppSpacing.horizontalSpacing(SpacingSize.sm),
                           Expanded(
                             child: AppText.bodyMedium(
                               'No internet connection. Wallet operations are disabled.',
-                              color: Colors.orange.shade900,
+                              color: AppColors.warningDark,
                             ),
                           ),
                         ],
@@ -146,10 +148,8 @@ class _WalletScreenState extends State<WalletScreen> {
                           color: AppColors.onSurfaceVariant,
                         ),
                         AppSpacing.verticalSpacing(SpacingSize.sm),
-                        AppText(
+                        AppText.headlineLarge(
                           '${walletData.currency} ${walletData.availableBalance.toStringAsFixed(2)}',
-                          variant: TextVariant.headlineLarge,
-                          fontSize: 36,
                           fontWeight: FontWeight.bold,
                           color: AppColors.primary,
                         ),
@@ -178,7 +178,7 @@ class _WalletScreenState extends State<WalletScreen> {
                                 AppText.bodyLarge(
                                   '${walletData.currency} ${walletData.escrowBalance.toStringAsFixed(2)}',
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.orange,
+                                  color: AppColors.warning,
                                 ),
                               ],
                             ),
@@ -236,7 +236,7 @@ class _WalletScreenState extends State<WalletScreen> {
                       AppText(
                         'Recent Transactions',
                         variant: TextVariant.titleMedium,
-                        fontSize: 18,
+                        fontSize: AppFontSize.xl,
                         fontWeight: FontWeight.bold,
                       ),
                       IconButton(
@@ -285,7 +285,7 @@ class _WalletScreenState extends State<WalletScreen> {
                             Icon(
                               Icons.receipt_long_outlined,
                               size: 64,
-                              color: Colors.grey[400],
+                              color: AppColors.onSurfaceVariant,
                             ),
                             AppSpacing.verticalSpacing(SpacingSize.md),
                             AppText.bodyLarge(
@@ -464,7 +464,7 @@ class _FundingModalContentState extends State<_FundingModalContent> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: AppText.bodyMedium('Failed to initialize payment: $e', color: Colors.white),
+          content: AppText.bodyMedium('Failed to initialize payment: $e', color: AppColors.white),
           backgroundColor: AppColors.error,
           duration: const Duration(seconds: 4),
         ),
@@ -506,7 +506,7 @@ class _FundingModalContentState extends State<_FundingModalContent> {
                         margin: const EdgeInsets.only(bottom: 16),
                         decoration: BoxDecoration(
                           color: AppColors.onSurfaceVariant.withAlpha((0.3 * 255).toInt()),
-                          borderRadius: BorderRadius.circular(2),
+                          borderRadius: AppRadius.xs,
                         ),
                       ),
                     ),
@@ -518,7 +518,7 @@ class _FundingModalContentState extends State<_FundingModalContent> {
                         AppText(
                           'Add Money to Wallet',
                           variant: TextVariant.titleLarge,
-                          fontSize: 20,
+                          fontSize: AppFontSize.xxl,
                           fontWeight: FontWeight.bold,
                         ),
                         IconButton(
@@ -537,7 +537,7 @@ class _FundingModalContentState extends State<_FundingModalContent> {
                       padding: AppSpacing.paddingMD,
                       decoration: BoxDecoration(
                         color: AppColors.primary.withAlpha((0.1 * 255).toInt()),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: AppRadius.sm,
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -591,10 +591,10 @@ class _FundingModalContentState extends State<_FundingModalContent> {
                               height: 16,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: Colors.white,
+                                color: AppColors.white,
                               ),
                             )
-                                : const Icon(Icons.add, color: Colors.white),
+                                : const Icon(Icons.add, color: AppColors.white),
                             requiresKyc: true,
                             child: AppText(
                               _isLoading ? 'Processing...' : 'Add Money',

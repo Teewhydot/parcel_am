@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
 import '../../domain/repositories/presence_repository.dart';
+import '../../utils/logger.dart';
 
 class PresenceRepositoryImpl implements PresenceRepository {
   final FirebaseFirestore _firestore;
@@ -17,7 +17,7 @@ class PresenceRepositoryImpl implements PresenceRepository {
         }
       }, SetOptions(merge: true));
     } catch (e) {
-      debugPrint('Error setting online status: $e');
+      Logger.logError('Error setting online status: $e', tag: 'PresenceRepository');
       rethrow;
     }
   }
@@ -32,7 +32,7 @@ class PresenceRepositoryImpl implements PresenceRepository {
         }
       }, SetOptions(merge: true));
     } catch (e) {
-      debugPrint('Error setting offline status: $e');
+      Logger.logError('Error setting offline status: $e', tag: 'PresenceRepository');
       rethrow;
     }
   }
@@ -46,7 +46,7 @@ class PresenceRepositoryImpl implements PresenceRepository {
         }
       }, SetOptions(merge: true));
     } catch (e) {
-      debugPrint('Error updating last seen: $e');
+      Logger.logError('Error updating last seen: $e', tag: 'PresenceRepository');
       rethrow;
     }
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:parcel_am/core/helpers/user_extensions.dart';
 import 'package:parcel_am/core/services/file_upload_service.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_container.dart';
 import '../../../../core/widgets/app_text.dart';
@@ -40,13 +41,13 @@ class ProgressIndicatorWidget extends StatelessWidget {
                       color: isActive
                           ? AppColors.primary
                           : AppColors.surfaceVariant,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: AppRadius.lg,
                       alignment: Alignment.center,
                       child: Icon(
                         isCompleted ? Icons.check : steps[index].icon,
                         size: 16,
                         color: isActive
-                            ? Colors.white
+                            ? AppColors.white
                             : AppColors.onSurfaceVariant,
                       ),
                     ),
@@ -225,7 +226,7 @@ class _DocumentUploadCardState extends State<DocumentUploadCard> {
               padding: AppSpacing.paddingSM,
               variant: ContainerVariant.filled,
               color: AppColors.success.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: AppRadius.sm,
               child: Row(
                 children: [
                   const Icon(
@@ -275,7 +276,7 @@ class InfoCard extends StatelessWidget {
     return AppContainer(
       variant: ContainerVariant.filled,
       color: color.withValues(alpha: 0.1),
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: AppRadius.md,
       padding: AppSpacing.paddingMD,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -322,7 +323,7 @@ class TipsCard extends StatelessWidget {
     return AppContainer(
       variant: ContainerVariant.filled,
       color: color.withValues(alpha: 0.1),
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: AppRadius.md,
       padding: AppSpacing.paddingMD,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_text.dart';
+import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../core/routes/routes.dart';
 
@@ -142,7 +143,7 @@ class _WalletFundingPaymentScreenState
             onReceivedError: (controller, request, error) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: AppText.bodyMedium('Failed to load payment page. Please try again.', color: Colors.white),
+                  content: AppText.bodyMedium('Failed to load payment page. Please try again.', color: AppColors.white),
                   backgroundColor: AppColors.error,
                   duration: const Duration(seconds: 4),
                 ),
@@ -161,13 +162,13 @@ class _WalletFundingPaymentScreenState
           if (isLoading)
             Container(
               color: AppColors.surface,
-              child: const Center(
+              child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    CircularProgressIndicator(color: AppColors.primary),
-                    SizedBox(height: 16),
-                    AppText(
+                    const CircularProgressIndicator(color: AppColors.primary),
+                    AppSpacing.verticalSpacing(SpacingSize.lg),
+                    const AppText(
                       'Loading payment page...',
                       color: AppColors.onSurfaceVariant,
                     ),

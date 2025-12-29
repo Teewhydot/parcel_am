@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_font_size.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../domain/entities/chat_entity.dart';
@@ -44,7 +46,7 @@ class ChatListItem extends StatelessWidget {
                           ? participantName[0].toUpperCase()
                           : '?',
                       variant: TextVariant.titleLarge,
-                      fontSize: 20,
+                      fontSize: AppFontSize.xxl,
                       fontWeight: FontWeight.w600,
                       color: AppColors.primary,
                     )
@@ -100,11 +102,11 @@ class ChatListItem extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
                             color: AppColors.primary,
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: AppRadius.md,
                           ),
                           child: AppText.bodySmall(
                             unreadCount > 99 ? '99+' : unreadCount.toString(),
-                            color: Colors.white,
+                            color: AppColors.white,
                             fontWeight: FontWeight.w600,
                           ),
                         ),

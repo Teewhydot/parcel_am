@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_spacing.dart';
@@ -149,7 +150,7 @@ class _WalletBalanceCardState extends State<WalletBalanceCard> {
             variant: ContainerVariant.filled,
             color: AppColors.primary.withValues(alpha: 0.1),
             padding: AppSpacing.paddingMD,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: AppRadius.sm,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [

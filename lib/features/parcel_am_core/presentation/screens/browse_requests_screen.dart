@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
+import '../../../../core/theme/app_font_size.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
@@ -166,7 +168,7 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> with Ticker
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   decoration: BoxDecoration(
                     color: isSelected ? AppColors.primary : AppColors.surfaceVariant,
-                    borderRadius: BorderRadius.circular(25),
+                    borderRadius: AppRadius.pill,
                   ),
                   child: AppText.bodyMedium(
                     _routes[index],
@@ -201,7 +203,7 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> with Ticker
                       AppText(
                         'Failed to load requests',
                         variant: TextVariant.titleMedium,
-                        fontSize: 18,
+                        fontSize: AppFontSize.xl,
                         fontWeight: FontWeight.w600,
                       ),
                       AppSpacing.verticalSpacing(SpacingSize.sm),
@@ -239,7 +241,7 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> with Ticker
                       AppText(
                         'No requests available',
                         variant: TextVariant.titleMedium,
-                        fontSize: 18,
+                        fontSize: AppFontSize.xl,
                         fontWeight: FontWeight.w600,
                       ),
                       AppSpacing.verticalSpacing(SpacingSize.sm),
@@ -266,7 +268,7 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> with Ticker
                       AppText(
                         'No matching requests',
                         variant: TextVariant.titleMedium,
-                        fontSize: 18,
+                        fontSize: AppFontSize.xl,
                         fontWeight: FontWeight.w600,
                       ),
                       AppSpacing.verticalSpacing(SpacingSize.sm),
@@ -397,7 +399,7 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> with Ticker
                         AppText(
                           price,
                           variant: TextVariant.titleMedium,
-                          fontSize: 18,
+                          fontSize: AppFontSize.xl,
                           fontWeight: FontWeight.bold,
                           color: AppColors.primary,
                         ),

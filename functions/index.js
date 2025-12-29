@@ -34,8 +34,16 @@ const {
 // ========================================================================
 const {
   verifyPendingTransactions,
-  cleanupOldPendingTransactions
+  cleanupOldPendingTransactions,
+  autoReleaseEscrow
 } = require('./scheduled');
+
+// ========================================================================
+// Import Triggers
+// ========================================================================
+const {
+  onParcelAwaitingConfirmation
+} = require('./triggers');
 
 // ========================================================================
 // Export All Cloud Functions
@@ -64,6 +72,10 @@ exports.paystackWebhook = paystackWebhook;
 // Scheduled tasks
 exports.verifyPendingTransactions = verifyPendingTransactions;
 exports.cleanupOldPendingTransactions = cleanupOldPendingTransactions;
+exports.autoReleaseEscrow = autoReleaseEscrow;
+
+// Triggers
+exports.onParcelAwaitingConfirmation = onParcelAwaitingConfirmation;
 
 // ========================================================================
 // Startup Complete

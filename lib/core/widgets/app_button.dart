@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_radius.dart';
 import '../helpers/haptic_helper.dart';
 import '../services/auth/kyc_guard.dart';
 import 'app_spacing.dart';
@@ -278,11 +279,11 @@ class AppButton extends StatelessWidget {
           onPressed: effectiveCallback,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primary,
-            foregroundColor: Colors.white,
+            foregroundColor: AppColors.white,
             padding: size.padding,
             minimumSize: const Size(0, 52),
             shape: RoundedRectangleBorder(
-              borderRadius: borderRadius ?? BorderRadius.circular(12),
+              borderRadius: borderRadius ?? AppRadius.button,
             ),
             elevation: 0,
           ),
@@ -294,11 +295,11 @@ class AppButton extends StatelessWidget {
           onPressed: effectiveCallback,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.secondary,
-            foregroundColor: Colors.white,
+            foregroundColor: AppColors.white,
             padding: size.padding,
             minimumSize: const Size(0, 52),
             shape: RoundedRectangleBorder(
-              borderRadius: borderRadius ?? BorderRadius.circular(12),
+              borderRadius: borderRadius ?? AppRadius.button,
             ),
             elevation: 0,
           ),
@@ -313,7 +314,7 @@ class AppButton extends StatelessWidget {
             padding: size.padding,
             minimumSize: const Size(0, 52),
             shape: RoundedRectangleBorder(
-              borderRadius: borderRadius ?? BorderRadius.circular(12),
+              borderRadius: borderRadius ?? AppRadius.button,
             ),
             side: const BorderSide(color: AppColors.primary, width: 1.5),
           ),
@@ -328,7 +329,7 @@ class AppButton extends StatelessWidget {
             padding: size.padding,
             minimumSize: Size.zero,
             shape: RoundedRectangleBorder(
-              borderRadius: borderRadius ?? BorderRadius.circular(8),
+              borderRadius: borderRadius ?? AppRadius.sm,
             ),
           ),
           child: buttonChild,
@@ -337,7 +338,7 @@ class AppButton extends StatelessWidget {
       case ButtonVariant.ghost:
         return InkWell(
           onTap: effectiveCallback,
-          borderRadius: borderRadius ?? BorderRadius.circular(8),
+          borderRadius: borderRadius ?? AppRadius.sm,
           child: Container(
             padding: size.padding,
             child: buttonChild,
@@ -349,11 +350,11 @@ class AppButton extends StatelessWidget {
           onPressed: effectiveCallback,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.error,
-            foregroundColor: Colors.white,
+            foregroundColor: AppColors.white,
             padding: size.padding,
             minimumSize: const Size(0, 52),
             shape: RoundedRectangleBorder(
-              borderRadius: borderRadius ?? BorderRadius.circular(12),
+              borderRadius: borderRadius ?? AppRadius.button,
             ),
             elevation: 0,
           ),
@@ -367,7 +368,7 @@ class AppButton extends StatelessWidget {
       case ButtonVariant.primary:
       case ButtonVariant.secondary:
       case ButtonVariant.danger:
-        return Colors.white;
+        return AppColors.white;
       case ButtonVariant.outline:
       case ButtonVariant.text:
       case ButtonVariant.ghost:

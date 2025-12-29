@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/widgets/app_scaffold.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../injection_container.dart';
@@ -84,7 +85,7 @@ class _SettingsTile extends StatelessWidget {
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: AppColors.primary.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: AppRadius.sm,
         ),
         child: Icon(
           icon,
@@ -97,7 +98,7 @@ class _SettingsTile extends StatelessWidget {
       ),
       subtitle: AppText.bodySmall(
         subtitle,
-        color: Colors.grey[600],
+        color: AppColors.textSecondary,
       ),
       trailing: const Icon(Icons.chevron_right),
       onTap: onTap,

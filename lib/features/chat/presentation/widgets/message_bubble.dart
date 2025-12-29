@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_font_size.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../domain/entities/message.dart';
@@ -54,11 +57,11 @@ class MessageBubble extends StatelessWidget {
       padding: const EdgeInsets.all(8),
       margin: const EdgeInsets.only(bottom: 4),
       decoration: BoxDecoration(
-        color: isMe ? Colors.blue.shade50 : Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(8),
+        color: isMe ? AppColors.infoLight : AppColors.surfaceVariant,
+        borderRadius: AppRadius.sm,
         border: Border(
           left: BorderSide(
-            color: isMe ? Colors.blue : Colors.grey,
+            color: isMe ? AppColors.info : AppColors.onSurfaceVariant,
             width: 3,
           ),
         ),
@@ -69,14 +72,14 @@ class MessageBubble extends StatelessWidget {
           AppText.bodySmall(
             reply.senderName,
             fontWeight: FontWeight.bold,
-            color: isMe ? Colors.blue : Colors.grey.shade700,
+            color: isMe ? AppColors.info : AppColors.textSecondary,
           ),
           const SizedBox(height: 2),
           AppText.bodySmall(
             reply.type == MessageType.text
                 ? reply.content
                 : _getMediaTypeLabel(reply.type),
-            color: Colors.grey.shade600,
+            color: AppColors.textSecondary,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
@@ -102,12 +105,12 @@ class MessageBubble extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: isMe ? Colors.blue : Colors.grey.shade200,
-        borderRadius: BorderRadius.circular(18),
+        color: isMe ? AppColors.info : AppColors.surfaceVariant,
+        borderRadius: AppRadius.lg,
       ),
       child: AppText.bodyLarge(
         message.isDeleted ? 'This message was deleted' : message.content,
-        color: isMe ? Colors.white : Colors.black87,
+        color: isMe ? AppColors.white : AppColors.black,
       ),
     );
   }
@@ -117,7 +120,7 @@ class MessageBubble extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ClipRRect(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppRadius.md,
           child: CachedNetworkImage(
             imageUrl: message.mediaUrl ?? '',
             width: 250,
@@ -126,7 +129,7 @@ class MessageBubble extends StatelessWidget {
             placeholder: (context, url) => Container(
               width: 250,
               height: 250,
-              color: Colors.grey.shade300,
+              color: AppColors.surfaceVariant,
               child: const Center(
                 child: CircularProgressIndicator(),
               ),
@@ -134,7 +137,7 @@ class MessageBubble extends StatelessWidget {
             errorWidget: (context, url, error) => Container(
               width: 250,
               height: 250,
-              color: Colors.grey.shade300,
+              color: AppColors.surfaceVariant,
               child: const Icon(Icons.error),
             ),
           ),
@@ -144,12 +147,12 @@ class MessageBubble extends StatelessWidget {
             margin: const EdgeInsets.only(top: 4),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: isMe ? Colors.blue : Colors.grey.shade200,
-              borderRadius: BorderRadius.circular(12),
+              color: isMe ? AppColors.info : AppColors.surfaceVariant,
+              borderRadius: AppRadius.md,
             ),
             child: AppText.bodyMedium(
               message.content,
-              color: isMe ? Colors.white : Colors.black87,
+              color: isMe ? AppColors.white : AppColors.black,
             ),
           ),
       ],
@@ -161,7 +164,7 @@ class MessageBubble extends StatelessWidget {
       alignment: Alignment.center,
       children: [
         ClipRRect(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppRadius.md,
           child: message.thumbnailUrl != null
               ? CachedNetworkImage(
                   imageUrl: message.thumbnailUrl!,
@@ -171,7 +174,7 @@ class MessageBubble extends StatelessWidget {
                   placeholder: (context, url) => Container(
                     width: 250,
                     height: 250,
-                    color: Colors.grey.shade300,
+                    color: AppColors.surfaceVariant,
                     child: const Center(
                       child: CircularProgressIndicator(),
                     ),
@@ -180,19 +183,19 @@ class MessageBubble extends StatelessWidget {
               : Container(
                   width: 250,
                   height: 250,
-                  color: Colors.grey.shade300,
+                  color: AppColors.surfaceVariant,
                   child: const Icon(Icons.videocam, size: 64),
                 ),
         ),
         Container(
           decoration: BoxDecoration(
-            color: Colors.black54,
-            borderRadius: BorderRadius.circular(30),
+            color: AppColors.black.withOpacity(0.54),
+            borderRadius: AppRadius.pill,
           ),
           padding: const EdgeInsets.all(12),
           child: const Icon(
             Icons.play_arrow,
-            color: Colors.white,
+            color: AppColors.white,
             size: 32,
           ),
         ),
@@ -204,8 +207,8 @@ class MessageBubble extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isMe ? Colors.blue : Colors.grey.shade200,
-        borderRadius: BorderRadius.circular(12),
+        color: isMe ? AppColors.info : AppColors.surfaceVariant,
+        borderRadius: AppRadius.md,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -213,12 +216,12 @@ class MessageBubble extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: isMe ? Colors.blue.shade700 : Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(8),
+              color: isMe ? AppColors.infoDark : AppColors.surfaceVariant,
+              borderRadius: AppRadius.sm,
             ),
             child: Icon(
               Icons.description,
-              color: isMe ? Colors.white : Colors.grey.shade700,
+              color: isMe ? AppColors.white : AppColors.textSecondary,
               size: 24,
             ),
           ),
@@ -230,14 +233,14 @@ class MessageBubble extends StatelessWidget {
                 AppText.bodyMedium(
                   message.fileName ?? 'Document',
                   fontWeight: FontWeight.w500,
-                  color: isMe ? Colors.white : Colors.black87,
+                  color: isMe ? AppColors.white : AppColors.black,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 if (message.fileSize != null)
                   AppText.bodySmall(
                     _formatFileSize(message.fileSize!),
-                    color: isMe ? Colors.white70 : Colors.grey.shade600,
+                    color: isMe ? AppColors.white.withOpacity(0.7) : AppColors.textSecondary,
                   ),
               ],
             ),
@@ -245,7 +248,7 @@ class MessageBubble extends StatelessWidget {
           AppSpacing.horizontalSpacing(SpacingSize.sm),
           Icon(
             Icons.download,
-            color: isMe ? Colors.white : Colors.grey.shade700,
+            color: isMe ? AppColors.white : AppColors.textSecondary,
             size: 20,
           ),
         ],
@@ -260,8 +263,8 @@ class MessageBubble extends StatelessWidget {
         AppText(
           DateFormat('HH:mm').format(message.timestamp),
           variant: TextVariant.bodySmall,
-          fontSize: 11,
-          color: Colors.grey.shade600,
+          fontSize: AppFontSize.sm,
+          color: AppColors.textSecondary,
         ),
         if (isMe) ...[
           AppSpacing.horizontalSpacing(SpacingSize.xs),
@@ -278,23 +281,23 @@ class MessageBubble extends StatelessWidget {
     switch (message.status) {
       case MessageStatus.sending:
         icon = Icons.access_time;
-        color = Colors.grey;
+        color = AppColors.textSecondary;
         break;
       case MessageStatus.sent:
         icon = Icons.check;
-        color = Colors.grey;
+        color = AppColors.textSecondary;
         break;
       case MessageStatus.delivered:
         icon = Icons.done_all;
-        color = Colors.grey;
+        color = AppColors.textSecondary;
         break;
       case MessageStatus.read:
         icon = Icons.done_all;
-        color = Colors.blue;
+        color = AppColors.info;
         break;
       case MessageStatus.failed:
         icon = Icons.error;
-        color = Colors.red;
+        color = AppColors.error;
         break;
     }
 

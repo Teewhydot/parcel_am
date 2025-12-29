@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/widgets/app_spacing.dart';
 
 class TypingIndicator extends StatefulWidget {
@@ -33,8 +35,8 @@ class _TypingIndicatorState extends State<TypingIndicator>
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       margin: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
       decoration: BoxDecoration(
-        color: Colors.grey.shade200,
-        borderRadius: BorderRadius.circular(18),
+        color: AppColors.surfaceVariant,
+        borderRadius: AppRadius.lg,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -62,7 +64,7 @@ class _TypingIndicatorState extends State<TypingIndicator>
             width: 8,
             height: 8,
             decoration: BoxDecoration(
-              color: Colors.grey.shade500,
+              color: AppColors.textSecondary,
               shape: BoxShape.circle,
             ),
           ),

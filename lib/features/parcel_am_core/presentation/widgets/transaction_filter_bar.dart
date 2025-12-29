@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
+import '../../../../core/theme/app_font_size.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../domain/value_objects/transaction_filter.dart';
@@ -25,7 +28,7 @@ class TransactionFilterBar extends StatelessWidget {
             children: [
               AppText.bodySmall(
                 'Filter by:',
-                color: Colors.grey[600],
+                color: AppColors.textSecondary,
                 fontWeight: FontWeight.w500,
               ),
               AppSpacing.horizontalSpacing(SpacingSize.sm),
@@ -75,12 +78,12 @@ class TransactionFilterBar extends StatelessWidget {
         decoration: BoxDecoration(
           color: currentFilter.status != null
               ? Theme.of(context).primaryColor.withOpacity(0.1)
-              : Colors.grey[200],
-          borderRadius: BorderRadius.circular(20),
+              : AppColors.surfaceVariant,
+          borderRadius: AppRadius.xl,
           border: Border.all(
             color: currentFilter.status != null
                 ? Theme.of(context).primaryColor
-                : Colors.transparent,
+                : AppColors.transparent,
           ),
         ),
         child: Row(
@@ -91,7 +94,7 @@ class TransactionFilterBar extends StatelessWidget {
               size: 16,
               color: currentFilter.status != null
                   ? Theme.of(context).primaryColor
-                  : Colors.grey[700],
+                  : AppColors.onSurfaceVariant,
             ),
             AppSpacing.horizontalSpacing(SpacingSize.xs),
             AppText(
@@ -99,11 +102,11 @@ class TransactionFilterBar extends StatelessWidget {
                   ? _formatStatus(currentFilter.status!)
                   : 'Status',
               variant: TextVariant.bodySmall,
-              fontSize: 13,
+              fontSize: AppFontSize.md,
               fontWeight: FontWeight.w500,
               color: currentFilter.status != null
                   ? Theme.of(context).primaryColor
-                  : Colors.grey[700],
+                  : AppColors.onSurfaceVariant,
             ),
           ],
         ),
@@ -135,12 +138,12 @@ class TransactionFilterBar extends StatelessWidget {
         decoration: BoxDecoration(
           color: (currentFilter.startDate != null || currentFilter.endDate != null)
               ? Theme.of(context).primaryColor.withOpacity(0.1)
-              : Colors.grey[200],
-          borderRadius: BorderRadius.circular(20),
+              : AppColors.surfaceVariant,
+          borderRadius: AppRadius.xl,
           border: Border.all(
             color: (currentFilter.startDate != null || currentFilter.endDate != null)
                 ? Theme.of(context).primaryColor
-                : Colors.transparent,
+                : AppColors.transparent,
           ),
         ),
         child: Row(
@@ -151,17 +154,17 @@ class TransactionFilterBar extends StatelessWidget {
               size: 16,
               color: (currentFilter.startDate != null || currentFilter.endDate != null)
                   ? Theme.of(context).primaryColor
-                  : Colors.grey[700],
+                  : AppColors.onSurfaceVariant,
             ),
             AppSpacing.horizontalSpacing(SpacingSize.xs),
             AppText(
               _getDateRangeText(),
               variant: TextVariant.bodySmall,
-              fontSize: 13,
+              fontSize: AppFontSize.md,
               fontWeight: FontWeight.w500,
               color: (currentFilter.startDate != null || currentFilter.endDate != null)
                   ? Theme.of(context).primaryColor
-                  : Colors.grey[700],
+                  : AppColors.onSurfaceVariant,
             ),
           ],
         ),
@@ -193,25 +196,25 @@ class TransactionFilterBar extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.red.shade50,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.red.shade200),
+          color: AppColors.errorLight,
+          borderRadius: AppRadius.xl,
+          border: Border.all(color: AppColors.error.withOpacity(0.3)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
+            const Icon(
               Icons.clear,
               size: 16,
-              color: Colors.red.shade700,
+              color: AppColors.errorDark,
             ),
             AppSpacing.horizontalSpacing(SpacingSize.xs),
             AppText(
               'Clear All',
               variant: TextVariant.bodySmall,
-              fontSize: 13,
+              fontSize: AppFontSize.md,
               fontWeight: FontWeight.w500,
-              color: Colors.red.shade700,
+              color: AppColors.errorDark,
             ),
           ],
         ),
@@ -248,7 +251,7 @@ class TransactionFilterBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: Theme.of(context).primaryColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppRadius.md,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

@@ -16,11 +16,16 @@ class ParcelData {
   /// These are deliveries the user has accepted and is responsible for.
   final List<ParcelEntity> acceptedParcels;
 
+  /// The ID of the parcel currently being updated (for loading state).
+  /// Null when no parcel is being updated.
+  final String? updatingParcelId;
+
   const ParcelData({
     this.currentParcel,
     this.userParcels = const [],
     this.availableParcels = const [],
     this.acceptedParcels = const [],
+    this.updatingParcelId,
   });
 
   /// Creates a copy of this ParcelData with the given fields replaced with new values.
@@ -29,12 +34,15 @@ class ParcelData {
     List<ParcelEntity>? userParcels,
     List<ParcelEntity>? availableParcels,
     List<ParcelEntity>? acceptedParcels,
+    String? updatingParcelId,
+    bool clearUpdatingParcelId = false,
   }) {
     return ParcelData(
       currentParcel: currentParcel ?? this.currentParcel,
       userParcels: userParcels ?? this.userParcels,
       availableParcels: availableParcels ?? this.availableParcels,
       acceptedParcels: acceptedParcels ?? this.acceptedParcels,
+      updatingParcelId: clearUpdatingParcelId ? null : (updatingParcelId ?? this.updatingParcelId),
     );
   }
 

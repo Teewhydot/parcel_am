@@ -1,6 +1,8 @@
 // Example usage of ChatScreen with navigation service
 
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_font_size.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../core/widgets/app_text.dart';
@@ -77,8 +79,8 @@ class ChatListExample extends StatelessWidget {
             trailing: AppText(
               chat['time'] as String,
               variant: TextVariant.bodySmall,
-              fontSize: 12,
-              color: Colors.grey,
+              fontSize: AppFontSize.bodySmall,
+              color: AppColors.textSecondary,
             ),
             onTap: () {
               sl<NavigationService>().navigateTo(

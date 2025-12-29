@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
 import 'package:parcel_am/core/widgets/app_button.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
+import '../../../../core/theme/app_font_size.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../bloc/parcel/parcel_bloc.dart';
@@ -107,7 +109,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                   const AppText(
                     'Failed to load request details',
                     variant: TextVariant.titleMedium,
-                    fontSize: 18,
+                    fontSize: AppFontSize.xl,
                     fontWeight: FontWeight.w600,
                   ),
                   AppSpacing.verticalSpacing(SpacingSize.sm),
@@ -121,7 +123,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                     onPressed: () {
                       context.read<ParcelBloc>().add(ParcelLoadRequested(widget.requestId));
                     },
-                    child: AppText.bodyMedium('Retry', color: Colors.white),
+                    child: AppText.bodyMedium('Retry', color: AppColors.white),
                   ),
                 ],
               ),
@@ -159,7 +161,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
               onPressed: (){
                 _acceptRequest(parcel);
               },
-              child: AppText.bodyMedium('Accept Request', color: Colors.white),
+              child: AppText.bodyMedium('Accept Request', color: AppColors.white),
             ),
           );
         }, child: Container(),
@@ -205,12 +207,12 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
               color: AppColors.error,
               child: Row(
                 children: [
-                  const Icon(Icons.warning, color: Colors.white),
+                  const Icon(Icons.warning, color: AppColors.white),
                   AppSpacing.horizontalSpacing(SpacingSize.sm),
                   Expanded(
                     child: AppText.bodyMedium(
                       'Urgent delivery needed by $deliveryText',
-                      color: Colors.white,
+                      color: AppColors.white,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -232,7 +234,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                       height: 60,
                       decoration: BoxDecoration(
                         color: AppColors.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: AppRadius.lg,
                       ),
                       child: const Icon(
                         Icons.inventory_2_outlined,
@@ -248,7 +250,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                           AppText(
                             parcel.category ?? 'Package',
                             variant: TextVariant.titleLarge,
-                            fontSize: 20,
+                            fontSize: AppFontSize.xxl,
                             fontWeight: FontWeight.bold,
                           ),
                           AppSpacing.verticalSpacing(SpacingSize.xs),
@@ -322,7 +324,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                             color: AppColors.primary,
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.circle, color: Colors.white, size: 8),
+                          child: const Icon(Icons.circle, color: AppColors.white, size: 8),
                         ),
                         Container(
                           width: 2,
@@ -335,7 +337,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                             color: AppColors.secondary,
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.flag, color: Colors.white, size: 16),
+                          child: const Icon(Icons.flag, color: AppColors.white, size: 16),
                         ),
                       ],
                     ),
@@ -457,7 +459,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surfaceVariant,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppRadius.md,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

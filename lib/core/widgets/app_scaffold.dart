@@ -41,15 +41,15 @@ class AppScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColor ?? (hasGradientBackground ? Colors.transparent : AppColors.background),
+      backgroundColor: backgroundColor ?? (hasGradientBackground ? AppColors.transparent : AppColors.background),
       extendBodyBehindAppBar: extendBodyBehindAppBar,
       resizeToAvoidBottomInset: resizeToAvoidBottomInset,
-      appBar: title != null || leading != null || actions != null 
+      appBar: title != null || leading != null || actions != null
         ? AppBar(
             title: title != null ? AppText.titleLarge(title!) : null,
             leading: leading,
             actions: actions,
-            backgroundColor: appBarBackgroundColor ?? (hasGradientBackground ? Colors.transparent : null),
+            backgroundColor: appBarBackgroundColor ?? (hasGradientBackground ? AppColors.transparent : null),
             centerTitle: centerTitle,
             elevation: 0,
             scrolledUnderElevation: 0,

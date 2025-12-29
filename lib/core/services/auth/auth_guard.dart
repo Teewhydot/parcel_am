@@ -4,6 +4,8 @@ import 'package:get/get.dart';
 import '../../widgets/app_text.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_spacing.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_font_size.dart';
 import '../../../features/parcel_am_core/presentation/bloc/auth/auth_bloc.dart';
 import '../../../features/parcel_am_core/presentation/bloc/auth/auth_data.dart';
 import '../../../core/bloc/base/base_state.dart';
@@ -201,21 +203,21 @@ class _DefaultUnauthenticatedWidget extends StatelessWidget {
             const Icon(
               Icons.lock_outline,
               size: 64,
-              color: Colors.grey,
+              color: AppColors.onSurfaceVariant,
             ),
             AppSpacing.verticalSpacing(SpacingSize.lg),
             AppText(
               'Authentication Required',
               variant: TextVariant.titleMedium,
-              fontSize: 18,
+              fontSize: AppFontSize.xl,
               fontWeight: FontWeight.w600,
             ),
             AppSpacing.verticalSpacing(SpacingSize.sm),
             AppText(
               'Please log in to access this feature',
               variant: TextVariant.bodyMedium,
-              fontSize: 14,
-              color: Colors.grey,
+              fontSize: AppFontSize.bodyMedium,
+              color: AppColors.textSecondary,
             ),
             AppSpacing.verticalSpacing(SpacingSize.xxl),
             AppButton.primary(
