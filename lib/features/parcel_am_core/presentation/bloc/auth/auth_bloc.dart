@@ -16,6 +16,12 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
   final authUseCase = AuthUseCase();
   final passkeyUseCase = PasskeyUseCase();
 
+  // Cache for user data streams to prevent creating new streams on each call
+  final Map<String, Stream<Either<Failure, UserModel>>> _userDataStreams = {};
+
+  // Subscription to user data stream for realtime KYC updates
+  StreamSubscription<Either<Failure, UserModel>>? _userDataSubscription;
+
   AuthBloc() : super(const InitialState<AuthData>()) {
     on<AuthStarted>(_onAuthStarted);
     on<AuthEmailChanged>(_onEmailChanged);
@@ -33,8 +39,42 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
 
 
   /// Watch user data stream for realtime updates
-  Stream<Either<Failure, UserModel>> watchUserData(String userId) async* {
-    yield* authUseCase.watchKycStatus(userId);
+  /// Returns a cached broadcast stream to ensure the same stream is reused
+  /// across multiple widget rebuilds (fixes KYC realtime update issue)
+  Stream<Either<Failure, UserModel>> watchUserData(String userId) {
+    // Return cached stream if exists, otherwise create and cache new one
+    return _userDataStreams.putIfAbsent(userId, () {
+      // Create broadcast stream so multiple listeners can subscribe
+      // and transform the async generator into a reusable stream
+      return authUseCase.watchKycStatus(userId).asBroadcastStream();
+    });
+  }
+
+  /// Clear cached streams (call on logout)
+  void clearUserDataCache() {
+    _userDataSubscription?.cancel();
+    _userDataSubscription = null;
+    _userDataStreams.clear();
+  }
+
+  /// Start listening to user data changes to keep state in sync with Firestore
+  void _startUserDataListener(String userId) {
+    _userDataSubscription?.cancel();
+    _userDataSubscription = watchUserData(userId).listen((result) {
+      result.fold(
+        (failure) {
+          Logger.logError('User data stream error: ${failure.failureMessage}');
+        },
+        (userData) {
+          // Update state with fresh user data (including KYC status)
+          final currentData = state.data ?? const AuthData();
+          if (currentData.user?.kycStatus != userData.kycStatus) {
+            Logger.logSuccess('KYC status updated: ${userData.kycStatus}');
+            add(AuthKycStatusUpdated(userData.kycStatus.toJson()));
+          }
+        },
+      );
+    });
   }
   Future<void> _onAuthStarted(
     AuthStarted event,
@@ -59,6 +99,8 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
           Logger.logError('No current user found.');
           return;
         }
+        // Start listening to user data changes for realtime KYC updates
+        _startUserDataListener(user.uid);
         emit(
           LoadedState<AuthData>(
             data: const AuthData().copyWith(user: user),
@@ -114,6 +156,8 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
         );
       },
       (user) {
+        // Start listening to user data changes for realtime KYC updates
+        _startUserDataListener(user.uid);
         emit(SuccessState<AuthData>(successMessage: 'Login successful!'));
         emit(
           LoadedState<AuthData>(
@@ -147,6 +191,8 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
         );
       },
       (user) {
+        // Start listening to user data changes for realtime KYC updates
+        _startUserDataListener(user.uid);
         emit(
           LoadedState<AuthData>(
             data: const AuthData().copyWith(user: user, email: event.email),
@@ -175,6 +221,8 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
         );
       },
       (_) {
+        // Clear cached user data streams on logout
+        clearUserDataCache();
         emit(const SuccessState(successMessage: "Logout success"));
       },
     );
@@ -334,6 +382,8 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
       },
       (user) async {
         if (user != null) {
+          // Start listening to user data changes for realtime KYC updates
+          _startUserDataListener(user.uid);
           // User exists, complete sign in
           emit(SuccessState<AuthData>(successMessage: 'Signed in with passkey!'));
           emit(LoadedState<AuthData>(

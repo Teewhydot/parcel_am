@@ -20,7 +20,7 @@ extension KycBlockedActionExtension on KycBlockedAction {
   void execute(BuildContext context) {
     switch (this) {
       case KycBlockedAction.showSnackbar:
-        KycGuard.instance.showKycBlockedSnackbar();
+        KycGuard.instance.showKycBlockedSnackbar(context);
         break;
       case KycBlockedAction.navigateToKyc:
         sl<NavigationService>().navigateTo(Routes.verification);

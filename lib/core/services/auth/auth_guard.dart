@@ -40,7 +40,7 @@ class AuthGuard {
     if (requireKyc) {
       final status = _kycGuard.getStatus(context);
       if (!status.isVerified) {
-        _kycGuard.showKycBlockedSnackbar();
+        _kycGuard.showKycBlockedSnackbar(context);
         return false;
       }
     }
@@ -90,7 +90,7 @@ class AuthGuard {
 
               // Not verified - redirect to blocked screen
               WidgetsBinding.instance.addPostFrameCallback((_) {
-                _kycGuard.showKycBlockedSnackbar();
+                _kycGuard.showKycBlockedSnackbar(context);
               });
 
               return unauthenticatedWidget ?? const _DefaultUnauthenticatedWidget();
