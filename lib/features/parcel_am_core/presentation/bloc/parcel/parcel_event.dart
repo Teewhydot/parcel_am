@@ -172,3 +172,33 @@ class ParcelConfirmDeliveryRequested extends ParcelEvent {
   @override
   List<Object?> get props => [parcelId, escrowId];
 }
+
+/// Event to cancel a parcel and release held balance back to available.
+///
+/// This event can only be triggered for parcels with status 'created' or 'paid'.
+/// Upon cancellation:
+/// 1. Parcel status is updated to 'cancelled'
+/// 2. Held balance is released back to available balance
+class ParcelCancelRequested extends ParcelEvent {
+  /// The ID of the parcel to cancel
+  final String parcelId;
+
+  /// The user ID of the parcel owner (for wallet release)
+  final String userId;
+
+  /// The amount to release back to available balance
+  final double amount;
+
+  /// Optional reason for cancellation
+  final String? reason;
+
+  const ParcelCancelRequested({
+    required this.parcelId,
+    required this.userId,
+    required this.amount,
+    this.reason,
+  });
+
+  @override
+  List<Object?> get props => [parcelId, userId, amount, reason];
+}

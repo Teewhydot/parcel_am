@@ -277,7 +277,64 @@ class _ParcelCard extends StatelessWidget {
           // Show delivery confirmation card when awaiting sender confirmation
           if (parcel.status == ParcelStatus.awaitingConfirmation)
             DeliveryConfirmationCard(parcel: parcel),
+          // Show cancel button for parcels that can be cancelled
+          if (parcel.status.canBeCancelled) ...[
+            AppSpacing.verticalSpacing(SpacingSize.md),
+            SizedBox(
+              width: double.infinity,
+              child: AppButton.outline(
+                onPressed: () => _showCancelConfirmation(context),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.cancel_outlined, size: 18, color: AppColors.error),
+                    AppSpacing.horizontalSpacing(SpacingSize.xs),
+                    AppText.bodyMedium('Cancel Parcel', color: AppColors.error),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ],
+      ),
+    );
+  }
+
+  void _showCancelConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: AppText.titleMedium('Cancel Parcel'),
+          content: AppText.bodyMedium(
+            'Are you sure you want to cancel this parcel? The held amount will be returned to your available balance.',
+          ),
+          actions: [
+            AppButton.text(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: AppText.labelMedium('No, Keep It'),
+            ),
+            AppButton.primary(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                _cancelParcel(context);
+              },
+              child: AppText.labelMedium('Yes, Cancel', color: Colors.white),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _cancelParcel(BuildContext context) {
+    final totalAmount = (parcel.price ?? 0.0) + 150.0; // price + service fee
+    context.read<ParcelBloc>().add(
+      ParcelCancelRequested(
+        parcelId: parcel.id,
+        userId: parcel.sender.userId,
+        amount: totalAmount,
+        reason: 'User requested cancellation',
       ),
     );
   }

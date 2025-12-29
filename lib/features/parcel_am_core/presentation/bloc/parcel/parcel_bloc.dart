@@ -14,10 +14,14 @@ import 'parcel_state.dart';
 import '../../../domain/entities/parcel_entity.dart';
 import '../../../domain/usecases/parcel_usecase.dart';
 import '../../../domain/usecases/escrow_usecase.dart';
+import '../../../domain/usecases/wallet_usecase.dart';
+import 'package:uuid/uuid.dart';
 
 class ParcelBloc extends BaseBloC<ParcelEvent, BaseState<ParcelData>> {
   final _parcelUseCase = ParcelUseCase();
   final _escrowUseCase = EscrowUseCase();
+  final _walletUseCase = WalletUseCase();
+  static const _uuid = Uuid();
   StreamSubscription<dynamic>? _parcelStatusSubscription;
   StreamSubscription<dynamic>? _userParcelsSubscription;
   StreamSubscription<dynamic>? _availableParcelsSubscription;
@@ -43,6 +47,7 @@ class ParcelBloc extends BaseBloC<ParcelEvent, BaseState<ParcelData>> {
     on<ParcelWatchAcceptedParcelsRequested>(_onWatchAcceptedParcelsRequested);
     on<ParcelAcceptedListUpdated>(_onAcceptedListUpdated);
     on<ParcelConfirmDeliveryRequested>(_onConfirmDeliveryRequested);
+    on<ParcelCancelRequested>(_onCancelRequested);
 
     // Task Group 4.2.1: Start connectivity monitoring
     // _initConnectivityMonitoring();
@@ -56,10 +61,54 @@ class ParcelBloc extends BaseBloC<ParcelEvent, BaseState<ParcelData>> {
     final currentData = state.data ?? const ParcelData();
     emit(AsyncLoadingState<ParcelData>(data: currentData));
 
-    final result = await _parcelUseCase.createParcel(event.parcel);
+    // Generate parcel ID upfront for use as reference in wallet hold
+    final parcelId = _uuid.v4();
+    final idempotencyKey = 'parcel_hold_$parcelId';
+
+    // Calculate total amount (price + service fee)
+    final parcelPrice = event.parcel.price ?? 0.0;
+    const serviceFee = 150.0;
+    final totalAmount = parcelPrice + serviceFee;
+
+    // 1. Hold balance first before creating parcel
+    final holdResult = await _walletUseCase.holdBalance(
+      event.parcel.sender.userId,
+      totalAmount,
+      parcelId,
+      idempotencyKey,
+    );
+
+    // If hold fails, emit error and return without creating parcel
+    final holdFailed = holdResult.fold(
+      (failure) {
+        emit(AsyncErrorState<ParcelData>(
+          errorMessage: 'Failed to hold balance: ${failure.failureMessage}',
+          data: currentData,
+        ));
+        DFoodUtils.showSnackBar(
+          'Insufficient balance to create parcel',
+          AppColors.error,
+        );
+        return true;
+      },
+      (_) => false,
+    );
+
+    if (holdFailed) return;
+
+    // 2. Create parcel with the pre-generated ID
+    final parcelWithId = event.parcel.copyWith(id: parcelId);
+    final result = await _parcelUseCase.createParcel(parcelWithId);
 
     result.fold(
       (failure) {
+        // If parcel creation fails, we should release the held balance
+        _walletUseCase.releaseBalance(
+          event.parcel.sender.userId,
+          totalAmount,
+          parcelId,
+          'parcel_release_$parcelId',
+        );
         emit(AsyncErrorState<ParcelData>(
           errorMessage: failure.failureMessage,
           data: currentData,
@@ -682,6 +731,88 @@ class ParcelBloc extends BaseBloC<ParcelEvent, BaseState<ParcelData>> {
       ));
       DFoodUtils.showSnackBar(
         'Error confirming delivery: $e',
+        AppColors.error,
+      );
+    }
+  }
+
+  /// Handles parcel cancellation requests.
+  ///
+  /// Flow:
+  /// 1. Validates the parcel can be cancelled (status is created or paid)
+  /// 2. Updates parcel status to cancelled
+  /// 3. Releases held balance back to available
+  /// 4. Shows appropriate feedback to user
+  Future<void> _onCancelRequested(
+    ParcelCancelRequested event,
+    Emitter<BaseState<ParcelData>> emit,
+  ) async {
+    final currentData = state.data ?? const ParcelData();
+
+    // Show loading state
+    emit(AsyncLoadingState<ParcelData>(
+      data: currentData.copyWith(updatingParcelId: event.parcelId),
+    ));
+
+    try {
+      // 1. Update parcel status to cancelled
+      final statusResult = await _parcelUseCase.updateParcelStatus(
+        event.parcelId,
+        ParcelStatus.cancelled,
+      );
+
+      await statusResult.fold(
+        (failure) async {
+          emit(AsyncErrorState<ParcelData>(
+            errorMessage: failure.failureMessage,
+            data: currentData.copyWith(clearUpdatingParcelId: true),
+          ));
+          DFoodUtils.showSnackBar(
+            'Failed to cancel parcel: ${failure.failureMessage}',
+            AppColors.error,
+          );
+        },
+        (cancelledParcel) async {
+          // 2. Release held balance back to available
+          final releaseResult = await _walletUseCase.releaseBalance(
+            event.userId,
+            event.amount,
+            event.parcelId,
+            'parcel_release_${event.parcelId}',
+          );
+
+          releaseResult.fold(
+            (failure) {
+              // Log release failure but parcel is cancelled
+              DFoodUtils.showSnackBar(
+                'Parcel cancelled! Balance release pending.',
+                AppColors.warning,
+              );
+            },
+            (_) {
+              DFoodUtils.showSnackBar(
+                'Parcel cancelled. Balance returned to available.',
+                AppColors.success,
+              );
+            },
+          );
+
+          // 3. Update state with cancelled parcel
+          final updatedData = _applyOptimisticUpdate(currentData, cancelledParcel)
+              .copyWith(clearUpdatingParcelId: true);
+          emit(LoadedState<ParcelData>(
+            data: updatedData,
+            lastUpdated: DateTime.now(),
+          ));
+        },
+      );
+    } catch (e) {
+      emit(AsyncErrorState<ParcelData>(
+        errorMessage: e.toString(),
+        data: currentData.copyWith(clearUpdatingParcelId: true),
+      ));
+      DFoodUtils.showSnackBar(
+        'Error cancelling parcel: $e',
         AppColors.error,
       );
     }
