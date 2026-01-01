@@ -16,6 +16,8 @@ import '../bloc/auth/auth_data.dart';
 import '../../../parcel_am_core/domain/entities/parcel_entity.dart';
 import '../../../../core/helpers/user_extensions.dart';
 import '../../../../core/widgets/app_spacing.dart';
+import '../../../../core/services/navigation_service/nav_config.dart';
+import '../../../../injection_container.dart';
 
 class RequestDetailsScreen extends StatefulWidget {
   const RequestDetailsScreen({super.key, required this.requestId});
@@ -28,12 +30,55 @@ class RequestDetailsScreen extends StatefulWidget {
 
 class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
   bool _isAccepting = false;
+  bool _isCancelling = false;
 
   @override
   void initState() {
     super.initState();
     // Use provided ParcelBloc instead of creating new one
     context.read<ParcelBloc>().add(ParcelLoadRequested(widget.requestId));
+  }
+
+  void _showCancelConfirmation(ParcelEntity parcel) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: AppText.titleMedium('Cancel Request'),
+          content: AppText.bodyMedium(
+            'Are you sure you want to cancel this request? The held amount will be returned to your available balance.',
+          ),
+          actions: [
+            AppButton.text(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: AppText.labelMedium('No, Keep It'),
+            ),
+            AppButton.primary(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                _cancelParcel(parcel);
+              },
+              child: AppText.labelMedium('Yes, Cancel', color: Colors.white),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _cancelParcel(ParcelEntity parcel) {
+    setState(() {
+      _isCancelling = true;
+    });
+
+    final totalAmount = (parcel.price ?? 0.0) + 150.0; // price + service fee
+    context.read<ParcelBloc>().add(
+      ParcelCancelRequested(
+        parcelId: parcel.id,
+        userId: parcel.sender.userId,
+        amount: totalAmount,
+      ),
+    );
   }
 
   Future<void> _acceptRequest(ParcelEntity parcel) async {
@@ -69,6 +114,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
       ),
       body: BlocConsumer<ParcelBloc, BaseState<ParcelData>>(
         listener: (context, state) {
+          // Handle accept result
           if (state is LoadedState<ParcelData> && _isAccepting) {
             setState(() {
               _isAccepting = false;
@@ -77,10 +123,30 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
               message: 'Request accepted successfully!',
               color: AppColors.success,
             );
-            Navigator.of(context).pop();
+            sl<NavigationService>().goBack();
           } else if (state is AsyncErrorState<ParcelData> && _isAccepting) {
             setState(() {
               _isAccepting = false;
+            });
+            context.showSnackbar(
+              message: state.errorMessage,
+              color: AppColors.error,
+            );
+          }
+
+          // Handle cancel result
+          if (state is LoadedState<ParcelData> && _isCancelling) {
+            setState(() {
+              _isCancelling = false;
+            });
+            context.showSnackbar(
+              message: 'Request cancelled. Balance returned.',
+              color: AppColors.success,
+            );
+            sl<NavigationService>().goBack();
+          } else if (state is AsyncErrorState<ParcelData> && _isCancelling) {
+            setState(() {
+              _isCancelling = false;
             });
             context.showSnackbar(
               message: state.errorMessage,
@@ -144,10 +210,46 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
         },
       ),
       floatingActionButton: BlocManager<ParcelBloc, BaseState<ParcelData>>(
-        bloc:  context.read<ParcelBloc>(),
+        bloc: context.read<ParcelBloc>(),
         builder: (context, state) {
           final parcel = state.data?.currentParcel;
-          if (parcel == null || parcel.status != ParcelStatus.created) {
+          if (parcel == null) {
+            return const SizedBox.shrink();
+          }
+
+          // Get current user to check if they are the sender
+          final authState = context.read<AuthBloc>().state;
+          final currentUserId = (authState is DataState<AuthData>)
+              ? authState.data?.user?.uid
+              : null;
+          final isCreator = currentUserId == parcel.sender.userId;
+
+          // Creator sees Cancel button (if parcel can be cancelled)
+          if (isCreator) {
+            if (!parcel.status.canBeCancelled) {
+              return const SizedBox.shrink();
+            }
+            return Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: AppButton.outline(
+                fullWidth: true,
+                loading: _isCancelling,
+                onPressed: _isCancelling ? null : () => _showCancelConfirmation(parcel),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.cancel_outlined, color: AppColors.error, size: 20),
+                    AppSpacing.horizontalSpacing(SpacingSize.sm),
+                    AppText.bodyMedium('Cancel Request', color: AppColors.error),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          // Non-creators see Accept button (only for created status)
+          if (parcel.status != ParcelStatus.created) {
             return const SizedBox.shrink();
           }
 
@@ -158,13 +260,14 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
               fullWidth: true,
               loading: _isAccepting,
               requiresKyc: true,
-              onPressed: (){
+              onPressed: () {
                 _acceptRequest(parcel);
               },
               child: AppText.bodyMedium('Accept Request', color: AppColors.white),
             ),
           );
-        }, child: Container(),
+        },
+        child: Container(),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
