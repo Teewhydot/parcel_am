@@ -101,10 +101,9 @@ enum ParcelStatus {
   bool get isDisputed => this == ParcelStatus.disputed;
 
   /// Returns true if the parcel can be cancelled.
-  /// Only parcels with status 'created' or 'paid' can be cancelled.
-  /// Once a traveler is assigned and delivery starts, cancellation is not allowed.
-  bool get canBeCancelled =>
-      this == ParcelStatus.created || this == ParcelStatus.paid;
+  /// Only parcels with status 'created' can be cancelled.
+  /// Once a courier accepts (status becomes 'paid'), cancellation is not allowed.
+  bool get canBeCancelled => this == ParcelStatus.created;
 
   /// Returns true if the status can progress to the next valid status by the courier.
   /// Returns false for terminal statuses (delivered, cancelled, disputed)
