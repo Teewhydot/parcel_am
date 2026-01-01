@@ -15,6 +15,7 @@ import '../bloc/parcel/parcel_state.dart';
 import '../../../parcel_am_core/domain/entities/parcel_entity.dart';
 import '../bloc/auth/auth_bloc.dart';
 import '../widgets/my_deliveries_tab.dart';
+import '../widgets/my_packages_tab.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_card.dart';
@@ -38,17 +39,18 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> with Ticker
   @override
   void initState() {
     super.initState();
-    // Initialize TabController with 2 tabs
-    _tabController = TabController(length: 2, vsync: this);
+    // Initialize TabController with 3 tabs
+    _tabController = TabController(length: 3, vsync: this);
 
     // Initialize available parcels stream
     context.read<ParcelBloc>().add(const ParcelWatchAvailableParcelsRequested());
 
-    // Initialize accepted parcels stream with current userId
+    // Initialize accepted parcels and user parcels streams with current userId
     final authState = context.read<AuthBloc>().state;
     final userId = authState.data?.user?.uid;
     if (userId != null) {
       context.read<ParcelBloc>().add(ParcelWatchAcceptedParcelsRequested(userId));
+      context.read<ParcelBloc>().add(ParcelWatchUserParcelsRequested(userId));
     }
 
     _searchController.addListener(() {
@@ -115,6 +117,7 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> with Ticker
           tabs: const [
             Tab(text: 'Available'),
             Tab(text: 'My Deliveries'),
+            Tab(text: 'My Packages'),
           ],
         ),
       ),
@@ -123,8 +126,10 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> with Ticker
         children: [
           // First tab: Available requests (existing functionality)
           _buildAvailableRequestsTab(),
-          // Second tab: My Deliveries (placeholder for now)
+          // Second tab: My Deliveries - parcels user accepted as courier
           const MyDeliveriesTab(),
+          // Third tab: My Packages - parcels user created as sender
+          const MyPackagesTab(),
         ],
       ),
     );
