@@ -207,7 +207,12 @@ class _MyDeliveriesTabState extends State<MyDeliveriesTab> {
                   },
                   child: AnimationLimiter(
                     child: ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      // Add bottom padding for floating nav bar
+                      padding: const EdgeInsets.only(
+                        left: 16,
+                        right: 16,
+                        bottom: 100,
+                      ),
                       itemCount: filteredParcels.length,
                       itemBuilder: (context, index) {
                         final parcel = filteredParcels[index];
