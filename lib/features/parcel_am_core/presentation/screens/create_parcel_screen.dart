@@ -449,33 +449,7 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
   }
 
   Widget _buildReviewStep() {
-    return BlocBuilder<ParcelBloc, BaseState<ParcelData>>(
-      builder: (context, state) {
-        if (state is LoadingState<ParcelData>) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(
-                  width: 80,
-                  height: 80,
-                  child: CircularProgressIndicator(
-                    value: state.progress,
-                    strokeWidth: 6,
-                    color: AppColors.primary,
-                  ),
-                ),
-                AppSpacing.verticalSpacing(SpacingSize.lg),
-                AppText.bodyLarge(
-                  'Creating parcel... ${((state.progress ?? 0) * 100).toInt()}%',
-                  fontWeight: FontWeight.w500,
-                ),
-              ],
-            ),
-          );
-        }
-
-        return SingleChildScrollView(
+    return SingleChildScrollView(
           padding: AppSpacing.paddingLG,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -520,8 +494,6 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
               ),
             ],
           ),
-        );
-      },
     );
   }
 
@@ -739,8 +711,10 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
 
   Widget _buildNavigationButtons() {
     return BlocBuilder<ParcelBloc, BaseState<ParcelData>>(
+      bloc: _parcelBloc,
       builder: (context, state) {
-        final isCreating = state is LoadingState<ParcelData>;
+        final isCreating = state is LoadingState<ParcelData> ||
+            state is AsyncLoadingState<ParcelData>;
         final isLastStep = _currentStep == 3;
 
         if (isLastStep) {
