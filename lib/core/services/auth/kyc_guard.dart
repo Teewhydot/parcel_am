@@ -60,6 +60,7 @@ class KycGuard {
   }
 
   /// Watch KYC status stream (realtime)
+  /// Emits current status immediately, then listens for updates
   Stream<KycStatus> watchStatus(BuildContext context) {
     try {
       final authBloc = context.read<AuthBloc>();
@@ -69,11 +70,30 @@ class KycGuard {
         return Stream.value(KycStatus.notStarted);
       }
 
-      return authBloc.watchUserData(userId).map((result) {
-        return result.fold(
-          (failure) => KycStatus.notStarted,
-          (userData) => userData.kycStatus,
+      // Get current status to emit immediately
+      final currentStatus = getStatus(context);
+
+      // Create stream that emits current value first, then updates
+      return Stream.multi((controller) {
+        // Emit current value immediately
+        controller.add(currentStatus);
+
+        // Then listen to updates
+        final subscription = authBloc.watchUserData(userId).listen(
+          (result) {
+            final status = result.fold(
+              (failure) => KycStatus.notStarted,
+              (userData) => userData.kycStatus,
+            );
+            controller.add(status);
+          },
+          onError: controller.addError,
+          onDone: controller.close,
         );
+
+        controller.onCancel = () {
+          subscription.cancel();
+        };
       });
     } catch (e) {
       return Stream.value(KycStatus.notStarted);
