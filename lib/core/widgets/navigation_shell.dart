@@ -12,6 +12,8 @@ import 'package:parcel_am/features/seeder/presentation/screens/database_seeder_s
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_bloc.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_data.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/package/package_bloc.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/bloc/dashboard/dashboard_bloc.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/bloc/dashboard/dashboard_event.dart';
 import 'package:parcel_am/core/helpers/user_extensions.dart';
 
 class NavigationShell extends StatefulWidget {
@@ -29,6 +31,8 @@ class NavigationShell extends StatefulWidget {
 class _NavigationShellState extends State<NavigationShell> {
   late int _currentIndex;
   DateTime? _lastBackPressed;
+  late DashboardBloc _dashboardBloc;
+  String? _lastUserId;
 
   // Navigation items configuration
   final List<FloatingNavItem> _navItems = const [
@@ -61,8 +65,19 @@ class _NavigationShellState extends State<NavigationShell> {
 
   // Build screens for each tab based on current user
   List<Widget> _buildScreens(String userId) {
+    // Store userId for dashboard refresh
+    _lastUserId = userId;
+
+    // Initialize dashboard if first time
+    if (_dashboardBloc.state.data == null) {
+      _dashboardBloc.add(DashboardStarted(userId));
+    }
+
     return [
-      const DashboardScreen(),
+      BlocProvider.value(
+        value: _dashboardBloc,
+        child: const DashboardScreen(),
+      ),
       const BrowseRequestsScreen(),
       BlocProvider(
         create: (_) => PackageBloc(),
@@ -77,17 +92,35 @@ class _NavigationShellState extends State<NavigationShell> {
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
+    _dashboardBloc = DashboardBloc();
+  }
+
+  @override
+  void dispose() {
+    _dashboardBloc.close();
+    super.dispose();
   }
 
   void _onTabTapped(int index) {
+    final wasDashboard = _currentIndex == 0;
+    final isDashboard = index == 0;
+
     if (_currentIndex == index) {
-      // Tap same tab - could scroll to top or refresh in future
+      // Tap same tab - refresh if dashboard
+      if (isDashboard && _lastUserId != null) {
+        _dashboardBloc.add(DashboardRefreshRequested(_lastUserId!));
+      }
       return;
     }
 
     setState(() {
       _currentIndex = index;
     });
+
+    // Refresh dashboard when switching TO dashboard tab
+    if (isDashboard && !wasDashboard && _lastUserId != null) {
+      _dashboardBloc.add(DashboardRefreshRequested(_lastUserId!));
+    }
   }
 
   Future<bool> _onWillPop() async {

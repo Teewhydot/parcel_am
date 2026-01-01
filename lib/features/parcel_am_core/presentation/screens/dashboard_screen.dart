@@ -47,15 +47,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
   PresenceService? _presenceService;
   ChatNotificationService? _chatNotificationService;
   late ActivePackagesBloc _activePackagesBloc;
-  late DashboardBloc _dashboardBloc;
+  // DashboardBloc is now provided from NavigationShell
+  DashboardBloc get _dashboardBloc => context.read<DashboardBloc>();
   String? _lastActivePackagesUserId;
-  String? _lastDashboardUserId;
 
   @override
   void initState() {
     super.initState();
 
-    _dashboardBloc = DashboardBloc();
     _activePackagesBloc = ActivePackagesBloc();
     _loadInitialData();
     _subscribeToEscrowNotifications();
@@ -68,7 +67,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _notificationService.dispose();
     _presenceService?.dispose();
     _chatNotificationService?.dispose();
-    _dashboardBloc.close();
+    // DashboardBloc is managed by NavigationShell, don't close here
     _activePackagesBloc.close();
     super.dispose();
   }
@@ -108,9 +107,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _activePackagesBloc.add(LoadActivePackages(userId));
     }
 
-    if (force || _lastDashboardUserId != userId) {
-      _lastDashboardUserId = userId;
-      _dashboardBloc.add(DashboardStarted(userId));
+    // Dashboard refresh is handled by NavigationShell on tab switch
+    // Only force refresh on pull-to-refresh
+    if (force) {
+      _dashboardBloc.add(DashboardRefreshRequested(userId));
     }
   }
 

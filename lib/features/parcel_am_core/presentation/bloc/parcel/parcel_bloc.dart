@@ -629,7 +629,18 @@ class ParcelBloc extends BaseBloC<ParcelEvent, BaseState<ParcelData>> {
         ));
       },
       (parcel) {
-        final updatedData = currentData.copyWith(currentParcel: parcel);
+        // Add parcel to acceptedParcels immediately for instant UI update
+        // The Firestore listener will also update, but this ensures immediate feedback
+        final updatedAcceptedParcels = List<ParcelEntity>.from(currentData.acceptedParcels);
+        // Remove if already exists (shouldn't happen, but safety check)
+        updatedAcceptedParcels.removeWhere((p) => p.id == parcel.id);
+        // Add to beginning of list (most recent first)
+        updatedAcceptedParcels.insert(0, parcel);
+
+        final updatedData = currentData.copyWith(
+          currentParcel: parcel,
+          acceptedParcels: updatedAcceptedParcels,
+        );
         emit(LoadedState<ParcelData>(
           data: updatedData,
           lastUpdated: DateTime.now(),
