@@ -75,19 +75,34 @@ class ErrorHandler {
     Stream<T> Function() streamOperation, {
     String? operationName,
   }) {
-    final controller = StreamController<Either<Failure, T>>();
+    StreamSubscription<T>? innerSubscription;
+    late StreamController<Either<Failure, T>> controller;
+
+    controller = StreamController<Either<Failure, T>>(
+      onCancel: () {
+        // Cancel inner subscription when outer subscription is cancelled
+        innerSubscription?.cancel();
+        if (operationName != null) {
+          Logger.logBasic('$operationName: Stream subscription cancelled');
+        }
+      },
+    );
 
     try {
       final stream = streamOperation();
 
-      stream.listen(
+      innerSubscription = stream.listen(
         (data) {
-          if (operationName != null) {
-            Logger.logSuccess('$operationName: Data received');
+          if (!controller.isClosed) {
+            if (operationName != null) {
+              Logger.logSuccess('$operationName: Data received');
+            }
+            controller.add(Right(data));
           }
-          controller.add(Right(data));
         },
         onError: (error, stackTrace) {
+          if (controller.isClosed) return;
+
           // Always log the original error first
           Logger.logError(
             'Stream Original Error${operationName != null ? " in $operationName" : ""}: Type=${error.runtimeType}, Error=$error',
