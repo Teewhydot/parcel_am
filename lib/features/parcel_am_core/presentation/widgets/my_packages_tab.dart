@@ -7,8 +7,10 @@ import '../../../../core/theme/app_font_size.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
+import '../../../../core/widgets/app_button.dart';
 import '../../../../injection_container.dart';
 import '../bloc/parcel/parcel_bloc.dart';
+import '../bloc/parcel/parcel_event.dart';
 import '../bloc/parcel/parcel_state.dart';
 import '../../domain/entities/parcel_entity.dart';
 import '../../../../core/widgets/app_text.dart';
@@ -33,6 +35,7 @@ class MyPackagesTab extends StatefulWidget {
 class _MyPackagesTabState extends State<MyPackagesTab> {
   String _selectedFilter = 'All';
   final List<String> _filterOptions = ['All', 'Active', 'Delivered', 'Cancelled'];
+  String? _confirmingParcelId;
 
   List<ParcelEntity> _filterParcels(List<ParcelEntity> parcels) {
     switch (_selectedFilter) {
@@ -311,9 +314,55 @@ class _MyPackagesTabState extends State<MyPackagesTab> {
               ],
             ),
           ],
+          // Show Confirm Delivery button for parcels awaiting confirmation
+          if (parcel.status == ParcelStatus.awaitingConfirmation) ...[
+            AppSpacing.verticalSpacing(SpacingSize.md),
+            AppButton.primary(
+              loading: _confirmingParcelId == parcel.id,
+              onPressed: _confirmingParcelId == parcel.id
+                  ? null
+                  : () => _confirmDelivery(parcel),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.check_circle, size: 20, color: Colors.white),
+                  AppSpacing.horizontalSpacing(SpacingSize.sm),
+                  AppText.labelMedium('Confirm Delivery', color: Colors.white),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
+  }
+
+  void _confirmDelivery(ParcelEntity parcel) {
+    if (parcel.escrowId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to confirm delivery: Missing escrow information'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _confirmingParcelId = parcel.id);
+
+    context.read<ParcelBloc>().add(
+      ParcelConfirmDeliveryRequested(
+        parcelId: parcel.id,
+        escrowId: parcel.escrowId!,
+      ),
+    );
+
+    // Reset loading state after a delay (the bloc will update the parcel status)
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted && _confirmingParcelId == parcel.id) {
+        setState(() => _confirmingParcelId = null);
+      }
+    });
   }
 
   Color _getStatusColor(ParcelStatus status) {
