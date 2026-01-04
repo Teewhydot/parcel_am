@@ -8,6 +8,7 @@ import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../core/routes/routes.dart';
+import '../../../../core/constants/business_constants.dart';
 
 class WalletFundingPaymentScreen extends StatefulWidget {
   final String authorizationUrl;
@@ -67,17 +68,9 @@ class _WalletFundingPaymentScreenState
         if (data != null) {
           final status = data['status'] as String?;
 
-          // Check if payment was successful
-          if (status == 'success' ||
-              status == 'confirmed' ||
-              status == 'completed') {
-            hasProcessedPayment = true;
-            _navigateToConfirmationScreen();
-          }
-          // Check if payment failed
-          else if (status == 'failed' ||
-              status == 'cancelled' ||
-              status == 'expired') {
+          // Check if payment was successful or failed
+          if (BusinessConstants.isSuccessStatus(status ?? '') ||
+              BusinessConstants.isFailureStatus(status ?? '')) {
             hasProcessedPayment = true;
             _navigateToConfirmationScreen();
           }

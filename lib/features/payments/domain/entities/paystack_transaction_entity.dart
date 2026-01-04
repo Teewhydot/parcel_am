@@ -1,3 +1,5 @@
+import '../../../../core/constants/business_constants.dart';
+
 class PaystackTransactionEntity {
   final String reference;
   final String orderId;
@@ -97,7 +99,7 @@ class PaystackTransactionEntity {
   }
 
   bool get isPending => status == 'pending';
-  bool get isSuccess => status == 'success';
-  bool get isFailed => status == 'failed';
+  bool get isSuccess => BusinessConstants.isSuccessStatus(status);
+  bool get isFailed => BusinessConstants.isFailureStatus(status);
   bool get isProcessing => status == 'processing';
 }

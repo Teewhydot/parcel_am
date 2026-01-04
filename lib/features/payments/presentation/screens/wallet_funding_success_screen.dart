@@ -12,6 +12,7 @@ import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../parcel_am_core/presentation/bloc/wallet/wallet_bloc.dart';
 import '../../../parcel_am_core/presentation/bloc/wallet/wallet_data.dart';
 import '../../../../core/bloc/base/base_state.dart';
+import '../../../../core/constants/business_constants.dart';
 
 class WalletFundingSuccessScreen extends StatefulWidget {
   final String transactionId;
@@ -107,9 +108,7 @@ class _WalletFundingSuccessScreenState
   }
 
   bool _isSuccessStatus() {
-    return _paymentStatus == 'success' ||
-        _paymentStatus == 'confirmed' ||
-        _paymentStatus == 'completed';
+    return BusinessConstants.isSuccessStatus(_paymentStatus);
   }
 
   bool _isPendingStatus() {
@@ -117,9 +116,7 @@ class _WalletFundingSuccessScreenState
   }
 
   bool _isFailedStatus() {
-    return _paymentStatus == 'failed' ||
-        _paymentStatus == 'cancelled' ||
-        _paymentStatus == 'expired';
+    return BusinessConstants.isFailureStatus(_paymentStatus);
   }
 
   Widget _buildStatusIcon() {

@@ -112,7 +112,7 @@ class FirebaseFileUploadImpl implements FileUploadDataSource {
 
 
 class ImageKitFileUploadImpl implements FileUploadDataSource {
-  final baseUrl = "https://ik.imagekit.io/szxwvslzo/";
+  final baseUrl = Env.imageKitUrlEndpoint;
   final _firestore = FirebaseFirestore.instance;
   @override
   Future<UploadedFileEntity> uploadFile({
