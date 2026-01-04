@@ -301,10 +301,10 @@ packages:
     dependency: "direct main"
     description:
       name: corbado_auth
-      sha256: "34ec48851e8307b7db36c153ed2558b8f3bb219b8e973791403edf581e16d55f"
+      sha256: "6d54414d23bdf2bc0d7805ccb1d9a53b1632d6fb4052149ca3fac4f80e4bd80a"
       url: "https://pub.dev"
     source: hosted
-    version: "3.4.1"
+    version: "3.7.1"
   corbado_frontend_api_client:
     dependency: transitive
     description:
@@ -313,6 +313,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.0"
+  corbado_telemetry_api_client:
+    dependency: transitive
+    description:
+      name: corbado_telemetry_api_client
+      sha256: c454bc6a041001d515c0678393971bad605331559a9e256ac675ba705eccf924
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.2"
   coverage:
     dependency: transitive
     description:
@@ -381,10 +389,10 @@ packages:
     dependency: transitive
     description:
       name: device_info_plus
-      sha256: dd0e8e02186b2196c7848c9d394a5fd6e5b57a43a546082c5820b1ec72317e33
+      sha256: "98f28b42168cc509abc92f88518882fd58061ea372d7999aecc424345c7bff6a"
       url: "https://pub.dev"
     source: hosted
-    version: "12.2.0"
+    version: "11.5.0"
   device_info_plus_platform_interface:
     dependency: transitive
     description:
@@ -742,14 +750,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.6.0"
-  flutter_keychain:
-    dependency: transitive
-    description:
-      name: flutter_keychain
-      sha256: "0d000c0e9b3c16fdec016df406b4e89e7195bf719ed0882157400f1e16323cf8"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.5.0"
   flutter_lints:
     dependency: "direct dev"
     description:
@@ -802,10 +802,10 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_secure_storage
-      sha256: "9cad52d75ebc511adfae3d447d5d13da15a55a92c9410e50f67335b6d21d16ea"
+      sha256: ffdbb60130e4665d2af814a0267c481bcf522c41ae2e43caf69fa0146876d685
       url: "https://pub.dev"
     source: hosted
-    version: "9.2.4"
+    version: "9.0.0"
   flutter_secure_storage_linux:
     dependency: transitive
     description:
@@ -1380,10 +1380,10 @@ packages:
     dependency: transitive
     description:
       name: passkeys
-      sha256: "075a5dbaa16b76b10219cd1d9665bc9235d15eb218ac3c329560cf7b31d43640"
+      sha256: aee1299e119f84cfe3848dd4a117b51c908e27ed6652413a93d63d077f5a8812
       url: "https://pub.dev"
     source: hosted
-    version: "2.8.2"
+    version: "2.17.4"
   passkeys_android:
     dependency: transitive
     description:
@@ -1392,6 +1392,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.11.0"
+  passkeys_darwin:
+    dependency: transitive
+    description:
+      name: passkeys_darwin
+      sha256: cc5a1571417a73258cb84cbb7a6dcbdacf2eb5df6009fca8d7a8864aeaf15b43
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.0"
+  passkeys_doctor:
+    dependency: transitive
+    description:
+      name: passkeys_doctor
+      sha256: "6e700f957053505eeb57b021dd4c0825a05af163fe059015a006908a5ee6bbaa"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.0"
   passkeys_ios:
     dependency: transitive
     description:
@@ -1416,6 +1432,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.8.1"
+  passkeys_windows:
+    dependency: transitive
+    description:
+      name: passkeys_windows
+      sha256: acea5ff790a8c6de0366d1b87dd591c0d6e6770bf17d62efbd9fac7747724cc7
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.1"
   path:
     dependency: "direct main"
     description:

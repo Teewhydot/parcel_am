@@ -199,9 +199,37 @@ class ParcelRemoteDataSourceImpl implements ParcelRemoteDataSource {
     try {
       final docRef = firestore.collection('parcels').doc(parcelId);
 
+      // First, get the parcel data to extract sender info and price for escrow
+      final parcelDoc = await docRef.get();
+      if (!parcelDoc.exists) {
+        throw ServerException();
+      }
+
+      final parcelData = parcelDoc.data() as Map<String, dynamic>;
+      final senderData = parcelData['sender'] as Map<String, dynamic>?;
+      final senderId = senderData?['userId'] as String? ?? '';
+      final price = (parcelData['price'] as num?)?.toDouble() ?? 0.0;
+      final currency = parcelData['currency'] as String? ?? 'NGN';
+
+      // Create escrow document
+      final escrowRef = firestore.collection('escrows').doc();
+      final escrowData = {
+        'parcelId': parcelId,
+        'senderId': senderId,
+        'travelerId': travelerId,
+        'amount': price,
+        'currency': currency,
+        'status': 'pending',
+        'createdAt': FieldValue.serverTimestamp(),
+        'metadata': {},
+      };
+      await escrowRef.set(escrowData);
+
+      // Update parcel with travelerId, status, and escrowId
       await docRef.update({
         'travelerId': travelerId,
         'status': ParcelStatus.paid.toJson(),
+        'escrowId': escrowRef.id,
         'updatedAt': FieldValue.serverTimestamp(),
         'lastStatusUpdate': FieldValue.serverTimestamp(),
       });
