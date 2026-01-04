@@ -199,49 +199,77 @@ class ParcelRemoteDataSourceImpl implements ParcelRemoteDataSource {
     try {
       final docRef = firestore.collection('parcels').doc(parcelId);
 
-      // First, get the parcel data to extract sender info and price for escrow
-      final parcelDoc = await docRef.get();
-      if (!parcelDoc.exists) {
-        throw ServerException();
-      }
+      // Use Firestore transaction for atomic operations
+      await firestore.runTransaction((transaction) async {
+        // 1. Get the parcel data to extract sender info and price for escrow
+        final parcelDoc = await transaction.get(docRef);
 
-      final parcelData = parcelDoc.data() as Map<String, dynamic>;
-      final senderData = parcelData['sender'] as Map<String, dynamic>?;
-      final senderId = senderData?['userId'] as String? ?? '';
-      final price = (parcelData['price'] as num?)?.toDouble() ?? 0.0;
-      final currency = parcelData['currency'] as String? ?? 'NGN';
+        if (!parcelDoc.exists) {
+          throw ServerException();
+        }
 
-      // Create escrow document
-      final escrowRef = firestore.collection('escrows').doc();
-      final escrowData = {
-        'parcelId': parcelId,
-        'senderId': senderId,
-        'travelerId': travelerId,
-        'amount': price,
-        'currency': currency,
-        'status': 'pending',
-        'createdAt': FieldValue.serverTimestamp(),
-        'metadata': {},
-      };
-      await escrowRef.set(escrowData);
+        final parcelData = parcelDoc.data() as Map<String, dynamic>;
 
-      // Update parcel with travelerId, status, and escrowId
-      await docRef.update({
-        'travelerId': travelerId,
-        'status': ParcelStatus.paid.toJson(),
-        'escrowId': escrowRef.id,
-        'updatedAt': FieldValue.serverTimestamp(),
-        'lastStatusUpdate': FieldValue.serverTimestamp(),
+        // Check if parcel already has an escrow assigned
+        final existingEscrowId = parcelData['escrowId'] as String?;
+        if (existingEscrowId != null && existingEscrowId.isNotEmpty) {
+          Logger.logError(
+            'Parcel $parcelId already has escrow assigned: $existingEscrowId',
+            tag: 'ParcelRemoteDataSource',
+          );
+          throw ServerException();
+        }
+
+        final senderData = parcelData['sender'] as Map<String, dynamic>?;
+        final senderId = senderData?['userId'] as String? ?? '';
+        final price = (parcelData['price'] as num?)?.toDouble() ?? 0.0;
+        final currency = parcelData['currency'] as String? ?? 'NGN';
+
+        // 2. Create escrow document
+        final escrowRef = firestore.collection('escrows').doc();
+        final escrowData = {
+          'parcelId': parcelId,
+          'senderId': senderId,
+          'travelerId': travelerId,
+          'amount': price,
+          'currency': currency,
+          'status': 'pending',
+          'createdAt': FieldValue.serverTimestamp(),
+          'metadata': {},
+        };
+        transaction.set(escrowRef, escrowData);
+
+        // 3. Update parcel with travelerId, status, and escrowId
+        final statusKey = ParcelStatus.paid.toJson();
+        final timestamp = FieldValue.serverTimestamp();
+
+        transaction.update(docRef, {
+          'travelerId': travelerId,
+          'status': statusKey,
+          'escrowId': escrowRef.id,
+          'updatedAt': timestamp,
+          'lastStatusUpdate': timestamp,
+          'metadata.deliveryStatusHistory.$statusKey': timestamp,
+        });
       });
 
+      // Fetch the updated document after transaction completes
       final updatedDoc = await docRef.get();
       if (!updatedDoc.exists) {
         throw ServerException();
       }
       return ParcelModel.fromFirestore(updatedDoc);
-    } on FirebaseException {
+    } on FirebaseException catch (e) {
+      Logger.logError(
+        'Firebase Error (assignTraveler): $e',
+        tag: 'ParcelRemoteDataSource',
+      );
       throw ServerException();
     } catch (e) {
+      Logger.logError(
+        'Error assigning traveler to parcel $parcelId: $e',
+        tag: 'ParcelRemoteDataSource',
+      );
       throw ServerException();
     }
   }
