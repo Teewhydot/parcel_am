@@ -317,18 +317,21 @@ class _MyPackagesTabState extends State<MyPackagesTab> {
           // Show Confirm Delivery button for parcels awaiting confirmation
           if (parcel.status == ParcelStatus.awaitingConfirmation) ...[
             AppSpacing.verticalSpacing(SpacingSize.md),
-            AppButton.primary(
-              loading: _confirmingParcelId == parcel.id,
-              onPressed: _confirmingParcelId == parcel.id
-                  ? null
-                  : () => _confirmDelivery(parcel),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.check_circle, size: 20, color: Colors.white),
-                  AppSpacing.horizontalSpacing(SpacingSize.sm),
-                  AppText.labelMedium('Confirm Delivery', color: Colors.white),
-                ],
+            SizedBox(
+              width: double.infinity,
+              child: AppButton.primary(
+                loading: _confirmingParcelId == parcel.id,
+                onPressed: _confirmingParcelId == parcel.id
+                    ? null
+                    : () => _confirmDelivery(parcel),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.check_circle, size: 20, color: Colors.white),
+                    AppSpacing.horizontalSpacing(SpacingSize.sm),
+                    AppText.labelMedium('Confirm Delivery', color: Colors.white),
+                  ],
+                ),
               ),
             ),
           ],
