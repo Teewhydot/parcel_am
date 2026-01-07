@@ -12,6 +12,16 @@ class LoadActivePackages extends ActivePackagesEvent {
   LoadActivePackages(this.userId);
 }
 
+class _ActivePackagesStreamUpdated extends ActivePackagesEvent {
+  final List<PackageEntity> packages;
+  _ActivePackagesStreamUpdated(this.packages);
+}
+
+class _ActivePackagesStreamFailed extends ActivePackagesEvent {
+  final String message;
+  _ActivePackagesStreamFailed(this.message);
+}
+
 // BLoC
 class ActivePackagesBloc extends Bloc<ActivePackagesEvent, BaseState<List<PackageEntity>>> {
   final _parcelUseCase = ParcelUseCase();
@@ -19,6 +29,8 @@ class ActivePackagesBloc extends Bloc<ActivePackagesEvent, BaseState<List<Packag
 
   ActivePackagesBloc() : super(const InitialState<List<PackageEntity>>()) {
     on<LoadActivePackages>(_onLoadActivePackages);
+    on<_ActivePackagesStreamUpdated>(_onStreamUpdated);
+    on<_ActivePackagesStreamFailed>(_onStreamFailed);
   }
 
   Future<void> _onLoadActivePackages(
@@ -33,25 +45,35 @@ class ActivePackagesBloc extends Bloc<ActivePackagesEvent, BaseState<List<Packag
       (result) {
         result.fold(
           (failure) {
-            if (!isClosed) {
-              emit(ErrorState<List<PackageEntity>>(
-                errorMessage: failure.failureMessage,
-              ));
-            }
+            if (isClosed) return;
+            add(_ActivePackagesStreamFailed(failure.failureMessage));
           },
           (parcels) {
-            if (!isClosed) {
-              // Convert ParcelEntity list to PackageEntity list
-              // For now, return empty list as PackageEntity structure differs
-              emit(LoadedState<List<PackageEntity>>(
-                data: [],
-                lastUpdated: DateTime.now(),
-              ));
-            }
+            if (isClosed) return;
+            // Convert ParcelEntity list to PackageEntity list
+            // For now, return empty list as PackageEntity structure differs
+            add(_ActivePackagesStreamUpdated(const <PackageEntity>[]));
           },
         );
       },
     );
+  }
+
+  Future<void> _onStreamUpdated(
+    _ActivePackagesStreamUpdated event,
+    Emitter<BaseState<List<PackageEntity>>> emit,
+  ) async {
+    emit(LoadedState<List<PackageEntity>>(
+      data: event.packages,
+      lastUpdated: DateTime.now(),
+    ));
+  }
+
+  Future<void> _onStreamFailed(
+    _ActivePackagesStreamFailed event,
+    Emitter<BaseState<List<PackageEntity>>> emit,
+  ) async {
+    emit(ErrorState<List<PackageEntity>>(errorMessage: event.message));
   }
 
   @override
