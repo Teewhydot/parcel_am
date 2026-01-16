@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/services/notification_service.dart';
+import '../../../notifications/services/notification_service.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_spacing.dart';

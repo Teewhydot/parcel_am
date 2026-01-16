@@ -4,6 +4,10 @@ enum NotificationType {
   announcement,
   reminder,
   parcelRequestAccepted,
+  deliveryConfirmationRequired,
+  escrowHeld,
+  escrowReleased,
+  escrowDisputed,
 }
 
 extension NotificationTypeExtension on NotificationType {
@@ -19,6 +23,14 @@ extension NotificationTypeExtension on NotificationType {
         return 'reminder';
       case NotificationType.parcelRequestAccepted:
         return 'parcel_request_accepted';
+      case NotificationType.deliveryConfirmationRequired:
+        return 'delivery_confirmation_required';
+      case NotificationType.escrowHeld:
+        return 'escrow_held';
+      case NotificationType.escrowReleased:
+        return 'escrow_released';
+      case NotificationType.escrowDisputed:
+        return 'escrow_disputed';
     }
   }
 
@@ -34,6 +46,14 @@ extension NotificationTypeExtension on NotificationType {
         return NotificationType.reminder;
       case 'parcel_request_accepted':
         return NotificationType.parcelRequestAccepted;
+      case 'delivery_confirmation_required':
+        return NotificationType.deliveryConfirmationRequired;
+      case 'escrow_held':
+        return NotificationType.escrowHeld;
+      case 'escrow_released':
+        return NotificationType.escrowReleased;
+      case 'escrow_disputed':
+        return NotificationType.escrowDisputed;
       default:
         return NotificationType.chatMessage;
     }

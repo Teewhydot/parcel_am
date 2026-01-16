@@ -9,20 +9,18 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import 'core/services/navigation_service/nav_config.dart';
-import 'core/services/notification_service.dart';
 import 'core/services/connectivity_service.dart';
 import 'core/services/offline_queue_service.dart';
-import 'core/services/escrow_notification_service.dart' as escrow;
-import 'core/domain/repositories/escrow_notification_repository.dart';
-import 'core/data/repositories/escrow_notification_repository_impl.dart';
 import 'core/domain/repositories/presence_repository.dart';
 import 'core/data/repositories/presence_repository_impl.dart';
 import 'core/services/presence_service.dart';
-import 'core/domain/repositories/chat_notification_repository.dart';
-import 'core/data/repositories/chat_notification_repository_impl.dart';
-import 'core/services/chat_notification_service.dart';
-import 'core/domain/repositories/notification_repository.dart';
-import 'core/data/repositories/notification_repository_impl.dart';
+
+// Notifications Feature Module
+import 'features/notifications/services/notification_service.dart';
+import 'features/notifications/domain/repositories/fcm_repository.dart';
+import 'features/notifications/data/repositories/fcm_repository_impl.dart';
+import 'features/notifications/domain/repositories/notification_settings_repository.dart';
+import 'features/notifications/data/repositories/notification_settings_repository_impl.dart';
 import 'core/errors/failure_mapper.dart';
 import 'core/errors/firebase_failure_mapper.dart';
 import 'core/services/error/error_handler.dart';
@@ -90,13 +88,6 @@ Future<void> init() async {
   // Presence System
   sl.registerLazySingleton<PresenceRepository>(() => PresenceRepositoryImpl(sl()));
   sl.registerLazySingleton<PresenceService>(() => PresenceService(repository: sl()));
-
-  // Chat Notification System
-  sl.registerLazySingleton<ChatNotificationRepository>(() => ChatNotificationRepositoryImpl(sl()));
-  sl.registerLazySingleton<ChatNotificationService>(() => ChatNotificationService(
-    repository: sl(),
-    notificationsPlugin: sl(),
-  ));
 
   //! Feature Modules (No longer using DI modules - direct instantiation)
 
@@ -183,24 +174,23 @@ Future<void> init() async {
     () => FileUploadUseCase(),
   );
 
-  //! Notification Service - Singleton
-  // Register Escrow Notification Repository and Service
-  sl.registerLazySingleton<EscrowNotificationRepository>(
-    () => EscrowNotificationRepositoryImpl(sl()),
-  );
-  sl.registerLazySingleton<escrow.NotificationService>(
-    () => escrow.NotificationService(repository: sl()),
-  );
-
-  // Register Notification Repository
-  sl.registerLazySingleton<NotificationRepository>(
-    () => NotificationRepositoryImpl(
+  //! Notifications Feature Module
+  // FCM Repository
+  sl.registerLazySingleton<FCMRepository>(
+    () => FCMRepositoryImpl(
       firebaseMessaging: sl(),
       firestore: sl(),
     ),
   );
 
-  // Register Notification Service
+  // Notification Settings Repository
+  sl.registerLazySingleton<NotificationSettingsRepository>(
+    () => NotificationSettingsRepositoryImpl(
+      firestore: sl(),
+    ),
+  );
+
+  // Notification Service
   sl.registerLazySingleton<NotificationService>(
     () => NotificationService.getInstance(
       repository: sl(),

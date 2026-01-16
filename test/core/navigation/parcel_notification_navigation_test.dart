@@ -3,18 +3,18 @@ import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:parcel_am/core/routes/routes.dart';
 import 'package:parcel_am/core/services/navigation_service/nav_config.dart';
-import 'package:parcel_am/core/services/notification_service.dart';
+import 'package:parcel_am/features/notifications/services/notification_service.dart';
 import 'package:parcel_am/features/notifications/data/datasources/notification_remote_datasource.dart';
+import 'package:parcel_am/features/notifications/domain/repositories/fcm_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:parcel_am/core/domain/repositories/notification_repository.dart';
 import 'dart:convert';
 
 import 'parcel_notification_navigation_test.mocks.dart';
 
 @GenerateMocks([
   NavigationService,
-  NotificationRepository,
+  FCMRepository,
   NotificationRemoteDataSource,
   FirebaseAuth,
   User,

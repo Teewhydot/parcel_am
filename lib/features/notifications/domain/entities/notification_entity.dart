@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../../../core/enums/notification_type.dart';
+import '../enums/notification_type.dart';
 
 class NotificationEntity extends Equatable {
   final String id;

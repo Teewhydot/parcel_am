@@ -28,9 +28,7 @@ import '../bloc/auth/auth_data.dart';
 import '../../data/constants/verification_constants.dart';
 import '../bloc/active_packages/active_packages_bloc.dart';
 import '../../domain/entities/package_entity.dart';
-import '../../../../core/services/escrow_notification_service.dart' as escrow;
 import '../../../../core/services/presence_service.dart';
-import '../../../../core/services/chat_notification_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -40,12 +38,7 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  StreamSubscription? _notificationSubscription;
-
-  final escrow.NotificationService _notificationService =
-      sl<escrow.NotificationService>();
   PresenceService? _presenceService;
-  ChatNotificationService? _chatNotificationService;
   late ActivePackagesBloc _activePackagesBloc;
   // DashboardBloc is now provided from NavigationShell
   DashboardBloc get _dashboardBloc => context.read<DashboardBloc>();
@@ -57,22 +50,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     _activePackagesBloc = ActivePackagesBloc();
     _loadInitialData();
-    _subscribeToEscrowNotifications();
-    _initializePresenceAndChatNotifications();
+    _initializePresence();
   }
 
   @override
   void dispose() {
-    _notificationSubscription?.cancel();
-    _notificationService.dispose();
     _presenceService?.dispose();
-    _chatNotificationService?.dispose();
     // DashboardBloc is managed by NavigationShell, don't close here
     _activePackagesBloc.close();
     super.dispose();
   }
 
-  void _initializePresenceAndChatNotifications() {
+  void _initializePresence() {
     final authState = context.read<AuthBloc>().state;
     final userId = authState is LoadedState<AuthData>
         ? authState.data?.user?.uid ?? ''
@@ -82,11 +71,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final presenceService = sl<PresenceService>();
       presenceService.initialize(userId);
       _presenceService = presenceService;
-
-      final chatNotificationService = sl<ChatNotificationService>();
-      chatNotificationService.initialize(userId);
-      chatNotificationService.requestPermissions();
-      _chatNotificationService = chatNotificationService;
     }
   }
 
@@ -120,75 +104,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       return authState.data?.user?.uid ?? '';
     }
     return '';
-  }
-
-  void _subscribeToEscrowNotifications() {
-    final authState = context.read<AuthBloc>().state;
-    final userId = authState is LoadedState<AuthData>
-        ? authState.data?.user?.uid ?? 'demo_user'
-        : 'demo_user';
-
-    _notificationService.subscribeToEscrowNotifications(userId);
-    _notificationSubscription = _notificationService.escrowNotifications.listen(
-      (notification) {
-        if (mounted) {
-          _showEscrowNotification(notification);
-        }
-      },
-    );
-  }
-
-  void _showEscrowNotification(escrow.EscrowNotification notification) {
-    Color backgroundColor;
-    IconData icon;
-
-    switch (notification.status) {
-      case 'held':
-        backgroundColor = AppColors.accent;
-        icon = Icons.lock;
-        break;
-      case 'released':
-        backgroundColor = AppColors.success;
-        icon = Icons.check_circle;
-        break;
-      case 'disputed':
-        backgroundColor = AppColors.error;
-        icon = Icons.warning;
-        break;
-      case 'cancelled':
-        backgroundColor = AppColors.textSecondary;
-        icon = Icons.cancel;
-        break;
-      default:
-        backgroundColor = AppColors.primary;
-        icon = Icons.info;
-    }
-
-    // Note: For snackbars with actions, we keep the original implementation
-    // as context.showSnackbar() doesn't support action buttons
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(icon, color: AppColors.white),
-            AppSpacing.horizontalSpacing(SpacingSize.md),
-            Expanded(child: AppText.bodyMedium(notification.message, color: AppColors.white)),
-          ],
-        ),
-        backgroundColor: backgroundColor,
-        duration: const Duration(seconds: 4),
-        action: SnackBarAction(
-          label: 'View',
-          textColor: AppColors.white,
-          onPressed: () {
-            sl<NavigationService>().navigateTo(
-              Routes.tracking,
-              arguments: {'packageId': notification.packageId},
-            );
-          },
-        ),
-      ),
-    );
   }
 
   @override

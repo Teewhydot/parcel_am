@@ -6,20 +6,19 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:app_badge_plus/app_badge_plus.dart';
-import 'package:parcel_am/features/notifications/domain/usecases/notification_usecase.dart';
-import '../../features/notifications/data/datasources/notification_remote_datasource.dart';
-import '../../features/notifications/data/models/notification_model.dart';
-import '../routes/routes.dart';
-import 'navigation_service/nav_config.dart';
-import '../domain/repositories/notification_repository.dart';
-import '../utils/logger.dart';
+import '../domain/usecases/notification_usecase.dart';
+import '../data/datasources/notification_remote_datasource.dart';
+import '../data/models/notification_model.dart';
+import '../../../core/routes/routes.dart';
+import '../../../core/services/navigation_service/nav_config.dart';
+import '../domain/repositories/fcm_repository.dart';
 
 /// Top-level background message handler
 /// Must be a top-level function for Firebase Messaging background handler
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   if (kDebugMode) {
-    Logger.logBasic('Background message received: ${message.messageId}');
+    print('[NotificationService] Background message received: ${message.messageId}');
   }
 
   // Display notification from background handler
@@ -54,7 +53,8 @@ Future<void> _showBackgroundNotification(RemoteMessage message) async {
   final travelerName = data['travelerName'] as String?;
 
   // Use appropriate channel based on notification type
-  final isParcelNotification = type == 'parcel_request_accepted';
+  final isParcelNotification = type == 'parcel_request_accepted' ||
+      type == 'delivery_confirmation_required';
 
   final androidDetails = AndroidNotificationDetails(
     isParcelNotification ? 'parcel_updates' : 'chat_messages',
@@ -104,8 +104,8 @@ Future<void> _showBackgroundNotification(RemoteMessage message) async {
 class NotificationService {
   static NotificationService? _instance;
 
-  final NotificationRepository repository;
-  final  useCase = NotificationUseCase();
+  final FCMRepository repository;
+  final useCase = NotificationUseCase();
   final FlutterLocalNotificationsPlugin localNotifications;
   final NotificationRemoteDataSource remoteDataSource;
   final NavigationService navigationService;
@@ -126,7 +126,7 @@ class NotificationService {
 
   /// Get singleton instance
   factory NotificationService.getInstance({
-    required NotificationRepository repository,
+    required FCMRepository repository,
     required FlutterLocalNotificationsPlugin localNotifications,
     required NotificationRemoteDataSource remoteDataSource,
     required NavigationService navigationService,
@@ -150,7 +150,7 @@ class NotificationService {
   Future<void> initialize() async {
     if (_isInitialized) {
       if (kDebugMode) {
-        Logger.logWarning('NotificationService already initialized', tag: 'NotificationService');
+        print('[NotificationService] Already initialized');
       }
       return;
     }
@@ -175,7 +175,7 @@ class NotificationService {
         _currentToken = newToken;
         storeToken(newToken);
         if (kDebugMode) {
-          Logger.logSuccess('FCM token refreshed: $newToken', tag: 'NotificationService');
+          print('[NotificationService] FCM token refreshed: $newToken');
         }
       });
 
@@ -185,10 +185,8 @@ class NotificationService {
         await storeToken(token);
       } else {
         if (kDebugMode) {
-          Logger.logWarning(
-            'FCM token not available during initialization. Will be retrieved when available via token refresh listener.',
-            tag: 'NotificationService',
-          );
+          print('[NotificationService] FCM token not available during initialization. '
+              'Will be retrieved when available via token refresh listener.');
         }
       }
 
@@ -199,11 +197,11 @@ class NotificationService {
       _isInitialized = true;
 
       if (kDebugMode) {
-        Logger.logSuccess('NotificationService initialized successfully', tag: 'NotificationService');
+        print('[NotificationService] Initialized successfully');
       }
     } catch (e) {
       if (kDebugMode) {
-        Logger.logError('Error initializing NotificationService: $e');
+        print('[NotificationService] Error initializing: $e');
       }
       rethrow;
     }
@@ -282,13 +280,13 @@ class NotificationService {
       _currentToken = await repository.getFCMToken();
       if (_currentToken != null) {
         if (kDebugMode) {
-          Logger.logSuccess('FCM Token retrieved: $_currentToken', tag: 'NotificationService');
+          print('[NotificationService] FCM Token retrieved: $_currentToken');
         }
       }
       return _currentToken;
     } catch (e) {
       if (kDebugMode) {
-        Logger.logError('Error getting FCM token: $e', tag: 'NotificationService');
+        print('[NotificationService] Error getting FCM token: $e');
       }
       return null;
     }
@@ -298,7 +296,7 @@ class NotificationService {
   /// Useful for iOS when APNS token becomes available after initial initialization
   Future<String?> retryGetToken() async {
     if (kDebugMode) {
-      Logger.logBasic('Manually retrying FCM token retrieval...', tag: 'NotificationService');
+      print('[NotificationService] Manually retrying FCM token retrieval...');
     }
 
     final token = await getToken();
@@ -314,7 +312,7 @@ class NotificationService {
       final userId = firebaseAuth.currentUser?.uid;
       if (userId == null) {
         if (kDebugMode) {
-          Logger.logWarning('Cannot store token: No user logged in', tag: 'NotificationService');
+          print('[NotificationService] Cannot store token: No user logged in');
         }
         return;
       }
@@ -322,11 +320,29 @@ class NotificationService {
       await repository.storeFCMToken(userId, token);
 
       if (kDebugMode) {
-        Logger.logSuccess('FCM token stored for user: $userId');
+        print('[NotificationService] FCM token stored for user: $userId');
       }
     } catch (e) {
       if (kDebugMode) {
-        Logger.logError('Error storing FCM token: $e');
+        print('[NotificationService] Error storing FCM token: $e');
+      }
+    }
+  }
+
+  /// Remove FCM token on logout
+  Future<void> removeToken() async {
+    try {
+      final userId = firebaseAuth.currentUser?.uid;
+      if (userId == null || _currentToken == null) return;
+
+      await repository.removeFCMToken(userId, _currentToken!);
+
+      if (kDebugMode) {
+        print('[NotificationService] FCM token removed for user: $userId');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('[NotificationService] Error removing FCM token: $e');
       }
     }
   }
@@ -336,7 +352,7 @@ class NotificationService {
   Future<void> handleForegroundMessage(RemoteMessage message) async {
     try {
       if (kDebugMode) {
-        Logger.logBasic('Foreground message received: ${message.messageId}');
+        print('[NotificationService] Foreground message received: ${message.messageId}');
       }
 
       final userId = firebaseAuth.currentUser?.uid;
@@ -375,11 +391,11 @@ class NotificationService {
       await _updateBadgeCount();
 
       if (kDebugMode) {
-        Logger.logSuccess('Foreground notification processed and saved', tag: 'NotificationService');
+        print('[NotificationService] Foreground notification processed and saved');
       }
     } catch (e) {
       if (kDebugMode) {
-        Logger.logError('Error handling foreground message: $e');
+        print('[NotificationService] Error handling foreground message: $e');
       }
     }
   }
@@ -396,7 +412,8 @@ class NotificationService {
   }) async {
     // Detect notification type from data
     final type = message.data['type'] as String?;
-    final isParcelNotification = type == 'parcel_request_accepted';
+    final isParcelNotification = type == 'parcel_request_accepted' ||
+        type == 'delivery_confirmation_required';
 
     // Use appropriate channel based on notification type
     final androidDetails = AndroidNotificationDetails(
@@ -449,7 +466,7 @@ class NotificationService {
   Future<void> handleBackgroundMessage(RemoteMessage message) async {
     try {
       if (kDebugMode) {
-        Logger.logBasic('Background message handler: ${message.messageId}');
+        print('[NotificationService] Background message handler: ${message.messageId}');
       }
 
       // Extract chat details from data payload
@@ -497,11 +514,11 @@ class NotificationService {
       );
 
       if (kDebugMode) {
-        Logger.logSuccess('Background notification displayed', tag: 'NotificationService');
+        print('[NotificationService] Background notification displayed');
       }
     } catch (e) {
       if (kDebugMode) {
-        Logger.logError('Error handling background message: $e');
+        print('[NotificationService] Error handling background message: $e');
       }
     }
   }
@@ -513,7 +530,7 @@ class NotificationService {
       final payload = response.payload;
       if (payload == null || payload.isEmpty) {
         if (kDebugMode) {
-          Logger.logWarning('Notification tapped with no payload', tag: 'NotificationService');
+          print('[NotificationService] Notification tapped with no payload');
         }
         return;
       }
@@ -525,7 +542,7 @@ class NotificationService {
       final notificationId = data['notificationId'] as String?;
 
       if (kDebugMode) {
-        Logger.logBasic('Notification tapped - chatId: $chatId, parcelId: $parcelId, notificationId: $notificationId');
+        print('[NotificationService] Notification tapped - chatId: $chatId, parcelId: $parcelId');
       }
 
       // Mark notification as read if notificationId exists
@@ -552,7 +569,7 @@ class NotificationService {
       }
     } catch (e) {
       if (kDebugMode) {
-        Logger.logError('Error handling notification tap: $e');
+        print('[NotificationService] Error handling notification tap: $e');
       }
     }
   }
@@ -563,13 +580,13 @@ class NotificationService {
       final status = await repository.requestPermissions();
 
       if (kDebugMode) {
-        Logger.logBasic('Notification permission status: $status');
+        print('[NotificationService] Notification permission status: $status');
       }
 
       return status;
     } catch (e) {
       if (kDebugMode) {
-        Logger.logError('Error requesting notification permissions: $e');
+        print('[NotificationService] Error requesting notification permissions: $e');
       }
       return AuthorizationStatus.denied;
     }
@@ -580,11 +597,11 @@ class NotificationService {
     try {
       await repository.subscribeToTopic(topic);
       if (kDebugMode) {
-        Logger.logSuccess('Subscribed to topic: $topic');
+        print('[NotificationService] Subscribed to topic: $topic');
       }
     } catch (e) {
       if (kDebugMode) {
-        Logger.logError('Error subscribing to topic $topic: $e');
+        print('[NotificationService] Error subscribing to topic $topic: $e');
       }
     }
   }
@@ -594,11 +611,11 @@ class NotificationService {
     try {
       await repository.unsubscribeFromTopic(topic);
       if (kDebugMode) {
-        Logger.logSuccess('Unsubscribed from topic: $topic');
+        print('[NotificationService] Unsubscribed from topic: $topic');
       }
     } catch (e) {
       if (kDebugMode) {
-        Logger.logError('Error unsubscribing from topic $topic: $e');
+        print('[NotificationService] Error unsubscribing from topic $topic: $e');
       }
     }
   }
@@ -612,7 +629,7 @@ class NotificationService {
       return await repository.getUnreadNotificationCount(userId);
     } catch (e) {
       if (kDebugMode) {
-        Logger.logError('Error getting unread count: $e');
+        print('[NotificationService] Error getting unread count: $e');
       }
       return 0;
     }
@@ -625,7 +642,7 @@ class NotificationService {
       await updateBadgeCount(unreadCount);
     } catch (e) {
       if (kDebugMode) {
-        Logger.logError('Error updating badge count: $e');
+        print('[NotificationService] Error updating badge count: $e');
       }
     }
   }
@@ -641,16 +658,16 @@ class NotificationService {
         await AppBadgePlus.updateBadge(count);
 
         if (kDebugMode) {
-          Logger.logSuccess('Badge count updated to: $count');
+          print('[NotificationService] Badge count updated to: $count');
         }
       } else {
         if (kDebugMode) {
-          Logger.logWarning('App badges not supported on this device', tag: 'NotificationService');
+          print('[NotificationService] App badges not supported on this device');
         }
       }
     } catch (e) {
       if (kDebugMode) {
-        Logger.logError('Error updating badge count: $e');
+        print('[NotificationService] Error updating badge count: $e');
       }
     }
   }
@@ -660,11 +677,11 @@ class NotificationService {
     try {
       await AppBadgePlus.updateBadge(0);
       if (kDebugMode) {
-        Logger.logSuccess('Badge cleared', tag: 'NotificationService');
+        print('[NotificationService] Badge cleared');
       }
     } catch (e) {
       if (kDebugMode) {
-        Logger.logError('Error clearing badge: $e');
+        print('[NotificationService] Error clearing badge: $e');
       }
     }
   }

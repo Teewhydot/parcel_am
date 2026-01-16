@@ -1,14 +1,15 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import '../../domain/repositories/notification_repository.dart';
-import '../../utils/logger.dart';
+import 'package:flutter/foundation.dart';
+import '../../domain/repositories/fcm_repository.dart';
 
-class NotificationRepositoryImpl implements NotificationRepository {
+/// Implementation of FCMRepository using Firebase Messaging and Firestore
+class FCMRepositoryImpl implements FCMRepository {
   final FirebaseMessaging _firebaseMessaging;
   final FirebaseFirestore _firestore;
 
-  NotificationRepositoryImpl({
+  FCMRepositoryImpl({
     required FirebaseMessaging firebaseMessaging,
     required FirebaseFirestore firestore,
   })  : _firebaseMessaging = firebaseMessaging,
@@ -29,17 +30,15 @@ class NotificationRepositoryImpl implements NotificationRepository {
           try {
             apnsToken = await _firebaseMessaging.getAPNSToken();
             if (apnsToken != null) {
-              Logger.logSuccess(
-                'APNS token obtained successfully',
-                tag: 'NotificationRepository',
-              );
+              if (kDebugMode) {
+                print('[FCMRepository] APNS token obtained successfully');
+              }
               break;
             }
           } catch (e) {
-            Logger.logWarning(
-              'APNS token not available yet (attempt ${retries + 1}/$maxRetries)',
-              tag: 'NotificationRepository',
-            );
+            if (kDebugMode) {
+              print('[FCMRepository] APNS token not available yet (attempt ${retries + 1}/$maxRetries)');
+            }
           }
 
           retries++;
@@ -50,10 +49,10 @@ class NotificationRepositoryImpl implements NotificationRepository {
 
         // If APNS token is still not available after retries, log warning
         if (apnsToken == null) {
-          Logger.logWarning(
-            'APNS token not available after $maxRetries attempts. FCM token will be retrieved when APNS token becomes available.',
-            tag: 'NotificationRepository',
-          );
+          if (kDebugMode) {
+            print('[FCMRepository] APNS token not available after $maxRetries attempts. '
+                'FCM token will be retrieved when APNS token becomes available.');
+          }
           return null;
         }
       }
@@ -61,10 +60,9 @@ class NotificationRepositoryImpl implements NotificationRepository {
       // Get FCM token
       return await _firebaseMessaging.getToken();
     } catch (e) {
-      Logger.logError(
-        'Error getting FCM token: $e',
-        tag: 'NotificationRepository',
-      );
+      if (kDebugMode) {
+        print('[FCMRepository] Error getting FCM token: $e');
+      }
       return null;
     }
   }
@@ -75,20 +73,46 @@ class NotificationRepositoryImpl implements NotificationRepository {
       await _firestore.collection('users').doc(userId).update({
         'fcmTokens': FieldValue.arrayUnion([token]),
       });
+      if (kDebugMode) {
+        print('[FCMRepository] FCM token stored for user: $userId');
+      }
     } catch (e) {
-      // Log error or rethrow depending on error handling strategy
-      Logger.logError('Error storing FCM token: $e', tag: 'NotificationRepository');
+      if (kDebugMode) {
+        print('[FCMRepository] Error storing FCM token: $e');
+      }
+    }
+  }
+
+  @override
+  Future<void> removeFCMToken(String userId, String token) async {
+    try {
+      await _firestore.collection('users').doc(userId).update({
+        'fcmTokens': FieldValue.arrayRemove([token]),
+      });
+      if (kDebugMode) {
+        print('[FCMRepository] FCM token removed for user: $userId');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('[FCMRepository] Error removing FCM token: $e');
+      }
     }
   }
 
   @override
   Future<void> subscribeToTopic(String topic) async {
     await _firebaseMessaging.subscribeToTopic(topic);
+    if (kDebugMode) {
+      print('[FCMRepository] Subscribed to topic: $topic');
+    }
   }
 
   @override
   Future<void> unsubscribeFromTopic(String topic) async {
     await _firebaseMessaging.unsubscribeFromTopic(topic);
+    if (kDebugMode) {
+      print('[FCMRepository] Unsubscribed from topic: $topic');
+    }
   }
 
   @override
@@ -101,7 +125,9 @@ class NotificationRepositoryImpl implements NotificationRepository {
           .get();
       return snapshot.docs.length;
     } catch (e) {
-      Logger.logError('Error getting unread count: $e', tag: 'NotificationRepository');
+      if (kDebugMode) {
+        print('[FCMRepository] Error getting unread count: $e');
+      }
       return 0;
     }
   }

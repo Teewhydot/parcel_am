@@ -11,7 +11,7 @@ import 'package:parcel_am/core/widgets/app_text.dart';
 import 'package:parcel_am/core/widgets/app_button.dart';
 import 'package:provider/provider.dart';
 import 'package:parcel_am/app/init.dart';
-import 'package:parcel_am/core/services/notification_service.dart';
+import 'package:parcel_am/features/notifications/services/notification_service.dart';
 import 'package:parcel_am/core/utils/logger.dart';
 import 'package:parcel_am/features/passkey/data/datasources/passkey_remote_data_source.dart';
 import 'package:parcel_am/injection_container.dart' as di;

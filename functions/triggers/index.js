@@ -3,7 +3,9 @@
 // ========================================================================
 
 const { onParcelAwaitingConfirmation } = require('./parcel-triggers');
+const { onChatMessageNotification } = require('./chat-triggers');
 
 module.exports = {
-  onParcelAwaitingConfirmation
+  onParcelAwaitingConfirmation,
+  onChatMessageNotification
 };

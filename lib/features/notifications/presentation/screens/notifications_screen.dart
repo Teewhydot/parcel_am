@@ -5,7 +5,7 @@ import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:parcel_am/core/bloc/base/base_state.dart';
 import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
 import 'package:timeago/timeago.dart' as timeago;
-import '../../../../core/enums/notification_type.dart';
+import '../../domain/enums/notification_type.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
@@ -17,6 +17,7 @@ import '../../../../core/widgets/app_spacing.dart';
 import '../bloc/notification_bloc.dart';
 import '../bloc/notification_event.dart';
 import '../bloc/notification_state.dart';
+import 'notification_settings_screen.dart';
 
 class NotificationsScreen extends StatefulWidget {
   final String userId;
@@ -43,6 +44,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       appBar: AppBar(
         title: AppText.titleLarge('Notifications'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: 'Notification settings',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => NotificationSettingsScreen(userId: widget.userId),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.done_all),
             tooltip: 'Mark all as read',

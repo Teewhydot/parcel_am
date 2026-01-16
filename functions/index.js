@@ -42,7 +42,8 @@ const {
 // Import Triggers
 // ========================================================================
 const {
-  onParcelAwaitingConfirmation
+  onParcelAwaitingConfirmation,
+  onChatMessageNotification
 } = require('./triggers');
 
 // ========================================================================
@@ -76,6 +77,7 @@ exports.autoReleaseEscrow = autoReleaseEscrow;
 
 // Triggers
 exports.onParcelAwaitingConfirmation = onParcelAwaitingConfirmation;
+exports.onChatMessageNotification = onChatMessageNotification;
 
 // ========================================================================
 // Startup Complete

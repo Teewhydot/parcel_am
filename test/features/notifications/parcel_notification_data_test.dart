@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:parcel_am/core/enums/notification_type.dart';
+import 'package:parcel_am/features/notifications/domain/enums/notification_type.dart';
 import 'package:parcel_am/features/notifications/data/models/notification_model.dart';
 import 'package:parcel_am/features/notifications/domain/entities/notification_entity.dart';
 
