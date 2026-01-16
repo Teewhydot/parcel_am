@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../../../../core/domain/entities/kyc_status.dart';
+import 'package:parcel_am/features/kyc/domain/entities/kyc_status.dart';
 
 class UserEntity extends Equatable {
   final String uid;

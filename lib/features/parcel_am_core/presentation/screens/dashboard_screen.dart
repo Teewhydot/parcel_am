@@ -28,7 +28,7 @@ import '../bloc/auth/auth_data.dart';
 import '../../data/constants/verification_constants.dart';
 import '../bloc/active_packages/active_packages_bloc.dart';
 import '../../domain/entities/package_entity.dart';
-import '../../../../core/services/presence_service.dart';
+import 'package:parcel_am/features/chat/services/presence_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});

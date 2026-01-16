@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/domain/entities/kyc_status.dart';
+import '../../domain/entities/kyc_status.dart';
 import '../../../../core/services/auth/kyc_guard.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../core/routes/routes.dart';

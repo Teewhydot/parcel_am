@@ -4,7 +4,7 @@ import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
 import 'package:parcel_am/core/helpers/user_extensions.dart';
 import 'package:parcel_am/features/file_upload/domain/entities/uploaded_file_entity.dart';
 import 'package:parcel_am/features/file_upload/domain/use_cases/file_upload_usecase.dart';
-import '../../../../core/domain/entities/kyc_status.dart';
+import '../../domain/entities/kyc_status.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_scaffold.dart';
 import '../../../../core/widgets/app_container.dart';

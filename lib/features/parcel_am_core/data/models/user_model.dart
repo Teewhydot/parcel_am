@@ -1,4 +1,4 @@
-import '../../../../core/domain/entities/kyc_status.dart';
+import 'package:parcel_am/features/kyc/domain/entities/kyc_status.dart';
 import '../../domain/entities/user_entity.dart';
 
 class UserModel extends UserEntity {

@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import '../utils/logger.dart';
+import 'package:parcel_am/core/utils/logger.dart';
 
 /// Simplified endpoint service that only handles logging and timeouts
 /// Use with ErrorHandler.handle() for consistent error handling
@@ -13,7 +13,7 @@ class EndpointService {
     Future<T> Function() endpointCall,
   ) async {
     Logger.logBasic('Starting operation: $operation');
-    
+
     try {
       final result = await endpointCall().timeout(_timeoutDuration);
       Logger.logSuccess('Completed operation: $operation');
@@ -31,7 +31,7 @@ class EndpointService {
     Duration timeout,
   ) async {
     Logger.logBasic('Starting operation: $operation (timeout: ${timeout.inSeconds}s)');
-    
+
     try {
       final result = await endpointCall().timeout(timeout);
       Logger.logSuccess('Completed operation: $operation');

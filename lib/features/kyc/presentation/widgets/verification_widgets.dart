@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:parcel_am/core/helpers/user_extensions.dart';
-import 'package:parcel_am/core/services/file_upload_service.dart';
+import 'package:parcel_am/features/file_upload/services/file_upload_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/widgets/app_card.dart';

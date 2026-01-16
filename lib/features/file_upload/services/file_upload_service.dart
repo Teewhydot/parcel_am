@@ -1,11 +1,10 @@
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:parcel_am/core/services/permission_service/permission_service.dart';
+import 'package:parcel_am/core/utils/logger.dart';
 import 'package:file_picker/file_picker.dart';
-import '../utils/logger.dart';
+import '../domain/enums/file_upload_type.dart';
 import 'firebase_storage_service.dart';
-
-enum FileUploadType { image, video, audio, document, any }
 
 /// File upload service that handles file selection and Firebase Storage uploads
 class FileUploadService {

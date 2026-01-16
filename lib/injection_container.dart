@@ -11,9 +11,14 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'core/services/navigation_service/nav_config.dart';
 import 'core/services/connectivity_service.dart';
 import 'core/services/offline_queue_service.dart';
-import 'core/domain/repositories/presence_repository.dart';
-import 'core/data/repositories/presence_repository_impl.dart';
-import 'core/services/presence_service.dart';
+import 'core/errors/failure_mapper.dart';
+import 'core/errors/firebase_failure_mapper.dart';
+import 'core/services/error/error_handler.dart';
+
+// Chat Feature Module
+import 'features/chat/domain/repositories/presence_repository.dart';
+import 'features/chat/data/repositories/presence_repository_impl.dart';
+import 'features/chat/services/presence_service.dart';
 
 // Notifications Feature Module
 import 'features/notifications/services/notification_service.dart';
@@ -21,9 +26,10 @@ import 'features/notifications/domain/repositories/fcm_repository.dart';
 import 'features/notifications/data/repositories/fcm_repository_impl.dart';
 import 'features/notifications/domain/repositories/notification_settings_repository.dart';
 import 'features/notifications/data/repositories/notification_settings_repository_impl.dart';
-import 'core/errors/failure_mapper.dart';
-import 'core/errors/firebase_failure_mapper.dart';
-import 'core/services/error/error_handler.dart';
+
+// Payments Feature Module
+import 'features/payments/services/endpoint_service.dart';
+import 'features/payments/services/paystack_service.dart';
 
 // Feature modules no longer use DI - using direct instantiation instead
 
@@ -37,8 +43,6 @@ import 'features/chat/data/datasources/chat_remote_data_source.dart';
 import 'features/notifications/data/datasources/notification_remote_datasource.dart';
 
 // Payment System
-import 'core/services/endpoint_service.dart';
-import 'core/services/paystack_service.dart';
 import 'features/payments/data/remote/data_sources/paystack_payment_data_source.dart';
 import 'features/payments/data/repositories/paystack_payment_repository_impl.dart';
 import 'features/payments/domain/repositories/paystack_payment_repository.dart';

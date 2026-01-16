@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:parcel_am/core/errors/failures.dart' show Failure;
 import 'package:parcel_am/features/parcel_am_core/data/models/user_model.dart';
-import '../../../../core/domain/entities/kyc_status.dart';
+import '../../domain/entities/kyc_status.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';

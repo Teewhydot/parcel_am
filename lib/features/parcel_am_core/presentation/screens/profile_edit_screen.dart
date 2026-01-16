@@ -5,7 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
 import 'package:parcel_am/core/helpers/user_extensions.dart';
 import 'package:parcel_am/core/routes/routes.dart';
-import 'package:parcel_am/core/services/file_upload_service.dart';
+import 'package:parcel_am/features/file_upload/services/file_upload_service.dart';
 import 'package:parcel_am/core/services/navigation_service/nav_config.dart';
 import 'package:parcel_am/features/parcel_am_core/data/models/user_model.dart';
 import 'package:parcel_am/injection_container.dart';

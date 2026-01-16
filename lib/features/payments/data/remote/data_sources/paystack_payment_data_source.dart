@@ -1,5 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../../../../core/services/paystack_service.dart';
+import '../../../services/paystack_service.dart';
 import '../../../../../core/utils/logger.dart';
 
 abstract class PaystackPaymentDataSource {

@@ -13,7 +13,7 @@ import '../../../../core/bloc/base/base_state.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../injection_container.dart';
-import '../../../../core/domain/entities/kyc_status.dart';
+import 'package:parcel_am/features/kyc/domain/entities/kyc_status.dart';
 import '../../../../core/helpers/user_extensions.dart';
 import '../../../escrow/domain/entities/escrow_status.dart';
 import '../bloc/parcel/parcel_bloc.dart';

@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
-import '../constants/env.dart';
-import '../utils/logger.dart';
+import 'package:parcel_am/core/constants/env.dart';
+import 'package:parcel_am/core/utils/logger.dart';
 import 'endpoint_service.dart';
 
 class PaystackService {

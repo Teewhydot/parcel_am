@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:parcel_am/features/parcel_am_core/domain/usecases/wallet_usecase.dart';
-import '../../../../core/domain/entities/kyc_status.dart';
+import 'package:parcel_am/features/kyc/domain/entities/kyc_status.dart';
 import '../../../../core/utils/logger.dart';
 import '../models/user_model.dart';
 import '../../domain/exceptions/auth_exceptions.dart';

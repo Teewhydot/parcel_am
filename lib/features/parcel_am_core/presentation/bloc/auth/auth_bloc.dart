@@ -3,7 +3,7 @@ import 'package:bloc/bloc.dart';
 import 'package:dartz/dartz.dart';
 import 'package:parcel_am/core/bloc/base/base_bloc.dart';
 import 'package:parcel_am/core/bloc/base/base_state.dart';
-import 'package:parcel_am/core/domain/entities/kyc_status.dart';
+import 'package:parcel_am/features/kyc/domain/entities/kyc_status.dart';
 import 'package:parcel_am/core/errors/failures.dart';
 import 'package:parcel_am/core/utils/logger.dart';
 import 'package:parcel_am/features/parcel_am_core/data/models/user_model.dart';

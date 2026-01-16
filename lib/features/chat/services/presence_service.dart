@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:parcel_am/core/utils/logger.dart';
 import '../domain/repositories/presence_repository.dart';
-import '../utils/logger.dart';
 
 class PresenceService with WidgetsBindingObserver {
   final PresenceRepository _repository;

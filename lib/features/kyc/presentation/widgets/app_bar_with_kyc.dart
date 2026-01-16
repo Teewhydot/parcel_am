@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/domain/entities/kyc_status.dart';
+import '../../domain/entities/kyc_status.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_font_size.dart';
 import '../../../../core/bloc/base/base_state.dart';

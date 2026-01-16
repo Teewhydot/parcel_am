@@ -2,10 +2,10 @@
 class KycRequired {
   /// Whether to allow access with pending KYC status
   final bool allowPending;
-  
+
   /// Custom message to display when KYC is required
   final String? message;
-  
+
   /// Minimum KYC level required (for future multi-level KYC)
   final int level;
 

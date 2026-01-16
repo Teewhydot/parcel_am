@@ -5,7 +5,7 @@ import 'package:parcel_am/core/widgets/app_button.dart';
 import '../../../features/parcel_am_core/presentation/bloc/auth/auth_bloc.dart';
 import '../../../features/parcel_am_core/presentation/bloc/auth/auth_data.dart';
 import '../../../core/bloc/base/base_state.dart';
-import '../../../core/domain/entities/kyc_status.dart';
+import 'package:parcel_am/features/kyc/domain/entities/kyc_status.dart';
 
 /// Simple KYC Guard with realtime stream support for surgical protection
 ///

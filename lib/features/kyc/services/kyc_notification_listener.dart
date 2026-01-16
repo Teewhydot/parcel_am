@@ -1,31 +1,32 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../widgets/app_text.dart';
-import '../../widgets/app_button.dart';
-import '../../widgets/app_spacing.dart';
-import '../../../features/parcel_am_core/presentation/bloc/auth/auth_bloc.dart';
-import '../../../features/parcel_am_core/presentation/bloc/auth/auth_data.dart';
-import '../../../core/bloc/base/base_state.dart';
-import '../../../core/domain/entities/kyc_status.dart';
-import '../../../core/services/navigation_service/nav_config.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_radius.dart';
-import '../../../core/theme/app_font_size.dart';
-import '../../../core/routes/routes.dart';
-import '../../../injection_container.dart';
+import 'package:parcel_am/core/widgets/app_text.dart';
+import 'package:parcel_am/core/widgets/app_button.dart';
+import 'package:parcel_am/core/widgets/app_spacing.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_bloc.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_data.dart';
+import 'package:parcel_am/core/bloc/base/base_state.dart';
+import 'package:parcel_am/features/kyc/domain/entities/kyc_status.dart';
+import 'package:parcel_am/core/services/navigation_service/nav_config.dart';
+import 'package:parcel_am/core/theme/app_colors.dart';
+import 'package:parcel_am/core/theme/app_radius.dart';
+import 'package:parcel_am/core/theme/app_font_size.dart';
+import 'package:parcel_am/core/routes/routes.dart';
+import 'package:parcel_am/injection_container.dart';
 
 /// Listens to KYC status changes and shows notifications
 class KycNotificationListener extends StatefulWidget {
   final Widget child;
-  
+
   const KycNotificationListener({
     super.key,
     required this.child,
   });
 
   @override
-  State<KycNotificationListener> createState() => _KycNotificationListenerState();
+  State<KycNotificationListener> createState() =>
+      _KycNotificationListenerState();
 }
 
 class _KycNotificationListenerState extends State<KycNotificationListener> {
@@ -42,12 +43,13 @@ class _KycNotificationListenerState extends State<KycNotificationListener> {
   void _initializeListener() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      
+
       final authBloc = context.read<AuthBloc>();
       _statusSubscription = authBloc.stream.listen(_handleStatusChange);
-      
+
       final currentState = authBloc.state;
-      if (currentState is DataState<AuthData> && currentState.data?.user != null) {
+      if (currentState is DataState<AuthData> &&
+          currentState.data?.user != null) {
         _previousStatus = currentState.data!.user!.kycStatus;
       }
     });
@@ -55,14 +57,14 @@ class _KycNotificationListenerState extends State<KycNotificationListener> {
 
   void _handleStatusChange(BaseState<AuthData> state) {
     if (!mounted) return;
-    
+
     if (state is DataState<AuthData> && state.data?.user != null) {
       final currentStatus = state.data!.user!.kycStatus;
-      
+
       if (_previousStatus != null && _previousStatus != currentStatus) {
         _showStatusChangeNotification(currentStatus, _previousStatus!);
       }
-      
+
       _previousStatus = currentStatus;
     }
   }
@@ -75,12 +77,12 @@ class _KycNotificationListenerState extends State<KycNotificationListener> {
 
     final notificationData = _getNotificationData(newStatus, oldStatus);
     if (notificationData == null) return;
-    
+
     if (!mounted) return;
-    
+
     // Show toast notification
     _showToastNotification(notificationData);
-    
+
     // Show dialog for critical status changes (approved/rejected)
     if (newStatus == KycStatus.approved || newStatus == KycStatus.rejected) {
       Future.delayed(const Duration(milliseconds: 500), () {
@@ -99,46 +101,50 @@ class _KycNotificationListenerState extends State<KycNotificationListener> {
     if (oldStatus == KycStatus.underReview && newStatus == KycStatus.pending) {
       return false;
     }
-    
+
     return true;
   }
 
-  _NotificationData? _getNotificationData(KycStatus newStatus, KycStatus oldStatus) {
+  _NotificationData? _getNotificationData(
+      KycStatus newStatus, KycStatus oldStatus) {
     switch (newStatus) {
       case KycStatus.pending:
       case KycStatus.underReview:
-        if (oldStatus == KycStatus.notStarted || 
+        if (oldStatus == KycStatus.notStarted ||
             oldStatus == KycStatus.incomplete) {
           return _NotificationData(
             title: 'Verification Submitted',
-            message: 'Your documents are now under review. We\'ll notify you once complete.',
+            message:
+                'Your documents are now under review. We\'ll notify you once complete.',
             backgroundColor: AppColors.info,
             icon: Icons.pending_outlined,
             actionText: null,
           );
         }
         return null;
-        
+
       case KycStatus.approved:
         return _NotificationData(
-          title: 'Verification Approved! ✓',
-          message: 'Your identity has been verified. You now have full access to all features.',
+          title: 'Verification Approved!',
+          message:
+              'Your identity has been verified. You now have full access to all features.',
           backgroundColor: AppColors.success,
           icon: Icons.check_circle_outline,
           actionText: 'Explore Features',
           actionRoute: Routes.dashboard,
         );
-        
+
       case KycStatus.rejected:
         return _NotificationData(
           title: 'Verification Issues',
-          message: 'We couldn\'t verify your documents. Please review and resubmit.',
+          message:
+              'We couldn\'t verify your documents. Please review and resubmit.',
           backgroundColor: AppColors.error,
           icon: Icons.error_outline,
           actionText: 'Resubmit',
           actionRoute: Routes.verification,
         );
-        
+
       default:
         return null;
     }
@@ -147,7 +153,7 @@ class _KycNotificationListenerState extends State<KycNotificationListener> {
   void _showToastNotification(_NotificationData data) {
     // Remove previous overlay if exists
     _currentOverlay?.remove();
-    
+
     final overlay = Overlay.of(context);
     _currentOverlay = OverlayEntry(
       builder: (context) => _KycNotificationToast(
@@ -158,9 +164,9 @@ class _KycNotificationListenerState extends State<KycNotificationListener> {
         },
       ),
     );
-    
+
     overlay.insert(_currentOverlay!);
-    
+
     // Auto-dismiss after 5 seconds
     Future.delayed(const Duration(seconds: 5), () {
       _currentOverlay?.remove();
@@ -234,7 +240,7 @@ class _KycNotificationToastState extends State<_KycNotificationToast>
       vsync: this,
       duration: const Duration(milliseconds: 400),
     );
-    
+
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, -1),
       end: Offset.zero,
@@ -242,7 +248,7 @@ class _KycNotificationToastState extends State<_KycNotificationToast>
       parent: _controller,
       curve: Curves.easeOutCubic,
     ));
-    
+
     _fadeAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
@@ -250,7 +256,7 @@ class _KycNotificationToastState extends State<_KycNotificationToast>
       parent: _controller,
       curve: Curves.easeIn,
     ));
-    
+
     _controller.forward();
   }
 
@@ -349,7 +355,7 @@ class _KycStatusChangeDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isApproved = data.backgroundColor == AppColors.success;
-    
+
     return AlertDialog(
       shape: RoundedRectangleBorder(
         borderRadius: AppRadius.xl,
@@ -396,7 +402,8 @@ class _KycStatusChangeDialog extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.check_circle, color: AppColors.success, size: 20),
+                  const Icon(Icons.check_circle,
+                      color: AppColors.success, size: 20),
                   AppSpacing.horizontalSpacing(SpacingSize.sm),
                   const Expanded(
                     child: AppText(
