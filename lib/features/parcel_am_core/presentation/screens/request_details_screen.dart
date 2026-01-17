@@ -249,7 +249,8 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
           }
 
           // Non-creators see Accept button (only for created status)
-          if (parcel.status != ParcelStatus.created) {
+          // Hide button if user is the creator or if parcel is not in created status
+          if (parcel.status != ParcelStatus.created || isCreator) {
             return const SizedBox.shrink();
           }
 
