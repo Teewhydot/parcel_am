@@ -386,151 +386,201 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           ],
         ),
       ),
-      body: BlocListener<ChatCubit, BaseState<ChatMessageData>>(
+      body: BlocConsumer<ChatCubit, BaseState<ChatMessageData>>(
         listener: (context, state) {
           if (state is AsyncErrorState<ChatMessageData>) {
             context.showSnackbar(message: state.errorMessage);
           }
-          // Scroll to bottom when state is loaded (after message sent)
         },
-        child: StreamBuilder<Either<Failure, List<Message>>>(
-          stream: context.read<ChatCubit>().watchMessages(widget.chatId),
-          builder: (context, messagesSnapshot) {
-            if (messagesSnapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
+        builder: (context, state) {
+          final chatData = state.data ?? const ChatMessageData();
+          final replyToMessage = chatData.replyToMessage;
+          final isUploading = chatData.isUploading;
+          final uploadProgress = chatData.uploadProgress;
 
-            if (messagesSnapshot.hasError) {
-              return Center(
-                child: AppText.bodyMedium('Error loading messages'),
+          return Column(
+            children: [
+              Expanded(
+                child: _MessagesList(
+                  chatId: widget.chatId,
+                  otherUserId: widget.otherUserId,
+                  currentUserId: _currentUserId,
+                  pendingMessages: chatData.pendingMessages,
+                  scrollController: _scrollController,
+                  onMessageTap: _handleMessageTap,
+                  onMessageLongPress: _handleMessageLongPress,
+                  onMarkAsRead: _markMessagesAsRead,
+                ),
+              ),
+              MessageInput(
+                onSend: _handleSendMessage,
+                onSendMedia: _handleSendMedia,
+                onTyping: _handleTyping,
+                replyToMessage: replyToMessage,
+                onCancelReply: () {
+                  context.read<ChatCubit>().setReplyToMessage(null);
+                },
+                isUploading: isUploading,
+                uploadProgress: uploadProgress,
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Separate widget for messages list to handle stream independently
+class _MessagesList extends StatelessWidget {
+  final String chatId;
+  final String otherUserId;
+  final String? currentUserId;
+  final List<Message> pendingMessages;
+  final ScrollController scrollController;
+  final void Function(Message) onMessageTap;
+  final void Function(Message) onMessageLongPress;
+  final void Function(List<Message>) onMarkAsRead;
+
+  const _MessagesList({
+    required this.chatId,
+    required this.otherUserId,
+    required this.currentUserId,
+    required this.pendingMessages,
+    required this.scrollController,
+    required this.onMessageTap,
+    required this.onMessageLongPress,
+    required this.onMarkAsRead,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<Either<Failure, List<Message>>>(
+      stream: context.read<ChatCubit>().watchMessages(chatId),
+      builder: (context, messagesSnapshot) {
+        // Get stream messages (or empty list if loading/error)
+        List<Message> streamMessages = [];
+        bool isLoading = messagesSnapshot.connectionState == ConnectionState.waiting;
+        String? errorMessage;
+
+        if (messagesSnapshot.hasData) {
+          messagesSnapshot.data!.fold(
+            (failure) => errorMessage = failure.failureMessage,
+            (messages) {
+              streamMessages = messages;
+              // Mark messages as read
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                onMarkAsRead(messages);
+              });
+            },
+          );
+        }
+
+        // Merge stream messages with pending messages for instant display
+        final allMessages = _mergeMessages(streamMessages, pendingMessages);
+
+        return StreamBuilder<Either<Failure, Chat>>(
+          stream: context.read<ChatCubit>().watchChat(chatId),
+          builder: (context, chatSnapshot) {
+            Chat? chat;
+            if (chatSnapshot.hasData) {
+              chatSnapshot.data!.fold(
+                (failure) => null,
+                (c) => chat = c,
               );
             }
 
-            if (!messagesSnapshot.hasData) {
+            final showTypingIndicator = chat?.isTyping[otherUserId] ?? false;
+
+            // Show loading only if no messages at all (pending or stream)
+            if (isLoading && allMessages.isEmpty) {
               return const Center(child: CircularProgressIndicator());
             }
 
-            return messagesSnapshot.data!.fold(
-              (failure) => Center(
-                child: AppText.bodyMedium(failure.failureMessage),
-              ),
-              (messages) {
-                // Mark messages as read when loaded
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  _markMessagesAsRead(messages);
-                });
+            if (errorMessage != null && allMessages.isEmpty) {
+              return Center(
+                child: AppText.bodyMedium(errorMessage!),
+              );
+            }
 
-                return StreamBuilder<Either<Failure, Chat>>(
-                  stream: context.read<ChatCubit>().watchChat(widget.chatId),
-                  builder: (context, chatSnapshot) {
-                    Chat? chat;
-                    if (chatSnapshot.hasData) {
-                      chatSnapshot.data!.fold(
-                        (failure) => null,
-                        (c) => chat = c,
-                      );
-                    }
+            if (allMessages.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.chat_bubble_outline,
+                      size: 64,
+                      color: AppColors.disabled,
+                    ),
+                    AppSpacing.verticalSpacing(SpacingSize.lg),
+                    AppText.bodyLarge(
+                      'No messages yet',
+                      color: AppColors.textSecondary,
+                    ),
+                    AppSpacing.verticalSpacing(SpacingSize.sm),
+                    AppText.bodyMedium(
+                      'Start the conversation!',
+                      color: AppColors.textDisabled,
+                    ),
+                  ],
+                ),
+              );
+            }
 
-                    final showTypingIndicator =
-                        chat?.isTyping[widget.otherUserId] ?? false;
+            return ListView.builder(
+              controller: scrollController,
+              reverse: true,
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              itemCount: allMessages.length + (showTypingIndicator ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (showTypingIndicator && index == 0) {
+                  return const Align(
+                    alignment: Alignment.centerLeft,
+                    child: TypingIndicator(),
+                  );
+                }
 
-                    return BlocBuilder<ChatCubit, BaseState<ChatMessageData>>(
-                      buildWhen: (previous, current) {
-                        // Only rebuild for state changes related to input
-                        return current.hasData;
-                      },
-                      builder: (context, state) {
-                        final chatData = state.data ?? const ChatMessageData();
-                        final replyToMessage = chatData.replyToMessage;
-                        final isUploading = chatData.isUploading;
-                        final uploadProgress = chatData.uploadProgress;
+                final messageIndex = showTypingIndicator ? index - 1 : index;
+                final message = allMessages[messageIndex];
+                final isMe = message.senderId == currentUserId;
 
-                        return Column(
-                          children: [
-                            Expanded(
-                              child: messages.isEmpty
-                                  ? Center(
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            Icons.chat_bubble_outline,
-                                            size: 64,
-                                            color: AppColors.disabled,
-                                          ),
-                                          AppSpacing.verticalSpacing(
-                                              SpacingSize.lg),
-                                          AppText.bodyLarge(
-                                            'No messages yet',
-                                            color: AppColors.textSecondary,
-                                          ),
-                                          AppSpacing.verticalSpacing(
-                                              SpacingSize.sm),
-                                          AppText.bodyMedium(
-                                            'Start the conversation!',
-                                            color: AppColors.textDisabled,
-                                          ),
-                                        ],
-                                      ),
-                                    )
-                                  : ListView.builder(
-                                      controller: _scrollController,
-                                      reverse: true,
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 8),
-                                      itemCount: messages.length +
-                                          (showTypingIndicator ? 1 : 0),
-                                      itemBuilder: (context, index) {
-                                        if (showTypingIndicator && index == 0) {
-                                          return const Align(
-                                            alignment: Alignment.centerLeft,
-                                            child: TypingIndicator(),
-                                          );
-                                        }
-
-                                        final messageIndex = showTypingIndicator
-                                            ? index - 1
-                                            : index;
-                                        final message = messages[messageIndex];
-                                        final isMe =
-                                            message.senderId == _currentUserId;
-
-                                        return MessageBubble(
-                                          message: message,
-                                          isMe: isMe,
-                                          onTap: () =>
-                                              _handleMessageTap(message),
-                                          onLongPress: () =>
-                                              _handleMessageLongPress(message),
-                                        );
-                                      },
-                                    ),
-                            ),
-                            MessageInput(
-                              onSend: _handleSendMessage,
-                              onSendMedia: _handleSendMedia,
-                              onTyping: _handleTyping,
-                              replyToMessage: replyToMessage,
-                              onCancelReply: () {
-                                context
-                                    .read<ChatCubit>()
-                                    .setReplyToMessage(null);
-                              },
-                              isUploading: isUploading,
-                              uploadProgress: uploadProgress,
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                  },
+                return MessageBubble(
+                  message: message,
+                  isMe: isMe,
+                  onTap: () => onMessageTap(message),
+                  onLongPress: () => onMessageLongPress(message),
                 );
               },
             );
           },
-        ),
-      ),
+        );
+      },
     );
+  }
+
+  /// Merge stream messages with pending messages, removing duplicates
+  List<Message> _mergeMessages(List<Message> streamMessages, List<Message> pending) {
+    if (pending.isEmpty) return streamMessages;
+
+    // Filter out pending messages that are now confirmed in stream
+    final confirmedIds = streamMessages.map((m) => m.id).toSet();
+    final stillPending = pending.where((p) =>
+      !confirmedIds.contains(p.id) &&
+      !streamMessages.any((m) => _isSameMessage(m, p))
+    ).toList();
+
+    // Merge and sort by timestamp (descending for reverse list)
+    final merged = [...stillPending, ...streamMessages];
+    merged.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    return merged;
+  }
+
+  /// Check if two messages are the same (for matching temp IDs with real IDs)
+  bool _isSameMessage(Message a, Message b) {
+    return a.senderId == b.senderId &&
+        a.content == b.content &&
+        a.type == b.type &&
+        (a.timestamp.difference(b.timestamp).inSeconds.abs() < 5);
   }
 }

@@ -44,6 +44,13 @@ class ChatListTile extends StatelessWidget {
     return chat.isTyping[_otherParticipantId] ?? false;
   }
 
+  bool get _isOnline {
+    final lastSeen = chat.lastSeen[_otherParticipantId];
+    if (lastSeen == null) return false;
+    final difference = DateTime.now().difference(lastSeen);
+    return difference.inMinutes < 5;
+  }
+
   String get _lastMessagePreview {
     if (_isTyping) return 'typing...';
     if (chat.lastMessage == null) return 'No messages yet';
@@ -149,6 +156,7 @@ class ChatListTile extends StatelessWidget {
                 )
               : _buildAvatarPlaceholder(),
         ),
+        // Show typing indicator or online status
         if (_isTyping)
           Positioned(
             right: 0,
@@ -167,6 +175,20 @@ class ChatListTile extends StatelessWidget {
                   height: 10,
                   child: _TypingDots(),
                 ),
+              ),
+            ),
+          )
+        else if (_isOnline)
+          Positioned(
+            right: 0,
+            bottom: 0,
+            child: Container(
+              width: 16,
+              height: 16,
+              decoration: BoxDecoration(
+                color: AppColors.success,
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.white, width: 2),
               ),
             ),
           ),

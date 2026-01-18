@@ -84,6 +84,8 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         .collection('messages');
 
     final messageData = message.toJson();
+    // Set status to 'sent' when writing to server (not 'sending')
+    messageData['status'] = MessageStatus.sent.name;
 
     // Add message to collection
     if (message.id.isEmpty || message.id.startsWith('temp_')) {

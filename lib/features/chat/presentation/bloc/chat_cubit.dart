@@ -56,26 +56,89 @@ class ChatCubit extends BaseCubit<BaseState<ChatMessageData>> {
   Future<void> sendMessage(Message message) async {
     final currentData = state.data ?? const ChatMessageData();
 
-    // Clear reply-to message immediately for instant feedback
+    // Optimistic update: Add message to pending list immediately
+    final pendingMessage = Message(
+      id: message.id,
+      chatId: message.chatId,
+      senderId: message.senderId,
+      senderName: message.senderName,
+      senderAvatar: message.senderAvatar,
+      content: message.content,
+      type: message.type,
+      status: MessageStatus.sending, // Show as sending
+      timestamp: message.timestamp,
+      mediaUrl: message.mediaUrl,
+      thumbnailUrl: message.thumbnailUrl,
+      fileName: message.fileName,
+      fileSize: message.fileSize,
+      replyToMessageId: message.replyToMessageId,
+      replyToMessage: message.replyToMessage,
+    );
+
+    // Add to pending and clear reply immediately for instant feedback
     emit(LoadedState<ChatMessageData>(
-      data: currentData.copyWith(clearReplyToMessage: true),
+      data: currentData.copyWith(
+        pendingMessages: [...currentData.pendingMessages, pendingMessage],
+        clearReplyToMessage: true,
+      ),
       lastUpdated: DateTime.now(),
     ));
 
-    // Send message - status is tracked on each message via MessageStatus
+    // Send message to server in background
     final result = await chatUseCase.sendMessage(message);
 
     result.fold(
       (failure) {
-        // Show error snackbar but don't block UI
-        // The message status will show as 'failed' in the message bubble
+        // Update pending message status to failed
+        final updatedPending = currentData.pendingMessages.map((m) {
+          if (m.id == message.id) {
+            return Message(
+              id: m.id,
+              chatId: m.chatId,
+              senderId: m.senderId,
+              senderName: m.senderName,
+              senderAvatar: m.senderAvatar,
+              content: m.content,
+              type: m.type,
+              status: MessageStatus.failed, // Mark as failed
+              timestamp: m.timestamp,
+              mediaUrl: m.mediaUrl,
+              thumbnailUrl: m.thumbnailUrl,
+              fileName: m.fileName,
+              fileSize: m.fileSize,
+              replyToMessageId: m.replyToMessageId,
+              replyToMessage: m.replyToMessage,
+            );
+          }
+          return m;
+        }).toList();
+
+        // Also add the failed message to show it
+        updatedPending.add(Message(
+          id: message.id,
+          chatId: message.chatId,
+          senderId: message.senderId,
+          senderName: message.senderName,
+          senderAvatar: message.senderAvatar,
+          content: message.content,
+          type: message.type,
+          status: MessageStatus.failed,
+          timestamp: message.timestamp,
+          mediaUrl: message.mediaUrl,
+          replyToMessageId: message.replyToMessageId,
+        ));
+
         emit(AsyncErrorState<ChatMessageData>(
           errorMessage: failure.failureMessage,
-          data: currentData.copyWith(clearReplyToMessage: true),
+          data: (state.data ?? currentData).copyWith(
+            pendingMessages: updatedPending,
+            clearReplyToMessage: true,
+          ),
         ));
       },
       (_) {
-        // Success - message status will update via stream
+        // Success - the stream will pick up the confirmed message
+        // Pending message will be filtered out in allMessages getter
       },
     );
   }
