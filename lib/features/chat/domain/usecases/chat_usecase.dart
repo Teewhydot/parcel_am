@@ -1,12 +1,16 @@
 import 'package:dartz/dartz.dart';
 import '../../../../core/errors/failures.dart';
+import '../../../../injection_container.dart';
 import '../entities/message.dart';
 import '../entities/message_type.dart';
 import '../entities/chat.dart';
-import '../../data/repositories/chat_repository_impl.dart';
+import '../repositories/chat_repository.dart';
 
 class ChatUseCase {
-  final repository = ChatRepositoryImpl();
+  final ChatRepository repository;
+
+  ChatUseCase({ChatRepository? repository})
+      : repository = repository ?? sl<ChatRepository>();
 
   Stream<Either<Failure, List<Message>>> getMessagesStream(String chatId) {
     return repository.getMessagesStream(chatId);
@@ -58,5 +62,17 @@ class ChatUseCase {
 
   Future<Either<Failure, void>> deleteMessage(String messageId) {
     return repository.deleteMessage(messageId);
+  }
+
+  Future<Either<Failure, Chat>> getOrCreateChat({
+    required String chatId,
+    required List<String> participantIds,
+    required Map<String, String> participantNames,
+  }) {
+    return repository.getOrCreateChat(
+      chatId: chatId,
+      participantIds: participantIds,
+      participantNames: participantNames,
+    );
   }
 }

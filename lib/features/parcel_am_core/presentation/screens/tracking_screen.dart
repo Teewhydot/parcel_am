@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -17,6 +18,7 @@ import '../bloc/package/package_bloc.dart';
 import '../bloc/package/package_event.dart';
 import '../bloc/package/package_state.dart';
 import '../../../../core/helpers/user_extensions.dart';
+import '../../../chat/domain/usecases/chat_usecase.dart';
 
 class TrackingScreen extends StatefulWidget {
   const TrackingScreen({super.key, this.packageId});
@@ -31,6 +33,7 @@ class _TrackingScreenState extends State<TrackingScreen> with TickerProviderStat
   late TabController _tabController;
   final TextEditingController _confirmationCodeController = TextEditingController();
   final TextEditingController _disputeReasonController = TextEditingController();
+  bool _isChatLoading = false;
 
   @override
   void initState() {
@@ -77,16 +80,64 @@ ETA: ${_formatETA(package.estimatedArrival)}
     }
   }
 
-  void _messageCarrier(PackageEntity package) {
-    sl<NavigationService>().navigateTo(
-      Routes.chat,
-      arguments: {
-        'chatId': null,
-        'otherUserId': package.carrier.id,
-        'otherUserName': package.carrier.name,
-        'otherUserAvatar': null,
-      },
-    );
+  Future<void> _messageCarrier(PackageEntity package) async {
+    if (_isChatLoading) return;
+
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: AppText.bodyMedium('Please sign in to chat', color: AppColors.white)),
+        );
+      }
+      return;
+    }
+
+    setState(() => _isChatLoading = true);
+
+    try {
+      final currentUserId = currentUser.uid;
+      final currentUserName = currentUser.displayName ?? 'User';
+      final otherUserId = package.carrier.id;
+      final otherUserName = package.carrier.name;
+
+      // Generate chatId using sorted user IDs for consistency
+      final sortedIds = [currentUserId, otherUserId]..sort();
+      final chatId = '${sortedIds[0]}_${sortedIds[1]}';
+
+      // Ensure chat exists before navigation
+      final chatUseCase = ChatUseCase();
+      await chatUseCase.getOrCreateChat(
+        chatId: chatId,
+        participantIds: [currentUserId, otherUserId],
+        participantNames: {
+          currentUserId: currentUserName,
+          otherUserId: otherUserName,
+        },
+      );
+
+      if (!mounted) return;
+
+      sl<NavigationService>().navigateTo(
+        Routes.chat,
+        arguments: {
+          'chatId': chatId,
+          'otherUserId': otherUserId,
+          'otherUserName': otherUserName,
+          'otherUserAvatar': null,
+        },
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: AppText.bodyMedium('Failed to open chat: $e', color: AppColors.white)),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isChatLoading = false);
+      }
+    }
   }
 
   @override

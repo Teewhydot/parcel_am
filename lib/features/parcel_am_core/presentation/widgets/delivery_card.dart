@@ -18,6 +18,7 @@ import '../../domain/entities/parcel_entity.dart';
 import '../bloc/parcel/parcel_cubit.dart';
 import '../bloc/parcel/parcel_state.dart';
 import 'status_update_action_sheet.dart';
+import '../../../chat/domain/usecases/chat_usecase.dart';
 
 /// Delivery card widget for displaying accepted parcel information.
 ///
@@ -48,6 +49,8 @@ class DeliveryCard extends StatefulWidget {
 class _DeliveryCardState extends State<DeliveryCard> {
   // Task 3.6.2: Track hover state for elevation changes
   bool _isHovered = false;
+  // Track chat loading state
+  bool _isChatLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -356,17 +359,31 @@ class _DeliveryCardState extends State<DeliveryCard> {
             ),
           ),
           // Chat with sender button
-          IconButton(
-            onPressed: () => _handleChatNavigation(context),
-            icon: Icon(
-              Icons.chat_bubble_outline,
-              color: AppColors.primary,
-            ),
-            tooltip: 'Chat with sender',
-            style: IconButton.styleFrom(
-              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-            ),
-          ),
+          _isChatLoading
+              ? Container(
+                  width: 40,
+                  height: 40,
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                  ),
+                )
+              : IconButton(
+                  onPressed: () => _handleChatNavigation(context),
+                  icon: Icon(
+                    Icons.chat_bubble_outline,
+                    color: AppColors.primary,
+                  ),
+                  tooltip: 'Chat with sender',
+                  style: IconButton.styleFrom(
+                    backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                  ),
+                ),
         ],
       ),
     );
@@ -668,8 +685,10 @@ class _DeliveryCardState extends State<DeliveryCard> {
   }
 
   /// Task 3.3.5: Handle chat navigation with sender
-  /// Prepares navigation logic for chat (will be fully functional with Task Group 3.5)
-  void _handleChatNavigation(BuildContext context) {
+  /// Creates chat if it doesn't exist, then navigates to chat screen
+  Future<void> _handleChatNavigation(BuildContext context) async {
+    if (_isChatLoading) return;
+
     try {
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) {
@@ -679,11 +698,28 @@ class _DeliveryCardState extends State<DeliveryCard> {
         return;
       }
 
+      setState(() => _isChatLoading = true);
+
       final currentUserId = currentUser.uid;
+      final currentUserName = currentUser.displayName ?? 'User';
       final otherUserId = widget.parcel.sender.userId;
+      final otherUserName = widget.parcel.sender.name;
 
       // Generate chatId using sorted user IDs for consistency
       final chatId = _generateChatId(currentUserId, otherUserId);
+
+      // Ensure chat exists before navigation
+      final chatUseCase = ChatUseCase();
+      await chatUseCase.getOrCreateChat(
+        chatId: chatId,
+        participantIds: [currentUserId, otherUserId],
+        participantNames: {
+          currentUserId: currentUserName,
+          otherUserId: otherUserName,
+        },
+      );
+
+      if (!mounted) return;
 
       // Navigate to chat screen with required arguments
       sl<NavigationService>().navigateTo(
@@ -691,14 +727,20 @@ class _DeliveryCardState extends State<DeliveryCard> {
         arguments: {
           'chatId': chatId,
           'otherUserId': otherUserId,
-          'otherUserName': widget.parcel.sender.name,
+          'otherUserName': otherUserName,
           'otherUserAvatar': null, // Avatar not available in current data model
         },
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: AppText.bodyMedium('Failed to open chat: $e', color: AppColors.white)),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: AppText.bodyMedium('Failed to open chat: $e', color: AppColors.white)),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isChatLoading = false);
+      }
     }
   }
 

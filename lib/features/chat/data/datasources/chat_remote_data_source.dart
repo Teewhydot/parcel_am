@@ -33,6 +33,11 @@ abstract class ChatRemoteDataSource {
   Future<List<ChatModel>> getUserChats(String userId);
   Stream<ChatModel> watchChat(String chatId);
   Stream<List<ChatModel>> watchUserChats(String userId);
+  Future<ChatModel> getOrCreateChat({
+    required String chatId,
+    required List<String> participantIds,
+    required Map<String, String> participantNames,
+  });
 }
 
 class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
@@ -340,5 +345,49 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         return ChatModel.fromJson(data);
       }).toList();
     });
+  }
+
+  @override
+  Future<ChatModel> getOrCreateChat({
+    required String chatId,
+    required List<String> participantIds,
+    required Map<String, String> participantNames,
+  }) async {
+    final chatRef = firestore.collection('chats').doc(chatId);
+    final chatDoc = await chatRef.get();
+
+    if (chatDoc.exists) {
+      // Chat already exists, return it
+      final data = chatDoc.data()!;
+      data['id'] = chatDoc.id;
+      return ChatModel.fromJson(data);
+    }
+
+    // Create new chat with the specified ID
+    final chatData = {
+      'participantIds': participantIds,
+      'participantNames': participantNames,
+      'participantAvatars': <String, String?>{},
+      'createdAt': FieldValue.serverTimestamp(),
+      'lastMessage': null,
+      'lastMessageTime': null,
+      'unreadCount': <String, int>{},
+      'isTyping': <String, bool>{},
+      'lastSeen': <String, dynamic>{},
+    };
+
+    await chatRef.set(chatData);
+
+    // Return the created chat
+    return ChatModel(
+      id: chatId,
+      participantIds: participantIds,
+      participantNames: participantNames,
+      participantAvatars: {},
+      unreadCount: {},
+      isTyping: {},
+      lastSeen: {},
+      createdAt: DateTime.now(),
+    );
   }
 }

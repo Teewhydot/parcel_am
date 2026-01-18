@@ -17,7 +17,9 @@ import 'core/services/error/error_handler.dart';
 
 // Chat Feature Module
 import 'features/chat/domain/repositories/presence_repository.dart';
+import 'features/chat/domain/repositories/chat_repository.dart';
 import 'features/chat/data/repositories/presence_repository_impl.dart';
+import 'features/chat/data/repositories/chat_repository_impl.dart';
 import 'features/chat/services/presence_service.dart';
 
 // Notifications Feature Module
@@ -135,6 +137,11 @@ Future<void> init() async {
       firestore: sl(),
       storage: sl(),
     ),
+  );
+
+  //! Features - Chat Repository
+  sl.registerLazySingleton<ChatRepository>(
+    () => ChatRepositoryImpl(),
   );
 
   //! Features - Payment System

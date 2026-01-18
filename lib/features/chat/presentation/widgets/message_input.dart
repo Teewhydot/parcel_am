@@ -103,18 +103,18 @@ class _MessageInputState extends State<MessageInput> {
   void _showAttachmentOptions() {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: AppRadius.xl.topLeft),
       ),
       builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
+        padding: AppSpacing.paddingXL,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               width: 40,
               height: 4,
-              margin: const EdgeInsets.only(bottom: 20),
+              margin: EdgeInsets.only(bottom: SpacingSize.xl.value),
               decoration: BoxDecoration(
                 color: AppColors.surfaceVariant,
                 borderRadius: AppRadius.xs,
@@ -202,7 +202,10 @@ class _MessageInputState extends State<MessageInput> {
           ),
         if (widget.replyToMessage != null)
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: EdgeInsets.symmetric(
+              horizontal: SpacingSize.lg.value,
+              vertical: SpacingSize.sm.value,
+            ),
             decoration: BoxDecoration(
               color: AppColors.surfaceVariant,
               border: Border(
@@ -215,7 +218,7 @@ class _MessageInputState extends State<MessageInput> {
                   width: 3,
                   height: 40,
                   color: AppColors.info,
-                  margin: const EdgeInsets.only(right: 12),
+                  margin: EdgeInsets.only(right: SpacingSize.md.value),
                 ),
                 Expanded(
                   child: Column(
@@ -228,7 +231,7 @@ class _MessageInputState extends State<MessageInput> {
                         fontWeight: FontWeight.bold,
                         color: AppColors.info,
                       ),
-                      const SizedBox(height: 2),
+                      SizedBox(height: SpacingSize.xs.value / 2),
                       AppText(
                         widget.replyToMessage!.type == MessageType.text
                             ? widget.replyToMessage!.content
@@ -252,7 +255,7 @@ class _MessageInputState extends State<MessageInput> {
             ),
           ),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          padding: AppSpacing.paddingSM,
           decoration: BoxDecoration(
             color: AppColors.white,
             boxShadow: [
@@ -272,7 +275,7 @@ class _MessageInputState extends State<MessageInput> {
                 ),
                 Expanded(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: AppSpacing.horizontalPaddingLG,
                     decoration: BoxDecoration(
                       color: AppColors.surfaceVariant,
                       borderRadius: AppRadius.xxl,
@@ -280,10 +283,10 @@ class _MessageInputState extends State<MessageInput> {
                     child: TextField(
                       controller: _controller,
                       onChanged: _handleTextChanged,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         hintText: 'Type a message...',
                         border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(vertical: 10),
+                        contentPadding: EdgeInsets.symmetric(vertical: SpacingSize.md.value),
                       ),
                       maxLines: null,
                       textCapitalization: TextCapitalization.sentences,
@@ -295,7 +298,7 @@ class _MessageInputState extends State<MessageInput> {
                 GestureDetector(
                   onTap: widget.isUploading || widget.isSending ? null : _handleSend,
                   child: Container(
-                    padding: const EdgeInsets.all(10),
+                    padding: EdgeInsets.all(SpacingSize.md.value),
                     decoration: BoxDecoration(
                       color: _controller.text.trim().isEmpty || widget.isUploading || widget.isSending
                           ? AppColors.surfaceVariant

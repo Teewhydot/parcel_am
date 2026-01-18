@@ -18,25 +18,40 @@ class ChatModel extends Chat {
 
   factory ChatModel.fromJson(Map<String, dynamic> json) {
     return ChatModel(
-      id: json['id'] as String,
-      participantIds: List<String>.from(json['participantIds'] as List),
-      participantNames: Map<String, String>.from(json['participantNames'] as Map),
-      participantAvatars: Map<String, String?>.from(json['participantAvatars'] as Map),
+      id: json['id'] as String? ?? '',
+      participantIds: json['participantIds'] != null
+          ? List<String>.from(json['participantIds'] as List)
+          : [],
+      participantNames: json['participantNames'] != null
+          ? Map<String, String>.from(json['participantNames'] as Map)
+          : {},
+      participantAvatars: json['participantAvatars'] != null
+          ? Map<String, String?>.from(json['participantAvatars'] as Map)
+          : {},
       lastMessage: json['lastMessage'] != null
           ? MessageModel.fromJson(json['lastMessage'] as Map<String, dynamic>)
           : null,
       lastMessageTime: json['lastMessageTime'] != null
           ? (json['lastMessageTime'] as Timestamp).toDate()
           : null,
-      unreadCount: Map<String, int>.from(json['unreadCount'] as Map),
-      isTyping: Map<String, bool>.from(json['isTyping'] as Map),
-      lastSeen: (json['lastSeen'] as Map).map(
-        (key, value) => MapEntry(
-          key as String,
-          value != null ? (value as Timestamp).toDate() : null,
-        ),
-      ),
-      createdAt: (json['createdAt'] as Timestamp).toDate(),
+      unreadCount: json['unreadCount'] != null
+          ? Map<String, int>.from(json['unreadCount'] as Map)
+          : {},
+      isTyping: json['isTyping'] != null
+          ? Map<String, bool>.from(json['isTyping'] as Map)
+          : {},
+      lastSeen: json['lastSeen'] != null
+          ? (json['lastSeen'] as Map).map(
+              (key, value) => MapEntry(
+                key as String,
+                value != null ? (value as Timestamp).toDate() : null,
+              ),
+            )
+          : {},
+      // Handle both Timestamp and null for createdAt
+      createdAt: json['createdAt'] != null
+          ? (json['createdAt'] as Timestamp).toDate()
+          : DateTime.now(),
     );
   }
 

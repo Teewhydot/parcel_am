@@ -11,6 +11,11 @@ abstract class ChatRepository {
   Future<Either<Failure, List<Chat>>> getUserChats(String userId);
   Stream<Chat> watchChat(String chatId);
   Stream<List<Chat>> watchUserChats(String userId);
+  Future<Either<Failure, Chat>> getOrCreateChat({
+    required String chatId,
+    required List<String> participantIds,
+    required Map<String, String> participantNames,
+  });
 
   // Message management
   Stream<Either<Failure, List<Message>>> getMessagesStream(String chatId);

@@ -204,4 +204,26 @@ class ChatRepositoryImpl implements ChatRepository {
   Stream<List<Chat>> watchUserChats(String userId) {
     return remoteDataSource.watchUserChats(userId);
   }
+
+  @override
+  Future<Either<Failure, Chat>> getOrCreateChat({
+    required String chatId,
+    required List<String> participantIds,
+    required Map<String, String> participantNames,
+  }) async {
+    if (!await InternetConnectionChecker.instance.hasConnection) {
+      return const Left(NetworkFailure(failureMessage: 'No internet connection'));
+    }
+
+    try {
+      final chat = await remoteDataSource.getOrCreateChat(
+        chatId: chatId,
+        participantIds: participantIds,
+        participantNames: participantNames,
+      );
+      return Right(chat);
+    } catch (e) {
+      return Left(ServerFailure(failureMessage: e.toString()));
+    }
+  }
 }

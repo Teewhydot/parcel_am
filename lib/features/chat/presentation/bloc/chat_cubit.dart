@@ -19,6 +19,7 @@ class ChatCubit extends BaseCubit<BaseState<ChatMessageData>> {
       yield* chatUseCase.getMessagesStream(chatId);
     } catch (e, stackTrace) {
       handleException(Exception(e.toString()), stackTrace);
+      yield Left(ServerFailure(failureMessage: e.toString()));
     }
   }
 
@@ -28,6 +29,7 @@ class ChatCubit extends BaseCubit<BaseState<ChatMessageData>> {
       yield* chatUseCase.getChatStream(chatId);
     } catch (e, stackTrace) {
       handleException(Exception(e.toString()), stackTrace);
+      yield Left(ServerFailure(failureMessage: e.toString()));
     }
   }
 
