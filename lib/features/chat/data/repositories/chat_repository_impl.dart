@@ -226,4 +226,9 @@ class ChatRepositoryImpl implements ChatRepository {
       return Left(ServerFailure(failureMessage: e.toString()));
     }
   }
+
+  @override
+  Future<void> markMessageNotificationSent(String chatId, String messageId) async {
+    await remoteDataSource.markMessageNotificationSent(chatId, messageId);
+  }
 }

@@ -116,6 +116,9 @@ class NotificationService {
   StreamSubscription<String>? _tokenRefreshSubscription;
   StreamSubscription<RemoteMessage>? _foregroundMessageSubscription;
 
+  /// Currently viewed chat ID - used to suppress notifications for active chat
+  String? _currentChatId;
+
   NotificationService({
     required this.repository,
     required this.localNotifications,
@@ -144,6 +147,16 @@ class NotificationService {
 
   bool get isInitialized => _isInitialized;
   String? get currentToken => _currentToken;
+  String? get currentChatId => _currentChatId;
+
+  /// Set the current chat ID when user enters a chat screen
+  /// Pass null when leaving the chat screen
+  void setCurrentChatId(String? chatId) {
+    _currentChatId = chatId;
+    if (kDebugMode) {
+      print('[NotificationService] Current chat ID set to: $chatId');
+    }
+  }
 
   /// Initialize notification service
   /// Called from main.dart after Firebase initialization, before runApp
@@ -669,6 +682,74 @@ class NotificationService {
       if (kDebugMode) {
         print('[NotificationService] Error updating badge count: $e');
       }
+    }
+  }
+
+  /// Show local notification for a chat message
+  /// Returns true if notification was shown, false if suppressed
+  Future<bool> showChatMessageNotification({
+    required String chatId,
+    required String messageId,
+    required String senderName,
+    required String messagePreview,
+    String? senderAvatar,
+  }) async {
+    // Skip if user is currently viewing this chat
+    if (_currentChatId == chatId) {
+      if (kDebugMode) {
+        print('[NotificationService] Suppressing notification - user viewing chat: $chatId');
+      }
+      return false;
+    }
+
+    try {
+      final androidDetails = AndroidNotificationDetails(
+        'chat_messages',
+        'Chat Messages',
+        channelDescription: 'Notifications for new chat messages',
+        importance: Importance.high,
+        priority: Priority.high,
+        showWhen: true,
+        enableVibration: true,
+        playSound: true,
+        groupKey: 'chat_group',
+      );
+
+      const iosDetails = DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      );
+
+      final notificationDetails = NotificationDetails(
+        android: androidDetails,
+        iOS: iosDetails,
+      );
+
+      final payload = jsonEncode({
+        'chatId': chatId,
+        'messageId': messageId,
+        'type': 'chat_message',
+      });
+
+      await localNotifications.show(
+        messageId.hashCode,
+        senderName,
+        messagePreview,
+        notificationDetails,
+        payload: payload,
+      );
+
+      if (kDebugMode) {
+        print('[NotificationService] Chat notification shown for message: $messageId');
+      }
+
+      return true;
+    } catch (e) {
+      if (kDebugMode) {
+        print('[NotificationService] Error showing chat notification: $e');
+      }
+      return false;
     }
   }
 

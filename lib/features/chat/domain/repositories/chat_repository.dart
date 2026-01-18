@@ -43,4 +43,5 @@ abstract class ChatRepository {
   Future<Either<Failure, void>> updateLastSeen(String chatId, String userId);
   Stream<Either<Failure, Chat>> getChatStream(String chatId);
   Future<Either<Failure, void>> deleteMessage(String messageId);
+  Future<void> markMessageNotificationSent(String chatId, String messageId);
 }

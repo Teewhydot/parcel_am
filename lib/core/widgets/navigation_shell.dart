@@ -8,6 +8,7 @@ import 'package:parcel_am/features/parcel_am_core/presentation/screens/dashboard
 import 'package:parcel_am/features/parcel_am_core/presentation/screens/browse_requests_screen.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/screens/tracking_screen.dart';
 import 'package:parcel_am/features/chat/presentation/screens/chats_list_screen.dart';
+import 'package:parcel_am/features/chat/presentation/widgets/chat_notification_listener.dart';
 // import 'package:parcel_am/features/seeder/presentation/screens/database_seeder_screen.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_cubit.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_data.dart';
@@ -159,21 +160,24 @@ class _NavigationShellState extends State<NavigationShell> {
           );
         }
 
-        return WillPopScope(
-          onWillPop: _onWillPop,
-          child: Scaffold(
-            body: AnnotatedRegion<SystemUiOverlayStyle>(
-              value: SystemUiOverlayStyle.dark,
-              child: IndexedStack(
-                index: _currentIndex,
-                children: _buildScreens(userId),
+        return ChatNotificationListener(
+          userId: userId,
+          child: WillPopScope(
+            onWillPop: _onWillPop,
+            child: Scaffold(
+              body: AnnotatedRegion<SystemUiOverlayStyle>(
+                value: SystemUiOverlayStyle.dark,
+                child: IndexedStack(
+                  index: _currentIndex,
+                  children: _buildScreens(userId),
+                ),
               ),
-            ),
-            extendBody: true,
-            bottomNavigationBar: FloatingBottomNavBar(
-              currentIndex: _currentIndex,
-              onTap: _onTabTapped,
-              items: _navItems,
+              extendBody: true,
+              bottomNavigationBar: FloatingBottomNavBar(
+                currentIndex: _currentIndex,
+                onTap: _onTabTapped,
+                items: _navItems,
+              ),
             ),
           ),
         );

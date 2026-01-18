@@ -22,6 +22,7 @@ class MessageModel extends Message {
     super.replyToMessage,
     super.isDeleted,
     super.readBy,
+    super.notificationSent,
   });
 
   factory MessageModel.fromJson(Map<String, dynamic> json) {
@@ -55,6 +56,7 @@ class MessageModel extends Message {
                   .map((e) => MapEntry(e.key, (e.value as Timestamp).toDate())),
             )
           : null,
+      notificationSent: json['notificationSent'] as bool? ?? false,
     );
   }
 
@@ -86,6 +88,7 @@ class MessageModel extends Message {
       'readBy': readBy?.map(
         (key, value) => MapEntry(key, Timestamp.fromDate(value)),
       ),
+      'notificationSent': notificationSent,
     };
   }
 
@@ -108,6 +111,7 @@ class MessageModel extends Message {
       replyToMessage: message.replyToMessage,
       isDeleted: message.isDeleted,
       readBy: message.readBy,
+      notificationSent: message.notificationSent,
     );
   }
 

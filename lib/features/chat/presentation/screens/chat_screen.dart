@@ -55,6 +55,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     _loadCurrentUser();
     _initializeChat();
     _requestNotificationPermissionsOnFirstLaunch();
+    // Set current chat ID to suppress notifications while viewing this chat
+    di.sl<NotificationService>().setCurrentChatId(widget.chatId);
   }
 
   void _loadCurrentUser() {
@@ -139,6 +141,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     _scrollController.dispose();
     _updateLastSeen();
+    // Clear current chat ID so notifications can be shown again
+    di.sl<NotificationService>().setCurrentChatId(null);
     super.dispose();
   }
 

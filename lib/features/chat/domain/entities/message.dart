@@ -21,6 +21,7 @@ class Message extends Equatable {
   final Message? replyToMessage;
   final bool isDeleted;
   final Map<String, DateTime>? readBy;
+  final bool notificationSent;
 
   const Message({
     required this.id,
@@ -40,6 +41,7 @@ class Message extends Equatable {
     this.replyToMessage,
     this.isDeleted = false,
     this.readBy,
+    this.notificationSent = false,
   });
 
   @override
@@ -60,6 +62,7 @@ class Message extends Equatable {
         replyToMessageId,
         isDeleted,
         readBy,
+        notificationSent,
       ];
 
   Message copyWith({
@@ -80,6 +83,7 @@ class Message extends Equatable {
     Message? replyToMessage,
     bool? isDeleted,
     Map<String, DateTime>? readBy,
+    bool? notificationSent,
   }) {
     return Message(
       id: id ?? this.id,
@@ -99,6 +103,7 @@ class Message extends Equatable {
       replyToMessage: replyToMessage ?? this.replyToMessage,
       isDeleted: isDeleted ?? this.isDeleted,
       readBy: readBy ?? this.readBy,
+      notificationSent: notificationSent ?? this.notificationSent,
     );
   }
 }

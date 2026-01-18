@@ -38,6 +38,8 @@ abstract class ChatRemoteDataSource {
     required List<String> participantIds,
     required Map<String, String> participantNames,
   });
+
+  Future<void> markMessageNotificationSent(String chatId, String messageId);
 }
 
 class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
@@ -442,5 +444,34 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       lastSeen: {},
       createdAt: DateTime.now(),
     );
+  }
+
+  @override
+  Future<void> markMessageNotificationSent(String chatId, String messageId) async {
+    try {
+      // Update the message in the messages subcollection
+      await firestore
+          .collection('chats')
+          .doc(chatId)
+          .collection('messages')
+          .doc(messageId)
+          .update({'notificationSent': true});
+
+      // Also update the lastMessage in the chat document if it matches
+      final chatDoc = await firestore.collection('chats').doc(chatId).get();
+      if (chatDoc.exists) {
+        final data = chatDoc.data();
+        if (data != null && data['lastMessage'] != null) {
+          final lastMessageData = data['lastMessage'] as Map<String, dynamic>;
+          if (lastMessageData['id'] == messageId) {
+            await firestore.collection('chats').doc(chatId).update({
+              'lastMessage.notificationSent': true,
+            });
+          }
+        }
+      }
+    } catch (e) {
+      Logger.logError('markMessageNotificationSent failed: $e', tag: 'ChatDataSource');
+    }
   }
 }
