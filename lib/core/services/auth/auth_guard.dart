@@ -6,7 +6,7 @@ import '../../widgets/app_button.dart';
 import '../../widgets/app_spacing.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_font_size.dart';
-import '../../../features/parcel_am_core/presentation/bloc/auth/auth_bloc.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_cubit.dart';
 import '../../../features/parcel_am_core/presentation/bloc/auth/auth_data.dart';
 import '../../../core/bloc/base/base_state.dart';
 import '../../../injection_container.dart';
@@ -24,7 +24,7 @@ class AuthGuard {
 
   /// Check if user is authenticated and redirect if not
   bool checkAuthentication(BuildContext context, {bool requireKyc = false, bool allowPendingKyc = false}) {
-    final authState = context.read<AuthBloc>().state;
+    final authState = context.read<AuthCubit>().state;
     
     final isAuthenticated = authState is DataState<AuthData> && 
                             authState.data != null && 
@@ -57,7 +57,7 @@ class AuthGuard {
     Widget? loadingWidget,
     Widget? unauthenticatedWidget,
   }) {
-    return BlocBuilder<AuthBloc, BaseState<AuthData>>(
+    return BlocBuilder<AuthCubit, BaseState<AuthData>>(
       builder: (context, state) {
         final authData = state is DataState<AuthData> ? state.data : null;
         final isAuthenticated = authData != null && authData.user != null;
@@ -157,7 +157,7 @@ class AuthMiddleware extends GetMiddleware {
     if (authGuard.requiresAuthentication(route)) {
       if (Get.context != null) {
         try {
-          final authState = Get.context!.read<AuthBloc>().state;
+          final authState = Get.context!.read<AuthCubit>().state;
           final isAuthenticated = authState is DataState<AuthData> && 
                                   authState.data != null && 
                                   authState.data!.user != null;

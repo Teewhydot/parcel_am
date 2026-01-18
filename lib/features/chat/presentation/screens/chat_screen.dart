@@ -1,10 +1,13 @@
+import 'package:dartz/dartz.dart' show Either;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../../../core/errors/failures.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/bloc/base/base_state.dart';
 import '../../../notifications/services/notification_service.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_button.dart';
@@ -13,9 +16,9 @@ import '../../../../core/utils/logger.dart';
 import '../../../../injection_container.dart' as di;
 import '../../domain/entities/message.dart';
 import '../../domain/entities/message_type.dart';
-import '../bloc/chat_bloc.dart';
-import '../bloc/chat_event.dart';
-import '../bloc/chat_state.dart';
+import '../../domain/entities/chat.dart';
+import 'package:parcel_am/features/chat/presentation/bloc/chat_cubit.dart';
+import '../bloc/chat_message_data.dart';
 import '../widgets/message_bubble.dart';
 import '../widgets/message_input.dart';
 import '../widgets/typing_indicator.dart';
@@ -61,8 +64,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   }
 
   void _initializeChat() {
-    context.read<ChatBloc>().add(LoadMessages(widget.chatId));
-    context.read<ChatBloc>().add(LoadChat(widget.chatId));
+    // Streams are handled by StreamBuilder in build method
     _updateLastSeen();
   }
 
@@ -152,9 +154,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
 
   void _updateLastSeen() {
     if (_currentUserId != null) {
-      context.read<ChatBloc>().add(
-            UpdateLastSeen(chatId: widget.chatId, userId: _currentUserId!),
-          );
+      context.read<ChatCubit>().updateLastSeen(widget.chatId, _currentUserId!);
     }
   }
 
@@ -171,11 +171,11 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   void _handleSendMessage(String content) {
     if (_currentUserId == null) return;
 
-    final state = context.read<ChatBloc>().state;
+    final state = context.read<ChatCubit>().state;
     String? replyToMessageId;
 
-    if (state is MessagesLoaded && state.replyToMessage != null) {
-      replyToMessageId = state.replyToMessage!.id;
+    if (state.hasData && state.data?.replyToMessage != null) {
+      replyToMessageId = state.data!.replyToMessage!.id;
     }
 
     final message = Message(
@@ -190,42 +190,38 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       replyToMessageId: replyToMessageId,
     );
 
-    context.read<ChatBloc>().add(SendMessage(message));
+    context.read<ChatCubit>().sendMessage(message);
     _scrollToBottom();
   }
 
   void _handleSendMedia(String filePath, MessageType type) {
     if (_currentUserId == null) return;
 
-    final state = context.read<ChatBloc>().state;
+    final state = context.read<ChatCubit>().state;
     String? replyToMessageId;
 
-    if (state is MessagesLoaded && state.replyToMessage != null) {
-      replyToMessageId = state.replyToMessage!.id;
+    if (state.hasData && state.data?.replyToMessage != null) {
+      replyToMessageId = state.data!.replyToMessage!.id;
     }
 
-    context.read<ChatBloc>().add(
-          SendMediaMessage(
-            filePath: filePath,
-            chatId: widget.chatId,
-            senderId: _currentUserId!,
-            senderName: _currentUserName ?? 'You',
-            type: type,
-            replyToMessageId: replyToMessageId,
-          ),
-        );
+    context.read<ChatCubit>().sendMediaMessage(
+      filePath: filePath,
+      chatId: widget.chatId,
+      senderId: _currentUserId!,
+      senderName: _currentUserName ?? 'You',
+      type: type,
+      replyToMessageId: replyToMessageId,
+    );
     _scrollToBottom();
   }
 
   void _handleTyping(bool isTyping) {
     if (_currentUserId != null) {
-      context.read<ChatBloc>().add(
-            SetTypingStatus(
-              chatId: widget.chatId,
-              userId: _currentUserId!,
-              isTyping: isTyping,
-            ),
-          );
+      context.read<ChatCubit>().setTypingStatus(
+        widget.chatId,
+        _currentUserId!,
+        isTyping,
+      );
     }
   }
 
@@ -273,12 +269,13 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   }
 
   void _handleMessageLongPress(Message message) {
+    final chatCubit = context.read<ChatCubit>();
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => Container(
+      builder: (bottomSheetContext) => Container(
         padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -287,8 +284,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
               leading: const Icon(Icons.reply),
               title: AppText.bodyLarge('Reply'),
               onTap: () {
-                Navigator.pop(context);
-                context.read<ChatBloc>().add(SetReplyToMessage(message));
+                Navigator.pop(bottomSheetContext);
+                chatCubit.setReplyToMessage(message);
               },
             ),
             if (message.senderId == _currentUserId)
@@ -296,8 +293,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                 leading: const Icon(Icons.delete, color: AppColors.error),
                 title: AppText.bodyLarge('Delete', color: AppColors.error),
                 onTap: () {
-                  Navigator.pop(context);
-                  context.read<ChatBloc>().add(DeleteMessage(message.id));
+                  Navigator.pop(bottomSheetContext);
+                  chatCubit.deleteMessage(message.id);
                 },
               ),
           ],
@@ -312,24 +309,22 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     for (final message in messages) {
       if (message.senderId != _currentUserId &&
           message.status != MessageStatus.read) {
-        context.read<ChatBloc>().add(
-              MarkMessageAsRead(
-                chatId: widget.chatId,
-                messageId: message.id,
-                userId: _currentUserId!,
-              ),
-            );
+        context.read<ChatCubit>().markMessageAsRead(
+          widget.chatId,
+          message.id,
+          _currentUserId!,
+        );
       }
     }
   }
 
-  String _getOnlineStatus(MessagesLoaded state) {
-    if (state.chat == null) return '';
+  String _getOnlineStatusFromChat(Chat? chat) {
+    if (chat == null) return '';
 
-    final isTyping = state.chat!.isTyping[widget.otherUserId] ?? false;
+    final isTyping = chat.isTyping[widget.otherUserId] ?? false;
     if (isTyping) return 'typing...';
 
-    final lastSeen = state.chat!.lastSeen[widget.otherUserId];
+    final lastSeen = chat.lastSeen[widget.otherUserId];
     if (lastSeen == null) return 'offline';
 
     final now = DateTime.now();
@@ -365,15 +360,21 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   AppText.bodyLarge(widget.otherUserName),
-                  BlocBuilder<ChatBloc, ChatState>(
-                    builder: (context, state) {
-                      if (state is MessagesLoaded) {
-                        final status = _getOnlineStatus(state);
-                        return AppText.bodySmall(
-                          status,
-                          color: status == 'online' || status == 'typing...'
-                              ? AppColors.success
-                              : AppColors.textSecondary,
+                  StreamBuilder<Either<Failure, Chat>>(
+                    stream: context.read<ChatCubit>().watchChat(widget.chatId),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasData) {
+                        return snapshot.data!.fold(
+                          (failure) => const SizedBox.shrink(),
+                          (chat) {
+                            final status = _getOnlineStatusFromChat(chat);
+                            return AppText.bodySmall(
+                              status,
+                              color: status == 'online' || status == 'typing...'
+                                  ? AppColors.success
+                                  : AppColors.textSecondary,
+                            );
+                          },
                         );
                       }
                       return const SizedBox.shrink();
@@ -385,99 +386,150 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           ],
         ),
       ),
-      body: BlocConsumer<ChatBloc, ChatState>(
+      body: BlocListener<ChatCubit, BaseState<ChatMessageData>>(
         listener: (context, state) {
-          if (state is ChatError) {
-            context.showSnackbar(
-              message: state.message,
-            );
-          } else if (state is MessageSent) {
-            _scrollToBottom();
-          } else if (state is MessagesLoaded) {
-            _markMessagesAsRead(state.messages);
+          if (state is AsyncErrorState<ChatMessageData>) {
+            context.showSnackbar(message: state.errorMessage);
           }
+          // Scroll to bottom when state is loaded (after message sent)
         },
-        builder: (context, state) {
-          if (state is ChatLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
+        child: StreamBuilder<Either<Failure, List<Message>>>(
+          stream: context.read<ChatCubit>().watchMessages(widget.chatId),
+          builder: (context, messagesSnapshot) {
+            if (messagesSnapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-          if (state is MessagesLoaded) {
-            final messages = state.messages;
-            final showTypingIndicator =
-                state.chat?.isTyping[widget.otherUserId] ?? false;
+            if (messagesSnapshot.hasError) {
+              return Center(
+                child: AppText.bodyMedium('Error loading messages'),
+              );
+            }
 
-            return Column(
-              children: [
-                Expanded(
-                  child: messages.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.chat_bubble_outline,
-                                size: 64,
-                                color: AppColors.disabled,
-                              ),
-                              AppSpacing.verticalSpacing(SpacingSize.lg),
-                              AppText.bodyLarge(
-                                'No messages yet',
-                                color: AppColors.textSecondary,
-                              ),
-                              AppSpacing.verticalSpacing(SpacingSize.sm),
-                              AppText.bodyMedium(
-                                'Start the conversation!',
-                                color: AppColors.textDisabled,
-                              ),
-                            ],
-                          ),
-                        )
-                      : ListView.builder(
-                          controller: _scrollController,
-                          reverse: true,
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          itemCount:
-                              messages.length + (showTypingIndicator ? 1 : 0),
-                          itemBuilder: (context, index) {
-                            if (showTypingIndicator && index == 0) {
-                              return const Align(
-                                alignment: Alignment.centerLeft,
-                                child: TypingIndicator(),
-                              );
-                            }
+            if (!messagesSnapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-                            final messageIndex =
-                                showTypingIndicator ? index - 1 : index;
-                            final message = messages[messageIndex];
-                            final isMe = message.senderId == _currentUserId;
+            return messagesSnapshot.data!.fold(
+              (failure) => Center(
+                child: AppText.bodyMedium(failure.failureMessage),
+              ),
+              (messages) {
+                // Mark messages as read when loaded
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _markMessagesAsRead(messages);
+                });
 
-                            return MessageBubble(
-                              message: message,
-                              isMe: isMe,
-                              onTap: () => _handleMessageTap(message),
-                              onLongPress: () => _handleMessageLongPress(message),
-                            );
-                          },
-                        ),
-                ),
-                MessageInput(
-                  onSend: _handleSendMessage,
-                  onSendMedia: _handleSendMedia,
-                  onTyping: _handleTyping,
-                  replyToMessage: state.replyToMessage,
-                  onCancelReply: () {
-                    context.read<ChatBloc>().add(const SetReplyToMessage(null));
+                return StreamBuilder<Either<Failure, Chat>>(
+                  stream: context.read<ChatCubit>().watchChat(widget.chatId),
+                  builder: (context, chatSnapshot) {
+                    Chat? chat;
+                    if (chatSnapshot.hasData) {
+                      chatSnapshot.data!.fold(
+                        (failure) => null,
+                        (c) => chat = c,
+                      );
+                    }
+
+                    final showTypingIndicator =
+                        chat?.isTyping[widget.otherUserId] ?? false;
+
+                    return BlocBuilder<ChatCubit, BaseState<ChatMessageData>>(
+                      buildWhen: (previous, current) {
+                        // Only rebuild for state changes related to input
+                        return current.hasData;
+                      },
+                      builder: (context, state) {
+                        final chatData = state.data ?? const ChatMessageData();
+                        final replyToMessage = chatData.replyToMessage;
+                        final isUploading = chatData.isUploading;
+                        final uploadProgress = chatData.uploadProgress;
+
+                        return Column(
+                          children: [
+                            Expanded(
+                              child: messages.isEmpty
+                                  ? Center(
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.chat_bubble_outline,
+                                            size: 64,
+                                            color: AppColors.disabled,
+                                          ),
+                                          AppSpacing.verticalSpacing(
+                                              SpacingSize.lg),
+                                          AppText.bodyLarge(
+                                            'No messages yet',
+                                            color: AppColors.textSecondary,
+                                          ),
+                                          AppSpacing.verticalSpacing(
+                                              SpacingSize.sm),
+                                          AppText.bodyMedium(
+                                            'Start the conversation!',
+                                            color: AppColors.textDisabled,
+                                          ),
+                                        ],
+                                      ),
+                                    )
+                                  : ListView.builder(
+                                      controller: _scrollController,
+                                      reverse: true,
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 8),
+                                      itemCount: messages.length +
+                                          (showTypingIndicator ? 1 : 0),
+                                      itemBuilder: (context, index) {
+                                        if (showTypingIndicator && index == 0) {
+                                          return const Align(
+                                            alignment: Alignment.centerLeft,
+                                            child: TypingIndicator(),
+                                          );
+                                        }
+
+                                        final messageIndex = showTypingIndicator
+                                            ? index - 1
+                                            : index;
+                                        final message = messages[messageIndex];
+                                        final isMe =
+                                            message.senderId == _currentUserId;
+
+                                        return MessageBubble(
+                                          message: message,
+                                          isMe: isMe,
+                                          onTap: () =>
+                                              _handleMessageTap(message),
+                                          onLongPress: () =>
+                                              _handleMessageLongPress(message),
+                                        );
+                                      },
+                                    ),
+                            ),
+                            MessageInput(
+                              onSend: _handleSendMessage,
+                              onSendMedia: _handleSendMedia,
+                              onTyping: _handleTyping,
+                              replyToMessage: replyToMessage,
+                              onCancelReply: () {
+                                context
+                                    .read<ChatCubit>()
+                                    .setReplyToMessage(null);
+                              },
+                              isUploading: isUploading,
+                              uploadProgress: uploadProgress,
+                            ),
+                          ],
+                        );
+                      },
+                    );
                   },
-                  isUploading: state.isUploading,
-                  uploadProgress: state.uploadProgress,
-                ),
-              ],
+                );
+              },
             );
-          }
-
-          return Center(child: AppText.bodyMedium('Failed to load messages'));
-        },
+          },
+        ),
       ),
     );
   }

@@ -163,6 +163,42 @@ class WalletRepositoryImpl implements WalletRepository {
   }
 
   @override
+  Future<Either<Failure, WalletEntity>> clearHeldBalance(
+    String userId,
+    double amount,
+    String referenceId,
+    String idempotencyKey,
+  ) async {
+    try {
+      final walletModel = await remoteDataSource.clearHeldBalance(
+        userId,
+        amount,
+        referenceId,
+        idempotencyKey,
+      );
+      return Right(walletModel.toEntity());
+    } on NoInternetException {
+      return const Left(NoInternetFailure(
+        failureMessage: 'No internet connection. Please check your connection and try again.',
+      ));
+    } on InsufficientHeldBalanceException catch (e) {
+      return Left(ValidationFailure(failureMessage: e.message));
+    } on InvalidAmountException catch (e) {
+      return Left(ValidationFailure(failureMessage: e.message));
+    } on WalletNotFoundException catch (e) {
+      return Left(ServerFailure(failureMessage: e.message));
+    } on ReleaseBalanceFailedException catch (e) {
+      return Left(ServerFailure(failureMessage: e.message));
+    } on WalletException catch (e) {
+      return Left(ServerFailure(failureMessage: e.message));
+    } on ServerException {
+      return const Left(ServerFailure(failureMessage: 'Server error occurred'));
+    } catch (e) {
+      return Left(UnknownFailure(failureMessage: e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, TransactionEntity>> recordTransaction(
     String userId,
     double amount,

@@ -1,13 +1,15 @@
+import 'package:dartz/dartz.dart' show Either;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import '../../../../core/errors/failures.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_font_size.dart';
 import '../../../../core/bloc/base/base_state.dart';
-import '../bloc/parcel/parcel_bloc.dart';
-import '../bloc/parcel/parcel_event.dart';
-import '../bloc/parcel/parcel_state.dart';
+import '../bloc/parcel/parcel_cubit.dart';
+import '../bloc/auth/auth_cubit.dart';
+import '../bloc/auth/auth_data.dart';
 import '../../domain/entities/parcel_entity.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_button.dart';
@@ -36,16 +38,24 @@ class _MyDeliveriesTabState extends State<MyDeliveriesTab> {
   final List<String> _filterOptions = ['All', 'Active', 'Completed'];
 
   /// Applies the selected filter to the accepted parcels list
-  List<ParcelEntity> _filterParcels(ParcelData data) {
+  List<ParcelEntity> _filterParcels(List<ParcelEntity> parcels) {
     switch (_selectedFilter) {
       case 'Active':
-        return data.activeParcels;
+        return parcels.where((p) => p.status.isActive).toList();
       case 'Completed':
-        return data.completedParcels;
+        return parcels.where((p) => p.status.isCompleted).toList();
       case 'All':
       default:
-        return data.acceptedParcels;
+        return parcels;
     }
+  }
+
+  String? _getUserId() {
+    final authState = context.read<AuthCubit>().state;
+    if (authState is LoadedState<AuthData>) {
+      return authState.data?.user?.uid;
+    }
+    return null;
   }
 
   /// Handles status update button press
@@ -77,11 +87,9 @@ class _MyDeliveriesTabState extends State<MyDeliveriesTab> {
         currentStatus: currentStatus,
         nextStatus: nextStatus,
         onConfirm: () {
-          context.read<ParcelBloc>().add(
-            ParcelUpdateStatusRequested(
-              parcelId: parcel.id,
-              status: nextStatus,
-            ),
+          context.read<ParcelCubit>().updateParcelStatus(
+            parcel.id,
+            nextStatus,
           );
           Navigator.pop(context);
         },
@@ -91,19 +99,28 @@ class _MyDeliveriesTabState extends State<MyDeliveriesTab> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ParcelBloc, BaseState<ParcelData>>(
-      builder: (context, state) {
-        // Task 3.6.3: Show loading skeletons while data is being fetched
-        if (state is AsyncLoadingState<ParcelData> && state.data == null) {
+    final userId = _getUserId();
+
+    if (userId == null) {
+      return _buildEmptyState(
+        icon: Icons.person_off,
+        title: 'Not signed in',
+        subtitle: 'Please sign in to view your deliveries',
+      );
+    }
+
+    return StreamBuilder<Either<Failure, List<ParcelEntity>>>(
+      stream: context.read<ParcelCubit>().watchAcceptedParcels(userId),
+      builder: (context, snapshot) {
+        // Show loading skeletons while data is being fetched
+        if (snapshot.connectionState == ConnectionState.waiting) {
           return Column(
             children: [
-              // Status filter skeleton
               _buildStatusFilter(),
-              // Loading skeleton cards
               Expanded(
                 child: ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: 3, // Show 3 skeleton cards
+                  itemCount: 3,
                   itemBuilder: (context, index) {
                     return const DeliveryCardSkeleton();
                   },
@@ -114,16 +131,12 @@ class _MyDeliveriesTabState extends State<MyDeliveriesTab> {
         }
 
         // Handle error state
-        if (state is AsyncErrorState<ParcelData>) {
+        if (snapshot.hasError) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.error_outline,
-                  size: 64,
-                  color: AppColors.error,
-                ),
+                Icon(Icons.error_outline, size: 64, color: AppColors.error),
                 AppSpacing.verticalSpacing(SpacingSize.lg),
                 AppText(
                   'Failed to load deliveries',
@@ -133,108 +146,116 @@ class _MyDeliveriesTabState extends State<MyDeliveriesTab> {
                 ),
                 AppSpacing.verticalSpacing(SpacingSize.sm),
                 AppText.bodyMedium(
-                  state.errorMessage,
+                  snapshot.error.toString(),
                   textAlign: TextAlign.center,
                   color: AppColors.onSurfaceVariant,
-                ),
-                AppSpacing.verticalSpacing(SpacingSize.xxl),
-                AppButton.primary(
-                  onPressed: () {
-                    // Retry loading accepted parcels
-                    // Note: Would need userId from auth context
-                  },
-                  child: AppText.bodyMedium('Retry', color: AppColors.white),
                 ),
               ],
             ),
           );
         }
 
-        // Get accepted parcels from state
-        final data = state.data ?? const ParcelData();
-        final acceptedParcels = data.acceptedParcels;
-
-        // Show empty state if no accepted deliveries at all
-        if (acceptedParcels.isEmpty) {
-          return _buildEmptyState(
-            icon: Icons.local_shipping_outlined,
-            title: 'No active deliveries',
-            subtitle: 'Accepted requests will appear here',
-          );
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
         }
 
-        // Apply filter to parcels
-        final filteredParcels = _filterParcels(data);
-
-        // Build main content with filter and list
-        return Column(
-          children: [
-            // Status filter dropdown
-            _buildStatusFilter(),
-
-            // Show empty state for filtered results
-            if (filteredParcels.isEmpty)
-              Expanded(
-                child: _buildEmptyState(
-                  icon: Icons.filter_list_off,
-                  title: 'No $_selectedFilter deliveries',
-                  subtitle: 'Try selecting a different filter',
+        return snapshot.data!.fold(
+          (failure) => Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, size: 64, color: AppColors.error),
+                AppSpacing.verticalSpacing(SpacingSize.lg),
+                AppText(
+                  'Failed to load deliveries',
+                  variant: TextVariant.titleMedium,
+                  fontSize: AppFontSize.xl,
+                  fontWeight: FontWeight.w600,
                 ),
-              )
-            else
-              // Deliveries count
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: AppText.bodyMedium(
-                    '${filteredParcels.length} delivery${filteredParcels.length == 1 ? '' : 'ies'}',
-                    color: AppColors.onSurfaceVariant,
-                  ),
+                AppSpacing.verticalSpacing(SpacingSize.sm),
+                AppText.bodyMedium(
+                  failure.failureMessage,
+                  textAlign: TextAlign.center,
+                  color: AppColors.onSurfaceVariant,
                 ),
-              ),
+              ],
+            ),
+          ),
+          (acceptedParcels) {
+            // Show empty state if no accepted deliveries at all
+            if (acceptedParcels.isEmpty) {
+              return _buildEmptyState(
+                icon: Icons.local_shipping_outlined,
+                title: 'No active deliveries',
+                subtitle: 'Accepted requests will appear here',
+              );
+            }
 
-            // Deliveries list with pull-to-refresh and animations
-            // Task 3.6.1: Staggered animations already implemented
-            if (filteredParcels.isNotEmpty)
-              Expanded(
-                child: RefreshIndicator(
-                  onRefresh: () async {
-                    // Re-fetch accepted parcels
-                    // Note: Would need userId from auth context
-                    // For now, just add a small delay to show the refresh indicator
-                    await Future.delayed(const Duration(milliseconds: 500));
-                  },
-                  child: AnimationLimiter(
-                    child: ListView.builder(
-                      // Add bottom padding for floating nav bar
-                      padding: const EdgeInsets.only(
-                        left: 16,
-                        right: 16,
-                        bottom: 100,
+            // Apply filter to parcels
+            final filteredParcels = _filterParcels(acceptedParcels);
+
+            // Build main content with filter and list
+            return Column(
+              children: [
+                // Status filter dropdown
+                _buildStatusFilter(),
+
+                // Show empty state for filtered results
+                if (filteredParcels.isEmpty)
+                  Expanded(
+                    child: _buildEmptyState(
+                      icon: Icons.filter_list_off,
+                      title: 'No $_selectedFilter deliveries',
+                      subtitle: 'Try selecting a different filter',
+                    ),
+                  )
+                else
+                  // Deliveries count
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: AppText.bodyMedium(
+                        '${filteredParcels.length} delivery${filteredParcels.length == 1 ? '' : 'ies'}',
+                        color: AppColors.onSurfaceVariant,
                       ),
-                      itemCount: filteredParcels.length,
-                      itemBuilder: (context, index) {
-                        final parcel = filteredParcels[index];
-                        return AnimationConfiguration.staggeredList(
-                          position: index,
-                          duration: const Duration(milliseconds: 375),
-                          child: SlideAnimation(
-                            verticalOffset: 50.0,
-                            child: FadeInAnimation(
-                              child: DeliveryCard(
-                                parcel: parcel,
-                                onUpdateStatus: () => _handleUpdateStatus(parcel),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
                     ),
                   ),
-                ),
-              ),
-          ],
+
+                // Deliveries list with animations (realtime updates via stream)
+                if (filteredParcels.isNotEmpty)
+                  Expanded(
+                    child: AnimationLimiter(
+                      child: ListView.builder(
+                        // Add bottom padding for floating nav bar
+                        padding: const EdgeInsets.only(
+                          left: 16,
+                          right: 16,
+                          bottom: 100,
+                        ),
+                        itemCount: filteredParcels.length,
+                        itemBuilder: (context, index) {
+                          final parcel = filteredParcels[index];
+                          return AnimationConfiguration.staggeredList(
+                            position: index,
+                            duration: const Duration(milliseconds: 375),
+                            child: SlideAnimation(
+                              verticalOffset: 50.0,
+                              child: FadeInAnimation(
+                                child: DeliveryCard(
+                                  parcel: parcel,
+                                  onUpdateStatus: () => _handleUpdateStatus(parcel),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
         );
       },
     );

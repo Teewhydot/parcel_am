@@ -3,24 +3,25 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i7;
+import 'dart:async' as _i8;
 
-import 'package:bloc/bloc.dart' as _i11;
-import 'package:dartz/dartz.dart' as _i8;
+import 'package:bloc/bloc.dart' as _i13;
+import 'package:dartz/dartz.dart' as _i9;
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i6;
-import 'package:parcel_am/core/bloc/base/base_state.dart' as _i4;
-import 'package:parcel_am/core/errors/failures.dart' as _i9;
+import 'package:mockito/src/dummies.dart' as _i7;
+import 'package:parcel_am/core/bloc/base/base_state.dart' as _i5;
+import 'package:parcel_am/core/errors/failures.dart' as _i10;
+import 'package:parcel_am/features/kyc/domain/entities/kyc_status.dart' as _i12;
 import 'package:parcel_am/features/parcel_am_core/data/models/user_model.dart'
-    as _i10;
+    as _i11;
 import 'package:parcel_am/features/parcel_am_core/domain/usecases/auth_usecase.dart'
     as _i2;
-import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_bloc.dart'
-    as _i3;
+import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_cubit.dart'
+    as _i4;
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_data.dart'
-    as _i5;
-import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_event.dart'
-    as _i12;
+    as _i6;
+import 'package:parcel_am/features/passkey/domain/usecases/passkey_usecase.dart'
+    as _i3;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -41,11 +42,17 @@ class _FakeAuthUseCase_0 extends _i1.SmartFake implements _i2.AuthUseCase {
     : super(parent, parentInvocation);
 }
 
-/// A class which mocks [AuthBloc].
+class _FakePasskeyUseCase_1 extends _i1.SmartFake
+    implements _i3.PasskeyUseCase {
+  _FakePasskeyUseCase_1(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+/// A class which mocks [AuthCubit].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockAuthBloc extends _i1.Mock implements _i3.AuthBloc {
-  MockAuthBloc() {
+class MockAuthCubit extends _i1.Mock implements _i4.AuthCubit {
+  MockAuthCubit() {
     _i1.throwOnMissingStub(this);
   }
 
@@ -61,23 +68,34 @@ class MockAuthBloc extends _i1.Mock implements _i3.AuthBloc {
           as _i2.AuthUseCase);
 
   @override
-  _i4.BaseState<_i5.AuthData> get state =>
+  _i3.PasskeyUseCase get passkeyUseCase =>
+      (super.noSuchMethod(
+            Invocation.getter(#passkeyUseCase),
+            returnValue: _FakePasskeyUseCase_1(
+              this,
+              Invocation.getter(#passkeyUseCase),
+            ),
+          )
+          as _i3.PasskeyUseCase);
+
+  @override
+  _i5.BaseState<_i6.AuthData> get state =>
       (super.noSuchMethod(
             Invocation.getter(#state),
-            returnValue: _i6.dummyValue<_i4.BaseState<_i5.AuthData>>(
+            returnValue: _i7.dummyValue<_i5.BaseState<_i6.AuthData>>(
               this,
               Invocation.getter(#state),
             ),
           )
-          as _i4.BaseState<_i5.AuthData>);
+          as _i5.BaseState<_i6.AuthData>);
 
   @override
-  _i7.Stream<_i4.BaseState<_i5.AuthData>> get stream =>
+  _i8.Stream<_i5.BaseState<_i6.AuthData>> get stream =>
       (super.noSuchMethod(
             Invocation.getter(#stream),
-            returnValue: _i7.Stream<_i4.BaseState<_i5.AuthData>>.empty(),
+            returnValue: _i8.Stream<_i5.BaseState<_i6.AuthData>>.empty(),
           )
-          as _i7.Stream<_i4.BaseState<_i5.AuthData>>);
+          as _i8.Stream<_i5.BaseState<_i6.AuthData>>);
 
   @override
   bool get isClosed =>
@@ -85,15 +103,130 @@ class MockAuthBloc extends _i1.Mock implements _i3.AuthBloc {
           as bool);
 
   @override
-  _i7.Stream<_i8.Either<_i9.Failure, _i10.UserModel>> watchUserData(
+  _i8.Stream<_i9.Either<_i10.Failure, _i11.UserModel>> watchUserData(
     String? userId,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#watchUserData, [userId]),
             returnValue:
-                _i7.Stream<_i8.Either<_i9.Failure, _i10.UserModel>>.empty(),
+                _i8.Stream<_i9.Either<_i10.Failure, _i11.UserModel>>.empty(),
           )
-          as _i7.Stream<_i8.Either<_i9.Failure, _i10.UserModel>>);
+          as _i8.Stream<_i9.Either<_i10.Failure, _i11.UserModel>>);
+
+  @override
+  _i8.Future<void> checkCurrentUser() =>
+      (super.noSuchMethod(
+            Invocation.method(#checkCurrentUser, []),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
+
+  @override
+  void updateEmail(String? email) => super.noSuchMethod(
+    Invocation.method(#updateEmail, [email]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void updatePassword(String? password) => super.noSuchMethod(
+    Invocation.method(#updatePassword, [password]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  _i8.Future<void> login(String? email, String? password) =>
+      (super.noSuchMethod(
+            Invocation.method(#login, [email, password]),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
+
+  @override
+  _i8.Future<void> register({
+    required String? email,
+    required String? password,
+    required String? displayName,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#register, [], {
+              #email: email,
+              #password: password,
+              #displayName: displayName,
+            }),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
+
+  @override
+  _i8.Future<void> logout() =>
+      (super.noSuchMethod(
+            Invocation.method(#logout, []),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
+
+  @override
+  _i8.Future<void> updateUserProfile(String? displayName) =>
+      (super.noSuchMethod(
+            Invocation.method(#updateUserProfile, [displayName]),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
+
+  @override
+  _i8.Future<void> updateUserProfileWithKyc({
+    required String? displayName,
+    _i12.KycStatus? kycStatus,
+    Map<String, dynamic>? additionalData,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#updateUserProfileWithKyc, [], {
+              #displayName: displayName,
+              #kycStatus: kycStatus,
+              #additionalData: additionalData,
+            }),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
+
+  @override
+  _i8.Future<void> resetPassword(String? email) =>
+      (super.noSuchMethod(
+            Invocation.method(#resetPassword, [email]),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
+
+  @override
+  void updateKycStatus(String? kycStatus) => super.noSuchMethod(
+    Invocation.method(#updateKycStatus, [kycStatus]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  _i8.Future<void> checkPasskeySupport() =>
+      (super.noSuchMethod(
+            Invocation.method(#checkPasskeySupport, []),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
+
+  @override
+  _i8.Future<void> signInWithPasskey() =>
+      (super.noSuchMethod(
+            Invocation.method(#signInWithPasskey, []),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
 
   @override
   void handleException(Exception? exception, [StackTrace? stackTrace]) =>
@@ -137,12 +270,35 @@ class MockAuthBloc extends _i1.Mock implements _i3.AuthBloc {
   );
 
   @override
-  void onTransition(
-    _i11.Transition<_i12.AuthEvent, _i4.BaseState<_i5.AuthData>>? transition,
-  ) => super.noSuchMethod(
-    Invocation.method(#onTransition, [transition]),
-    returnValueForMissingStub: null,
-  );
+  _i8.Future<void> executeAsync<T>(
+    _i8.Future<T> Function()? operation, {
+    void Function(T)? onSuccess,
+    void Function(Exception)? onError,
+    String? loadingMessage,
+    String? successMessage,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(
+              #executeAsync,
+              [operation],
+              {
+                #onSuccess: onSuccess,
+                #onError: onError,
+                #loadingMessage: loadingMessage,
+                #successMessage: successMessage,
+              },
+            ),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
+
+  @override
+  void onChange(_i13.Change<_i5.BaseState<_i6.AuthData>>? change) =>
+      super.noSuchMethod(
+        Invocation.method(#onChange, [change]),
+        returnValueForMissingStub: null,
+      );
 
   @override
   void onError(Object? error, StackTrace? stackTrace) => super.noSuchMethod(
@@ -151,51 +307,23 @@ class MockAuthBloc extends _i1.Mock implements _i3.AuthBloc {
   );
 
   @override
-  void add(_i12.AuthEvent? event) => super.noSuchMethod(
-    Invocation.method(#add, [event]),
-    returnValueForMissingStub: null,
-  );
-
-  @override
-  void onEvent(_i12.AuthEvent? event) => super.noSuchMethod(
-    Invocation.method(#onEvent, [event]),
-    returnValueForMissingStub: null,
-  );
-
-  @override
-  void emit(_i4.BaseState<_i5.AuthData>? state) => super.noSuchMethod(
+  void emit(_i5.BaseState<_i6.AuthData>? state) => super.noSuchMethod(
     Invocation.method(#emit, [state]),
     returnValueForMissingStub: null,
   );
-
-  @override
-  void on<E extends _i12.AuthEvent>(
-    _i11.EventHandler<E, _i4.BaseState<_i5.AuthData>>? handler, {
-    _i11.EventTransformer<E>? transformer,
-  }) => super.noSuchMethod(
-    Invocation.method(#on, [handler], {#transformer: transformer}),
-    returnValueForMissingStub: null,
-  );
-
-  @override
-  _i7.Future<void> close() =>
-      (super.noSuchMethod(
-            Invocation.method(#close, []),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
-          )
-          as _i7.Future<void>);
-
-  @override
-  void onChange(_i11.Change<_i4.BaseState<_i5.AuthData>>? change) =>
-      super.noSuchMethod(
-        Invocation.method(#onChange, [change]),
-        returnValueForMissingStub: null,
-      );
 
   @override
   void addError(Object? error, [StackTrace? stackTrace]) => super.noSuchMethod(
     Invocation.method(#addError, [error, stackTrace]),
     returnValueForMissingStub: null,
   );
+
+  @override
+  _i8.Future<void> close() =>
+      (super.noSuchMethod(
+            Invocation.method(#close, []),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
 }

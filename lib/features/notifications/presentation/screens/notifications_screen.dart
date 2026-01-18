@@ -1,10 +1,10 @@
+import 'package:dartz/dartz.dart' show Either;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import 'package:parcel_am/core/bloc/base/base_state.dart';
-import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import '../../../../core/errors/failures.dart';
 import '../../domain/enums/notification_type.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -14,9 +14,7 @@ import '../../domain/entities/notification_entity.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_spacing.dart';
-import '../bloc/notification_bloc.dart';
-import '../bloc/notification_event.dart';
-import '../bloc/notification_state.dart';
+import 'package:parcel_am/features/notifications/presentation/bloc/notification_cubit.dart';
 import 'notification_settings_screen.dart';
 
 class NotificationsScreen extends StatefulWidget {
@@ -32,12 +30,6 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  @override
-  void initState() {
-    super.initState();
-    context.read<NotificationBloc>().add(LoadNotifications(widget.userId));
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -60,7 +52,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             icon: const Icon(Icons.done_all),
             tooltip: 'Mark all as read',
             onPressed: () {
-              context.read<NotificationBloc>().add(MarkAllAsRead(widget.userId));
+              context.read<NotificationCubit>().markAllAsRead(widget.userId);
             },
           ),
           IconButton(
@@ -70,28 +62,26 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
         ],
       ),
-      body: BlocManager<NotificationBloc, BaseState<NotificationData>>(
-        bloc: context.read<NotificationBloc>(),
-        showLoadingIndicator: false,
-        showResultErrorNotifications: true,
-        showResultSuccessNotifications: false,
-        builder: (context, state) {
-          if (state.isLoading) {
+      body: StreamBuilder<Either<Failure, List<NotificationEntity>>>(
+        stream: context.read<NotificationCubit>().watchNotifications(widget.userId),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (state.isError) {
+          if (snapshot.hasError) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Icon(Icons.error_outline, size: 64, color: AppColors.error),
                   AppSpacing.verticalSpacing(SpacingSize.lg),
-                  AppText.bodyMedium(state.errorMessage ?? 'An error occurred'),
+                  AppText.bodyMedium('An error occurred'),
                   AppSpacing.verticalSpacing(SpacingSize.lg),
                   AppButton.primary(
                     onPressed: () {
-                      context.read<NotificationBloc>().add(LoadNotifications(widget.userId));
+                      // Force rebuild by calling setState
+                      setState(() {});
                     },
                     child: AppText.bodyMedium('Retry', color: AppColors.white),
                   ),
@@ -100,47 +90,51 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             );
           }
 
-          if (state.hasData && state.data != null) {
-            final notificationData = state.data!;
-            final notifications = notificationData.notifications;
-
-            if (notifications.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.notifications_off_outlined,
-                      size: 64,
-                      color: AppColors.onSurfaceVariant,
-                    ),
-                    AppSpacing.verticalSpacing(SpacingSize.lg),
-                    AppText.titleMedium(
-                      'No notifications yet',
-                      color: AppColors.onSurfaceVariant,
-                    ),
-                    AppSpacing.verticalSpacing(SpacingSize.sm),
-                    AppText.bodyMedium(
-                      'You\'ll see notifications here',
-                      color: AppColors.textSecondary,
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            return RefreshIndicator(
-              onRefresh: () async {
-                context.read<NotificationBloc>().add(LoadNotifications(widget.userId));
-              },
-              child: _buildGroupedNotificationsList(notifications),
-            );
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
           }
 
-          // Initial or empty state
-          return Center(child: AppText.bodyMedium('Loading notifications...'));
+          return snapshot.data!.fold(
+            (failure) => Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 64, color: AppColors.error),
+                  AppSpacing.verticalSpacing(SpacingSize.lg),
+                  AppText.bodyMedium(failure.failureMessage),
+                ],
+              ),
+            ),
+            (notifications) {
+              if (notifications.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.notifications_off_outlined,
+                        size: 64,
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                      AppSpacing.verticalSpacing(SpacingSize.lg),
+                      AppText.titleMedium(
+                        'No notifications yet',
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                      AppSpacing.verticalSpacing(SpacingSize.sm),
+                      AppText.bodyMedium(
+                        'You\'ll see notifications here',
+                        color: AppColors.textSecondary,
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return _buildGroupedNotificationsList(notifications);
+            },
+          );
         },
-        child: Container(),
       ),
     );
   }
@@ -342,7 +336,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   void _handleNotificationTap(NotificationEntity notification) {
     // Mark notification as read
     if (!notification.isRead) {
-      context.read<NotificationBloc>().add(MarkAsRead(notification.id));
+      context.read<NotificationCubit>().markAsRead(notification.id);
     }
 
     // Navigate to chat screen if chatId is present
@@ -359,6 +353,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   void _showDeleteConfirmation(BuildContext context, NotificationEntity notification) {
+    final notificationCubit = context.read<NotificationCubit>();
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -371,7 +366,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
           AppButton.text(
             onPressed: () {
-              context.read<NotificationBloc>().add(DeleteNotification(notification.id));
+              notificationCubit.deleteNotification(notification.id);
               Navigator.pop(dialogContext);
             },
             child: AppText.bodyMedium('Delete', color: AppColors.error),
@@ -382,6 +377,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   void _showClearAllConfirmation(BuildContext context) {
+    final notificationCubit = context.read<NotificationCubit>();
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -394,7 +390,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
           AppButton.text(
             onPressed: () {
-              context.read<NotificationBloc>().add(ClearAll(widget.userId));
+              notificationCubit.clearAll(widget.userId);
               Navigator.pop(dialogContext);
             },
             child: AppText.bodyMedium('Clear All', color: AppColors.error),

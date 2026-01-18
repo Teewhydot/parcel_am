@@ -9,7 +9,7 @@ import 'package:parcel_am/features/parcel_am_core/presentation/screens/browse_re
 import 'package:parcel_am/features/parcel_am_core/presentation/screens/tracking_screen.dart';
 import 'package:parcel_am/features/chat/presentation/screens/chats_list_screen.dart';
 // import 'package:parcel_am/features/seeder/presentation/screens/database_seeder_screen.dart';
-import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_bloc.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_cubit.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_data.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/package/package_bloc.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/dashboard/dashboard_bloc.dart';
@@ -145,7 +145,7 @@ class _NavigationShellState extends State<NavigationShell> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AuthBloc, BaseState<AuthData>>(
+    return BlocBuilder<AuthCubit, BaseState<AuthData>>(
       builder: (context, authState) {
         // Get current user ID from auth state
         final userId = authState.data?.user?.uid;

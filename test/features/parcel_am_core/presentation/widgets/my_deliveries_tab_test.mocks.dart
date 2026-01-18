@@ -5,14 +5,16 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i6;
 
-import 'package:flutter_bloc/flutter_bloc.dart' as _i7;
+import 'package:bloc/bloc.dart' as _i10;
+import 'package:dartz/dartz.dart' as _i8;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i5;
 import 'package:parcel_am/core/bloc/base/base_state.dart' as _i3;
-import 'package:parcel_am/features/parcel_am_core/presentation/bloc/parcel/parcel_bloc.dart'
+import 'package:parcel_am/core/errors/failures.dart' as _i9;
+import 'package:parcel_am/features/parcel_am_core/domain/entities/parcel_entity.dart'
+    as _i7;
+import 'package:parcel_am/features/parcel_am_core/presentation/bloc/parcel/parcel_cubit.dart'
     as _i2;
-import 'package:parcel_am/features/parcel_am_core/presentation/bloc/parcel/parcel_event.dart'
-    as _i8;
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/parcel/parcel_state.dart'
     as _i4;
 
@@ -30,11 +32,11 @@ import 'package:parcel_am/features/parcel_am_core/presentation/bloc/parcel/parce
 // ignore_for_file: camel_case_types
 // ignore_for_file: subtype_of_sealed_class
 
-/// A class which mocks [ParcelBloc].
+/// A class which mocks [ParcelCubit].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockParcelBloc extends _i1.Mock implements _i2.ParcelBloc {
-  MockParcelBloc() {
+class MockParcelCubit extends _i1.Mock implements _i2.ParcelCubit {
+  MockParcelCubit() {
     _i1.throwOnMissingStub(this);
   }
 
@@ -63,6 +65,82 @@ class MockParcelBloc extends _i1.Mock implements _i2.ParcelBloc {
           as bool);
 
   @override
+  _i6.Future<void> createParcel(_i7.ParcelEntity? parcel) =>
+      (super.noSuchMethod(
+            Invocation.method(#createParcel, [parcel]),
+            returnValue: _i6.Future<void>.value(),
+            returnValueForMissingStub: _i6.Future<void>.value(),
+          )
+          as _i6.Future<void>);
+
+  @override
+  _i6.Future<void> updateParcelStatus(
+    String? parcelId,
+    _i7.ParcelStatus? status,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#updateParcelStatus, [parcelId, status]),
+            returnValue: _i6.Future<void>.value(),
+            returnValueForMissingStub: _i6.Future<void>.value(),
+          )
+          as _i6.Future<void>);
+
+  @override
+  _i6.Future<void> loadParcel(String? parcelId) =>
+      (super.noSuchMethod(
+            Invocation.method(#loadParcel, [parcelId]),
+            returnValue: _i6.Future<void>.value(),
+            returnValueForMissingStub: _i6.Future<void>.value(),
+          )
+          as _i6.Future<void>);
+
+  @override
+  _i6.Future<void> loadUserParcels(String? userId) =>
+      (super.noSuchMethod(
+            Invocation.method(#loadUserParcels, [userId]),
+            returnValue: _i6.Future<void>.value(),
+            returnValueForMissingStub: _i6.Future<void>.value(),
+          )
+          as _i6.Future<void>);
+
+  @override
+  _i6.Future<void> assignTraveler(String? parcelId, String? travelerId) =>
+      (super.noSuchMethod(
+            Invocation.method(#assignTraveler, [parcelId, travelerId]),
+            returnValue: _i6.Future<void>.value(),
+            returnValueForMissingStub: _i6.Future<void>.value(),
+          )
+          as _i6.Future<void>);
+
+  @override
+  _i6.Future<void> confirmDelivery(String? parcelId, String? escrowId) =>
+      (super.noSuchMethod(
+            Invocation.method(#confirmDelivery, [parcelId, escrowId]),
+            returnValue: _i6.Future<void>.value(),
+            returnValueForMissingStub: _i6.Future<void>.value(),
+          )
+          as _i6.Future<void>);
+
+  @override
+  _i6.Future<void> cancelParcel({
+    required String? parcelId,
+    required String? userId,
+    required double? amount,
+    String? reason,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#cancelParcel, [], {
+              #parcelId: parcelId,
+              #userId: userId,
+              #amount: amount,
+              #reason: reason,
+            }),
+            returnValue: _i6.Future<void>.value(),
+            returnValueForMissingStub: _i6.Future<void>.value(),
+          )
+          as _i6.Future<void>);
+
+  @override
   _i6.Future<void> close() =>
       (super.noSuchMethod(
             Invocation.method(#close, []),
@@ -70,6 +148,54 @@ class MockParcelBloc extends _i1.Mock implements _i2.ParcelBloc {
             returnValueForMissingStub: _i6.Future<void>.value(),
           )
           as _i6.Future<void>);
+
+  @override
+  _i6.Stream<_i8.Either<_i9.Failure, _i7.ParcelEntity>> watchParcelStatus(
+    String? parcelId,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#watchParcelStatus, [parcelId]),
+            returnValue:
+                _i6.Stream<_i8.Either<_i9.Failure, _i7.ParcelEntity>>.empty(),
+          )
+          as _i6.Stream<_i8.Either<_i9.Failure, _i7.ParcelEntity>>);
+
+  @override
+  _i6.Stream<_i8.Either<_i9.Failure, List<_i7.ParcelEntity>>> watchUserParcels(
+    String? userId,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#watchUserParcels, [userId]),
+            returnValue:
+                _i6.Stream<
+                  _i8.Either<_i9.Failure, List<_i7.ParcelEntity>>
+                >.empty(),
+          )
+          as _i6.Stream<_i8.Either<_i9.Failure, List<_i7.ParcelEntity>>>);
+
+  @override
+  _i6.Stream<_i8.Either<_i9.Failure, List<_i7.ParcelEntity>>>
+  watchAcceptedParcels(String? userId) =>
+      (super.noSuchMethod(
+            Invocation.method(#watchAcceptedParcels, [userId]),
+            returnValue:
+                _i6.Stream<
+                  _i8.Either<_i9.Failure, List<_i7.ParcelEntity>>
+                >.empty(),
+          )
+          as _i6.Stream<_i8.Either<_i9.Failure, List<_i7.ParcelEntity>>>);
+
+  @override
+  _i6.Stream<_i8.Either<_i9.Failure, List<_i7.ParcelEntity>>>
+  watchAvailableParcels() =>
+      (super.noSuchMethod(
+            Invocation.method(#watchAvailableParcels, []),
+            returnValue:
+                _i6.Stream<
+                  _i8.Either<_i9.Failure, List<_i7.ParcelEntity>>
+                >.empty(),
+          )
+          as _i6.Stream<_i8.Either<_i9.Failure, List<_i7.ParcelEntity>>>);
 
   @override
   void handleException(Exception? exception, [StackTrace? stackTrace]) =>
@@ -113,12 +239,35 @@ class MockParcelBloc extends _i1.Mock implements _i2.ParcelBloc {
   );
 
   @override
-  void onTransition(
-    _i7.Transition<_i8.ParcelEvent, _i3.BaseState<_i4.ParcelData>>? transition,
-  ) => super.noSuchMethod(
-    Invocation.method(#onTransition, [transition]),
-    returnValueForMissingStub: null,
-  );
+  _i6.Future<void> executeAsync<T>(
+    _i6.Future<T> Function()? operation, {
+    void Function(T)? onSuccess,
+    void Function(Exception)? onError,
+    String? loadingMessage,
+    String? successMessage,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(
+              #executeAsync,
+              [operation],
+              {
+                #onSuccess: onSuccess,
+                #onError: onError,
+                #loadingMessage: loadingMessage,
+                #successMessage: successMessage,
+              },
+            ),
+            returnValue: _i6.Future<void>.value(),
+            returnValueForMissingStub: _i6.Future<void>.value(),
+          )
+          as _i6.Future<void>);
+
+  @override
+  void onChange(_i10.Change<_i3.BaseState<_i4.ParcelData>>? change) =>
+      super.noSuchMethod(
+        Invocation.method(#onChange, [change]),
+        returnValueForMissingStub: null,
+      );
 
   @override
   void onError(Object? error, StackTrace? stackTrace) => super.noSuchMethod(
@@ -127,38 +276,10 @@ class MockParcelBloc extends _i1.Mock implements _i2.ParcelBloc {
   );
 
   @override
-  void add(_i8.ParcelEvent? event) => super.noSuchMethod(
-    Invocation.method(#add, [event]),
-    returnValueForMissingStub: null,
-  );
-
-  @override
-  void onEvent(_i8.ParcelEvent? event) => super.noSuchMethod(
-    Invocation.method(#onEvent, [event]),
-    returnValueForMissingStub: null,
-  );
-
-  @override
   void emit(_i3.BaseState<_i4.ParcelData>? state) => super.noSuchMethod(
     Invocation.method(#emit, [state]),
     returnValueForMissingStub: null,
   );
-
-  @override
-  void on<E extends _i8.ParcelEvent>(
-    _i7.EventHandler<E, _i3.BaseState<_i4.ParcelData>>? handler, {
-    _i7.EventTransformer<E>? transformer,
-  }) => super.noSuchMethod(
-    Invocation.method(#on, [handler], {#transformer: transformer}),
-    returnValueForMissingStub: null,
-  );
-
-  @override
-  void onChange(_i7.Change<_i3.BaseState<_i4.ParcelData>>? change) =>
-      super.noSuchMethod(
-        Invocation.method(#onChange, [change]),
-        returnValueForMissingStub: null,
-      );
 
   @override
   void addError(Object? error, [StackTrace? stackTrace]) => super.noSuchMethod(

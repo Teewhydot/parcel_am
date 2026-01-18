@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
-import 'package:parcel_am/features/parcel_am_core/presentation/bloc/wallet/wallet_bloc.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/bloc/wallet/wallet_cubit.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_font_size.dart';
 import '../../../../core/widgets/app_button.dart';
@@ -16,12 +16,11 @@ import '../../../../injection_container.dart';
 import 'package:parcel_am/features/kyc/domain/entities/kyc_status.dart';
 import '../../../../core/helpers/user_extensions.dart';
 import '../../../escrow/domain/entities/escrow_status.dart';
-import '../bloc/parcel/parcel_bloc.dart';
-import '../bloc/parcel/parcel_event.dart';
+import '../bloc/parcel/parcel_cubit.dart';
 import '../bloc/parcel/parcel_state.dart';
-import '../bloc/escrow/escrow_bloc.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/bloc/escrow/escrow_cubit.dart';
 import '../bloc/escrow/escrow_state.dart';
-import '../bloc/auth/auth_bloc.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_cubit.dart';
 import '../bloc/auth/auth_data.dart';
 import '../../domain/entities/parcel_entity.dart' hide RouteInformation;
 import '../../domain/entities/parcel_entity.dart' as parcel_entity;
@@ -36,8 +35,8 @@ class CreateParcelScreen extends StatefulWidget {
 class _CreateParcelScreenState extends State<CreateParcelScreen> {
   final PageController _pageController = PageController();
   int _currentStep = 0;
-  late ParcelBloc _parcelBloc;
-  late EscrowBloc _escrowBloc;
+  late ParcelCubit _parcelBloc;
+  late EscrowCubit _escrowBloc;
 
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -71,8 +70,8 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
   @override
   void initState() {
     super.initState();
-    _parcelBloc = ParcelBloc();
-    _escrowBloc = EscrowBloc();
+    _parcelBloc = ParcelCubit();
+    _escrowBloc = EscrowCubit();
   }
 
   @override
@@ -115,9 +114,9 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
   }
 
   bool _validateParcelCreation() {
-    // Get user from AuthBloc
-    final walletState= context.read<WalletBloc>().state;
-    final authState = context.read<AuthBloc>().state;
+    // Get user from AuthCubit
+    final walletState= context.read<WalletCubit>().state;
+    final authState = context.read<AuthCubit>().state;
     if (authState is! DataState<AuthData> || authState.data?.user == null) {
       context.showSnackbar(
         message: 'User not authenticated',
@@ -158,8 +157,8 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
   }
 
   void _createParcel() {
-    // Get user from AuthBloc instead of Firebase directly
-    final authState = context.read<AuthBloc>().state;
+    // Get user from AuthCubit instead of Firebase directly
+    final authState = context.read<AuthCubit>().state;
     if (authState is! DataState<AuthData> || authState.data?.user == null) return;
 
     final currentUser = authState.data!.user!;
@@ -201,7 +200,7 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
       createdAt: DateTime.now(),
     );
 
-    _parcelBloc.add(ParcelCreateRequested(parcel));
+    _parcelBloc.createParcel(parcel);
   }
 
   @override
@@ -212,7 +211,7 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
         backgroundColor: AppColors.surface,
         elevation: 0,
       ),
-      body: BlocManager<ParcelBloc,BaseState<ParcelData>>(
+      body: BlocManager<ParcelCubit,BaseState<ParcelData>>(
         bloc: _parcelBloc,
         onSuccess: (context, state){
           context.showSnackbar(message: 'Parcel created successfully', color: AppColors.success);
@@ -523,7 +522,7 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
   }
 
   Widget _buildPaymentStep() {
-    return BlocBuilder<EscrowBloc, BaseState<EscrowData>>(
+    return BlocBuilder<EscrowCubit, BaseState<EscrowData>>(
       builder: (context, escrowState) {
         return SingleChildScrollView(
           padding: AppSpacing.paddingLG,
@@ -710,7 +709,7 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
   }
 
   Widget _buildNavigationButtons() {
-    return BlocBuilder<ParcelBloc, BaseState<ParcelData>>(
+    return BlocBuilder<ParcelCubit, BaseState<ParcelData>>(
       bloc: _parcelBloc,
       builder: (context, state) {
         final isCreating = state is LoadingState<ParcelData> ||

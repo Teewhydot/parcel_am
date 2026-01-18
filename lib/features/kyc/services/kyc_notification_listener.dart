@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:parcel_am/core/widgets/app_text.dart';
 import 'package:parcel_am/core/widgets/app_button.dart';
 import 'package:parcel_am/core/widgets/app_spacing.dart';
-import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_bloc.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_cubit.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_data.dart';
 import 'package:parcel_am/core/bloc/base/base_state.dart';
 import 'package:parcel_am/features/kyc/domain/entities/kyc_status.dart';
@@ -44,7 +44,7 @@ class _KycNotificationListenerState extends State<KycNotificationListener> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
 
-      final authBloc = context.read<AuthBloc>();
+      final authBloc = context.read<AuthCubit>();
       _statusSubscription = authBloc.stream.listen(_handleStatusChange);
 
       final currentState = authBloc.state;

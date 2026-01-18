@@ -15,7 +15,7 @@ import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../injection_container.dart';
 import '../../domain/entities/parcel_entity.dart';
-import '../bloc/parcel/parcel_bloc.dart';
+import '../bloc/parcel/parcel_cubit.dart';
 import '../bloc/parcel/parcel_state.dart';
 import 'status_update_action_sheet.dart';
 
@@ -532,7 +532,7 @@ class _DeliveryCardState extends State<DeliveryCard> {
     final isAwaitingConfirmation = widget.parcel.status == ParcelStatus.awaitingConfirmation;
     final nextStatus = widget.parcel.status.nextDeliveryStatus;
 
-    return BlocBuilder<ParcelBloc, BaseState<ParcelData>>(
+    return BlocBuilder<ParcelCubit, BaseState<ParcelData>>(
       buildWhen: (previous, current) {
         // Only rebuild when the updating parcel ID changes
         final prevUpdating = previous.data?.updatingParcelId;

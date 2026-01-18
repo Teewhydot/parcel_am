@@ -11,7 +11,7 @@ import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../injection_container.dart';
-import '../../../parcel_am_core/presentation/bloc/auth/auth_bloc.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_cubit.dart';
 import '../../../parcel_am_core/presentation/bloc/auth/auth_data.dart';
 import '../../../../core/bloc/base/base_state.dart';
 
@@ -99,7 +99,7 @@ class KycStatusIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AuthBloc, BaseState<AuthData>>(
+    return BlocBuilder<AuthCubit, BaseState<AuthData>>(
       builder: (context, state) {
         if (state is! DataState<AuthData> || state.data?.user == null) {
           return const SizedBox.shrink();
@@ -145,11 +145,11 @@ class _KycStatusBannerState extends State<KycStatusBanner> {
 @override
   void initState() {
     super.initState();
-     final authBloc = context.read<AuthBloc>();
+     final authBloc = context.read<AuthCubit>();
     final userId = authBloc.state is LoadedState<AuthData>
         ? (authBloc.state as LoadedState<AuthData>).data?.user?.uid ?? ''
         : '';
-    _kycStatusStream = context.read<AuthBloc>().watchUserData(userId);
+    _kycStatusStream = context.read<AuthCubit>().watchUserData(userId);
   }
   @override
   Widget build(BuildContext context) {
@@ -295,7 +295,7 @@ class KycStatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AuthBloc, BaseState<AuthData>>(
+    return BlocBuilder<AuthCubit, BaseState<AuthData>>(
       builder: (context, state) {
         if (state is! DataState<AuthData> || state.data?.user == null) {
           return const SizedBox.shrink();
@@ -472,7 +472,7 @@ class KycStatusIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AuthBloc, BaseState<AuthData>>(
+    return BlocBuilder<AuthCubit, BaseState<AuthData>>(
       builder: (context, state) {
         if (state is! DataState<AuthData> || state.data?.user == null) {
           return const SizedBox.shrink();

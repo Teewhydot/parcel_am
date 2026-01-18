@@ -1,6 +1,8 @@
+import 'package:dartz/dartz.dart' show Either;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import '../../../../core/errors/failures.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_font_size.dart';
@@ -9,9 +11,9 @@ import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../injection_container.dart';
-import '../bloc/parcel/parcel_bloc.dart';
-import '../bloc/parcel/parcel_event.dart';
-import '../bloc/parcel/parcel_state.dart';
+import '../bloc/parcel/parcel_cubit.dart';
+import '../bloc/auth/auth_cubit.dart';
+import '../bloc/auth/auth_data.dart';
 import '../../domain/entities/parcel_entity.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_card.dart';
@@ -36,6 +38,14 @@ class _MyPackagesTabState extends State<MyPackagesTab> {
   String _selectedFilter = 'All';
   final List<String> _filterOptions = ['All', 'Active', 'Delivered', 'Cancelled'];
   String? _confirmingParcelId;
+
+  String? _getUserId() {
+    final authState = context.read<AuthCubit>().state;
+    if (authState is LoadedState<AuthData>) {
+      return authState.data?.user?.uid;
+    }
+    return null;
+  }
 
   List<ParcelEntity> _filterParcels(List<ParcelEntity> parcels) {
     switch (_selectedFilter) {
@@ -63,13 +73,24 @@ class _MyPackagesTabState extends State<MyPackagesTab> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ParcelBloc, BaseState<ParcelData>>(
-      builder: (context, state) {
-        if (state is AsyncLoadingState<ParcelData> && state.data == null) {
+    final userId = _getUserId();
+
+    if (userId == null) {
+      return _buildEmptyState(
+        icon: Icons.person_off,
+        title: 'Not signed in',
+        subtitle: 'Please sign in to view your packages',
+      );
+    }
+
+    return StreamBuilder<Either<Failure, List<ParcelEntity>>>(
+      stream: context.read<ParcelCubit>().watchUserParcels(userId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        if (state is AsyncErrorState<ParcelData>) {
+        if (snapshot.hasError) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -84,7 +105,7 @@ class _MyPackagesTabState extends State<MyPackagesTab> {
                 ),
                 AppSpacing.verticalSpacing(SpacingSize.sm),
                 AppText.bodyMedium(
-                  state.errorMessage,
+                  snapshot.error.toString(),
                   textAlign: TextAlign.center,
                   color: AppColors.onSurfaceVariant,
                 ),
@@ -93,72 +114,94 @@ class _MyPackagesTabState extends State<MyPackagesTab> {
           );
         }
 
-        final userParcels = state.data?.userParcels ?? [];
-
-        if (userParcels.isEmpty) {
-          return _buildEmptyState(
-            icon: Icons.inventory_2_outlined,
-            title: 'No packages yet',
-            subtitle: 'Packages you create will appear here',
-          );
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
         }
 
-        final filteredParcels = _filterParcels(userParcels);
+        return snapshot.data!.fold(
+          (failure) => Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, size: 64, color: AppColors.error),
+                AppSpacing.verticalSpacing(SpacingSize.lg),
+                AppText(
+                  'Failed to load packages',
+                  variant: TextVariant.titleMedium,
+                  fontSize: AppFontSize.xl,
+                  fontWeight: FontWeight.w600,
+                ),
+                AppSpacing.verticalSpacing(SpacingSize.sm),
+                AppText.bodyMedium(
+                  failure.failureMessage,
+                  textAlign: TextAlign.center,
+                  color: AppColors.onSurfaceVariant,
+                ),
+              ],
+            ),
+          ),
+          (userParcels) {
+            if (userParcels.isEmpty) {
+              return _buildEmptyState(
+                icon: Icons.inventory_2_outlined,
+                title: 'No packages yet',
+                subtitle: 'Packages you create will appear here',
+              );
+            }
 
-        return Column(
-          children: [
-            _buildStatusFilter(),
-            if (filteredParcels.isEmpty)
-              Expanded(
-                child: _buildEmptyState(
-                  icon: Icons.filter_list_off,
-                  title: 'No $_selectedFilter packages',
-                  subtitle: 'Try selecting a different filter',
-                ),
-              )
-            else ...[
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: AppText.bodyMedium(
-                    '${filteredParcels.length} package${filteredParcels.length == 1 ? '' : 's'}',
-                    color: AppColors.onSurfaceVariant,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: RefreshIndicator(
-                  onRefresh: () async {
-                    await Future.delayed(const Duration(milliseconds: 500));
-                  },
-                  child: AnimationLimiter(
-                    child: ListView.builder(
-                      padding: const EdgeInsets.only(
-                        left: 16,
-                        right: 16,
-                        bottom: 100,
+            final filteredParcels = _filterParcels(userParcels);
+
+            return Column(
+              children: [
+                _buildStatusFilter(),
+                if (filteredParcels.isEmpty)
+                  Expanded(
+                    child: _buildEmptyState(
+                      icon: Icons.filter_list_off,
+                      title: 'No $_selectedFilter packages',
+                      subtitle: 'Try selecting a different filter',
+                    ),
+                  )
+                else ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: AppText.bodyMedium(
+                        '${filteredParcels.length} package${filteredParcels.length == 1 ? '' : 's'}',
+                        color: AppColors.onSurfaceVariant,
                       ),
-                      itemCount: filteredParcels.length,
-                      itemBuilder: (context, index) {
-                        final parcel = filteredParcels[index];
-                        return AnimationConfiguration.staggeredList(
-                          position: index,
-                          duration: const Duration(milliseconds: 375),
-                          child: SlideAnimation(
-                            verticalOffset: 50.0,
-                            child: FadeInAnimation(
-                              child: _buildPackageCard(parcel),
-                            ),
-                          ),
-                        );
-                      },
                     ),
                   ),
-                ),
-              ),
-            ],
-          ],
+                  Expanded(
+                    child: AnimationLimiter(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.only(
+                          left: 16,
+                          right: 16,
+                          bottom: 100,
+                        ),
+                        itemCount: filteredParcels.length,
+                        itemBuilder: (context, index) {
+                          final parcel = filteredParcels[index];
+                          return AnimationConfiguration.staggeredList(
+                            position: index,
+                            duration: const Duration(milliseconds: 375),
+                            child: SlideAnimation(
+                              verticalOffset: 50.0,
+                              child: FadeInAnimation(
+                                child: _buildPackageCard(parcel),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            );
+          },
         );
       },
     );
@@ -353,11 +396,9 @@ class _MyPackagesTabState extends State<MyPackagesTab> {
 
     setState(() => _confirmingParcelId = parcel.id);
 
-    context.read<ParcelBloc>().add(
-      ParcelConfirmDeliveryRequested(
-        parcelId: parcel.id,
-        escrowId: parcel.escrowId!,
-      ),
+    context.read<ParcelCubit>().confirmDelivery(
+      parcel.id,
+      parcel.escrowId!,
     );
 
     // Reset loading state after a delay (the bloc will update the parcel status)

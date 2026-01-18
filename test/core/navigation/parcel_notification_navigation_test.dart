@@ -24,7 +24,7 @@ void main() {
 
   late NotificationService notificationService;
   late MockNavigationService mockNavigationService;
-  late MockNotificationRepository mockRepository;
+  late MockFCMRepository mockRepository;
   late MockNotificationRemoteDataSource mockRemoteDataSource;
   late MockFirebaseAuth mockFirebaseAuth;
   late MockUser mockUser;
@@ -32,7 +32,7 @@ void main() {
 
   setUp(() {
     mockNavigationService = MockNavigationService();
-    mockRepository = MockNotificationRepository();
+    mockRepository = MockFCMRepository();
     mockRemoteDataSource = MockNotificationRemoteDataSource();
     mockFirebaseAuth = MockFirebaseAuth();
     mockUser = MockUser();

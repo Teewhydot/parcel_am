@@ -50,6 +50,15 @@ class WalletUseCase {
     return walletRepo.releaseBalance(userId, amount, referenceId, idempotencyKey);
   }
 
+  Future<Either<Failure, WalletEntity>> clearHeldBalance(
+    String userId,
+    double amount,
+    String referenceId,
+    String idempotencyKey,
+  ) {
+    return walletRepo.clearHeldBalance(userId, amount, referenceId, idempotencyKey);
+  }
+
   Future<Either<Failure, TransactionEntity>> recordTransaction(
     String userId,
     double amount,

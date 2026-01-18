@@ -5,21 +5,21 @@ import 'package:skeletonizer/skeletonizer.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:parcel_am/core/utils/logger.dart';
-import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_bloc.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_cubit.dart';
 import 'package:parcel_am/features/parcel_am_core/domain/entities/user_entity.dart';
 
 extension UserExtensions on BuildContext {
   // Extension method to always fetch the current user's ID
   String? get currentUserId {
-    // Assuming there's a UserBloc or AuthBloc that holds the current user info
-    final userState = read<AuthBloc>().state;
+    // Assuming there's a UserBloc or AuthCubit that holds the current user info
+    final userState = read<AuthCubit>().state;
     Logger.logBasic('Current User id: ${userState.data?.user?.uid}');
     return userState.data?.user?.uid;
   }
 
   // Extension method to get the current user entity
   UserEntity get user {
-    final userState = read<AuthBloc>().state;
+    final userState = read<AuthCubit>().state;
     return userState.data?.user ?? UserEntity(
       uid: '',
       displayName: '',

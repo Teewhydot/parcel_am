@@ -9,7 +9,7 @@ import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
-import '../../../parcel_am_core/presentation/bloc/wallet/wallet_bloc.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/bloc/wallet/wallet_cubit.dart';
 import '../../../parcel_am_core/presentation/bloc/wallet/wallet_data.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../../../../core/constants/business_constants.dart';
@@ -226,7 +226,7 @@ class _WalletFundingSuccessScreenState
         elevation: 0,
         automaticallyImplyLeading: false,
       ),
-      body: BlocBuilder<WalletBloc, BaseState<WalletData>>(
+      body: BlocBuilder<WalletCubit, BaseState<WalletData>>(
         builder: (context, state) {
           final walletData = state.data ?? const WalletData();
 

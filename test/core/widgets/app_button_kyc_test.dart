@@ -5,20 +5,20 @@ import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:parcel_am/core/widgets/app_button.dart';
 import 'package:parcel_am/core/widgets/kyc_blocked_action.dart';
-import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_bloc.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_cubit.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_data.dart';
 import 'package:parcel_am/features/parcel_am_core/domain/entities/user_entity.dart';
-import 'package:parcel_am/core/domain/entities/kyc_status.dart';
+import 'package:parcel_am/features/kyc/domain/entities/kyc_status.dart';
 import 'package:parcel_am/core/bloc/base/base_state.dart';
 
 import 'app_button_kyc_test.mocks.dart';
 
-@GenerateMocks([AuthBloc])
+@GenerateMocks([AuthCubit])
 void main() {
-  late MockAuthBloc mockAuthBloc;
+  late MockAuthCubit mockAuthCubit;
 
   setUp(() {
-    mockAuthBloc = MockAuthBloc();
+    mockAuthCubit = MockAuthCubit();
     // Provide dummy states
     provideDummy<BaseState<AuthData>>(
       const InitialState<AuthData>(),
@@ -43,13 +43,13 @@ void main() {
     required Widget child,
     required BaseState<AuthData> authState,
   }) {
-    when(mockAuthBloc.state).thenReturn(authState);
-    when(mockAuthBloc.stream).thenAnswer((_) => Stream.value(authState));
+    when(mockAuthCubit.state).thenReturn(authState);
+    when(mockAuthCubit.stream).thenAnswer((_) => Stream.value(authState));
 
     return MaterialApp(
       home: Scaffold(
-        body: BlocProvider<AuthBloc>.value(
-          value: mockAuthBloc,
+        body: BlocProvider<AuthCubit>.value(
+          value: mockAuthCubit,
           child: child,
         ),
       ),
@@ -179,8 +179,8 @@ void main() {
           lastUpdated: DateTime.now(),
         );
 
-        when(mockAuthBloc.state).thenReturn(initialState);
-        when(mockAuthBloc.stream).thenAnswer(
+        when(mockAuthCubit.state).thenReturn(initialState);
+        when(mockAuthCubit.stream).thenAnswer(
           (_) => Stream.fromIterable([
             initialState,
             verifiedState,

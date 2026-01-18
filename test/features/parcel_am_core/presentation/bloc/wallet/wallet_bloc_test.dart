@@ -9,9 +9,8 @@ import 'package:parcel_am/core/services/connectivity_service.dart';
 import 'package:parcel_am/features/parcel_am_core/data/helpers/idempotency_helper.dart';
 import 'package:parcel_am/features/parcel_am_core/domain/entities/wallet_entity.dart';
 import 'package:parcel_am/features/parcel_am_core/domain/usecases/wallet_usecase.dart';
-import 'package:parcel_am/features/parcel_am_core/presentation/bloc/wallet/wallet_bloc.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/bloc/wallet/wallet_cubit.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/wallet/wallet_data.dart';
-import 'package:parcel_am/features/parcel_am_core/presentation/bloc/wallet/wallet_event.dart';
 
 class MockWalletUseCase extends Mock implements WalletUseCase {}
 
@@ -38,43 +37,43 @@ void main() {
     connectivityController.close();
   });
 
-  group('WalletBloc - Connectivity Tests', () {
+  group('WalletCubit - Connectivity Tests', () {
     test('should start with isOnline = true by default', () {
-      final bloc = WalletBloc(
+      final cubit = WalletCubit(
         walletUseCase: mockWalletUseCase,
         connectivityService: mockConnectivityService,
       );
 
-      expect(bloc.isOnline, isTrue);
+      expect(cubit.isOnline, isTrue);
 
-      bloc.close();
+      cubit.close();
     });
 
-    blocTest<WalletBloc, BaseState<WalletData>>(
+    blocTest<WalletCubit, BaseState<WalletData>>(
       'should update isOnline when connectivity changes to offline',
-      build: () => WalletBloc(
+      build: () => WalletCubit(
         walletUseCase: mockWalletUseCase,
         connectivityService: mockConnectivityService,
       ),
-      act: (bloc) async {
-        // Give bloc time to set up
+      act: (cubit) async {
+        // Give cubit time to set up
         await Future.delayed(const Duration(milliseconds: 100));
         connectivityController.add(false);
         await Future.delayed(const Duration(milliseconds: 100));
       },
-      verify: (bloc) {
-        expect(bloc.isOnline, isFalse);
+      verify: (cubit) {
+        expect(cubit.isOnline, isFalse);
       },
     );
 
-    blocTest<WalletBloc, BaseState<WalletData>>(
+    blocTest<WalletCubit, BaseState<WalletData>>(
       'should update isOnline when connectivity changes to online',
-      build: () => WalletBloc(
+      build: () => WalletCubit(
         walletUseCase: mockWalletUseCase,
         connectivityService: mockConnectivityService,
       ),
-      act: (bloc) async {
-        // Give bloc time to set up
+      act: (cubit) async {
+        // Give cubit time to set up
         await Future.delayed(const Duration(milliseconds: 100));
         // First go offline
         connectivityController.add(false);
@@ -83,33 +82,33 @@ void main() {
         connectivityController.add(true);
         await Future.delayed(const Duration(milliseconds: 100));
       },
-      verify: (bloc) {
-        expect(bloc.isOnline, isTrue);
+      verify: (cubit) {
+        expect(cubit.isOnline, isTrue);
       },
     );
 
-    blocTest<WalletBloc, BaseState<WalletData>>(
+    blocTest<WalletCubit, BaseState<WalletData>>(
       'should emit error when hold operation attempted while offline',
       build: () {
-        final bloc = WalletBloc(
+        final cubit = WalletCubit(
           walletUseCase: mockWalletUseCase,
           connectivityService: mockConnectivityService,
         );
-        // Manually set offline state
-        bloc.add(const WalletConnectivityChanged(isOnline: false));
-        return bloc;
+        return cubit;
       },
       seed: () => LoadedState<WalletData>(
         data: const WalletData(availableBalance: 1000.0),
         lastUpdated: DateTime.now(),
       ),
-      act: (bloc) async {
+      act: (cubit) async {
+        // Simulate going offline
+        connectivityController.add(false);
         await Future.delayed(const Duration(milliseconds: 100));
-        bloc.add(const WalletEscrowHoldRequested(
-          transactionId: 'test-txn',
+        // Now try to hold balance
+        await cubit.holdEscrowBalance(
           amount: 100.0,
           packageId: 'pkg-123',
-        ));
+        );
       },
       expect: () => [
         isA<LoadedState<WalletData>>(), // From connectivity change
@@ -121,27 +120,28 @@ void main() {
       ],
     );
 
-    blocTest<WalletBloc, BaseState<WalletData>>(
+    blocTest<WalletCubit, BaseState<WalletData>>(
       'should emit error when release operation attempted while offline',
       build: () {
-        final bloc = WalletBloc(
+        final cubit = WalletCubit(
           walletUseCase: mockWalletUseCase,
           connectivityService: mockConnectivityService,
         );
-        // Manually set offline state
-        bloc.add(const WalletConnectivityChanged(isOnline: false));
-        return bloc;
+        return cubit;
       },
       seed: () => LoadedState<WalletData>(
         data: const WalletData(availableBalance: 1000.0, pendingBalance: 500.0),
         lastUpdated: DateTime.now(),
       ),
-      act: (bloc) async {
+      act: (cubit) async {
+        // Simulate going offline
+        connectivityController.add(false);
         await Future.delayed(const Duration(milliseconds: 100));
-        bloc.add(const WalletEscrowReleaseRequested(
+        // Now try to release balance
+        await cubit.releaseEscrowBalance(
           transactionId: 'test-txn',
           amount: 100.0,
-        ));
+        );
       },
       expect: () => [
         isA<LoadedState<WalletData>>(), // From connectivity change
@@ -154,7 +154,7 @@ void main() {
     );
   });
 
-  group('WalletBloc - Idempotency Tests', () {
+  group('WalletCubit - Idempotency Tests', () {
     test('IdempotencyHelper generates valid transaction ID for hold operation',
         () {
       final transactionId = IdempotencyHelper.generateTransactionId('hold');
@@ -172,9 +172,9 @@ void main() {
       expect(IdempotencyHelper.isValidTransactionId(transactionId), isTrue);
     });
 
-    blocTest<WalletBloc, BaseState<WalletData>>(
+    blocTest<WalletCubit, BaseState<WalletData>>(
       'should call holdBalance with idempotency key when operation succeeds',
-      build: () => WalletBloc(
+      build: () => WalletCubit(
         walletUseCase: mockWalletUseCase,
         connectivityService: mockConnectivityService,
       ),
@@ -199,15 +199,14 @@ void main() {
         data: const WalletData(availableBalance: 1000.0),
         lastUpdated: DateTime.now(),
       ),
-      act: (bloc) async {
+      act: (cubit) async {
         // Set wallet ID before operation
-        bloc.currentWalletId = 'wallet-1';
+        cubit.currentWalletId = 'wallet-1';
         await Future.delayed(const Duration(milliseconds: 50));
-        bloc.add(const WalletEscrowHoldRequested(
-          transactionId: 'test-txn',
+        await cubit.holdEscrowBalance(
           amount: 100.0,
           packageId: 'pkg-123',
-        ));
+        );
       },
       verify: (_) {
         // Verify that holdBalance was called with any idempotency key
@@ -220,9 +219,9 @@ void main() {
       },
     );
 
-    blocTest<WalletBloc, BaseState<WalletData>>(
+    blocTest<WalletCubit, BaseState<WalletData>>(
       'should call releaseBalance with idempotency key when operation succeeds',
-      build: () => WalletBloc(
+      build: () => WalletCubit(
         walletUseCase: mockWalletUseCase,
         connectivityService: mockConnectivityService,
       ),
@@ -250,14 +249,14 @@ void main() {
         ),
         lastUpdated: DateTime.now(),
       ),
-      act: (bloc) async {
+      act: (cubit) async {
         // Set wallet ID before operation
-        bloc.currentWalletId = 'wallet-1';
+        cubit.currentWalletId = 'wallet-1';
         await Future.delayed(const Duration(milliseconds: 50));
-        bloc.add(const WalletEscrowReleaseRequested(
+        await cubit.releaseEscrowBalance(
           transactionId: 'test-txn',
           amount: 100.0,
-        ));
+        );
       },
       verify: (_) {
         // Verify that releaseBalance was called with any idempotency key
@@ -271,10 +270,10 @@ void main() {
     );
   });
 
-  group('WalletBloc - Error Handling Tests', () {
-    blocTest<WalletBloc, BaseState<WalletData>>(
+  group('WalletCubit - Error Handling Tests', () {
+    blocTest<WalletCubit, BaseState<WalletData>>(
       'should emit error with custom message for NoInternetFailure',
-      build: () => WalletBloc(
+      build: () => WalletCubit(
         walletUseCase: mockWalletUseCase,
         connectivityService: mockConnectivityService,
       ),
@@ -292,14 +291,13 @@ void main() {
         data: const WalletData(availableBalance: 1000.0),
         lastUpdated: DateTime.now(),
       ),
-      act: (bloc) {
+      act: (cubit) async {
         // Set wallet ID before operation
-        bloc.currentWalletId = 'wallet-1';
-        bloc.add(const WalletEscrowHoldRequested(
-          transactionId: 'test-txn',
+        cubit.currentWalletId = 'wallet-1';
+        await cubit.holdEscrowBalance(
           amount: 100.0,
           packageId: 'pkg-123',
-        ));
+        );
       },
       expect: () => [
         isA<AsyncLoadingState<WalletData>>(),
@@ -311,9 +309,9 @@ void main() {
       ],
     );
 
-    blocTest<WalletBloc, BaseState<WalletData>>(
+    blocTest<WalletCubit, BaseState<WalletData>>(
       'should emit error with balance details for insufficient balance',
-      build: () => WalletBloc(
+      build: () => WalletCubit(
         walletUseCase: mockWalletUseCase,
         connectivityService: mockConnectivityService,
       ),
@@ -321,12 +319,11 @@ void main() {
         data: const WalletData(availableBalance: 50.0),
         lastUpdated: DateTime.now(),
       ),
-      act: (bloc) {
-        bloc.add(const WalletEscrowHoldRequested(
-          transactionId: 'test-txn',
+      act: (cubit) async {
+        await cubit.holdEscrowBalance(
           amount: 100.0,
           packageId: 'pkg-123',
-        ));
+        );
       },
       expect: () => [
         isA<AsyncErrorState<WalletData>>().having(
@@ -337,9 +334,9 @@ void main() {
       ],
     );
 
-    blocTest<WalletBloc, BaseState<WalletData>>(
+    blocTest<WalletCubit, BaseState<WalletData>>(
       'should emit error with held balance details for insufficient held balance',
-      build: () => WalletBloc(
+      build: () => WalletCubit(
         walletUseCase: mockWalletUseCase,
         connectivityService: mockConnectivityService,
       ),
@@ -362,13 +359,13 @@ void main() {
         ),
         lastUpdated: DateTime.now(),
       ),
-      act: (bloc) {
+      act: (cubit) async {
         // Set wallet ID before operation
-        bloc.currentWalletId = 'wallet-1';
-        bloc.add(const WalletEscrowReleaseRequested(
+        cubit.currentWalletId = 'wallet-1';
+        await cubit.releaseEscrowBalance(
           transactionId: 'test-txn',
           amount: 100.0,
-        ));
+        );
       },
       expect: () => [
         isA<AsyncLoadingState<WalletData>>(),
@@ -381,10 +378,10 @@ void main() {
     );
   });
 
-  group('WalletBloc - Loading State Tests', () {
-    blocTest<WalletBloc, BaseState<WalletData>>(
+  group('WalletCubit - Loading State Tests', () {
+    blocTest<WalletCubit, BaseState<WalletData>>(
       'should show AsyncLoadingState during hold operation',
-      build: () => WalletBloc(
+      build: () => WalletCubit(
         walletUseCase: mockWalletUseCase,
         connectivityService: mockConnectivityService,
       ),
@@ -409,14 +406,13 @@ void main() {
         data: const WalletData(availableBalance: 1000.0),
         lastUpdated: DateTime.now(),
       ),
-      act: (bloc) {
+      act: (cubit) async {
         // Set wallet ID before operation
-        bloc.currentWalletId = 'wallet-1';
-        bloc.add(const WalletEscrowHoldRequested(
-          transactionId: 'test-txn',
+        cubit.currentWalletId = 'wallet-1';
+        await cubit.holdEscrowBalance(
           amount: 100.0,
           packageId: 'pkg-123',
-        ));
+        );
       },
       wait: const Duration(milliseconds: 200),
       expect: () => [
@@ -425,9 +421,9 @@ void main() {
       ],
     );
 
-    blocTest<WalletBloc, BaseState<WalletData>>(
+    blocTest<WalletCubit, BaseState<WalletData>>(
       'should show AsyncLoadingState during release operation',
-      build: () => WalletBloc(
+      build: () => WalletCubit(
         walletUseCase: mockWalletUseCase,
         connectivityService: mockConnectivityService,
       ),
@@ -455,13 +451,13 @@ void main() {
         ),
         lastUpdated: DateTime.now(),
       ),
-      act: (bloc) {
+      act: (cubit) async {
         // Set wallet ID before operation
-        bloc.currentWalletId = 'wallet-1';
-        bloc.add(const WalletEscrowReleaseRequested(
+        cubit.currentWalletId = 'wallet-1';
+        await cubit.releaseEscrowBalance(
           transactionId: 'test-txn',
           amount: 100.0,
-        ));
+        );
       },
       wait: const Duration(milliseconds: 200),
       expect: () => [

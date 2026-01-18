@@ -18,8 +18,7 @@ import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_input.dart';
-import '../bloc/auth/auth_bloc.dart';
-import '../bloc/auth/auth_event.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_cubit.dart';
 import '../bloc/auth/auth_data.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../../../../features/file_upload/domain/use_cases/file_upload_usecase.dart';
@@ -43,7 +42,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   }
 
   void _loadExistingData() {
-    final authState = context.read<AuthBloc>().state;
+    final authState = context.read<AuthCubit>().state;
     if (authState.data?.user != null) {
       final user = authState.data!.user!;
       _displayNameController.text = user.displayName;
@@ -60,8 +59,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocManager<AuthBloc, BaseState<AuthData>>(
-      bloc: context.read<AuthBloc>(),
+    return BlocManager<AuthCubit, BaseState<AuthData>>(
+      bloc: context.read<AuthCubit>(),
       listener: (context, state) {
         // Only navigate on SuccessState, not LoadedState
         if (state is LoadedState<AuthData>) {
@@ -139,7 +138,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                           }
 
                           try {
-                            final authBloc = context.read<AuthBloc>();
+                            final authBloc = context.read<AuthCubit>();
 
                             // Safety check: ensure bloc is not closed
                             if (authBloc.isClosed) {
@@ -152,10 +151,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                               return;
                             }
 
-                            authBloc.add(
-                              AuthUserProfileUpdateRequested(
-                                displayName: _displayNameController.text,
-                              ),
+                            authBloc.updateUserProfile(
+                              _displayNameController.text,
                             );
                           } catch (e) {
                             if (mounted) {
@@ -235,7 +232,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       children: [
         StreamBuilder<Either<Failure, UserModel>>(
           stream: userId != null
-              ? context.read<AuthBloc>().watchUserData(userId)
+              ? context.read<AuthCubit>().watchUserData(userId)
               : const Stream.empty(),
           builder: (context, asyncSnapshot) {
             String? profileImageUrl;
@@ -296,8 +293,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   Future<void> _handleSignout() async {
     final confirmed = await _showSignoutConfirmationDialog();
 
-    if (confirmed == true) {
-      context.read<AuthBloc>().add(const AuthLogoutRequested());
+    if (confirmed == true && mounted) {
+      context.read<AuthCubit>().logout();
     }
   }
 

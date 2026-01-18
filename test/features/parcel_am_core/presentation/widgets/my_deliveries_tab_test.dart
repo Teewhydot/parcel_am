@@ -5,7 +5,7 @@ import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/widgets/my_deliveries_tab.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/widgets/delivery_card.dart';
-import 'package:parcel_am/features/parcel_am_core/presentation/bloc/parcel/parcel_bloc.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/bloc/parcel/parcel_cubit.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/parcel/parcel_state.dart';
 import 'package:parcel_am/features/parcel_am_core/domain/entities/parcel_entity.dart'
     as parcel;
@@ -13,12 +13,12 @@ import 'package:parcel_am/core/bloc/base/base_state.dart';
 
 import 'my_deliveries_tab_test.mocks.dart';
 
-@GenerateMocks([ParcelBloc])
+@GenerateMocks([ParcelCubit])
 void main() {
-  late MockParcelBloc mockParcelBloc;
+  late MockParcelCubit mockParcelCubit;
 
   setUp(() {
-    mockParcelBloc = MockParcelBloc();
+    mockParcelCubit = MockParcelCubit();
     // Provide a default dummy state value
     provideDummy<BaseState<ParcelData>>(
       const InitialState<ParcelData>(),
@@ -66,13 +66,13 @@ void main() {
   }
 
   Widget createTestWidget(BaseState<ParcelData> state) {
-    when(mockParcelBloc.state).thenReturn(state);
-    when(mockParcelBloc.stream).thenAnswer((_) => Stream.value(state));
+    when(mockParcelCubit.state).thenReturn(state);
+    when(mockParcelCubit.stream).thenAnswer((_) => Stream.value(state));
 
     return MaterialApp(
       home: Scaffold(
-        body: BlocProvider<ParcelBloc>.value(
-          value: mockParcelBloc,
+        body: BlocProvider<ParcelCubit>.value(
+          value: mockParcelCubit,
           child: const MyDeliveriesTab(),
         ),
       ),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart' hide Transition;
 import 'package:parcel_am/core/helpers/user_extensions.dart';
 import 'package:parcel_am/core/widgets/app_button.dart';
-import '../../../features/parcel_am_core/presentation/bloc/auth/auth_bloc.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_cubit.dart';
 import '../../../features/parcel_am_core/presentation/bloc/auth/auth_data.dart';
 import '../../../core/bloc/base/base_state.dart';
 import 'package:parcel_am/features/kyc/domain/entities/kyc_status.dart';
@@ -44,7 +44,7 @@ class KycGuard {
   /// Get current KYC status (synchronous)
   KycStatus getStatus(BuildContext context) {
     try {
-      final authBloc = context.read<AuthBloc>();
+      final authBloc = context.read<AuthCubit>();
       final state = authBloc.state;
 
       if (state is DataState<AuthData>) {
@@ -63,7 +63,7 @@ class KycGuard {
   /// Emits current status immediately, then listens for updates
   Stream<KycStatus> watchStatus(BuildContext context) {
     try {
-      final authBloc = context.read<AuthBloc>();
+      final authBloc = context.read<AuthCubit>();
       final userId = context.currentUserId;
 
       if (userId == null) {

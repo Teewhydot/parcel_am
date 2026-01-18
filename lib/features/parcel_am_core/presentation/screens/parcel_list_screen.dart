@@ -9,10 +9,9 @@ import '../../../../core/bloc/base/base_state.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../injection_container.dart';
-import '../bloc/parcel/parcel_bloc.dart';
-import '../bloc/parcel/parcel_event.dart';
+import '../bloc/parcel/parcel_cubit.dart';
 import '../bloc/parcel/parcel_state.dart';
-import '../bloc/auth/auth_bloc.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_cubit.dart';
 import '../bloc/auth/auth_data.dart';
 import '../../domain/entities/parcel_entity.dart';
 import '../widgets/bottom_navigation.dart';
@@ -28,19 +27,19 @@ class ParcelListScreen extends StatefulWidget {
 }
 
 class _ParcelListScreenState extends State<ParcelListScreen> {
-  late ParcelBloc _parcelBloc;
+  late ParcelCubit _parcelBloc;
   String? _currentUserId;
 
   @override
   void initState() {
     super.initState();
-    _parcelBloc = ParcelBloc();
+    _parcelBloc = ParcelCubit();
 
-    // Get user ID from AuthBloc
-    final authState = context.read<AuthBloc>().state;
+    // Get user ID from AuthCubit
+    final authState = context.read<AuthCubit>().state;
     if (authState is DataState<AuthData> && authState.data?.user != null) {
       _currentUserId = authState.data!.user!.uid;
-      _parcelBloc.add(ParcelLoadUserParcels(_currentUserId!));
+      _parcelBloc.loadUserParcels(_currentUserId!);
     }
   }
 
@@ -52,7 +51,7 @@ class _ParcelListScreenState extends State<ParcelListScreen> {
 
   void _refreshParcels() {
     if (_currentUserId != null) {
-      _parcelBloc.add(ParcelLoadUserParcels(_currentUserId!));
+      _parcelBloc.loadUserParcels(_currentUserId!);
     }
   }
 
@@ -72,7 +71,7 @@ class _ParcelListScreenState extends State<ParcelListScreen> {
             ),
           ],
         ),
-        body: BlocBuilder<ParcelBloc, BaseState<ParcelData>>(
+        body: BlocBuilder<ParcelCubit, BaseState<ParcelData>>(
           builder: (context, state) {
             if (state is LoadingState<ParcelData>) {
               return const Center(child: CircularProgressIndicator());
@@ -329,13 +328,11 @@ class _ParcelCard extends StatelessWidget {
 
   void _cancelParcel(BuildContext context) {
     final totalAmount = (parcel.price ?? 0.0) + 150.0; // price + service fee
-    context.read<ParcelBloc>().add(
-      ParcelCancelRequested(
-        parcelId: parcel.id,
-        userId: parcel.sender.userId,
-        amount: totalAmount,
-        reason: 'User requested cancellation',
-      ),
+    context.read<ParcelCubit>().cancelParcel(
+      parcelId: parcel.id,
+      userId: parcel.sender.userId,
+      amount: totalAmount,
+      reason: 'User requested cancellation',
     );
   }
 

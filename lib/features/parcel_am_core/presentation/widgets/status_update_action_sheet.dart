@@ -9,8 +9,7 @@ import '../../../../core/utils/app_utils.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../domain/entities/parcel_entity.dart';
-import '../bloc/parcel/parcel_bloc.dart';
-import '../bloc/parcel/parcel_event.dart';
+import '../bloc/parcel/parcel_cubit.dart';
 
 /// Status Update Action Sheet
 ///
@@ -359,13 +358,11 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
     setState(() => _isUpdating = true);
 
     try {
-      // Task 3.4.6: Dispatch status update event
+      // Task 3.4.6: Dispatch status update
       if (!mounted) return;
-      context.read<ParcelBloc>().add(
-            ParcelUpdateStatusRequested(
-              parcelId: widget.parcel.id,
-              status: nextStatus,
-            ),
+      context.read<ParcelCubit>().updateParcelStatus(
+            widget.parcel.id,
+            nextStatus,
           );
 
       // Wait a brief moment for the update to process

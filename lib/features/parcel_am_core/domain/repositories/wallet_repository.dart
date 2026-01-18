@@ -35,6 +35,13 @@ abstract class WalletRepository {
     String idempotencyKey,
   );
 
+  Future<Either<Failure, WalletEntity>> clearHeldBalance(
+    String userId,
+    double amount,
+    String referenceId,
+    String idempotencyKey,
+  );
+
   Future<Either<Failure, TransactionEntity>> recordTransaction(
     String userId,
     double amount,

@@ -1,85 +1,30 @@
-import 'dart:async';
-import 'package:bloc/bloc.dart';
 import 'package:dartz/dartz.dart';
 import 'package:parcel_am/core/bloc/base/base_bloc.dart';
 import 'package:parcel_am/core/bloc/base/base_state.dart';
-import 'package:parcel_am/features/kyc/domain/entities/kyc_status.dart';
 import 'package:parcel_am/core/errors/failures.dart';
 import 'package:parcel_am/core/utils/logger.dart';
 import 'package:parcel_am/features/parcel_am_core/data/models/user_model.dart';
 import 'package:parcel_am/features/parcel_am_core/domain/usecases/auth_usecase.dart';
 import 'package:parcel_am/features/passkey/domain/usecases/passkey_usecase.dart';
-import 'auth_event.dart';
+import 'package:parcel_am/features/kyc/domain/entities/kyc_status.dart';
 import 'auth_data.dart';
 
-class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
+class AuthCubit extends BaseCubit<BaseState<AuthData>> {
   final authUseCase = AuthUseCase();
   final passkeyUseCase = PasskeyUseCase();
 
-  // Cache for user data streams to prevent creating new streams on each call
-  final Map<String, Stream<Either<Failure, UserModel>>> _userDataStreams = {};
+  AuthCubit() : super(const InitialState<AuthData>());
 
-  // Subscription to user data stream for realtime KYC updates
-  StreamSubscription<Either<Failure, UserModel>>? _userDataSubscription;
-
-  AuthBloc() : super(const InitialState<AuthData>()) {
-    on<AuthStarted>(_onAuthStarted);
-    on<AuthEmailChanged>(_onEmailChanged);
-    on<AuthPasswordChanged>(_onPasswordChanged);
-    on<AuthLoginRequested>(_onLoginRequested);
-    on<AuthRegisterRequested>(_onRegisterRequested);
-    on<AuthLogoutRequested>(_onLogoutRequested);
-    on<AuthUserProfileUpdateRequested>(_onUserProfileUpdateRequested);
-    on<AuthPasswordResetRequested>(_onPasswordResetRequested);
-    on<AuthKycStatusUpdated>(_onKycStatusUpdated);
-    on<AuthPasskeyCheckSupport>(_onPasskeyCheckSupport);
-    on<AuthPasskeySignInRequested>(_onPasskeySignInRequested);
-    on<AuthPasskeySignInCompleted>(_onPasskeySignInCompleted);
+  /// Stream for watching user data (KYC status updates) - use with StreamBuilder
+  Stream<Either<Failure, UserModel>> watchUserData(String userId) async* {
+    try {
+      yield* authUseCase.watchKycStatus(userId);
+    } catch (e, stackTrace) {
+      handleException(Exception(e.toString()), stackTrace);
+    }
   }
 
-
-  /// Watch user data stream for realtime updates
-  /// Returns a cached broadcast stream to ensure the same stream is reused
-  /// across multiple widget rebuilds (fixes KYC realtime update issue)
-  Stream<Either<Failure, UserModel>> watchUserData(String userId) {
-    // Return cached stream if exists, otherwise create and cache new one
-    return _userDataStreams.putIfAbsent(userId, () {
-      // Create broadcast stream so multiple listeners can subscribe
-      // and transform the async generator into a reusable stream
-      return authUseCase.watchKycStatus(userId).asBroadcastStream();
-    });
-  }
-
-  /// Clear cached streams (call on logout)
-  void clearUserDataCache() {
-    _userDataSubscription?.cancel();
-    _userDataSubscription = null;
-    _userDataStreams.clear();
-  }
-
-  /// Start listening to user data changes to keep state in sync with Firestore
-  void _startUserDataListener(String userId) {
-    _userDataSubscription?.cancel();
-    _userDataSubscription = watchUserData(userId).listen((result) {
-      result.fold(
-        (failure) {
-          Logger.logError('User data stream error: ${failure.failureMessage}');
-        },
-        (userData) {
-          // Update state with fresh user data (including KYC status)
-          final currentData = state.data ?? const AuthData();
-          if (currentData.user?.kycStatus != userData.kycStatus) {
-            Logger.logSuccess('KYC status updated: ${userData.kycStatus}');
-            add(AuthKycStatusUpdated(userData.kycStatus.toJson()));
-          }
-        },
-      );
-    });
-  }
-  Future<void> _onAuthStarted(
-    AuthStarted event,
-    Emitter<BaseState<AuthData>> emit,
-  ) async {
+  Future<void> checkCurrentUser() async {
     emit(const LoadingState<AuthData>(message: 'Checking current user...'));
 
     final result = await authUseCase.getCurrentUser();
@@ -99,8 +44,6 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
           Logger.logError('No current user found.');
           return;
         }
-        // Start listening to user data changes for realtime KYC updates
-        _startUserDataListener(user.uid);
         emit(
           LoadedState<AuthData>(
             data: const AuthData().copyWith(user: user),
@@ -112,39 +55,30 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
     );
   }
 
-  void _onEmailChanged(
-    AuthEmailChanged event,
-    Emitter<BaseState<AuthData>> emit,
-  ) {
+  void updateEmail(String email) {
     final currentData = state.data ?? const AuthData();
     emit(
       LoadedState<AuthData>(
-        data: currentData.copyWith(email: event.email),
+        data: currentData.copyWith(email: email),
         lastUpdated: DateTime.now(),
       ),
     );
   }
 
-  void _onPasswordChanged(
-    AuthPasswordChanged event,
-    Emitter<BaseState<AuthData>> emit,
-  ) {
+  void updatePassword(String password) {
     final currentData = state.data ?? const AuthData();
     emit(
       LoadedState<AuthData>(
-        data: currentData.copyWith(password: event.password),
+        data: currentData.copyWith(password: password),
         lastUpdated: DateTime.now(),
       ),
     );
   }
 
-  Future<void> _onLoginRequested(
-    AuthLoginRequested event,
-    Emitter<BaseState<AuthData>> emit,
-  ) async {
+  Future<void> login(String email, String password) async {
     emit(const LoadingState<AuthData>(message: 'Logging in...'));
 
-    final result = await authUseCase.login(event.email, event.password);
+    final result = await authUseCase.login(email, password);
 
     result.fold(
       (failure) {
@@ -156,12 +90,10 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
         );
       },
       (user) {
-        // Start listening to user data changes for realtime KYC updates
-        _startUserDataListener(user.uid);
         emit(SuccessState<AuthData>(successMessage: 'Login successful!'));
         emit(
           LoadedState<AuthData>(
-            data: const AuthData().copyWith(user: user, email: event.email),
+            data: const AuthData().copyWith(user: user, email: email),
             lastUpdated: DateTime.now(),
           ),
         );
@@ -169,16 +101,17 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
     );
   }
 
-  Future<void> _onRegisterRequested(
-    AuthRegisterRequested event,
-    Emitter<BaseState<AuthData>> emit,
-  ) async {
+  Future<void> register({
+    required String email,
+    required String password,
+    required String displayName,
+  }) async {
     emit(const LoadingState<AuthData>(message: 'Creating account...'));
 
     final result = await authUseCase.register(
-      email: event.email,
-      password: event.password,
-      displayName: event.displayName,
+      email: email,
+      password: password,
+      displayName: displayName,
     );
 
     result.fold(
@@ -191,11 +124,9 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
         );
       },
       (user) {
-        // Start listening to user data changes for realtime KYC updates
-        _startUserDataListener(user.uid);
         emit(
           LoadedState<AuthData>(
-            data: const AuthData().copyWith(user: user, email: event.email),
+            data: const AuthData().copyWith(user: user, email: email),
             lastUpdated: DateTime.now(),
           ),
         );
@@ -203,10 +134,7 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
     );
   }
 
-  Future<void> _onLogoutRequested(
-    AuthLogoutRequested event,
-    Emitter<BaseState<AuthData>> emit,
-  ) async {
+  Future<void> logout() async {
     emit(const LoadingState<AuthData>(message: 'Logging out...'));
 
     final result = await authUseCase.logout();
@@ -221,24 +149,19 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
         );
       },
       (_) {
-        // Clear cached user data streams on logout
-        clearUserDataCache();
         emit(const SuccessState(successMessage: "Logout success"));
       },
     );
   }
 
-  Future<void> _onUserProfileUpdateRequested(
-    AuthUserProfileUpdateRequested event,
-    Emitter<BaseState<AuthData>> emit,
-  ) async {
+  Future<void> updateUserProfile(String displayName) async {
     final currentData = state.data ?? const AuthData();
     if (currentData.user == null) return;
 
     emit(const LoadingState<AuthData>(message: 'Updating profile...'));
 
     final updatedUser = currentData.user!.copyWith(
-      displayName: event.displayName,
+      displayName: displayName,
     );
     final result = await authUseCase.updateUserProfile(updatedUser);
     result.fold(
@@ -261,13 +184,46 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
     );
   }
 
-  Future<void> _onPasswordResetRequested(
-    AuthPasswordResetRequested event,
-    Emitter<BaseState<AuthData>> emit,
-  ) async {
+  Future<void> updateUserProfileWithKyc({
+    required String displayName,
+    KycStatus? kycStatus,
+    Map<String, dynamic>? additionalData,
+  }) async {
+    final currentData = state.data ?? const AuthData();
+    if (currentData.user == null) return;
+
+    emit(const LoadingState<AuthData>(message: 'Updating profile...'));
+
+    final updatedUser = currentData.user!.copyWith(
+      displayName: displayName,
+      kycStatus: kycStatus,
+      additionalData: additionalData,
+    );
+    final result = await authUseCase.updateUserProfile(updatedUser);
+    result.fold(
+      (failure) {
+        emit(
+          ErrorState<AuthData>(
+            errorMessage: failure.failureMessage,
+            errorCode: 'profile_update_failed',
+          ),
+        );
+      },
+      (_) {
+        emit(
+          LoadedState<AuthData>(
+            data: currentData.copyWith(user: updatedUser),
+            lastUpdated: DateTime.now(),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> resetPassword(String email) async {
     emit(const LoadingState<AuthData>(message: 'Sending reset email...'));
 
-    final result = await authUseCase.resetPassword(event.email);
+    final result = await authUseCase.resetPassword(email);
 
     result.fold(
       (failure) {
@@ -288,15 +244,12 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
     );
   }
 
-  Future<void> _onKycStatusUpdated(
-    AuthKycStatusUpdated event,
-    Emitter<BaseState<AuthData>> emit,
-  ) async {
+  void updateKycStatus(String kycStatus) {
     final currentData = state.data ?? const AuthData();
     if (currentData.user == null) return;
 
     final updatedUser = currentData.user!.copyWith(
-      kycStatus: KycStatus.fromString(event.kycStatus),
+      kycStatus: KycStatus.fromString(kycStatus),
     );
 
     emit(
@@ -307,11 +260,7 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
     );
   }
 
-  /// Check if passkeys are supported on this device
-  Future<void> _onPasskeyCheckSupport(
-    AuthPasskeyCheckSupport event,
-    Emitter<BaseState<AuthData>> emit,
-  ) async {
+  Future<void> checkPasskeySupport() async {
     final result = await passkeyUseCase.isPasskeySupported();
 
     result.fold(
@@ -334,11 +283,7 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
     );
   }
 
-  /// Sign in using passkey
-  Future<void> _onPasskeySignInRequested(
-    AuthPasskeySignInRequested event,
-    Emitter<BaseState<AuthData>> emit,
-  ) async {
+  Future<void> signInWithPasskey() async {
     emit(const LoadingState<AuthData>(message: 'Authenticating with passkey...'));
 
     final result = await passkeyUseCase.signInWithPasskey();
@@ -352,28 +297,24 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
         Logger.logError('Passkey sign in failed: ${failure.failureMessage}');
       },
       (authResult) async {
-        // Passkey auth succeeded, now we need to link with Firebase user
-        // Dispatch completed event to handle Firebase linking
-        add(AuthPasskeySignInCompleted(
+        await _completePasskeySignIn(
           corbadoUserId: authResult.corbadoUserId,
           email: authResult.email,
           displayName: authResult.displayName,
-        ));
+        );
       },
     );
   }
 
-  /// Handle passkey sign in completion - link with Firebase user
-  Future<void> _onPasskeySignInCompleted(
-    AuthPasskeySignInCompleted event,
-    Emitter<BaseState<AuthData>> emit,
-  ) async {
-    // Try to get existing Firebase user by email
+  Future<void> _completePasskeySignIn({
+    required String corbadoUserId,
+    required String email,
+    required String? displayName,
+  }) async {
     final result = await authUseCase.getCurrentUser();
 
     await result.fold(
       (failure) async {
-        // No existing Firebase user, create one or handle accordingly
         Logger.logError('Firebase user lookup failed: ${failure.failureMessage}');
         emit(ErrorState<AuthData>(
           errorMessage: 'Unable to complete passkey authentication',
@@ -382,14 +323,11 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
       },
       (user) async {
         if (user != null) {
-          // Start listening to user data changes for realtime KYC updates
-          _startUserDataListener(user.uid);
-          // User exists, complete sign in
           emit(SuccessState<AuthData>(successMessage: 'Signed in with passkey!'));
           emit(LoadedState<AuthData>(
             data: const AuthData().copyWith(
               user: user,
-              email: event.email,
+              email: email,
               isPasskeySupported: true,
               hasPasskeys: true,
             ),
@@ -397,7 +335,6 @@ class AuthBloc extends BaseBloC<AuthEvent, BaseState<AuthData>> {
           ));
           Logger.logSuccess('Passkey sign in completed for: ${user.displayName}');
         } else {
-          // No user found - this shouldn't happen for passkey signin
           emit(const ErrorState<AuthData>(
             errorMessage: 'No account found. Please sign in with email/password first.',
             errorCode: 'no_user_found',

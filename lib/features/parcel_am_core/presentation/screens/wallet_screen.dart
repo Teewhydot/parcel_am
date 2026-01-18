@@ -16,8 +16,7 @@ import '../../../../core/widgets/app_input.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../payments/domain/use_cases/paystack_payment_usecase.dart';
 import '../../domain/value_objects/transaction_filter.dart';
-import '../bloc/wallet/wallet_bloc.dart';
-import '../bloc/wallet/wallet_event.dart';
+import '../bloc/wallet/wallet_cubit.dart';
 import '../bloc/wallet/wallet_data.dart';
 import '../widgets/transaction_list_item.dart';
 import '../widgets/transaction_details_bottom_sheet.dart';
@@ -60,8 +59,8 @@ class _WalletScreenState extends State<WalletScreen> {
         backgroundColor: AppColors.surface,
         elevation: 0,
       ),
-      body: BlocManager<WalletBloc, BaseState<WalletData>>(
-        bloc: context.read<WalletBloc>(),
+      body: BlocManager<WalletCubit, BaseState<WalletData>>(
+        bloc: context.read<WalletCubit>(),
         listener: (context, state) {
           // Show error snackbar when error occurs
           if (state is AsyncErrorState<WalletData>) {
@@ -75,7 +74,7 @@ class _WalletScreenState extends State<WalletScreen> {
           }
         },
         builder: (context, state) {
-          final bloc = context.read<WalletBloc>();
+          final bloc = context.read<WalletCubit>();
           final isOnline = bloc.isOnline;
 
           if (state.isLoading && !state.hasData) {
@@ -95,7 +94,7 @@ class _WalletScreenState extends State<WalletScreen> {
                   AppSpacing.verticalSpacing(SpacingSize.md),
                   AppButton.primary(
                     onPressed: () {
-                      context.read<WalletBloc>().add(WalletRefreshRequested(widget.userId));
+                      context.read<WalletCubit>().refresh();
                     },
                     child: AppText.bodyMedium('Retry', color: AppColors.white),
                   ),
@@ -108,7 +107,7 @@ class _WalletScreenState extends State<WalletScreen> {
 
           return RefreshIndicator(
             onRefresh: () async {
-              context.read<WalletBloc>().add(WalletRefreshRequested(widget.userId));
+              context.read<WalletCubit>().refresh();
             },
             child: SingleChildScrollView(
               padding: AppSpacing.paddingLG,
@@ -242,9 +241,7 @@ class _WalletScreenState extends State<WalletScreen> {
                       IconButton(
                         icon: const Icon(Icons.refresh),
                         onPressed: () {
-                          context.read<WalletBloc>().add(
-                                const WalletTransactionsRefreshRequested(),
-                              );
+                          context.read<WalletCubit>().refresh();
                         },
                         tooltip: 'Refresh transactions',
                       ),
@@ -256,9 +253,7 @@ class _WalletScreenState extends State<WalletScreen> {
                   TransactionSearchBar(
                     initialValue: walletData.wallet?.activeFilter.searchQuery,
                     onSearchChanged: (query) {
-                      context.read<WalletBloc>().add(
-                            WalletTransactionSearchChanged(query: query),
-                          );
+                      context.read<WalletCubit>().updateTransactionSearch(query);
                     },
                   ),
 
@@ -267,9 +262,7 @@ class _WalletScreenState extends State<WalletScreen> {
                     currentFilter: walletData.wallet?.activeFilter ??
                         const TransactionFilter.empty(),
                     onFilterChanged: (filter) {
-                      context.read<WalletBloc>().add(
-                            WalletTransactionFilterChanged(filter: filter),
-                          );
+                      context.read<WalletCubit>().updateTransactionFilter(filter);
                     },
                   ),
 
@@ -333,9 +326,7 @@ class _WalletScreenState extends State<WalletScreen> {
                       child: Center(
                         child: AppButton.outline(
                           onPressed: () {
-                            context.read<WalletBloc>().add(
-                                  const WalletTransactionLoadMoreRequested(),
-                                );
+                            context.read<WalletCubit>().loadMoreTransactions();
                           },
                           loading: walletData.wallet?.isLoadingMore ?? false,
                           child: AppText.bodyMedium('Load More', color: AppColors.primary),
@@ -474,7 +465,7 @@ class _FundingModalContentState extends State<_FundingModalContent> {
 
   @override
   Widget build(BuildContext context) {
-    final walletData = context.read<WalletBloc>().state.data ?? const WalletData();
+    final walletData = context.read<WalletCubit>().state.data ?? const WalletData();
 
     return Container(
       decoration: const BoxDecoration(

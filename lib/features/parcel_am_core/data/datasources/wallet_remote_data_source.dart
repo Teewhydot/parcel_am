@@ -29,6 +29,12 @@ abstract class WalletRemoteDataSource {
     String referenceId,
     String idempotencyKey,
   );
+  Future<WalletModel> clearHeldBalance(
+    String userId,
+    double amount,
+    String referenceId,
+    String idempotencyKey,
+  );
   Future<TransactionModel> recordTransaction(
     String userId,
     double amount,
@@ -332,6 +338,69 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
         transaction.update(docRef, {
           'availableBalance': newAvailableBalance,
           'heldBalance': newHeldBalance,
+          'lastUpdated': FieldValue.serverTimestamp(),
+        });
+      });
+
+      final updatedDoc = await docRef.get();
+      return WalletModel.fromFirestore(updatedDoc);
+    } on FirebaseException {
+      throw const ReleaseBalanceFailedException();
+    } catch (e) {
+      if (e is WalletException) rethrow;
+      if (e is NoInternetException) rethrow;
+      throw const ReleaseBalanceFailedException();
+    }
+  }
+
+  @override
+  Future<WalletModel> clearHeldBalance(
+    String userId,
+    double amount,
+    String referenceId,
+    String idempotencyKey,
+  ) async {
+    try {
+      // Validate connectivity
+      await _validateConnectivity();
+
+      if (amount <= 0) {
+        throw const InvalidAmountException();
+      }
+
+      // Check for duplicate transaction
+      final duplicate = await _checkDuplicateTransaction(idempotencyKey);
+      if (duplicate != null) {
+        // Return wallet in current state for duplicate transaction
+        final walletDoc = await firestore.collection('wallets').doc(userId).get();
+        return WalletModel.fromFirestore(walletDoc);
+      }
+
+      final docRef = firestore.collection('wallets').doc(userId);
+
+      await firestore.runTransaction((transaction) async {
+        final snapshot = await transaction.get(docRef);
+
+        if (!snapshot.exists) {
+          throw const WalletNotFoundException();
+        }
+
+        final wallet = WalletModel.fromFirestore(snapshot);
+
+        if (wallet.heldBalance < amount) {
+          throw InsufficientHeldBalanceException(
+            required: amount,
+            available: wallet.heldBalance,
+          );
+        }
+
+        // Only decrement held balance - money is transferred out, not to available
+        final newHeldBalance = wallet.heldBalance - amount;
+        final newTotalBalance = wallet.availableBalance + newHeldBalance;
+
+        transaction.update(docRef, {
+          'heldBalance': newHeldBalance,
+          'totalBalance': newTotalBalance,
           'lastUpdated': FieldValue.serverTimestamp(),
         });
       });

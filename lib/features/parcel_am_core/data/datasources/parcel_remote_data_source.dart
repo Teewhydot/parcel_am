@@ -252,11 +252,13 @@ class ParcelRemoteDataSourceImpl implements ParcelRemoteDataSource {
           'metadata.deliveryStatusHistory.$statusKey': timestamp,
         });
 
-        //4. Update the travelerid pending balance
-        final travelerRef = firestore.collection('users').doc(travelerId);
-        transaction.update(travelerRef, {
-          'pendingBalance': FieldValue.increment(price),
+        //4. Update the travelerid held balance
+        final travelerDocRef = firestore.collection('wallets').doc(travelerId);
+        transaction.update(travelerDocRef, {
+          'heldBalance': FieldValue.increment(price),
         });
+        //Pending balance updated for traveler upon escrow creation
+    
       });
 
       // Fetch the updated document after transaction completes

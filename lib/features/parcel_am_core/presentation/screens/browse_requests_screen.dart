@@ -1,19 +1,17 @@
+import 'package:dartz/dartz.dart' show Either;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/errors/failures.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_font_size.dart';
-import '../../../../core/bloc/base/base_state.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../injection_container.dart';
-import '../bloc/parcel/parcel_bloc.dart';
-import '../bloc/parcel/parcel_event.dart';
-import '../bloc/parcel/parcel_state.dart';
+import '../bloc/parcel/parcel_cubit.dart';
 import '../../../parcel_am_core/domain/entities/parcel_entity.dart';
-import '../bloc/auth/auth_bloc.dart';
 import '../widgets/my_deliveries_tab.dart';
 import '../widgets/my_packages_tab.dart';
 import '../../../../core/widgets/app_text.dart';
@@ -41,17 +39,6 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> with Ticker
     super.initState();
     // Initialize TabController with 3 tabs
     _tabController = TabController(length: 3, vsync: this);
-
-    // Initialize available parcels stream
-    context.read<ParcelBloc>().add(const ParcelWatchAvailableParcelsRequested());
-
-    // Initialize accepted parcels and user parcels streams with current userId
-    final authState = context.read<AuthBloc>().state;
-    final userId = authState.data?.user?.uid;
-    if (userId != null) {
-      context.read<ParcelBloc>().add(ParcelWatchAcceptedParcelsRequested(userId));
-      context.read<ParcelBloc>().add(ParcelWatchUserParcelsRequested(userId));
-    }
 
     _searchController.addListener(() {
       setState(() {
@@ -186,15 +173,16 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> with Ticker
           ),
         ),
 
-        // Requests List with BLoC
+        // Requests List with StreamBuilder
         Expanded(
-          child: BlocBuilder<ParcelBloc, BaseState<ParcelData>>(
-            builder: (context, state) {
-              if (state is AsyncLoadingState<ParcelData> && state.data == null) {
+          child: StreamBuilder<Either<Failure, List<ParcelEntity>>>(
+            stream: context.read<ParcelCubit>().watchAvailableParcels(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
 
-              if (state is AsyncErrorState<ParcelData>) {
+              if (snapshot.hasError) {
                 return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -213,14 +201,14 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> with Ticker
                       ),
                       AppSpacing.verticalSpacing(SpacingSize.sm),
                       AppText.bodyMedium(
-                        state.errorMessage,
+                        snapshot.error.toString(),
                         textAlign: TextAlign.center,
                         color: AppColors.onSurfaceVariant,
                       ),
                       AppSpacing.verticalSpacing(SpacingSize.xxl),
                       AppButton.primary(
                         onPressed: () {
-                          context.read<ParcelBloc>().add(const ParcelWatchAvailableParcelsRequested());
+                          setState(() {}); // Trigger rebuild to restart stream
                         },
                         child: AppText.bodyMedium('Retry', color: Colors.white),
                       ),
@@ -229,105 +217,131 @@ class _BrowseRequestsScreenState extends State<BrowseRequestsScreen> with Ticker
                 );
               }
 
-              final availableParcels = state.data?.availableParcels ?? [];
-              final filteredParcels = _filterParcels(availableParcels);
+              if (!snapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-              if (availableParcels.isEmpty) {
-                return Center(
+              return snapshot.data!.fold(
+                (failure) => Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
-                        Icons.inventory_2_outlined,
+                        Icons.error_outline,
                         size: 64,
-                        color: AppColors.onSurfaceVariant,
+                        color: AppColors.error,
                       ),
                       AppSpacing.verticalSpacing(SpacingSize.lg),
                       AppText(
-                        'No requests available',
+                        'Failed to load requests',
                         variant: TextVariant.titleMedium,
                         fontSize: AppFontSize.xl,
                         fontWeight: FontWeight.w600,
                       ),
                       AppSpacing.verticalSpacing(SpacingSize.sm),
                       AppText.bodyMedium(
-                        'Check back later for new delivery requests',
+                        failure.failureMessage,
+                        textAlign: TextAlign.center,
                         color: AppColors.onSurfaceVariant,
                       ),
                     ],
                   ),
-                );
-              }
+                ),
+                (availableParcels) {
+                  final filteredParcels = _filterParcels(availableParcels);
 
-              if (filteredParcels.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  if (availableParcels.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.inventory_2_outlined,
+                            size: 64,
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                          AppSpacing.verticalSpacing(SpacingSize.lg),
+                          AppText(
+                            'No requests available',
+                            variant: TextVariant.titleMedium,
+                            fontSize: AppFontSize.xl,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          AppSpacing.verticalSpacing(SpacingSize.sm),
+                          AppText.bodyMedium(
+                            'Check back later for new delivery requests',
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  if (filteredParcels.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.search_off,
+                            size: 64,
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                          AppSpacing.verticalSpacing(SpacingSize.lg),
+                          AppText(
+                            'No matching requests',
+                            variant: TextVariant.titleMedium,
+                            fontSize: AppFontSize.xl,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          AppSpacing.verticalSpacing(SpacingSize.sm),
+                          AppText.bodyMedium(
+                            'Try adjusting your filters or search',
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return Column(
                     children: [
-                      Icon(
-                        Icons.search_off,
-                        size: 64,
-                        color: AppColors.onSurfaceVariant,
-                      ),
-                      AppSpacing.verticalSpacing(SpacingSize.lg),
-                      AppText(
-                        'No matching requests',
-                        variant: TextVariant.titleMedium,
-                        fontSize: AppFontSize.xl,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      AppSpacing.verticalSpacing(SpacingSize.sm),
-                      AppText.bodyMedium(
-                        'Try adjusting your filters or search',
-                        color: AppColors.onSurfaceVariant,
-                      ),
-                    ],
-                  ),
-                );
-              }
-
-              return Column(
-                children: [
-                  // Available Requests Count
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: AppText.bodyMedium(
-                        '${filteredParcels.length} request${filteredParcels.length == 1 ? '' : 's'} available',
-                        color: AppColors.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-
-                  Expanded(
-                    child: RefreshIndicator(
-                      onRefresh: () async {
-                        context.read<ParcelBloc>().add(const ParcelWatchAvailableParcelsRequested());
-                        await Future.delayed(const Duration(seconds: 1));
-                      },
-                      child: AnimationLimiter(
-                        child: ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          itemCount: filteredParcels.length,
-                          itemBuilder: (context, index) {
-                            final parcel = filteredParcels[index];
-                            return AnimationConfiguration.staggeredList(
-                              position: index,
-                              duration: const Duration(milliseconds: 375),
-                              child: SlideAnimation(
-                                verticalOffset: 50.0,
-                                child: FadeInAnimation(
-                                  child: _buildRequestCard(parcel),
-                                ),
-                              ),
-                            );
-                          },
+                      // Available Requests Count
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: AppText.bodyMedium(
+                            '${filteredParcels.length} request${filteredParcels.length == 1 ? '' : 's'} available',
+                            color: AppColors.onSurfaceVariant,
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                ],
+
+                      Expanded(
+                        child: AnimationLimiter(
+                          child: ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            itemCount: filteredParcels.length,
+                            itemBuilder: (context, index) {
+                              final parcel = filteredParcels[index];
+                              return AnimationConfiguration.staggeredList(
+                                position: index,
+                                duration: const Duration(milliseconds: 375),
+                                child: SlideAnimation(
+                                  verticalOffset: 50.0,
+                                  child: FadeInAnimation(
+                                    child: _buildRequestCard(parcel),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               );
             },
           ),

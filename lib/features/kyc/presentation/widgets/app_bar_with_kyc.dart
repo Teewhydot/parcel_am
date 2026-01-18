@@ -6,7 +6,7 @@ import '../../../../core/theme/app_font_size.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
-import '../../../parcel_am_core/presentation/bloc/auth/auth_bloc.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_cubit.dart';
 import '../../../parcel_am_core/presentation/bloc/auth/auth_data.dart';
 import 'kyc_status_widgets.dart';
 
@@ -69,7 +69,7 @@ class ProfileHeaderWithKyc extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AuthBloc, BaseState<AuthData>>(
+    return BlocBuilder<AuthCubit, BaseState<AuthData>>(
       builder: (context, state) {
         KycStatus status = KycStatus.notStarted;
         

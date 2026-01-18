@@ -11,8 +11,7 @@ import '../../../../core/widgets/app_container.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../injection_container.dart';
-import '../bloc/auth/auth_bloc.dart';
-import '../bloc/auth/auth_event.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_cubit.dart';
 import '../bloc/auth/auth_data.dart';
 import '../../../../core/bloc/base/base_state.dart';
 
@@ -43,7 +42,7 @@ class _SplashScreenState extends State<SplashScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(const Duration(seconds: 3), () {
         if (mounted) {
-          context.read<AuthBloc>().add(AuthStarted());
+          context.read<AuthCubit>().checkCurrentUser();
         }
       });
     });
@@ -58,8 +57,8 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    return BlocManager<AuthBloc, BaseState<AuthData>>(
-      bloc: context.read<AuthBloc>(),
+    return BlocManager<AuthCubit, BaseState<AuthData>>(
+      bloc: context.read<AuthCubit>(),
     showResultErrorNotifications: false,
     showResultSuccessNotifications: false,
     showLoadingIndicator: false,

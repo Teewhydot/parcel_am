@@ -10,8 +10,7 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/helpers/haptic_helper.dart';
 import '../../../../core/utils/logger.dart';
 import '../../domain/entities/parcel_entity.dart';
-import '../bloc/parcel/parcel_bloc.dart';
-import '../bloc/parcel/parcel_event.dart';
+import '../bloc/parcel/parcel_cubit.dart';
 import '../bloc/parcel/parcel_state.dart';
 
 /// A card widget that displays the delivery confirmation action for senders.
@@ -33,8 +32,8 @@ class DeliveryConfirmationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(top: 12),
-      padding: const EdgeInsets.all(16),
+      margin: EdgeInsets.only(top: SpacingSize.md.value),
+      padding: AppSpacing.paddingLG,
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: AppRadius.lg,
@@ -57,7 +56,7 @@ class DeliveryConfirmationCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: AppSpacing.paddingMD,
                 decoration: BoxDecoration(
                   color: AppColors.warning.withValues(alpha: 0.1),
                   borderRadius: AppRadius.md,
@@ -92,7 +91,7 @@ class DeliveryConfirmationCard extends StatelessWidget {
 
           // Instructions to contact receiver
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: AppSpacing.paddingMD,
             decoration: BoxDecoration(
               color: AppColors.surfaceVariant,
               borderRadius: AppRadius.md,
@@ -112,7 +111,10 @@ class DeliveryConfirmationCard extends StatelessWidget {
                 ),
                 AppSpacing.verticalSpacing(SpacingSize.sm),
                 GestureDetector(
-                  onTap: () => _handlePhoneCall(parcel.receiver.phoneNumber),
+                  onTap: () {
+                    HapticHelper.lightImpact();
+                    _handlePhoneCall(parcel.receiver.phoneNumber);
+                  },
                   child: Row(
                     children: [
                       AppSpacing.horizontalSpacing(SpacingSize.xxl),
@@ -153,7 +155,7 @@ class DeliveryConfirmationCard extends StatelessWidget {
 
           // Auto-release warning
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: AppSpacing.paddingMD,
             decoration: BoxDecoration(
               color: AppColors.warning.withValues(alpha: 0.1),
               borderRadius: AppRadius.md,
@@ -178,7 +180,7 @@ class DeliveryConfirmationCard extends StatelessWidget {
           AppSpacing.verticalSpacing(SpacingSize.lg),
 
           // Action buttons
-          BlocBuilder<ParcelBloc, BaseState<ParcelData>>(
+          BlocBuilder<ParcelCubit, BaseState<ParcelData>>(
             buildWhen: (previous, current) {
               final prevUpdating = previous.data?.updatingParcelId;
               final currUpdating = current.data?.updatingParcelId;
@@ -220,13 +222,8 @@ class DeliveryConfirmationCard extends StatelessWidget {
     );
   }
 
-  Future<void> _confirmDelivery(BuildContext context) async {
-    await HapticHelper.mediumImpact();
-
-    if (!context.mounted) return;
-
-    final confirmed = await _showConfirmationDialog(context);
-    if (!confirmed) return;
+  void _confirmDelivery(BuildContext context) {
+    HapticHelper.mediumImpact();
 
     if (!context.mounted) return;
 
@@ -244,80 +241,25 @@ class DeliveryConfirmationCard extends StatelessWidget {
       return;
     }
 
-    context.read<ParcelBloc>().add(
-      ParcelConfirmDeliveryRequested(
-        parcelId: parcel.id,
-        escrowId: parcel.escrowId!,
-      ),
-    );
+    _showConfirmationBottomSheet(context);
   }
 
-  Future<bool> _showConfirmationDialog(BuildContext context) async {
-    await HapticHelper.lightImpact();
-
-    if (!context.mounted) return false;
-
-    final result = await showDialog<bool>(
+  void _showConfirmationBottomSheet(BuildContext context) {
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: AppRadius.lg,
-        ),
-        title: AppText.titleMedium('Confirm Delivery'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AppText(
-              'Have you verified with ${parcel.receiver.name} that they received the parcel?',
-              variant: TextVariant.bodyMedium,
-            ),
-            AppSpacing.verticalSpacing(SpacingSize.md),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceVariant,
-                borderRadius: AppRadius.sm,
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.payments_outlined,
-                    size: 20,
-                    color: AppColors.success,
-                  ),
-                  AppSpacing.horizontalSpacing(SpacingSize.sm),
-                  Expanded(
-                    child: AppText.bodySmall(
-                      'This will release ${parcel.currency ?? "NGN"} ${parcel.price?.toStringAsFixed(2) ?? "0.00"} to the courier.',
-                      color: AppColors.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          AppButton.text(
-            onPressed: () {
-              HapticHelper.lightImpact();
-              Navigator.of(context).pop(false);
-            },
-            child: AppText.bodyMedium('Cancel'),
-          ),
-          AppButton.primary(
-            onPressed: () {
-              HapticHelper.mediumImpact();
-              Navigator.of(context).pop(true);
-            },
-            child: AppText.bodyMedium('Yes, Confirm', color: AppColors.white),
-          ),
-        ],
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (bottomSheetContext) => _DeliveryConfirmationSheet(
+        parcel: parcel,
+        onConfirm: () {
+          Navigator.of(bottomSheetContext).pop();
+          context.read<ParcelCubit>().confirmDelivery(
+            parcel.id,
+            parcel.escrowId!,
+          );
+        },
       ),
     );
-
-    return result ?? false;
   }
 
   void _reportIssue(BuildContext context) {
@@ -366,7 +308,7 @@ class DeliveryConfirmationCard extends StatelessWidget {
     required String description,
   }) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: AppSpacing.paddingMD,
       decoration: BoxDecoration(
         color: AppColors.surfaceVariant,
         borderRadius: AppRadius.sm,
@@ -408,5 +350,230 @@ class DeliveryConfirmationCard extends StatelessWidget {
     } catch (e) {
       Logger.logError('Failed to launch phone call: $e', tag: 'DeliveryConfirmationCard');
     }
+  }
+}
+
+class _DeliveryConfirmationSheet extends StatelessWidget {
+  final ParcelEntity parcel;
+  final VoidCallback onConfirm;
+
+  const _DeliveryConfirmationSheet({
+    required this.parcel,
+    required this.onConfirm,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final parcelPrice = parcel.price ?? 0.0;
+    final serviceFee = 150.0;
+    final totalAmount = parcelPrice + serviceFee;
+    final currency = parcel.currency ?? 'NGN';
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: AppRadius.topXxl,
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Drag handle
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.outline,
+                    borderRadius: AppRadius.xs,
+                  ),
+                ),
+              ),
+              AppSpacing.verticalSpacing(SpacingSize.lg),
+
+              // Header
+              Row(
+                children: [
+                  Container(
+                    padding: AppSpacing.paddingMD,
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withValues(alpha: 0.1),
+                      borderRadius: AppRadius.md,
+                    ),
+                    child: const Icon(
+                      Icons.verified,
+                      color: AppColors.success,
+                      size: 28,
+                    ),
+                  ),
+                  AppSpacing.horizontalSpacing(SpacingSize.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AppText.titleMedium(
+                          'Confirm Delivery',
+                          fontWeight: FontWeight.bold,
+                        ),
+                        AppSpacing.verticalSpacing(SpacingSize.xs),
+                        AppText.bodySmall(
+                          'Review the consequences before confirming',
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              AppSpacing.verticalSpacing(SpacingSize.xl),
+
+              // Receiver verification prompt
+              Container(
+                padding: AppSpacing.paddingLG,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceVariant,
+                  borderRadius: AppRadius.md,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.contact_phone, size: 20, color: AppColors.primary),
+                        AppSpacing.horizontalSpacing(SpacingSize.sm),
+                        AppText.bodyMedium(
+                          'Have you verified with ${parcel.receiver.name}?',
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ],
+                    ),
+                    AppSpacing.verticalSpacing(SpacingSize.sm),
+                    AppText.bodySmall(
+                      'Make sure the receiver has confirmed they received the parcel in good condition.',
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  ],
+                ),
+              ),
+              AppSpacing.verticalSpacing(SpacingSize.lg),
+
+              // Consequences section
+              AppText.bodyMedium(
+                'What happens when you confirm:',
+                fontWeight: FontWeight.w600,
+              ),
+              AppSpacing.verticalSpacing(SpacingSize.md),
+
+              // Consequence 1: Payment released
+              _buildConsequenceItem(
+                icon: Icons.payments,
+                iconColor: AppColors.success,
+                title: 'Payment Released',
+                description: '$currency ${parcelPrice.toStringAsFixed(2)} will be released to the courier\'s available balance.',
+              ),
+              AppSpacing.verticalSpacing(SpacingSize.sm),
+
+              // Consequence 2: Held balance cleared
+              _buildConsequenceItem(
+                icon: Icons.account_balance_wallet,
+                iconColor: AppColors.warning,
+                title: 'Held Balance Cleared',
+                description: '$currency ${totalAmount.toStringAsFixed(2)} (including service fee) will be removed from your held balance.',
+              ),
+              AppSpacing.verticalSpacing(SpacingSize.sm),
+
+              // Consequence 3: Irreversible
+              _buildConsequenceItem(
+                icon: Icons.warning_amber,
+                iconColor: AppColors.error,
+                title: 'This Action is Final',
+                description: 'Once confirmed, this action cannot be undone. Only confirm if the delivery is successful.',
+              ),
+              AppSpacing.verticalSpacing(SpacingSize.xl),
+
+              // Action buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: AppButton.outline(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: AppText.bodyMedium('Cancel'),
+                    ),
+                  ),
+                  AppSpacing.horizontalSpacing(SpacingSize.md),
+                  Expanded(
+                    flex: 2,
+                    child: AppButton.primary(
+                      onPressed: onConfirm,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.check_circle,
+                            color: AppColors.white,
+                            size: 20,
+                          ),
+                          AppSpacing.horizontalSpacing(SpacingSize.sm),
+                          AppText.bodyMedium(
+                            'Confirm & Release',
+                            color: AppColors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildConsequenceItem({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String description,
+  }) {
+    return Container(
+      padding: AppSpacing.paddingMD,
+      decoration: BoxDecoration(
+        color: iconColor.withValues(alpha: 0.05),
+        borderRadius: AppRadius.sm,
+        border: Border.all(
+          color: iconColor.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: iconColor),
+          AppSpacing.horizontalSpacing(SpacingSize.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppText.bodyMedium(
+                  title,
+                  fontWeight: FontWeight.w600,
+                  color: iconColor,
+                ),
+                AppSpacing.verticalSpacing(SpacingSize.xs),
+                AppText.bodySmall(
+                  description,
+                  color: AppColors.onSurfaceVariant,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

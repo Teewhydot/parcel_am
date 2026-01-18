@@ -4,19 +4,18 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/widgets/status_update_action_sheet.dart';
-import 'package:parcel_am/features/parcel_am_core/presentation/bloc/parcel/parcel_bloc.dart';
-import 'package:parcel_am/features/parcel_am_core/presentation/bloc/parcel/parcel_event.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/bloc/parcel/parcel_cubit.dart';
 import 'package:parcel_am/features/parcel_am_core/domain/entities/parcel_entity.dart'
     as parcel;
 
 import 'status_update_action_sheet_test.mocks.dart';
 
-@GenerateMocks([ParcelBloc])
+@GenerateMocks([ParcelCubit])
 void main() {
-  late MockParcelBloc mockParcelBloc;
+  late MockParcelCubit mockParcelCubit;
 
   setUp(() {
-    mockParcelBloc = MockParcelBloc();
+    mockParcelCubit = MockParcelCubit();
   });
 
   // Helper function to create test parcel entity
@@ -50,8 +49,8 @@ void main() {
 
   Widget createTestWidget(parcel.ParcelEntity parcelEntity) {
     return MaterialApp(
-      home: BlocProvider<ParcelBloc>.value(
-        value: mockParcelBloc,
+      home: BlocProvider<ParcelCubit>.value(
+        value: mockParcelCubit,
         child: Scaffold(
           body: Builder(
             builder: (context) => ElevatedButton(
@@ -159,12 +158,10 @@ void main() {
       await tester.tap(find.text('Confirm'));
       await tester.pumpAndSettle();
 
-      // Assert - Event should be dispatched
-      verify(mockParcelBloc.add(
-        ParcelUpdateStatusRequested(
-          parcelId: parcelEntity.id,
-          status: parcel.ParcelStatus.pickedUp,
-        ),
+      // Assert - Method should be called
+      verify(mockParcelCubit.updateParcelStatus(
+        parcelEntity.id,
+        parcel.ParcelStatus.pickedUp,
       )).called(1);
     });
 
@@ -186,8 +183,8 @@ void main() {
       await tester.tap(find.text('Cancel').last);
       await tester.pumpAndSettle();
 
-      // Assert - Event should NOT be dispatched
-      verifyNever(mockParcelBloc.add(any));
+      // Assert - Method should NOT be called
+      verifyNever(mockParcelCubit.updateParcelStatus(any, any));
     });
 
     testWidgets('should display status progression timeline',

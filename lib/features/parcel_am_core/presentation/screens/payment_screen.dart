@@ -11,11 +11,9 @@ import '../../../../core/widgets/app_input.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../../../escrow/domain/entities/escrow_status.dart';
 import '../widgets/bottom_navigation.dart';
-import '../bloc/wallet/wallet_bloc.dart';
-import '../bloc/wallet/wallet_event.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/bloc/wallet/wallet_cubit.dart';
 import '../bloc/wallet/wallet_data.dart';
-import '../bloc/escrow/escrow_bloc.dart';
-import '../bloc/escrow/escrow_event.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/bloc/escrow/escrow_cubit.dart';
 import '../bloc/escrow/escrow_state.dart';
 import '../../domain/entities/package_entity.dart';
 import '../../../../core/helpers/user_extensions.dart';
@@ -32,8 +30,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
   String paymentMethod = 'bank';
   final TextEditingController _accountNumberController = TextEditingController();
   final TextEditingController _bankNameController = TextEditingController();
-  late WalletBloc _walletBloc;
-  late EscrowBloc _escrowBloc;
+  late WalletCubit _walletBloc;
+  late EscrowCubit _escrowBloc;
   PaymentEntity? _paymentInfo;
 
   final List<Map<String, dynamic>> steps = [
@@ -80,9 +78,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
   @override
   void initState() {
     super.initState();
-    _walletBloc = WalletBloc();
-    _escrowBloc = EscrowBloc();
-    _walletBloc.add(const WalletLoadRequested());
+    _walletBloc = WalletCubit();
+    _escrowBloc = EscrowCubit();
+    _walletBloc.loadWallet();
   }
 
   @override
@@ -124,13 +122,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
     );
 
     // Use transactionId as placeholder escrowId
-    _escrowBloc.add(EscrowHoldRequested(transactionId));
+    _escrowBloc.holdEscrow(transactionId);
 
-    _walletBloc.add(WalletEscrowHoldRequested(
-      transactionId: transactionId,
+    _walletBloc.holdEscrowBalance(
       amount: totalAmount,
       packageId: 'PKG_001',
-    ));
+    );
 
     setState(() {
       currentStep++;
@@ -156,7 +153,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         ),
         body: MultiBlocListener(
           listeners: [
-            BlocListener<WalletBloc, BaseState<WalletData>>(
+            BlocListener<WalletCubit, BaseState<WalletData>>(
               listener: (context, state) {
                 if (state is ErrorState<WalletData>) {
                   context.showSnackbar(
@@ -166,7 +163,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 }
               },
             ),
-            BlocListener<EscrowBloc, BaseState<EscrowData>>(
+            BlocListener<EscrowCubit, BaseState<EscrowData>>(
               listener: (context, state) {
                 final escrow = state.data?.currentEscrow;
                 if (escrow?.status == EscrowStatus.held && currentStep == 2) {
@@ -569,10 +566,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   Widget _buildEscrowDepositStep() {
-    return BlocBuilder<EscrowBloc, BaseState<EscrowData>>(
+    return BlocBuilder<EscrowCubit, BaseState<EscrowData>>(
       builder: (context, escrowState) {
         final escrowStatus = escrowState.data?.currentEscrow?.status;
-        return BlocBuilder<WalletBloc, BaseState<WalletData>>(
+        return BlocBuilder<WalletCubit, BaseState<WalletData>>(
           builder: (context, walletState) {
             return Column(
               children: [

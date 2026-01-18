@@ -19,9 +19,8 @@ import '../../../../core/widgets/app_input.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../injection_container.dart';
-import '../bloc/auth/auth_bloc.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_cubit.dart';
 import '../bloc/auth/auth_data.dart';
-import '../bloc/auth/auth_event.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key, this.isSignUp = false});
@@ -150,9 +149,7 @@ class _LoginScreenState extends State<LoginScreen>
       return;
     }
 
-    context.read<AuthBloc>().add(
-          AuthLoginRequested(email: email, password: password),
-        );
+    context.read<AuthCubit>().login(email, password);
   }
 
   void _register() {
@@ -175,12 +172,10 @@ class _LoginScreenState extends State<LoginScreen>
       return;
     }
 
-    context.read<AuthBloc>().add(
-          AuthRegisterRequested(
-            email: email,
-            password: password,
-            displayName: displayName,
-          ),
+    context.read<AuthCubit>().register(
+          email: email,
+          password: password,
+          displayName: displayName,
         );
   }
 
@@ -197,7 +192,7 @@ class _LoginScreenState extends State<LoginScreen>
       return;
     }
 
-    context.read<AuthBloc>().add(AuthPasswordResetRequested(email));
+    context.read<AuthCubit>().resetPassword(email);
   }
 
   bool _isValidEmail(String email) {
@@ -227,8 +222,8 @@ class _LoginScreenState extends State<LoginScreen>
 
   @override
   Widget build(BuildContext context) {
-    return BlocManager<AuthBloc, BaseState<AuthData>>(
-      bloc: context.read<AuthBloc>(),
+    return BlocManager<AuthCubit, BaseState<AuthData>>(
+      bloc: context.read<AuthCubit>(),
       showLoadingIndicator: true,
       onSuccess: (context, state) {
         _navigateToDashboard();
@@ -390,7 +385,7 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Widget _buildSignInForm() {
-    return BlocBuilder<AuthBloc, BaseState<AuthData>>(
+    return BlocBuilder<AuthCubit, BaseState<AuthData>>(
       builder: (context, state) {
         return SingleChildScrollView(
           child: Column(
@@ -511,7 +506,7 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Widget _buildSignUpForm() {
-    return BlocBuilder<AuthBloc, BaseState<AuthData>>(
+    return BlocBuilder<AuthCubit, BaseState<AuthData>>(
       builder: (context, state) {
         return SingleChildScrollView(
           child: Column(
@@ -562,7 +557,7 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Widget _buildPasswordResetForm() {
-    return BlocConsumer<AuthBloc, BaseState<AuthData>>(
+    return BlocConsumer<AuthCubit, BaseState<AuthData>>(
       listener: (context, state) {
         if (state is SuccessState) {
           _showSuccess(

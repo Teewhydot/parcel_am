@@ -15,8 +15,7 @@ import '../../../../core/widgets/app_input.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../injection_container.dart';
 import '../widgets/verification_widgets.dart';
-import '../../../parcel_am_core/presentation/bloc/auth/auth_bloc.dart';
-import '../../../parcel_am_core/presentation/bloc/auth/auth_event.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_cubit.dart';
 import '../../../parcel_am_core/presentation/bloc/auth/auth_data.dart';
 import '../bloc/kyc_bloc.dart';
 import '../bloc/kyc_event.dart';
@@ -552,8 +551,8 @@ class _VerificationScreenState extends State<VerificationScreen> {
   }
 
   void _saveProgress() {
-    final authBloc = context.read<AuthBloc>();
-    final currentState = authBloc.state;
+    final authCubit = context.read<AuthCubit>();
+    final currentState = authCubit.state;
 
     Map<String, dynamic> additionalData = {};
     if (currentState is DataState<AuthData> &&
@@ -561,25 +560,23 @@ class _VerificationScreenState extends State<VerificationScreen> {
       additionalData = Map.from(currentState.data!.user!.additionalData);
     }
 
-    authBloc.add(
-      AuthUserProfileUpdateRequested(
-        displayName: '${_firstNameController.text} ${_lastNameController.text}',
-        kycStatus: KycStatus.incomplete,
-        additionalData: {
-          ...additionalData,
-          'kycCurrentStep': _currentStep,
-          'firstName': _firstNameController.text,
-          'lastName': _lastNameController.text,
-          'dateOfBirth': _dobController.text,
-          'gender': _selectedGender,
-          'address': _addressController.text,
-          'city': _cityController.text,
-          'state': _stateController.text,
-          'nin': _ninController.text,
-          'bvn': _bvnController.text,
-          'uploadedDocuments': _uploadedDocuments.keys.toList(),
-        },
-      ),
+    authCubit.updateUserProfileWithKyc(
+      displayName: '${_firstNameController.text} ${_lastNameController.text}',
+      kycStatus: KycStatus.incomplete,
+      additionalData: {
+        ...additionalData,
+        'kycCurrentStep': _currentStep,
+        'firstName': _firstNameController.text,
+        'lastName': _lastNameController.text,
+        'dateOfBirth': _dobController.text,
+        'gender': _selectedGender,
+        'address': _addressController.text,
+        'city': _cityController.text,
+        'state': _stateController.text,
+        'nin': _ninController.text,
+        'bvn': _bvnController.text,
+        'uploadedDocuments': _uploadedDocuments.keys.toList(),
+      },
     );
   }
 
@@ -603,7 +600,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
     setState(() => _isSubmitting = true);
 
     try {
-      final authState = context.read<AuthBloc>().state;
+      final authState = context.read<AuthCubit>().state;
 
       if (authState is DataState<AuthData> && authState.data?.user != null) {
         final user = authState.data!.user!;

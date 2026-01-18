@@ -23,10 +23,10 @@ import '../widgets/user_stats_grid.dart';
 import '../widgets/wallet_balance_card.dart';
 import '../bloc/dashboard/dashboard_bloc.dart';
 import '../bloc/dashboard/dashboard_event.dart';
-import '../bloc/auth/auth_bloc.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_cubit.dart';
 import '../bloc/auth/auth_data.dart';
 import '../../data/constants/verification_constants.dart';
-import '../bloc/active_packages/active_packages_bloc.dart';
+import 'package:parcel_am/features/parcel_am_core/presentation/bloc/active_packages/active_packages_cubit.dart';
 import '../../domain/entities/package_entity.dart';
 import 'package:parcel_am/features/chat/services/presence_service.dart';
 
@@ -39,7 +39,7 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   PresenceService? _presenceService;
-  late ActivePackagesBloc _activePackagesBloc;
+  late ActivePackagesCubit _activePackagesBloc;
   // DashboardBloc is now provided from NavigationShell
   DashboardBloc get _dashboardBloc => context.read<DashboardBloc>();
   String? _lastActivePackagesUserId;
@@ -48,7 +48,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
 
-    _activePackagesBloc = ActivePackagesBloc();
+    _activePackagesBloc = ActivePackagesCubit();
     _loadInitialData();
     _initializePresence();
   }
@@ -62,7 +62,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _initializePresence() {
-    final authState = context.read<AuthBloc>().state;
+    final authState = context.read<AuthCubit>().state;
     final userId = authState is LoadedState<AuthData>
         ? authState.data?.user?.uid ?? ''
         : '';
@@ -88,7 +88,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     if (force || _lastActivePackagesUserId != userId) {
       _lastActivePackagesUserId = userId;
-      _activePackagesBloc.add(LoadActivePackages(userId));
+      _activePackagesBloc.loadActivePackages(userId);
     }
 
     // Dashboard refresh is handled by NavigationShell on tab switch
@@ -99,7 +99,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   String _resolveCurrentUserId() {
-    final authState = context.read<AuthBloc>().state;
+    final authState = context.read<AuthCubit>().state;
     if (authState is LoadedState<AuthData>) {
       return authState.data?.user?.uid ?? '';
     }
@@ -108,14 +108,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocManager<AuthBloc, BaseState<AuthData>>(
+    return BlocManager<AuthCubit, BaseState<AuthData>>(
       listener: (context, authState) {
         final userId = authState is LoadedState<AuthData>
             ? authState.data?.user?.uid ?? ''
             : '';
         _requestDataForUser(userId);
       },
-      bloc: context.read<AuthBloc>(),
+      bloc: context.read<AuthCubit>(),
       child: AppScaffold(
         hasGradientBackground: false,
         body: MultiBlocProvider(
@@ -156,7 +156,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         const UserStatsGrid(),
                         AppSpacing.verticalSpacing(SpacingSize.xxl),
                         BlocBuilder<
-                          ActivePackagesBloc,
+                          ActivePackagesCubit,
                           BaseState<List<PackageEntity>>
                         >(
                           builder: (context, state) {
@@ -198,7 +198,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 class _HeaderSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AuthBloc, BaseState<AuthData>>(
+    return BlocBuilder<AuthCubit, BaseState<AuthData>>(
       builder: (context, authState) {
         final user = authState is LoadedState<AuthData>
             ? authState.data?.user
@@ -369,7 +369,7 @@ class _QuickActionsRow extends StatelessWidget {
         Expanded(
           child: KycGestureDetector(
             onTap: () {
-              final authState = context.read<AuthBloc>().state;
+              final authState = context.read<AuthCubit>().state;
               final userId = authState is LoadedState<AuthData>
                   ? authState.data?.user?.uid ?? ''
                   : '';

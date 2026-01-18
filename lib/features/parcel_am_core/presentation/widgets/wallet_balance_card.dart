@@ -9,10 +9,9 @@ import '../../../../core/widgets/app_icon.dart';
 import '../../../../core/widgets/app_container.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/bloc/base/base_state.dart';
-import '../bloc/wallet/wallet_bloc.dart';
+import '../bloc/wallet/wallet_cubit.dart';
 import '../bloc/wallet/wallet_data.dart';
-import '../bloc/wallet/wallet_event.dart';
-import '../bloc/auth/auth_bloc.dart';
+import '../bloc/auth/auth_cubit.dart';
 
 class WalletBalanceCard extends StatefulWidget {
   const WalletBalanceCard({super.key});
@@ -35,24 +34,24 @@ class _WalletBalanceCardState extends State<WalletBalanceCard> {
   void _initializeWallet() {
     if (_initialized) return;
 
-    final authState = context.read<AuthBloc>().state;
+    final authState = context.read<AuthCubit>().state;
     final userId = authState.data?.user?.uid;
 
     if (userId != null && userId.isNotEmpty) {
-      final walletState = context.read<WalletBloc>().state;
+      final walletState = context.read<WalletCubit>().state;
       // Only initialize if wallet is in initial state
       if (walletState.isInitial) {
         _initialized = true;
-        context.read<WalletBloc>().add(WalletStarted(userId));
+        context.read<WalletCubit>().start(userId);
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final userId = context.read<AuthBloc>().state.data?.user?.uid ?? '';
+    final userId = context.read<AuthCubit>().state.data?.user?.uid ?? '';
 
-    return BlocBuilder<WalletBloc, BaseState<WalletData>>(
+    return BlocBuilder<WalletCubit, BaseState<WalletData>>(
       builder: (context, state) {
         if (state.isLoading && !state.hasData) {
           return _buildLoadingCard();
@@ -207,7 +206,7 @@ class _WalletBalanceCardState extends State<WalletBalanceCard> {
                 AppButton.text(
                   onPressed: () {
                     if (userId.isNotEmpty) {
-                      context.read<WalletBloc>().add(WalletStarted(userId));
+                      context.read<WalletCubit>().start(userId);
                     }
                   },
                   child: AppText.bodyMedium('Retry'),

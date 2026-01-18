@@ -25,7 +25,7 @@ import 'notification_service_parcel_test.mocks.dart';
 ])
 void main() {
   late NotificationService notificationService;
-  late MockNotificationRepository mockRepository;
+  late MockFCMRepository mockRepository;
   late MockFlutterLocalNotificationsPlugin mockLocalNotifications;
   late MockNotificationRemoteDataSource mockRemoteDataSource;
   late MockNavigationService mockNavigationService;
@@ -33,7 +33,7 @@ void main() {
   late MockUser mockUser;
 
   setUp(() {
-    mockRepository = MockNotificationRepository();
+    mockRepository = MockFCMRepository();
     mockLocalNotifications = MockFlutterLocalNotificationsPlugin();
     mockRemoteDataSource = MockNotificationRemoteDataSource();
     mockNavigationService = MockNavigationService();
