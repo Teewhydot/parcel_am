@@ -188,16 +188,30 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     String userId,
     bool isTyping,
   ) async {
-    await firestore.collection('chats').doc(chatId).set({
-      'isTyping': {userId: isTyping},
-    }, SetOptions(merge: true));
+    try {
+      // Use update() to avoid creating partial documents without participantIds
+      // The chat should already exist from getOrCreateChat before navigating
+      await firestore.collection('chats').doc(chatId).update({
+        'isTyping.$userId': isTyping,
+      });
+    } catch (e) {
+      // Log but don't fail - chat may not exist yet if navigated directly
+      Logger.logError('setTypingStatus failed for chat $chatId: $e', tag: 'ChatDataSource');
+    }
   }
 
   @override
   Future<void> updateLastSeen(String chatId, String userId) async {
-    await firestore.collection('chats').doc(chatId).set({
-      'lastSeen': {userId: FieldValue.serverTimestamp()},
-    }, SetOptions(merge: true));
+    try {
+      // Use update() to avoid creating partial documents without participantIds
+      // The chat should already exist from getOrCreateChat before navigating
+      await firestore.collection('chats').doc(chatId).update({
+        'lastSeen.$userId': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      // Log but don't fail - chat may not exist yet if navigated directly
+      Logger.logError('updateLastSeen failed for chat $chatId: $e', tag: 'ChatDataSource');
+    }
   }
 
   @override
@@ -247,13 +261,14 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   Future<ChatModel> createChat(List<String> participantIds) async {
     final chatRef = firestore.collection('chats').doc();
 
+    // Set lastMessageTime to createdAt so it appears in orderBy queries
     final chatData = {
       'participantIds': participantIds,
       'participantNames': <String, String>{},
       'participantAvatars': <String, String?>{},
       'createdAt': FieldValue.serverTimestamp(),
       'lastMessage': null,
-      'lastMessageTime': null,
+      'lastMessageTime': FieldValue.serverTimestamp(),
       'unreadCount': <String, int>{},
       'isTyping': <String, bool>{},
       'lastSeen': <String, dynamic>{},
@@ -324,6 +339,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
 
   @override
   Stream<List<ChatModel>> watchUserChats(String userId) {
+    Logger.logBasic('watchUserChats called with userId: $userId', tag: 'ChatDataSource');
     return firestore
         .collection('chats')
         .where('participantIds', arrayContains: userId)
@@ -339,9 +355,11 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       }
     })
         .map((snapshot) {
+      Logger.logBasic('watchUserChats returned ${snapshot.docs.length} chats for userId: $userId', tag: 'ChatDataSource');
       return snapshot.docs.map((doc) {
         final data = doc.data();
         data['id'] = doc.id;
+        Logger.logBasic('Chat doc ${doc.id} participantIds: ${data['participantIds']}', tag: 'ChatDataSource');
         return ChatModel.fromJson(data);
       }).toList();
     });
@@ -353,30 +371,56 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     required List<String> participantIds,
     required Map<String, String> participantNames,
   }) async {
+    Logger.logBasic('getOrCreateChat called - chatId: $chatId, participantIds: $participantIds', tag: 'ChatDataSource');
     final chatRef = firestore.collection('chats').doc(chatId);
     final chatDoc = await chatRef.get();
 
     if (chatDoc.exists) {
-      // Chat already exists, return it
       final data = chatDoc.data()!;
+
+      // Check if participantIds is missing or empty - repair if needed
+      final existingParticipantIds = data['participantIds'] as List<dynamic>?;
+      if (existingParticipantIds == null || existingParticipantIds.isEmpty) {
+        Logger.logBasic('Chat $chatId exists but missing participantIds - repairing', tag: 'ChatDataSource');
+
+        // Update the document with missing fields
+        await chatRef.update({
+          'participantIds': participantIds,
+          'participantNames': participantNames,
+          // Ensure lastMessageTime exists for ordering in queries
+          if (data['lastMessageTime'] == null) 'lastMessageTime': FieldValue.serverTimestamp(),
+        });
+
+        Logger.logBasic('Chat $chatId repaired with participantIds: $participantIds', tag: 'ChatDataSource');
+
+        // Return with updated data
+        data['participantIds'] = participantIds;
+        data['participantNames'] = participantNames;
+      } else {
+        Logger.logBasic('Chat $chatId already exists with participantIds: $existingParticipantIds', tag: 'ChatDataSource');
+      }
+
       data['id'] = chatDoc.id;
       return ChatModel.fromJson(data);
     }
 
+    Logger.logBasic('Creating new chat $chatId with participantIds: $participantIds', tag: 'ChatDataSource');
     // Create new chat with the specified ID
+    // Set lastMessageTime to createdAt so it appears in orderBy queries
     final chatData = {
       'participantIds': participantIds,
       'participantNames': participantNames,
       'participantAvatars': <String, String?>{},
       'createdAt': FieldValue.serverTimestamp(),
       'lastMessage': null,
-      'lastMessageTime': null,
+      'lastMessageTime': FieldValue.serverTimestamp(),
       'unreadCount': <String, int>{},
       'isTyping': <String, bool>{},
       'lastSeen': <String, dynamic>{},
     };
 
     await chatRef.set(chatData);
+    Logger.logBasic('Chat $chatId created successfully', tag: 'ChatDataSource');
 
     // Return the created chat
     return ChatModel(
