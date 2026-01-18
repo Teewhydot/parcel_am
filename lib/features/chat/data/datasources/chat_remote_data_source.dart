@@ -56,7 +56,8 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         .doc(chatId)
         .collection('messages')
         .orderBy('timestamp', descending: true)
-        .snapshots()
+        .limit(50) // Limit initial fetch, load more on scroll if needed
+        .snapshots(includeMetadataChanges: false) // Avoid duplicate emissions
         .handleError((error) {
       Logger.logError('Firestore Error (getMessagesStream): $error', tag: 'ChatDataSource');
       if (error.toString().contains('index')) {
@@ -216,7 +217,11 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
 
   @override
   Stream<ChatModel> getChatStream(String chatId) {
-    return firestore.collection('chats').doc(chatId).snapshots().handleError((error) {
+    return firestore
+        .collection('chats')
+        .doc(chatId)
+        .snapshots(includeMetadataChanges: false) // Avoid duplicate emissions
+        .handleError((error) {
       Logger.logError('Firestore Error (getChatStream): $error', tag: 'ChatDataSource');
       if (error.toString().contains('index')) {
         Logger.logError('INDEX REQUIRED: Check Firebase Console for index requirements', tag: 'ChatDataSource');
@@ -312,7 +317,11 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
 
   @override
   Stream<ChatModel> watchChat(String chatId) {
-    return firestore.collection('chats').doc(chatId).snapshots().handleError((error) {
+    return firestore
+        .collection('chats')
+        .doc(chatId)
+        .snapshots(includeMetadataChanges: false) // Avoid duplicate emissions
+        .handleError((error) {
       Logger.logError('Firestore Error (watchChat): $error', tag: 'ChatDataSource');
       if (error.toString().contains('index')) {
         Logger.logError('INDEX REQUIRED: Check Firebase Console for index requirements', tag: 'ChatDataSource');
@@ -339,12 +348,12 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
 
   @override
   Stream<List<ChatModel>> watchUserChats(String userId) {
-    Logger.logBasic('watchUserChats called with userId: $userId', tag: 'ChatDataSource');
     return firestore
         .collection('chats')
         .where('participantIds', arrayContains: userId)
         .orderBy('lastMessageTime', descending: true)
-        .snapshots()
+        .limit(20) // Limit to most recent chats for efficiency
+        .snapshots(includeMetadataChanges: false) // Avoid duplicate emissions
         .handleError((error) {
       Logger.logError('Firestore Error (watchUserChats): $error', tag: 'ChatDataSource');
       if (error.toString().contains('index')) {
@@ -355,11 +364,9 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       }
     })
         .map((snapshot) {
-      Logger.logBasic('watchUserChats returned ${snapshot.docs.length} chats for userId: $userId', tag: 'ChatDataSource');
       return snapshot.docs.map((doc) {
         final data = doc.data();
         data['id'] = doc.id;
-        Logger.logBasic('Chat doc ${doc.id} participantIds: ${data['participantIds']}', tag: 'ChatDataSource');
         return ChatModel.fromJson(data);
       }).toList();
     });

@@ -289,16 +289,9 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
       },
       color: AppColors.primary,
       child: AnimationLimiter(
-        child: ListView.separated(
+        child: ListView.builder(
           padding: const EdgeInsets.only(top: 8, bottom: 100),
           itemCount: chats.length,
-          separatorBuilder: (context, index) => Padding(
-            padding: const EdgeInsets.only(left: 88),
-            child: Divider(
-              height: 1,
-              color: AppColors.outline.withValues(alpha: 0.5),
-            ),
-          ),
           itemBuilder: (context, index) {
             final chat = chats[index];
             return AnimationConfiguration.staggeredList(

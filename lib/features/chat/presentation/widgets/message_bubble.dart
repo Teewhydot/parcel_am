@@ -106,7 +106,25 @@ class MessageBubble extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
         color: isMe ? AppColors.info : AppColors.surfaceVariant,
-        borderRadius: AppRadius.lg,
+        borderRadius: BorderRadius.only(
+          topLeft: const Radius.circular(16),
+          topRight: const Radius.circular(16),
+          bottomLeft: isMe ? const Radius.circular(16) : const Radius.circular(4),
+          bottomRight: isMe ? const Radius.circular(4) : const Radius.circular(16),
+        ),
+        border: Border.all(
+          color: isMe
+              ? AppColors.info.withValues(alpha: 0.3)
+              : AppColors.outline.withValues(alpha: 0.5),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.black.withValues(alpha: 0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: AppText.bodyLarge(
         message.isDeleted ? 'This message was deleted' : message.content,
@@ -119,26 +137,44 @@ class MessageBubble extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ClipRRect(
-          borderRadius: AppRadius.md,
-          child: CachedNetworkImage(
-            imageUrl: message.mediaUrl ?? '',
-            width: 250,
-            height: 250,
-            fit: BoxFit.cover,
-            placeholder: (context, url) => Container(
-              width: 250,
-              height: 250,
-              color: AppColors.surfaceVariant,
-              child: const Center(
-                child: CircularProgressIndicator(),
-              ),
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: AppRadius.md,
+            border: Border.all(
+              color: isMe
+                  ? AppColors.info.withValues(alpha: 0.3)
+                  : AppColors.outline.withValues(alpha: 0.5),
+              width: 1.5,
             ),
-            errorWidget: (context, url, error) => Container(
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.black.withValues(alpha: 0.08),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: CachedNetworkImage(
+              imageUrl: message.mediaUrl ?? '',
               width: 250,
               height: 250,
-              color: AppColors.surfaceVariant,
-              child: const Icon(Icons.error),
+              fit: BoxFit.cover,
+              placeholder: (context, url) => Container(
+                width: 250,
+                height: 250,
+                color: AppColors.surfaceVariant,
+                child: const Center(
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+              errorWidget: (context, url, error) => Container(
+                width: 250,
+                height: 250,
+                color: AppColors.surfaceVariant,
+                child: const Icon(Icons.error),
+              ),
             ),
           ),
         ),
@@ -149,6 +185,12 @@ class MessageBubble extends StatelessWidget {
             decoration: BoxDecoration(
               color: isMe ? AppColors.info : AppColors.surfaceVariant,
               borderRadius: AppRadius.md,
+              border: Border.all(
+                color: isMe
+                    ? AppColors.info.withValues(alpha: 0.3)
+                    : AppColors.outline.withValues(alpha: 0.5),
+                width: 1,
+              ),
             ),
             child: AppText.bodyMedium(
               message.content,
@@ -160,46 +202,64 @@ class MessageBubble extends StatelessWidget {
   }
 
   Widget _buildVideoMessage(BuildContext context) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        ClipRRect(
-          borderRadius: AppRadius.md,
-          child: message.thumbnailUrl != null
-              ? CachedNetworkImage(
-                  imageUrl: message.thumbnailUrl!,
-                  width: 250,
-                  height: 250,
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: AppRadius.md,
+        border: Border.all(
+          color: isMe
+              ? AppColors.info.withValues(alpha: 0.3)
+              : AppColors.outline.withValues(alpha: 0.5),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.black.withValues(alpha: 0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: message.thumbnailUrl != null
+                ? CachedNetworkImage(
+                    imageUrl: message.thumbnailUrl!,
+                    width: 250,
+                    height: 250,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => Container(
+                      width: 250,
+                      height: 250,
+                      color: AppColors.surfaceVariant,
+                      child: const Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                    ),
+                  )
+                : Container(
                     width: 250,
                     height: 250,
                     color: AppColors.surfaceVariant,
-                    child: const Center(
-                      child: CircularProgressIndicator(),
-                    ),
+                    child: const Icon(Icons.videocam, size: 64),
                   ),
-                )
-              : Container(
-                  width: 250,
-                  height: 250,
-                  color: AppColors.surfaceVariant,
-                  child: const Icon(Icons.videocam, size: 64),
-                ),
-        ),
-        Container(
-          decoration: BoxDecoration(
-            color: AppColors.black.withOpacity(0.54),
-            borderRadius: AppRadius.pill,
           ),
-          padding: const EdgeInsets.all(12),
-          child: const Icon(
-            Icons.play_arrow,
-            color: AppColors.white,
-            size: 32,
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.black.withValues(alpha: 0.54),
+              borderRadius: AppRadius.pill,
+            ),
+            padding: const EdgeInsets.all(12),
+            child: const Icon(
+              Icons.play_arrow,
+              color: AppColors.white,
+              size: 32,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -209,6 +269,19 @@ class MessageBubble extends StatelessWidget {
       decoration: BoxDecoration(
         color: isMe ? AppColors.info : AppColors.surfaceVariant,
         borderRadius: AppRadius.md,
+        border: Border.all(
+          color: isMe
+              ? AppColors.info.withValues(alpha: 0.3)
+              : AppColors.outline.withValues(alpha: 0.5),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.black.withValues(alpha: 0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -216,8 +289,14 @@ class MessageBubble extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: isMe ? AppColors.infoDark : AppColors.surfaceVariant,
+              color: isMe ? AppColors.infoDark : AppColors.surface,
               borderRadius: AppRadius.sm,
+              border: Border.all(
+                color: isMe
+                    ? AppColors.white.withValues(alpha: 0.2)
+                    : AppColors.outline.withValues(alpha: 0.3),
+                width: 1,
+              ),
             ),
             child: Icon(
               Icons.description,
@@ -240,7 +319,7 @@ class MessageBubble extends StatelessWidget {
                 if (message.fileSize != null)
                   AppText.bodySmall(
                     _formatFileSize(message.fileSize!),
-                    color: isMe ? AppColors.white.withOpacity(0.7) : AppColors.textSecondary,
+                    color: isMe ? AppColors.white.withValues(alpha: 0.7) : AppColors.textSecondary,
                   ),
               ],
             ),
@@ -296,7 +375,7 @@ class MessageBubble extends StatelessWidget {
         color = AppColors.info;
         break;
       case MessageStatus.failed:
-        icon = Icons.error;
+        icon = Icons.priority_high;
         color = AppColors.error;
         break;
     }

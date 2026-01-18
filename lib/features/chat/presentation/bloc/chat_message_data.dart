@@ -9,7 +9,6 @@ class ChatMessageData {
   final Message? replyToMessage;
   final double uploadProgress;
   final bool isUploading;
-  final bool isSending;
 
   const ChatMessageData({
     this.messages = const [],
@@ -17,7 +16,6 @@ class ChatMessageData {
     this.replyToMessage,
     this.uploadProgress = 0.0,
     this.isUploading = false,
-    this.isSending = false,
   });
 
   ChatMessageData copyWith({
@@ -27,7 +25,6 @@ class ChatMessageData {
     bool clearReplyToMessage = false,
     double? uploadProgress,
     bool? isUploading,
-    bool? isSending,
   }) {
     return ChatMessageData(
       messages: messages ?? this.messages,
@@ -36,7 +33,6 @@ class ChatMessageData {
           clearReplyToMessage ? null : (replyToMessage ?? this.replyToMessage),
       uploadProgress: uploadProgress ?? this.uploadProgress,
       isUploading: isUploading ?? this.isUploading,
-      isSending: isSending ?? this.isSending,
     );
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -17,7 +18,6 @@ class MessageInput extends StatefulWidget {
   final VoidCallback? onCancelReply;
   final bool isUploading;
   final double uploadProgress;
-  final bool isSending;
 
   const MessageInput({
     super.key,
@@ -28,7 +28,6 @@ class MessageInput extends StatefulWidget {
     this.onCancelReply,
     this.isUploading = false,
     this.uploadProgress = 0.0,
-    this.isSending = false,
   });
 
   @override
@@ -39,10 +38,12 @@ class _MessageInputState extends State<MessageInput> {
   final TextEditingController _controller = TextEditingController();
   final ImagePicker _picker = ImagePicker();
   bool _isTyping = false;
+  Timer? _typingDebounce;
 
   @override
   void dispose() {
     _controller.dispose();
+    _typingDebounce?.cancel();
     super.dispose();
   }
 
@@ -50,7 +51,12 @@ class _MessageInputState extends State<MessageInput> {
     final isTyping = text.trim().isNotEmpty;
     if (isTyping != _isTyping) {
       _isTyping = isTyping;
-      widget.onTyping(isTyping);
+
+      // Debounce typing status updates to avoid rapid Firestore writes
+      _typingDebounce?.cancel();
+      _typingDebounce = Timer(const Duration(milliseconds: 300), () {
+        widget.onTyping(isTyping);
+      });
     }
   }
 
@@ -296,31 +302,22 @@ class _MessageInputState extends State<MessageInput> {
                 ),
                 AppSpacing.horizontalSpacing(SpacingSize.sm),
                 GestureDetector(
-                  onTap: widget.isUploading || widget.isSending ? null : _handleSend,
+                  onTap: widget.isUploading ? null : _handleSend,
                   child: Container(
                     padding: EdgeInsets.all(SpacingSize.md.value),
                     decoration: BoxDecoration(
-                      color: _controller.text.trim().isEmpty || widget.isUploading || widget.isSending
+                      color: _controller.text.trim().isEmpty || widget.isUploading
                           ? AppColors.surfaceVariant
                           : AppColors.info,
                       shape: BoxShape.circle,
                     ),
-                    child: widget.isSending
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.info),
-                            ),
-                          )
-                        : Icon(
-                            Icons.send,
-                            color: _controller.text.trim().isEmpty || widget.isUploading
-                                ? AppColors.textSecondary
-                                : AppColors.white,
-                            size: 20,
-                          ),
+                    child: Icon(
+                      Icons.send,
+                      color: _controller.text.trim().isEmpty || widget.isUploading
+                          ? AppColors.textSecondary
+                          : AppColors.white,
+                      size: 20,
+                    ),
                   ),
                 ),
               ],

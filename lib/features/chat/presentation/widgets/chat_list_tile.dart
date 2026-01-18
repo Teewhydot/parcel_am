@@ -67,26 +67,50 @@ class ChatListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasUnread = _unreadCount > 0;
 
-    return InkWell(
-      onTap: onTap,
-      onLongPress: onLongPress,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
-          children: [
-            _buildAvatar(),
-            AppSpacing.horizontalSpacing(SpacingSize.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeader(hasUnread),
-                  AppSpacing.verticalSpacing(SpacingSize.xs),
-                  _buildMessagePreview(hasUnread),
-                ],
-              ),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      decoration: BoxDecoration(
+        color: hasUnread ? AppColors.primary.withValues(alpha: 0.05) : AppColors.surface,
+        borderRadius: AppRadius.md,
+        border: Border.all(
+          color: hasUnread
+              ? AppColors.primary.withValues(alpha: 0.3)
+              : AppColors.outline.withValues(alpha: 0.3),
+          width: hasUnread ? 1.5 : 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          onLongPress: onLongPress,
+          borderRadius: AppRadius.md,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                _buildAvatar(),
+                AppSpacing.horizontalSpacing(SpacingSize.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildHeader(hasUnread),
+                      AppSpacing.verticalSpacing(SpacingSize.xs),
+                      _buildMessagePreview(hasUnread),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

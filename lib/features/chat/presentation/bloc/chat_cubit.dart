@@ -56,31 +56,26 @@ class ChatCubit extends BaseCubit<BaseState<ChatMessageData>> {
   Future<void> sendMessage(Message message) async {
     final currentData = state.data ?? const ChatMessageData();
 
-    // Set sending state to true
+    // Clear reply-to message immediately for instant feedback
     emit(LoadedState<ChatMessageData>(
-      data: currentData.copyWith(isSending: true),
+      data: currentData.copyWith(clearReplyToMessage: true),
       lastUpdated: DateTime.now(),
     ));
 
+    // Send message - status is tracked on each message via MessageStatus
     final result = await chatUseCase.sendMessage(message);
 
     result.fold(
       (failure) {
+        // Show error snackbar but don't block UI
+        // The message status will show as 'failed' in the message bubble
         emit(AsyncErrorState<ChatMessageData>(
           errorMessage: failure.failureMessage,
-          data: currentData.copyWith(isSending: false),
+          data: currentData.copyWith(clearReplyToMessage: true),
         ));
       },
       (_) {
-        // Clear reply-to message and reset sending state after successful send
-        final updatedData = currentData.copyWith(
-          clearReplyToMessage: true,
-          isSending: false,
-        );
-        emit(LoadedState<ChatMessageData>(
-          data: updatedData,
-          lastUpdated: DateTime.now(),
-        ));
+        // Success - message status will update via stream
       },
     );
   }

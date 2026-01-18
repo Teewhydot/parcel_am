@@ -48,8 +48,11 @@ class MessageModel extends Message {
       replyToMessageId: json['replyToMessageId'] as String?,
       isDeleted: json['isDeleted'] as bool? ?? false,
       readBy: json['readBy'] != null
-          ? (json['readBy'] as Map<String, dynamic>).map(
-              (key, value) => MapEntry(key, (value as Timestamp).toDate()),
+          ? Map.fromEntries(
+              (json['readBy'] as Map<String, dynamic>)
+                  .entries
+                  .where((e) => e.value != null && e.value is Timestamp)
+                  .map((e) => MapEntry(e.key, (e.value as Timestamp).toDate())),
             )
           : null,
     );
