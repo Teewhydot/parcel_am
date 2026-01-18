@@ -183,16 +183,16 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     String userId,
     bool isTyping,
   ) async {
-    await firestore.collection('chats').doc(chatId).update({
-      'isTyping.$userId': isTyping,
-    });
+    await firestore.collection('chats').doc(chatId).set({
+      'isTyping': {userId: isTyping},
+    }, SetOptions(merge: true));
   }
 
   @override
   Future<void> updateLastSeen(String chatId, String userId) async {
-    await firestore.collection('chats').doc(chatId).update({
-      'lastSeen.$userId': FieldValue.serverTimestamp(),
-    });
+    await firestore.collection('chats').doc(chatId).set({
+      'lastSeen': {userId: FieldValue.serverTimestamp()},
+    }, SetOptions(merge: true));
   }
 
   @override
@@ -204,7 +204,17 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       }
     }).map((snapshot) {
       if (!snapshot.exists) {
-        throw Exception('Chat not found');
+        // Return a default chat when document doesn't exist yet
+        return ChatModel(
+          id: chatId,
+          participantIds: [],
+          participantNames: {},
+          participantAvatars: {},
+          unreadCount: {},
+          isTyping: {},
+          lastSeen: {},
+          createdAt: DateTime.now(),
+        );
       }
       final data = snapshot.data()!;
       data['id'] = snapshot.id;
@@ -289,7 +299,17 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       }
     }).map((snapshot) {
       if (!snapshot.exists) {
-        throw Exception('Chat not found');
+        // Return a default chat when document doesn't exist yet
+        return ChatModel(
+          id: chatId,
+          participantIds: [],
+          participantNames: {},
+          participantAvatars: {},
+          unreadCount: {},
+          isTyping: {},
+          lastSeen: {},
+          createdAt: DateTime.now(),
+        );
       }
       final data = snapshot.data()!;
       data['id'] = snapshot.id;

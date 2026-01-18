@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:parcel_am/features/kyc/presentation/bloc/kyc_bloc.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/escrow/escrow_cubit.dart';
 import 'package:parcel_am/features/passkey/presentation/bloc/passkey_bloc.dart';
+import '../features/chat/presentation/bloc/chat_cubit.dart';
 import '../features/notifications/presentation/bloc/notification_cubit.dart';
 import '../features/parcel_am_core/presentation/bloc/auth/auth_cubit.dart';
 import '../features/parcel_am_core/presentation/bloc/dashboard/dashboard_bloc.dart';
@@ -31,4 +32,5 @@ final List<BlocProvider> blocs = [
   ),
   BlocProvider<EscrowCubit>(create:(_)=> EscrowCubit()),
   BlocProvider<PasskeyBloc>(create: (_) => PasskeyBloc()),
+  BlocProvider<ChatCubit>(create: (_) => ChatCubit()),
 ];

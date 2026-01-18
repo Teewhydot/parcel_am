@@ -444,6 +444,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                         final replyToMessage = chatData.replyToMessage;
                         final isUploading = chatData.isUploading;
                         final uploadProgress = chatData.uploadProgress;
+                        final isSending = chatData.isSending;
 
                         return Column(
                           children: [
@@ -519,6 +520,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                               },
                               isUploading: isUploading,
                               uploadProgress: uploadProgress,
+                              isSending: isSending,
                             ),
                           ],
                         );

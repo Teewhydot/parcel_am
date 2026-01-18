@@ -54,8 +54,11 @@ class ChatCubit extends BaseCubit<BaseState<ChatMessageData>> {
   Future<void> sendMessage(Message message) async {
     final currentData = state.data ?? const ChatMessageData();
 
-    // Show async loading state while preserving current data
-    emit(AsyncLoadingState<ChatMessageData>(data: currentData));
+    // Set sending state to true
+    emit(LoadedState<ChatMessageData>(
+      data: currentData.copyWith(isSending: true),
+      lastUpdated: DateTime.now(),
+    ));
 
     final result = await chatUseCase.sendMessage(message);
 
@@ -63,12 +66,15 @@ class ChatCubit extends BaseCubit<BaseState<ChatMessageData>> {
       (failure) {
         emit(AsyncErrorState<ChatMessageData>(
           errorMessage: failure.failureMessage,
-          data: currentData,
+          data: currentData.copyWith(isSending: false),
         ));
       },
       (_) {
-        // Clear reply-to message after successful send
-        final updatedData = currentData.copyWith(clearReplyToMessage: true);
+        // Clear reply-to message and reset sending state after successful send
+        final updatedData = currentData.copyWith(
+          clearReplyToMessage: true,
+          isSending: false,
+        );
         emit(LoadedState<ChatMessageData>(
           data: updatedData,
           lastUpdated: DateTime.now(),

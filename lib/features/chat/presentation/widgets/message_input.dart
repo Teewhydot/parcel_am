@@ -17,6 +17,7 @@ class MessageInput extends StatefulWidget {
   final VoidCallback? onCancelReply;
   final bool isUploading;
   final double uploadProgress;
+  final bool isSending;
 
   const MessageInput({
     super.key,
@@ -27,6 +28,7 @@ class MessageInput extends StatefulWidget {
     this.onCancelReply,
     this.isUploading = false,
     this.uploadProgress = 0.0,
+    this.isSending = false,
   });
 
   @override
@@ -291,22 +293,31 @@ class _MessageInputState extends State<MessageInput> {
                 ),
                 AppSpacing.horizontalSpacing(SpacingSize.sm),
                 GestureDetector(
-                  onTap: widget.isUploading ? null : _handleSend,
+                  onTap: widget.isUploading || widget.isSending ? null : _handleSend,
                   child: Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: _controller.text.trim().isEmpty || widget.isUploading
+                      color: _controller.text.trim().isEmpty || widget.isUploading || widget.isSending
                           ? AppColors.surfaceVariant
                           : AppColors.info,
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(
-                      Icons.send,
-                      color: _controller.text.trim().isEmpty || widget.isUploading
-                          ? AppColors.textSecondary
-                          : AppColors.white,
-                      size: 20,
-                    ),
+                    child: widget.isSending
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.info),
+                            ),
+                          )
+                        : Icon(
+                            Icons.send,
+                            color: _controller.text.trim().isEmpty || widget.isUploading
+                                ? AppColors.textSecondary
+                                : AppColors.white,
+                            size: 20,
+                          ),
                   ),
                 ),
               ],
