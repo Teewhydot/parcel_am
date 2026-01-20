@@ -64,7 +64,7 @@ const onChatMessageNotification = onDocumentUpdated(
         return;
       }
 
-      const { senderId, senderName, messagePreview, type } = afterNotification;
+      const { senderId, senderName, messagePreview, type, messageId } = afterNotification;
 
       if (!senderId || !messagePreview) {
         logger.warning('Missing required notification data', executionId);
@@ -73,6 +73,10 @@ const onChatMessageNotification = onDocumentUpdated(
           pendingNotification: null
         }, executionId);
         return;
+      }
+
+      if (!messageId) {
+        logger.warning('Missing messageId in notification data', executionId);
       }
 
       logger.info(`Processing chat notification from ${senderName} in chat ${chatId}`, executionId);
@@ -98,6 +102,7 @@ const onChatMessageNotification = onDocumentUpdated(
       const notificationData = {
         type: 'chat_message',
         chatId: chatId,
+        messageId: messageId || '', // Include messageId for notification tracking
         senderId: senderId,
         senderName: senderName || '',
         action: 'open_chat'

@@ -89,12 +89,20 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     // Set status to 'sent' when writing to server (not 'sending')
     messageData['status'] = MessageStatus.sent.name;
 
-    // Add message to collection
+    // Add message to collection and capture the messageId
+    String messageId;
     if (message.id.isEmpty || message.id.startsWith('temp_')) {
-      await messagesRef.add(messageData);
+      final docRef = await messagesRef.add(messageData);
+      messageId = docRef.id;
+      // Update the message document with its own ID
+      await docRef.update({'id': messageId});
     } else {
+      messageId = message.id;
       await messagesRef.doc(message.id).set(messageData);
     }
+
+    // Update messageData with the actual ID for lastMessage
+    messageData['id'] = messageId;
 
     // Update chat document with last message and notification trigger
     await firestore.collection('chats').doc(message.chatId).update({
@@ -109,6 +117,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
             ? '${message.content.substring(0, 100)}...'
             : message.content,
         'chatId': message.chatId,
+        'messageId': messageId, // Include messageId for notification tracking
         'timestamp': FieldValue.serverTimestamp(),
         'type': message.type.toString(),
       },

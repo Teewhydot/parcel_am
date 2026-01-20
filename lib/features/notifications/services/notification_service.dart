@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -17,6 +19,13 @@ import '../domain/repositories/fcm_repository.dart';
 /// Must be a top-level function for Firebase Messaging background handler
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Initialize Firebase in the background isolate if not already initialized
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    // Already initialized, ignore
+  }
+
   if (kDebugMode) {
     print('[NotificationService] Background message received: ${message.messageId}');
   }
@@ -27,6 +36,43 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 /// Helper function to display notification from background
 Future<void> _showBackgroundNotification(RemoteMessage message) async {
+  final data = message.data;
+  final type = data['type'] as String?;
+  final chatId = data['chatId'] as String?;
+  final messageId = data['messageId'] as String?;
+
+  // For chat messages, check if notification was already sent
+  if (type == 'chat_message' && chatId != null && messageId != null) {
+    try {
+      final firestore = FirebaseFirestore.instance;
+
+      // Check if notification was already sent for this message
+      final messageDoc = await firestore
+          .collection('chats')
+          .doc(chatId)
+          .collection('messages')
+          .doc(messageId)
+          .get();
+
+      if (messageDoc.exists) {
+        final messageData = messageDoc.data();
+        final notificationSent = messageData?['notificationSent'] as bool? ?? false;
+
+        if (notificationSent) {
+          if (kDebugMode) {
+            print('[NotificationService] Notification already sent for message: $messageId, skipping');
+          }
+          return; // Skip - notification already sent
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('[NotificationService] Error checking notificationSent: $e');
+      }
+      // Continue to show notification on error
+    }
+  }
+
   final FlutterLocalNotificationsPlugin localNotifications =
       FlutterLocalNotificationsPlugin();
 
@@ -40,14 +86,11 @@ Future<void> _showBackgroundNotification(RemoteMessage message) async {
   await localNotifications.initialize(initSettings);
 
   final notification = message.notification;
-  final data = message.data;
 
   final title = notification?.title ?? data['title'] as String? ?? '';
   final body = notification?.body ?? data['body'] as String? ?? '';
 
   // Detect notification type from data payload
-  final type = data['type'] as String?;
-  final chatId = data['chatId'] as String?;
   final parcelId = data['parcelId'] as String?;
   final travelerId = data['travelerId'] as String?;
   final travelerName = data['travelerName'] as String?;
@@ -83,11 +126,11 @@ Future<void> _showBackgroundNotification(RemoteMessage message) async {
   // Create payload with appropriate fields
   final payload = jsonEncode({
     if (chatId != null) 'chatId': chatId,
+    if (messageId != null) 'messageId': messageId,
     if (parcelId != null) 'parcelId': parcelId,
     if (travelerId != null) 'travelerId': travelerId,
     if (travelerName != null) 'travelerName': travelerName,
     if (type != null) 'type': type,
-    'messageId': message.messageId,
   });
 
   await localNotifications.show(
@@ -97,6 +140,47 @@ Future<void> _showBackgroundNotification(RemoteMessage message) async {
     notificationDetails,
     payload: payload,
   );
+
+  // Mark notification as sent for chat messages
+  if (type == 'chat_message' && chatId != null && messageId != null) {
+    await _markNotificationSentInBackground(chatId, messageId);
+  }
+}
+
+/// Mark notification as sent in Firestore (for background handler)
+Future<void> _markNotificationSentInBackground(String chatId, String messageId) async {
+  try {
+    final firestore = FirebaseFirestore.instance;
+
+    // Update the message document
+    await firestore
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .doc(messageId)
+        .update({'notificationSent': true});
+
+    // Also update lastMessage in the chat document if it matches
+    final chatDoc = await firestore.collection('chats').doc(chatId).get();
+    if (chatDoc.exists) {
+      final chatData = chatDoc.data();
+      final lastMessageData = chatData?['lastMessage'] as Map<String, dynamic>?;
+
+      if (lastMessageData != null && lastMessageData['id'] == messageId) {
+        await firestore.collection('chats').doc(chatId).update({
+          'lastMessage.notificationSent': true,
+        });
+      }
+    }
+
+    if (kDebugMode) {
+      print('[NotificationService] Marked notificationSent=true for message: $messageId');
+    }
+  } catch (e) {
+    if (kDebugMode) {
+      print('[NotificationService] Error marking notificationSent: $e');
+    }
+  }
 }
 
 /// Notification Service Singleton
