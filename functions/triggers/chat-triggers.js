@@ -3,10 +3,58 @@
 // ========================================================================
 
 const { onDocumentUpdated } = require('firebase-functions/v2/firestore');
+const admin = require('firebase-admin');
 const { FUNCTIONS_CONFIG } = require('../utils/constants');
 const { logger } = require('../utils/logger');
 const { dbHelper } = require('../utils/database');
 const { notificationService } = require('../services/notification-service');
+
+/**
+ * Helper function to update notificationSent flag in a message within a page
+ * @param {string} chatId - The chat ID
+ * @param {string} messageId - The message ID to mark as sent
+ * @param {string} executionId - Execution ID for logging
+ */
+async function markMessageNotificationSent(chatId, messageId, executionId) {
+  if (!messageId) {
+    logger.warning('No messageId provided, cannot mark notificationSent', executionId);
+    return;
+  }
+
+  try {
+    const db = admin.firestore();
+    const pagesRef = db.collection('chats').doc(chatId).collection('pages');
+    const pagesSnapshot = await pagesRef.get();
+
+    for (const pageDoc of pagesSnapshot.docs) {
+      const pageData = pageDoc.data();
+      const messages = pageData.messages || [];
+      
+      const messageIndex = messages.findIndex(m => m.id === messageId);
+      if (messageIndex !== -1) {
+        // Found the message, update it
+        const updatedMessages = messages.map(m => {
+          if (m.id === messageId) {
+            return { ...m, notificationSent: true };
+          }
+          return m;
+        });
+
+        await pageDoc.ref.update({
+          messages: updatedMessages,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        logger.info(`Marked message ${messageId} as notificationSent in page ${pageDoc.id}`, executionId);
+        return;
+      }
+    }
+
+    logger.warning(`Message ${messageId} not found in any page for chat ${chatId}`, executionId);
+  } catch (error) {
+    logger.error(`Failed to mark message ${messageId} notificationSent: ${error.message}`, executionId);
+  }
+}
 
 /**
  * Trigger: onChatMessageNotification
@@ -14,6 +62,7 @@ const { notificationService } = require('../services/notification-service');
  * Fires when a chat document is updated in Firestore.
  * When the pendingNotification field is added or updated:
  * - Sends push notification to all participants except the sender
+ * - Marks the message as notificationSent in the page
  * - Clears the pendingNotification field after sending
  *
  * Expected pendingNotification structure:
@@ -22,9 +71,13 @@ const { notificationService } = require('../services/notification-service');
  *   senderName: string,
  *   messagePreview: string,
  *   chatId: string,
+ *   messageId: string,
  *   timestamp: Timestamp,
  *   type: string (e.g., 'text', 'image')
  * }
+ *
+ * Note: Messages are now stored in paged structure under chats/{chatId}/pages/{pageId}
+ * but the notification trigger still fires from pendingNotification on the chat doc.
  */
 const onChatMessageNotification = onDocumentUpdated(
   {
@@ -133,6 +186,11 @@ const onChatMessageNotification = onDocumentUpdated(
         executionId
       );
 
+      // Mark the message as notificationSent in the page
+      if (successCount > 0 && messageId) {
+        await markMessageNotificationSent(chatId, messageId, executionId);
+      }
+
       // Clear the pendingNotification field
       await dbHelper.updateDocument('chats', chatId, {
         pendingNotification: null
@@ -158,6 +216,145 @@ const onChatMessageNotification = onDocumentUpdated(
   }
 );
 
+/**
+ * Trigger: onChatPageUpdated
+ *
+ * Fires when a message page document is updated (messages appended).
+ * This is an alternative/backup notification path that watches the
+ * paged message structure directly.
+ *
+ * Message page structure:
+ * chats/{chatId}/pages/{pageId}
+ * {
+ *   chatId: string,
+ *   pageNumber: int,
+ *   messages: [MessageModel, ...],
+ *   messageCount: int,
+ *   bytesUsed: int,
+ *   hasOlderPages: bool,
+ *   createdAt: Timestamp,
+ *   updatedAt: Timestamp
+ * }
+ *
+ * This trigger can be used to:
+ * - Send notifications for messages that missed the pendingNotification path
+ * - Track message analytics
+ * - Trigger read receipts or delivery confirmations
+ */
+const onChatPageUpdated = onDocumentUpdated(
+  {
+    document: 'chats/{chatId}/pages/{pageId}',
+    region: FUNCTIONS_CONFIG.REGION,
+    timeoutSeconds: FUNCTIONS_CONFIG.TRIGGER_TIMEOUT_SECONDS,
+    memory: FUNCTIONS_CONFIG.MEMORY,
+    cpu: FUNCTIONS_CONFIG.CPU,
+    maxInstances: FUNCTIONS_CONFIG.MAX_INSTANCES
+  },
+  async (event) => {
+    const executionId = `chat-page-trigger-${Date.now()}`;
+
+    try {
+      logger.startFunction('onChatPageUpdated', executionId);
+
+      const beforeData = event.data.before.data();
+      const afterData = event.data.after.data();
+      const { chatId, pageId } = event.params;
+
+      const beforeMessages = beforeData.messages || [];
+      const afterMessages = afterData.messages || [];
+
+      // Find new messages (appended since last update)
+      const newMessagesCount = afterMessages.length - beforeMessages.length;
+
+      if (newMessagesCount <= 0) {
+        logger.info('No new messages detected (update was edit/delete), skipping', executionId);
+        return;
+      }
+
+      // Get the new messages (they are appended at the end)
+      const newMessages = afterMessages.slice(-newMessagesCount);
+
+      logger.info(
+        `Detected ${newMessagesCount} new message(s) in chat ${chatId}, page ${pageId}`,
+        executionId
+      );
+
+      // Process each new message for notifications that weren't sent yet
+      for (const message of newMessages) {
+        if (message.notificationSent) {
+          logger.info(`Message ${message.id} notification already sent, skipping`, executionId);
+          continue;
+        }
+
+        // Get the chat document for participant info
+        const chatResult = await dbHelper.getDocument('chats', chatId, executionId);
+        if (!chatResult || !chatResult.data) {
+          logger.warning(`Chat ${chatId} not found`, executionId);
+          continue;
+        }
+
+        const chatData = chatResult.data;
+        const participantIds = chatData.participantIds || [];
+        const recipientIds = participantIds.filter(id => id !== message.senderId);
+
+        if (recipientIds.length === 0) {
+          logger.info('No recipients for message', executionId);
+          continue;
+        }
+
+        // Prepare notification
+        const notificationTitle = message.senderName || 'New Message';
+        const messagePreview = message.content?.length > 100
+          ? message.content.substring(0, 97) + '...'
+          : message.content || '';
+
+        const notificationData = {
+          type: 'chat_message',
+          chatId: chatId,
+          messageId: message.id || '',
+          senderId: message.senderId,
+          senderName: message.senderName || '',
+          action: 'open_chat'
+        };
+
+        // Send notifications
+        const results = await Promise.allSettled(
+          recipientIds.map(recipientId =>
+            notificationService.sendNotificationToUser(
+              recipientId,
+              notificationTitle,
+              messagePreview,
+              notificationData,
+              `${executionId}-${recipientId}`
+            )
+          )
+        );
+
+        const successCount = results.filter(
+          r => r.status === 'fulfilled' && r.value && r.value.success
+        ).length;
+
+        logger.info(
+          `Page trigger: sent ${successCount}/${recipientIds.length} notifications for message ${message.id}`,
+          executionId
+        );
+
+        // Mark notification as sent using the helper function
+        if (successCount > 0 && message.id) {
+          await markMessageNotificationSent(chatId, message.id, executionId);
+        }
+      }
+
+      logger.success(`Page trigger completed for chat ${chatId}, page ${pageId}`, executionId);
+
+    } catch (error) {
+      logger.error('Error in onChatPageUpdated trigger', executionId, error);
+      throw error;
+    }
+  }
+);
+
 module.exports = {
-  onChatMessageNotification
+  onChatMessageNotification,
+  onChatPageUpdated
 };

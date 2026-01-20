@@ -2,10 +2,12 @@
 // Triggers - Barrel Export
 // ========================================================================
 
-const { onParcelAwaitingConfirmation } = require('./parcel-triggers');
-const { onChatMessageNotification } = require('./chat-triggers');
+const { onParcelAwaitingConfirmation, onParcelStatusUpdate } = require('./parcel-triggers');
+const { onChatMessageNotification, onChatPageUpdated } = require('./chat-triggers');
 
 module.exports = {
   onParcelAwaitingConfirmation,
-  onChatMessageNotification
+  onParcelStatusUpdate,
+  onChatMessageNotification,
+  onChatPageUpdated
 };

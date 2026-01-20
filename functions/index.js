@@ -43,7 +43,9 @@ const {
 // ========================================================================
 const {
   onParcelAwaitingConfirmation,
-  onChatMessageNotification
+  onParcelStatusUpdate,
+  onChatMessageNotification,
+  onChatPageUpdated
 } = require('./triggers');
 
 // ========================================================================
@@ -77,7 +79,9 @@ exports.autoReleaseEscrow = autoReleaseEscrow;
 
 // Triggers
 exports.onParcelAwaitingConfirmation = onParcelAwaitingConfirmation;
+exports.onParcelStatusUpdate = onParcelStatusUpdate;
 exports.onChatMessageNotification = onChatMessageNotification;
+exports.onChatPageUpdated = onChatPageUpdated;
 
 // ========================================================================
 // Startup Complete

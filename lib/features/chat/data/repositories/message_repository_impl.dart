@@ -30,7 +30,9 @@ class MessageRepositoryImpl implements MessageRepository {
   ) async {
     try {
       if (!await InternetConnectionChecker.instance.hasConnection) {
-        return const Left(NoInternetFailure(failureMessage: 'No internet connection'));
+        return const Left(
+          NoInternetFailure(failureMessage: 'No internet connection'),
+        );
       }
 
       final message = MessageModel(
@@ -65,7 +67,9 @@ class MessageRepositoryImpl implements MessageRepository {
   }) async {
     try {
       if (!await InternetConnectionChecker.instance.hasConnection) {
-        return const Left(NoInternetFailure(failureMessage: 'No internet connection'));
+        return const Left(
+          NoInternetFailure(failureMessage: 'No internet connection'),
+        );
       }
 
       // Since watchMessages returns a stream, we'll take first value
@@ -91,7 +95,9 @@ class MessageRepositoryImpl implements MessageRepository {
   ) async {
     try {
       if (!await InternetConnectionChecker.instance.hasConnection) {
-        return const Left(NoInternetFailure(failureMessage: 'No internet connection'));
+        return const Left(
+          NoInternetFailure(failureMessage: 'No internet connection'),
+        );
       }
 
       await remoteDataSource.updateMessageStatus(
@@ -109,7 +115,9 @@ class MessageRepositoryImpl implements MessageRepository {
   Future<Either<Failure, void>> deleteMessage(String messageId) async {
     try {
       if (!await InternetConnectionChecker.instance.hasConnection) {
-        return const Left(NoInternetFailure(failureMessage: 'No internet connection'));
+        return const Left(
+          NoInternetFailure(failureMessage: 'No internet connection'),
+        );
       }
 
       // Extract chatId from messageId if needed, or modify datasource method
@@ -134,14 +142,20 @@ class MessageRepositoryImpl implements MessageRepository {
   ) async {
     try {
       if (!await InternetConnectionChecker.instance.hasConnection) {
-        return const Left(NoInternetFailure(failureMessage: 'No internet connection'));
+        return const Left(
+          NoInternetFailure(failureMessage: 'No internet connection'),
+        );
       }
 
       final status = isOnline ? PresenceStatus.online : PresenceStatus.offline;
       await presenceDataSource.updatePresenceStatus(userId, status);
 
       if (isTyping) {
-        await presenceDataSource.updateTypingStatus(userId, typingInChatId, isTyping);
+        await presenceDataSource.updateTypingStatus(
+          userId,
+          typingInChatId,
+          isTyping,
+        );
       }
 
       return const Right(null);
@@ -155,5 +169,49 @@ class MessageRepositoryImpl implements MessageRepository {
     return presenceDataSource
         .watchUserPresence(userId)
         .map((model) => model.toEntity());
+  }
+
+  @override
+  Future<Either<Failure, List<MessageEntity>>> loadOlderMessages(
+    String chatId, {
+    int? beforePageNumber,
+  }) async {
+    try {
+      if (!await InternetConnectionChecker.instance.hasConnection) {
+        return const Left(
+          NoInternetFailure(failureMessage: 'No internet connection'),
+        );
+      }
+
+      final messages = await remoteDataSource.loadOlderMessages(
+        chatId,
+        beforePageNumber: beforePageNumber,
+      );
+      return Right(messages.map((m) => m.toEntity()).toList());
+    } catch (e) {
+      return Left(ServerFailure(failureMessage: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, bool>> hasOlderMessages(
+    String chatId,
+    int currentPageNumber,
+  ) async {
+    try {
+      if (!await InternetConnectionChecker.instance.hasConnection) {
+        return const Left(
+          NoInternetFailure(failureMessage: 'No internet connection'),
+        );
+      }
+
+      final hasMore = await remoteDataSource.hasOlderMessages(
+        chatId,
+        currentPageNumber,
+      );
+      return Right(hasMore);
+    } catch (e) {
+      return Left(ServerFailure(failureMessage: e.toString()));
+    }
   }
 }

@@ -38,4 +38,17 @@ abstract class MessageRepository {
   );
 
   Stream<PresenceEntity> watchPresence(String userId);
+
+  /// Load older messages for pagination
+  /// [beforePageNumber] - load messages from pages before this page number
+  Future<Either<Failure, List<MessageEntity>>> loadOlderMessages(
+    String chatId, {
+    int? beforePageNumber,
+  });
+
+  /// Check if there are older message pages available
+  Future<Either<Failure, bool>> hasOlderMessages(
+    String chatId,
+    int currentPageNumber,
+  );
 }
