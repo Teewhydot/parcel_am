@@ -138,9 +138,10 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
           }
 
           final page = MessagePageModel.fromFirestore(snapshot.docs.first);
-          // Return messages sorted by timestamp ascending (oldest first for display)
+          // Return messages sorted by timestamp descending (newest first)
+          // This is the correct order for reverse: true ListView
           final messages = List<MessageModel>.from(page.messages);
-          messages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+          messages.sort((a, b) => b.timestamp.compareTo(a.timestamp));
           return messages;
         });
   }

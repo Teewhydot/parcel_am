@@ -82,7 +82,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     if (userId.isNotEmpty) {
       final presenceService = sl<PresenceService>();
-      presenceService.initialize(userId);
+      presenceService.initialize();
       _presenceService = presenceService;
     }
   }

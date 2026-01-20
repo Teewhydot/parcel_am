@@ -96,7 +96,10 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       _hasRequestedPermissions = true;
     } catch (e) {
       // Silently fail - permissions are optional
-      Logger.logError('Error requesting notification permissions: $e', tag: 'ChatScreen');
+      Logger.logError(
+        'Error requesting notification permissions: $e',
+        tag: 'ChatScreen',
+      );
     }
   }
 
@@ -265,9 +268,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
       if (mounted) {
-        context.showSnackbar(
-          message: 'Could not open document',
-        );
+        context.showSnackbar(message: 'Could not open document');
       }
     }
   }
@@ -464,7 +465,8 @@ class _MessagesList extends StatelessWidget {
       builder: (context, messagesSnapshot) {
         // Get stream messages (or empty list if loading/error)
         List<Message> streamMessages = [];
-        bool isLoading = messagesSnapshot.connectionState == ConnectionState.waiting;
+        bool isLoading =
+            messagesSnapshot.connectionState == ConnectionState.waiting;
         String? errorMessage;
 
         if (messagesSnapshot.hasData) {
@@ -488,10 +490,7 @@ class _MessagesList extends StatelessWidget {
           builder: (context, chatSnapshot) {
             Chat? chat;
             if (chatSnapshot.hasData) {
-              chatSnapshot.data!.fold(
-                (failure) => null,
-                (c) => chat = c,
-              );
+              chatSnapshot.data!.fold((failure) => null, (c) => chat = c);
             }
 
             final showTypingIndicator = chat?.isTyping[otherUserId] ?? false;
@@ -502,9 +501,7 @@ class _MessagesList extends StatelessWidget {
             }
 
             if (errorMessage != null && allMessages.isEmpty) {
-              return Center(
-                child: AppText.bodyMedium(errorMessage!),
-              );
+              return Center(child: AppText.bodyMedium(errorMessage!));
             }
 
             if (allMessages.isEmpty) {
@@ -564,15 +561,26 @@ class _MessagesList extends StatelessWidget {
   }
 
   /// Merge stream messages with pending messages, removing duplicates
-  List<Message> _mergeMessages(List<Message> streamMessages, List<Message> pending) {
-    if (pending.isEmpty) return streamMessages;
+  List<Message> _mergeMessages(
+    List<Message> streamMessages,
+    List<Message> pending,
+  ) {
+    // Always sort messages for reverse ListView (descending = newest at index 0)
+    if (pending.isEmpty) {
+      final sorted = List<Message>.from(streamMessages);
+      sorted.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      return sorted;
+    }
 
     // Filter out pending messages that are now confirmed in stream
     final confirmedIds = streamMessages.map((m) => m.id).toSet();
-    final stillPending = pending.where((p) =>
-      !confirmedIds.contains(p.id) &&
-      !streamMessages.any((m) => _isSameMessage(m, p))
-    ).toList();
+    final stillPending = pending
+        .where(
+          (p) =>
+              !confirmedIds.contains(p.id) &&
+              !streamMessages.any((m) => _isSameMessage(m, p)),
+        )
+        .toList();
 
     // Merge and sort by timestamp (descending for reverse list)
     final merged = [...stillPending, ...streamMessages];

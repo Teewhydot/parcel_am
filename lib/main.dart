@@ -12,6 +12,7 @@ import 'package:parcel_am/core/widgets/app_button.dart';
 import 'package:provider/provider.dart';
 import 'package:parcel_am/app/init.dart';
 import 'package:parcel_am/features/notifications/services/notification_service.dart';
+import 'package:parcel_am/features/chat/services/presence_service.dart';
 import 'package:parcel_am/core/utils/logger.dart';
 import 'package:parcel_am/features/passkey/data/datasources/passkey_remote_data_source.dart';
 import 'package:parcel_am/injection_container.dart' as di;
@@ -24,10 +25,9 @@ import 'features/parcel_am_core/data/providers/theme_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-        await dotenv.load(fileName: ".env");
+  await dotenv.load(fileName: ".env");
 
   try {
-
     // Initialize Firebase and dependency injection
     await AppConfig.init();
 
@@ -37,6 +37,11 @@ void main() async {
     // Initialize NotificationService after Firebase and DI, before runApp
     final notificationService = di.sl<NotificationService>();
     await notificationService.initialize();
+
+    // Initialize PresenceService to track user online/offline status app-wide
+    // This uses WidgetsBindingObserver to detect app lifecycle changes
+    final presenceService = di.sl<PresenceService>();
+    presenceService.initialize();
 
     // Initialize Corbado Passkey SDK
     await _initializeCorbado();
@@ -85,8 +90,12 @@ class MyApp extends StatelessWidget {
 Future<void> _initializeCorbado() async {
   try {
     final projectId = dotenv.env['CORBADO_PROJECT_ID'];
-    if (projectId == null || projectId.isEmpty || projectId == 'your_corbado_project_id_here') {
-      Logger.logWarning('Corbado Project ID not configured. Passkey authentication will be disabled.');
+    if (projectId == null ||
+        projectId.isEmpty ||
+        projectId == 'your_corbado_project_id_here') {
+      Logger.logWarning(
+        'Corbado Project ID not configured. Passkey authentication will be disabled.',
+      );
       return;
     }
 
@@ -115,7 +124,11 @@ class FirebaseErrorApp extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.error_outline, size: 80, color: AppColors.error),
+                const Icon(
+                  Icons.error_outline,
+                  size: 80,
+                  color: AppColors.error,
+                ),
                 AppSpacing.verticalSpacing(SpacingSize.xl),
                 AppText(
                   'Firebase Initialization Failed',
