@@ -195,31 +195,42 @@ class NotificationService {
       const serverKey = await this.getAccessToken(executionId);
 
       // Prepare FCM message using the v1 API format
+      // Using DATA-ONLY message (no notification payload) to allow app's
+      // background handler to create local notifications with full control.
+      // This ensures notifications work consistently when app is terminated.
       // Ensure all data values are strings (FCM requirement)
       const stringifiedData = {};
       for (const [key, value] of Object.entries(data)) {
         stringifiedData[key] = String(value);
       }
 
+      // Data-only message format - title and body are passed in data payload
+      // The app's background handler will create the local notification
       const message = {
         message: {
           token: token,
-          notification: {
-            title,
-            body,
+          // NO 'notification' object - this prevents system auto-display
+          // and allows the app's background handler to create local notifications
+          data: {
+            title: title,
+            body: body,
+            click_action: 'FLUTTER_NOTIFICATION_CLICK',
+            ...stringifiedData,
           },
-          data: stringifiedData,
           android: {
-            priority: 'high',
-            notification: {
-              sound: 'default',
-              click_action: 'FLUTTER_NOTIFICATION_CLICK'
-            }
+            priority: 'high',  // Critical for delivery when app is terminated
+            ttl: '86400s',     // 24 hour time-to-live
           },
           apns: {
+            headers: {
+              'apns-priority': '10',           // High priority for iOS
+              'apns-push-type': 'background',  // Background delivery
+            },
             payload: {
               aps: {
-                sound: 'default'
+                'content-available': 1,  // Wake app in background on iOS
+                'mutable-content': 1,    // Allow notification modification
+                sound: 'default',
               }
             }
           }

@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
 import 'package:parcel_am/core/services/auth/kyc_guard.dart';
+import 'package:parcel_am/core/services/battery_optimization_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/widgets/app_scaffold.dart';
@@ -51,6 +52,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _activePackagesBloc = ActivePackagesCubit();
     _loadInitialData();
     _initializePresence();
+    _checkBatteryOptimization();
+  }
+
+  /// Check and prompt for battery optimization settings.
+  /// This helps ensure notifications work when the app is terminated.
+  void _checkBatteryOptimization() {
+    // Delay to avoid disrupting initial app load experience
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) {
+        BatteryOptimizationService.checkAndPromptOptimization(context);
+      }
+    });
   }
 
   @override

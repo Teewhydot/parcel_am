@@ -362,6 +362,12 @@ class NotificationService {
 
   /// Handle foreground messages
   /// Subscribe to FirebaseMessaging.onMessage stream
+  ///
+  /// Notification display logic:
+  /// - Chat messages: SKIP - ChatNotificationListener handles via Firestore real-time
+  /// - Escrow/Parcel updates: SHOW - No dedicated listener, need FCM notification
+  ///
+  /// This prevents duplicate chat notifications while ensuring escrow updates are shown.
   Future<void> handleForegroundMessage(RemoteMessage message) async {
     try {
       if (kDebugMode) {
@@ -381,19 +387,30 @@ class NotificationService {
       final parcelId = data['parcelId'] as String?;
       final travelerId = data['travelerId'] as String?;
       final travelerName = data['travelerName'] as String?;
+      final type = data['type'] as String?;
 
-      // Display local notification
-      await _displayLocalNotification(
-        message: message,
-        title: title,
-        body: body,
-        chatId: chatId,
-        parcelId: parcelId,
-        travelerId: travelerId,
-        travelerName: travelerName,
-      );
+      // Only skip chat_message type - these are handled by ChatNotificationListener.
+      // Show all other notifications (escrow, parcel updates, etc.) in foreground.
+      final isChatMessage = type == 'chat_message';
 
-      // Save notification to Firestore
+      if (isChatMessage) {
+        if (kDebugMode) {
+          print('[NotificationService] Skipping chat notification - handled by ChatNotificationListener');
+        }
+      } else {
+        // Display local notification for non-chat messages (escrow, parcel updates, etc.)
+        await _displayLocalNotification(
+          message: message,
+          title: title,
+          body: body,
+          chatId: chatId,
+          parcelId: parcelId,
+          travelerId: travelerId,
+          travelerName: travelerName,
+        );
+      }
+
+      // Save notification to Firestore for in-app notification center (all types)
       final notificationModel = NotificationModel.fromRemoteMessage(
         message,
         userId,
@@ -404,7 +421,7 @@ class NotificationService {
       await _updateBadgeCount();
 
       if (kDebugMode) {
-        print('[NotificationService] Foreground notification processed and saved');
+        print('[NotificationService] Foreground message processed');
       }
     } catch (e) {
       if (kDebugMode) {
