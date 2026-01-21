@@ -229,11 +229,11 @@ class ParcelCubit extends BaseCubit<BaseState<ParcelData>> {
         );
       },
       (updatedParcel) {
-        // Replace optimistic update with actual data and clear loading state
-        final updatedData = _applyOptimisticUpdate(currentData, updatedParcel)
-            .copyWith(clearUpdatingParcelId: true);
+        // Clear updating state only - Firestore stream will update the UI
+        // Don't emit LoadedState here to avoid double refresh
+        final data = state.data ?? const ParcelData();
         emit(LoadedState<ParcelData>(
-          data: updatedData,
+          data: data.copyWith(clearUpdatingParcelId: true),
           lastUpdated: DateTime.now(),
         ));
 
@@ -545,11 +545,10 @@ class ParcelCubit extends BaseCubit<BaseState<ParcelData>> {
             },
           );
 
-          // Update state with confirmed parcel
-          final updatedData = _applyOptimisticUpdate(currentData, updatedParcel)
-              .copyWith(clearUpdatingParcelId: true);
+          // Clear updating state only - Firestore stream will update the UI
+          final data = state.data ?? const ParcelData();
           emit(LoadedState<ParcelData>(
-            data: updatedData,
+            data: data.copyWith(clearUpdatingParcelId: true),
             lastUpdated: DateTime.now(),
           ));
         },

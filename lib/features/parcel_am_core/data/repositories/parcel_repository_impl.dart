@@ -23,33 +23,41 @@ class ParcelRepositoryImpl implements ParcelRepository {
 
   @override
   Stream<Either<Failure, List<ParcelEntity>>> watchUserParcels(
-      String userId, {ParcelStatus? status}) {
+    String userId, {
+    ParcelStatus? status,
+  }) {
     return ErrorHandler.handleStream(
-      () => remoteDataSource.watchUserParcels(userId, status: status).map((parcelModels) {
-        return parcelModels.map((model) => model.toEntity()).toList();
-      }),
+      () => remoteDataSource
+          .watchUserParcels(userId, status: status)
+          .map((parcelModels) {
+            return parcelModels.map((model) => model.toEntity()).toList();
+          }),
       operationName: 'watchUserParcels',
     );
   }
 
   @override
   Stream<Either<Failure, List<ParcelEntity>>> watchUserAcceptedParcels(
-      String userId) {
+    String userId,
+  ) {
     return ErrorHandler.handleStream(
-      () => remoteDataSource.watchUserAcceptedParcels(userId).map((parcelModels) {
-        return parcelModels.map((model) => model.toEntity()).toList();
-      }),
+      () => remoteDataSource
+          .watchUserAcceptedParcels(userId)
+          .map((parcelModels) {
+            return parcelModels.map((model) => model.toEntity()).toList();
+          }),
       operationName: 'watchUserAcceptedParcels',
     );
   }
 
   @override
   Future<Either<Failure, ParcelEntity>> createParcel(
-      ParcelEntity parcel) async {
+    ParcelEntity parcel,
+  ) async {
     try {
-     final parcelModel = ParcelModel.fromEntity(parcel);
-        final createdModel = await remoteDataSource.createParcel(parcelModel);
-        return Right(createdModel.toEntity());
+      final parcelModel = ParcelModel.fromEntity(parcel);
+      final createdModel = await remoteDataSource.createParcel(parcelModel);
+      return Right(createdModel.toEntity());
     } on ServerException {
       return const Left(ServerFailure(failureMessage: 'Server error occurred'));
     } catch (e) {
@@ -63,9 +71,8 @@ class ParcelRepositoryImpl implements ParcelRepository {
     Map<String, dynamic> data,
   ) async {
     try {
-     final parcelModel =
-            await remoteDataSource.updateParcel(parcelId, data);
-        return Right(parcelModel.toEntity());
+      final parcelModel = await remoteDataSource.updateParcel(parcelId, data);
+      return Right(parcelModel.toEntity());
     } on ServerException {
       return const Left(ServerFailure(failureMessage: 'Server error occurred'));
     } catch (e) {
@@ -79,8 +86,10 @@ class ParcelRepositoryImpl implements ParcelRepository {
     ParcelStatus status,
   ) async {
     try {
-      final parcelModel =
-          await remoteDataSource.updateParcelStatus(parcelId, status);
+      final parcelModel = await remoteDataSource.updateParcelStatus(
+        parcelId,
+        status,
+      );
       return Right(parcelModel.toEntity());
     } on ServerException {
       return const Left(ServerFailure(failureMessage: 'Server error occurred'));
@@ -95,9 +104,11 @@ class ParcelRepositoryImpl implements ParcelRepository {
     String travelerId,
   ) async {
     try {
-     final parcelModel =
-            await remoteDataSource.assignTraveler(parcelId, travelerId);
-        return Right(parcelModel.toEntity());
+      final parcelModel = await remoteDataSource.assignTraveler(
+        parcelId,
+        travelerId,
+      );
+      return Right(parcelModel.toEntity());
     } on ServerException {
       return const Left(ServerFailure(failureMessage: 'Server error occurred'));
     } catch (e) {
@@ -109,7 +120,7 @@ class ParcelRepositoryImpl implements ParcelRepository {
   Future<Either<Failure, ParcelEntity>> getParcel(String parcelId) async {
     try {
       final parcelModel = await remoteDataSource.getParcel(parcelId);
-        return Right(parcelModel.toEntity());
+      return Right(parcelModel.toEntity());
     } on ServerException {
       return const Left(ServerFailure(failureMessage: 'Server error occurred'));
     } catch (e) {
@@ -123,8 +134,11 @@ class ParcelRepositoryImpl implements ParcelRepository {
     ParcelStatus? status,
   }) async {
     try {
-     final parcelModels = await remoteDataSource.getUserParcels(userId, status: status);
-        return Right(parcelModels.map((model) => model.toEntity()).toList());
+      final parcelModels = await remoteDataSource.getUserParcels(
+        userId,
+        status: status,
+      );
+      return Right(parcelModels.map((model) => model.toEntity()).toList());
     } on ServerException {
       return const Left(ServerFailure(failureMessage: 'Server error occurred'));
     } catch (e) {
@@ -134,10 +148,11 @@ class ParcelRepositoryImpl implements ParcelRepository {
 
   @override
   Future<Either<Failure, List<ParcelEntity>>> getParcelsByUser(
-      String userId) async {
+    String userId,
+  ) async {
     try {
       final parcelModels = await remoteDataSource.getParcelsByUser(userId);
-        return Right(parcelModels.map((model) => model.toEntity()).toList());
+      return Right(parcelModels.map((model) => model.toEntity()).toList());
     } on ServerException {
       return const Left(ServerFailure(failureMessage: 'Server error occurred'));
     } catch (e) {
@@ -148,8 +163,8 @@ class ParcelRepositoryImpl implements ParcelRepository {
   @override
   Future<Either<Failure, List<ParcelEntity>>> getAvailableParcels() async {
     try {
-    final parcelModels = await remoteDataSource.getAvailableParcels();
-        return Right(parcelModels.map((model) => model.toEntity()).toList());
+      final parcelModels = await remoteDataSource.getAvailableParcels();
+      return Right(parcelModels.map((model) => model.toEntity()).toList());
     } on ServerException {
       return const Left(ServerFailure(failureMessage: 'Server error occurred'));
     } catch (e) {
