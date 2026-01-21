@@ -96,10 +96,11 @@ const onParcelStatusUpdate = onDocumentUpdated(
         return;
       }
 
-      // Get sender information
-      const senderId = afterData.senderId;
+      // Get sender information from nested sender object
+      // Parcel structure: { sender: { userId, name, phoneNumber, address, email } }
+      const senderId = afterData.sender?.userId;
       if (!senderId) {
-        logger.warning(`No senderId found for parcel ${parcelId}`, executionId);
+        logger.warning(`No sender.userId found for parcel ${parcelId}`, executionId);
         return;
       }
 

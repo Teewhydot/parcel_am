@@ -27,7 +27,9 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   }
 
   if (kDebugMode) {
-    print('[NotificationService] Background message received: ${message.messageId}');
+    print(
+      '[NotificationService] Background message received: ${message.messageId}',
+    );
   }
 
   // Display notification from background handler
@@ -40,38 +42,6 @@ Future<void> _showBackgroundNotification(RemoteMessage message) async {
   final type = data['type'] as String?;
   final chatId = data['chatId'] as String?;
   final messageId = data['messageId'] as String?;
-
-  // For chat messages, check if notification was already sent
-  if (type == 'chat_message' && chatId != null && messageId != null) {
-    try {
-      final firestore = FirebaseFirestore.instance;
-
-      // Check if notification was already sent for this message
-      final messageDoc = await firestore
-          .collection('chats')
-          .doc(chatId)
-          .collection('messages')
-          .doc(messageId)
-          .get();
-
-      if (messageDoc.exists) {
-        final messageData = messageDoc.data();
-        final notificationSent = messageData?['notificationSent'] as bool? ?? false;
-
-        if (notificationSent) {
-          if (kDebugMode) {
-            print('[NotificationService] Notification already sent for message: $messageId, skipping');
-          }
-          return; // Skip - notification already sent
-        }
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('[NotificationService] Error checking notificationSent: $e');
-      }
-      // Continue to show notification on error
-    }
-  }
 
   final FlutterLocalNotificationsPlugin localNotifications =
       FlutterLocalNotificationsPlugin();
@@ -96,7 +66,8 @@ Future<void> _showBackgroundNotification(RemoteMessage message) async {
   final travelerName = data['travelerName'] as String?;
 
   // Use appropriate channel based on notification type
-  final isParcelNotification = type == 'parcel_request_accepted' ||
+  final isParcelNotification =
+      type == 'parcel_request_accepted' ||
       type == 'delivery_confirmation_required';
 
   final androidDetails = AndroidNotificationDetails(
@@ -133,8 +104,18 @@ Future<void> _showBackgroundNotification(RemoteMessage message) async {
     if (type != null) 'type': type,
   });
 
+  // Use a consistent notification ID based on the actual message content
+  // This ensures duplicate FCM deliveries update the same notification
+  // instead of creating multiple notifications
+  final notificationId =
+      messageId?.hashCode ??
+      chatId?.hashCode ??
+      parcelId?.hashCode ??
+      message.messageId?.hashCode ??
+      DateTime.now().millisecondsSinceEpoch;
+
   await localNotifications.show(
-    message.messageId?.hashCode ?? DateTime.now().millisecondsSinceEpoch,
+    notificationId,
     title,
     body,
     notificationDetails,
@@ -148,33 +129,77 @@ Future<void> _showBackgroundNotification(RemoteMessage message) async {
 }
 
 /// Mark notification as sent in Firestore (for background handler)
-Future<void> _markNotificationSentInBackground(String chatId, String messageId) async {
+/// Supports paged message structure: chats/{chatId}/pages/{pageId}/messages[]
+Future<void> _markNotificationSentInBackground(
+  String chatId,
+  String messageId,
+) async {
   try {
     final firestore = FirebaseFirestore.instance;
 
-    // Update the message document
-    await firestore
+    // Find and update the message in pages
+    final pagesQuery = await firestore
         .collection('chats')
         .doc(chatId)
-        .collection('messages')
-        .doc(messageId)
-        .update({'notificationSent': true});
+        .collection('pages')
+        .orderBy('pageNumber', descending: true)
+        .limit(3) // Check the 3 most recent pages
+        .get();
 
-    // Also update lastMessage in the chat document if it matches
-    final chatDoc = await firestore.collection('chats').doc(chatId).get();
-    if (chatDoc.exists) {
-      final chatData = chatDoc.data();
-      final lastMessageData = chatData?['lastMessage'] as Map<String, dynamic>?;
+    bool found = false;
+    for (final pageDoc in pagesQuery.docs) {
+      final messages = pageDoc.data()['messages'] as List<dynamic>? ?? [];
+      final messageIndex = messages.indexWhere(
+        (msg) => msg is Map<String, dynamic> && msg['id'] == messageId,
+      );
 
-      if (lastMessageData != null && lastMessageData['id'] == messageId) {
-        await firestore.collection('chats').doc(chatId).update({
-          'lastMessage.notificationSent': true,
+      if (messageIndex >= 0) {
+        // Found the message, update notificationSent flag
+        final updatedMessages = List<dynamic>.from(messages);
+        final msgMap = Map<String, dynamic>.from(
+          updatedMessages[messageIndex] as Map,
+        );
+        msgMap['notificationSent'] = true;
+        updatedMessages[messageIndex] = msgMap;
+
+        await pageDoc.reference.update({
+          'messages': updatedMessages,
+          'updatedAt': FieldValue.serverTimestamp(),
         });
+
+        found = true;
+        if (kDebugMode) {
+          print(
+            '[NotificationService] Marked notificationSent=true for message $messageId in page ${pageDoc.id}',
+          );
+        }
+        break;
+      }
+    }
+
+    // Fallback: try old structure for backward compatibility
+    if (!found) {
+      try {
+        await firestore
+            .collection('chats')
+            .doc(chatId)
+            .collection('messages')
+            .doc(messageId)
+            .update({'notificationSent': true});
+        if (kDebugMode) {
+          print(
+            '[NotificationService] Marked notificationSent=true for message $messageId (old structure)',
+          );
+        }
+      } catch (e) {
+        // Old structure doesn't exist, that's fine
       }
     }
 
     if (kDebugMode) {
-      print('[NotificationService] Marked notificationSent=true for message: $messageId');
+      print(
+        '[NotificationService] Marked notificationSent=true for message: $messageId',
+      );
     }
   } catch (e) {
     if (kDebugMode) {
@@ -282,14 +307,17 @@ class NotificationService {
         await storeToken(token);
       } else {
         if (kDebugMode) {
-          print('[NotificationService] FCM token not available during initialization. '
-              'Will be retrieved when available via token refresh listener.');
+          print(
+            '[NotificationService] FCM token not available during initialization. '
+            'Will be retrieved when available via token refresh listener.',
+          );
         }
       }
 
       // Subscribe to foreground messages
-      _foregroundMessageSubscription =
-          repository.onForegroundMessage.listen(handleForegroundMessage);
+      _foregroundMessageSubscription = repository.onForegroundMessage.listen(
+        handleForegroundMessage,
+      );
 
       _isInitialized = true;
 
@@ -306,7 +334,9 @@ class NotificationService {
 
   /// Initialize local notifications with platform-specific settings
   Future<void> _initializeLocalNotifications() async {
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
@@ -351,7 +381,8 @@ class NotificationService {
 
     final androidPlugin = localNotifications
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+          AndroidFlutterLocalNotificationsPlugin
+        >();
 
     await androidPlugin?.createNotificationChannel(chatChannel);
     await androidPlugin?.createNotificationChannel(parcelChannel);
@@ -363,12 +394,9 @@ class NotificationService {
 
     await localNotifications
         .resolvePlatformSpecificImplementation<
-            IOSFlutterLocalNotificationsPlugin>()
-        ?.requestPermissions(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
+          IOSFlutterLocalNotificationsPlugin
+        >()
+        ?.requestPermissions(alert: true, badge: true, sound: true);
   }
 
   /// Get FCM token
@@ -455,7 +483,9 @@ class NotificationService {
   Future<void> handleForegroundMessage(RemoteMessage message) async {
     try {
       if (kDebugMode) {
-        print('[NotificationService] Foreground message received: ${message.messageId}');
+        print(
+          '[NotificationService] Foreground message received: ${message.messageId}',
+        );
       }
 
       final userId = firebaseAuth.currentUser?.uid;
@@ -479,7 +509,9 @@ class NotificationService {
 
       if (isChatMessage) {
         if (kDebugMode) {
-          print('[NotificationService] Skipping chat notification - handled by ChatNotificationListener');
+          print(
+            '[NotificationService] Skipping chat notification - handled by ChatNotificationListener',
+          );
         }
       } else {
         // Display local notification for non-chat messages (escrow, parcel updates, etc.)
@@ -526,7 +558,8 @@ class NotificationService {
   }) async {
     // Detect notification type from data
     final type = message.data['type'] as String?;
-    final isParcelNotification = type == 'parcel_request_accepted' ||
+    final isParcelNotification =
+        type == 'parcel_request_accepted' ||
         type == 'delivery_confirmation_required';
 
     // Use appropriate channel based on notification type
@@ -580,7 +613,9 @@ class NotificationService {
   Future<void> handleBackgroundMessage(RemoteMessage message) async {
     try {
       if (kDebugMode) {
-        print('[NotificationService] Background message handler: ${message.messageId}');
+        print(
+          '[NotificationService] Background message handler: ${message.messageId}',
+        );
       }
 
       // Extract chat details from data payload
@@ -588,7 +623,8 @@ class NotificationService {
       final notification = message.notification;
 
       final senderName = data['senderName'] as String? ?? 'Someone';
-      final messageContent = notification?.body ?? data['body'] as String? ?? '';
+      final messageContent =
+          notification?.body ?? data['body'] as String? ?? '';
       final chatId = data['chatId'] as String?;
 
       // Display local notification from background handler
@@ -656,7 +692,9 @@ class NotificationService {
       final notificationId = data['notificationId'] as String?;
 
       if (kDebugMode) {
-        print('[NotificationService] Notification tapped - chatId: $chatId, parcelId: $parcelId');
+        print(
+          '[NotificationService] Notification tapped - chatId: $chatId, parcelId: $parcelId',
+        );
       }
 
       // Mark notification as read if notificationId exists
@@ -700,7 +738,9 @@ class NotificationService {
       return status;
     } catch (e) {
       if (kDebugMode) {
-        print('[NotificationService] Error requesting notification permissions: $e');
+        print(
+          '[NotificationService] Error requesting notification permissions: $e',
+        );
       }
       return AuthorizationStatus.denied;
     }
@@ -729,7 +769,9 @@ class NotificationService {
       }
     } catch (e) {
       if (kDebugMode) {
-        print('[NotificationService] Error unsubscribing from topic $topic: $e');
+        print(
+          '[NotificationService] Error unsubscribing from topic $topic: $e',
+        );
       }
     }
   }
@@ -776,7 +818,9 @@ class NotificationService {
         }
       } else {
         if (kDebugMode) {
-          print('[NotificationService] App badges not supported on this device');
+          print(
+            '[NotificationService] App badges not supported on this device',
+          );
         }
       }
     } catch (e) {
@@ -798,7 +842,9 @@ class NotificationService {
     // Skip if user is currently viewing this chat
     if (_currentChatId == chatId) {
       if (kDebugMode) {
-        print('[NotificationService] Suppressing notification - user viewing chat: $chatId');
+        print(
+          '[NotificationService] Suppressing notification - user viewing chat: $chatId',
+        );
       }
       return false;
     }
@@ -842,7 +888,9 @@ class NotificationService {
       );
 
       if (kDebugMode) {
-        print('[NotificationService] Chat notification shown for message: $messageId');
+        print(
+          '[NotificationService] Chat notification shown for message: $messageId',
+        );
       }
 
       return true;

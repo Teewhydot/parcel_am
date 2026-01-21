@@ -219,6 +219,13 @@ const onChatMessageNotification = onDocumentUpdated(
 /**
  * Trigger: onChatPageUpdated
  *
+ * DISABLED - This trigger was causing duplicate notifications.
+ * The primary notification path is onChatMessageNotification which
+ * watches pendingNotification on the chat document.
+ *
+ * This backup trigger is kept for reference but not exported.
+ * It could be re-enabled if the pendingNotification approach fails.
+ *
  * Fires when a message page document is updated (messages appended).
  * This is an alternative/backup notification path that watches the
  * paged message structure directly.
@@ -241,6 +248,7 @@ const onChatMessageNotification = onDocumentUpdated(
  * - Track message analytics
  * - Trigger read receipts or delivery confirmations
  */
+/*
 const onChatPageUpdated = onDocumentUpdated(
   {
     document: 'chats/{chatId}/pages/{pageId}',
@@ -353,8 +361,9 @@ const onChatPageUpdated = onDocumentUpdated(
     }
   }
 );
+*/
 
 module.exports = {
   onChatMessageNotification,
-  onChatPageUpdated
+  // onChatPageUpdated - DISABLED to prevent duplicate notifications
 };
