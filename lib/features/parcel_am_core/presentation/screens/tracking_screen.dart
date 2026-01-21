@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -83,8 +82,9 @@ ETA: ${_formatETA(package.estimatedArrival)}
   Future<void> _messageCarrier(PackageEntity package) async {
     if (_isChatLoading) return;
 
-    final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser == null) {
+    // Use clean architecture extension for user access
+    final currentUserId = context.currentUserId;
+    if (currentUserId == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: AppText.bodyMedium('Please sign in to chat', color: AppColors.white)),
@@ -96,8 +96,7 @@ ETA: ${_formatETA(package.estimatedArrival)}
     setState(() => _isChatLoading = true);
 
     try {
-      final currentUserId = currentUser.uid;
-      final currentUserName = currentUser.displayName ?? 'User';
+      final currentUserName = context.user.displayName.isNotEmpty ? context.user.displayName : 'User';
       final otherUserId = package.carrier.id;
       final otherUserName = package.carrier.name;
 

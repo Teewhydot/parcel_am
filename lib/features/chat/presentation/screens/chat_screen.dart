@@ -1,7 +1,6 @@
 import 'package:dartz/dartz.dart' show Either;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -23,6 +22,7 @@ import '../widgets/message_bubble.dart';
 import '../widgets/message_input.dart';
 import '../widgets/typing_indicator.dart';
 import '../../../../core/helpers/user_extensions.dart';
+import '../../services/typing_service.dart';
 
 class ChatScreen extends StatefulWidget {
   final String chatId;
@@ -44,6 +44,7 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   final ScrollController _scrollController = ScrollController();
+  final TypingService _typingService = TypingService();
   String? _currentUserId;
   String? _currentUserName;
   bool _hasRequestedPermissions = false;
@@ -54,20 +55,27 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _loadCurrentUser();
     _initializeChat();
+    _setupTypingService();
     _requestNotificationPermissionsOnFirstLaunch();
     // Set current chat ID to suppress notifications while viewing this chat
     di.sl<NotificationService>().setCurrentChatId(widget.chatId);
   }
 
   void _loadCurrentUser() {
-    final user = FirebaseAuth.instance.currentUser;
-    _currentUserId = user?.uid;
-    _currentUserName = user?.displayName ?? 'You';
+    // Use clean architecture extension for user access
+    _currentUserId = context.currentUserId;
+    final user = context.user;
+    _currentUserName = user.displayName.isNotEmpty ? user.displayName : 'You';
   }
 
   void _initializeChat() {
     // Streams are handled by StreamBuilder in build method
     _updateLastSeen();
+  }
+
+  void _setupTypingService() {
+    // Setup onDisconnect to auto-clear typing when connection drops
+    _typingService.setupOnDisconnect(widget.chatId);
   }
 
   /// Request notification permissions on first app launch
@@ -144,6 +152,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     _scrollController.dispose();
     _updateLastSeen();
+    // Clear typing status when leaving chat
+    _typingService.clearTypingStatus(widget.chatId);
     // Clear current chat ID so notifications can be shown again
     di.sl<NotificationService>().setCurrentChatId(null);
     super.dispose();
@@ -180,9 +190,11 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
 
     final state = context.read<ChatCubit>().state;
     String? replyToMessageId;
+    Message? replyToMessage;
 
     if (state.hasData && state.data?.replyToMessage != null) {
       replyToMessageId = state.data!.replyToMessage!.id;
+      replyToMessage = state.data!.replyToMessage;
     }
 
     final message = Message(
@@ -195,6 +207,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       status: MessageStatus.sending,
       timestamp: DateTime.now(),
       replyToMessageId: replyToMessageId,
+      replyToMessage: replyToMessage,
     );
 
     context.read<ChatCubit>().sendMessage(message);
@@ -223,13 +236,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   }
 
   void _handleTyping(bool isTyping) {
-    if (_currentUserId != null) {
-      context.read<ChatCubit>().setTypingStatus(
-        widget.chatId,
-        _currentUserId!,
-        isTyping,
-      );
-    }
+    // Use Realtime Database for faster typing updates
+    _typingService.setTypingStatus(widget.chatId, isTyping);
   }
 
   void _handleMessageTap(Message message) {
@@ -326,9 +334,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   String _getOnlineStatusFromChat(Chat? chat) {
     if (chat == null) return '';
 
-    final isTyping = chat.isTyping[widget.otherUserId] ?? false;
-    if (isTyping) return 'typing...';
-
+    // Typing is now handled by RTDB StreamBuilder, not here
     final lastSeen = chat.lastSeen[widget.otherUserId];
     if (lastSeen == null) return 'offline';
 
@@ -345,6 +351,13 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        // Add subtle bottom border for visual separation
+        shape: Border(
+          bottom: BorderSide(
+            color: AppColors.outline.withValues(alpha: 0.3),
+            width: 1,
+          ),
+        ),
         title: Row(
           children: [
             CircleAvatar(
@@ -365,24 +378,45 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   AppText.bodyLarge(widget.otherUserName),
-                  StreamBuilder<Either<Failure, Chat>>(
-                    stream: context.read<ChatCubit>().watchChat(widget.chatId),
-                    builder: (context, snapshot) {
-                      if (snapshot.hasData) {
-                        return snapshot.data!.fold(
-                          (failure) => const SizedBox.shrink(),
-                          (chat) {
-                            final status = _getOnlineStatusFromChat(chat);
-                            return AppText.bodySmall(
-                              status,
-                              color: status == 'online' || status == 'typing...'
-                                  ? AppColors.success
-                                  : AppColors.textSecondary,
-                            );
-                          },
+                  // Use RTDB for faster typing status updates
+                  StreamBuilder<bool>(
+                    stream: _typingService.watchUserTyping(
+                      widget.chatId,
+                      widget.otherUserId,
+                    ),
+                    builder: (context, typingSnapshot) {
+                      final isTyping = typingSnapshot.data ?? false;
+
+                      if (isTyping) {
+                        return AppText.bodySmall(
+                          'typing...',
+                          color: AppColors.success,
                         );
                       }
-                      return const SizedBox.shrink();
+
+                      // Fall back to Firestore for online/last seen status
+                      return StreamBuilder<Either<Failure, Chat>>(
+                        stream: context.read<ChatCubit>().watchChat(
+                          widget.chatId,
+                        ),
+                        builder: (context, snapshot) {
+                          if (snapshot.hasData) {
+                            return snapshot.data!.fold(
+                              (failure) => const SizedBox.shrink(),
+                              (chat) {
+                                final status = _getOnlineStatusFromChat(chat);
+                                return AppText.bodySmall(
+                                  status,
+                                  color: status == 'online'
+                                      ? AppColors.success
+                                      : AppColors.textSecondary,
+                                );
+                              },
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
+                      );
                     },
                   ),
                 ],
@@ -414,6 +448,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                   scrollController: _scrollController,
                   onMessageTap: _handleMessageTap,
                   onMessageLongPress: _handleMessageLongPress,
+                  onReply: (message) =>
+                      context.read<ChatCubit>().setReplyToMessage(message),
                   onMarkAsRead: _markMessagesAsRead,
                 ),
               ),
@@ -445,9 +481,11 @@ class _MessagesList extends StatelessWidget {
   final ScrollController scrollController;
   final void Function(Message) onMessageTap;
   final void Function(Message) onMessageLongPress;
+  final void Function(Message) onReply;
   final void Function(List<Message>) onMarkAsRead;
+  final TypingService _typingService = TypingService();
 
-  const _MessagesList({
+  _MessagesList({
     required this.chatId,
     required this.otherUserId,
     required this.currentUserId,
@@ -455,6 +493,7 @@ class _MessagesList extends StatelessWidget {
     required this.scrollController,
     required this.onMessageTap,
     required this.onMessageLongPress,
+    required this.onReply,
     required this.onMarkAsRead,
   });
 
@@ -485,15 +524,11 @@ class _MessagesList extends StatelessWidget {
         // Merge stream messages with pending messages for instant display
         final allMessages = _mergeMessages(streamMessages, pendingMessages);
 
-        return StreamBuilder<Either<Failure, Chat>>(
-          stream: context.read<ChatCubit>().watchChat(chatId),
-          builder: (context, chatSnapshot) {
-            Chat? chat;
-            if (chatSnapshot.hasData) {
-              chatSnapshot.data!.fold((failure) => null, (c) => chat = c);
-            }
-
-            final showTypingIndicator = chat?.isTyping[otherUserId] ?? false;
+        // Use RTDB for faster typing indicator
+        return StreamBuilder<bool>(
+          stream: _typingService.watchUserTyping(chatId, otherUserId),
+          builder: (context, typingSnapshot) {
+            final showTypingIndicator = typingSnapshot.data ?? false;
 
             // Show loading only if no messages at all (pending or stream)
             if (isLoading && allMessages.isEmpty) {
@@ -545,12 +580,37 @@ class _MessagesList extends StatelessWidget {
                 final messageIndex = showTypingIndicator ? index - 1 : index;
                 final message = allMessages[messageIndex];
                 final isMe = message.senderId == currentUserId;
+                final screenWidth = MediaQuery.of(context).size.width;
 
-                return MessageBubble(
-                  message: message,
-                  isMe: isMe,
-                  onTap: () => onMessageTap(message),
-                  onLongPress: () => onMessageLongPress(message),
+                // Swipe-to-reply: limited to 40% of screen width
+                return Dismissible(
+                  key: Key('swipe_${message.id}'),
+                  direction: isMe
+                      ? DismissDirection.endToStart
+                      : DismissDirection.startToEnd,
+                  movementDuration: const Duration(milliseconds: 200),
+                  dismissThresholds: const {
+                    DismissDirection.endToStart: 0.2,
+                    DismissDirection.startToEnd: 0.2,
+                  },
+                  confirmDismiss: (direction) async {
+                    onReply(message);
+                    return false; // Don't actually dismiss, just trigger reply
+                  },
+                  background: Container(
+                    constraints: BoxConstraints(maxWidth: screenWidth * 0.4),
+                    alignment: isMe
+                        ? Alignment.centerRight
+                        : Alignment.centerLeft,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Icon(Icons.reply, color: AppColors.info, size: 28),
+                  ),
+                  child: MessageBubble(
+                    message: message,
+                    isMe: isMe,
+                    onTap: () => onMessageTap(message),
+                    onLongPress: () => onMessageLongPress(message),
+                  ),
                 );
               },
             );

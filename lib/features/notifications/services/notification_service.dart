@@ -81,7 +81,6 @@ Future<void> _showBackgroundNotification(RemoteMessage message) async {
     showWhen: true,
     enableVibration: true,
     playSound: true,
-    largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
   );
 
   const iosDetails = DarwinNotificationDetails(
@@ -576,7 +575,6 @@ class NotificationService {
       enableVibration: true,
       playSound: true,
       groupKey: isParcelNotification ? 'parcel_group' : 'chat_group',
-      largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
     );
 
     const iosDetails = DarwinNotificationDetails(
@@ -639,7 +637,6 @@ class NotificationService {
         showWhen: true,
         enableVibration: true,
         playSound: true,
-        largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
       );
 
       const iosDetails = DarwinNotificationDetails(
@@ -863,7 +860,6 @@ class NotificationService {
         enableVibration: true,
         playSound: true,
         groupKey: 'chat_group',
-        largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
       );
 
       const iosDetails = DarwinNotificationDetails(

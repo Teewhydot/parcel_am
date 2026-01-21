@@ -38,24 +38,30 @@ class _MessageInputState extends State<MessageInput> {
   final TextEditingController _controller = TextEditingController();
   final ImagePicker _picker = ImagePicker();
   bool _isTyping = false;
-  Timer? _typingDebounce;
+  Timer? _typingStopDebounce;
 
   @override
   void dispose() {
     _controller.dispose();
-    _typingDebounce?.cancel();
+    _typingStopDebounce?.cancel();
     super.dispose();
   }
 
   void _handleTextChanged(String text) {
     final isTyping = text.trim().isNotEmpty;
-    if (isTyping != _isTyping) {
-      _isTyping = isTyping;
-
-      // Debounce typing status updates to avoid rapid Firestore writes
-      _typingDebounce?.cancel();
-      _typingDebounce = Timer(const Duration(milliseconds: 300), () {
-        widget.onTyping(isTyping);
+    
+    // Cancel any pending "stop typing" timer
+    _typingStopDebounce?.cancel();
+    
+    if (isTyping && !_isTyping) {
+      // Started typing - send immediately for fast response
+      _isTyping = true;
+      widget.onTyping(true);
+    } else if (!isTyping && _isTyping) {
+      // Stopped typing - debounce to avoid flickering when pausing briefly
+      _typingStopDebounce = Timer(const Duration(milliseconds: 1500), () {
+        _isTyping = false;
+        widget.onTyping(false);
       });
     }
   }
