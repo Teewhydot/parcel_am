@@ -24,7 +24,7 @@ import 'delivery_card.dart';
 /// - Empty state when no deliveries
 /// - Animated list of delivery cards
 /// - Status update action via delivery card button
-/// - Skeleton loaders for improved UX during loading (Task 3.6.3)
+/// - Skeleton loaders for improved UX during loading
 class MyDeliveriesTab extends StatefulWidget {
   const MyDeliveriesTab({super.key});
 

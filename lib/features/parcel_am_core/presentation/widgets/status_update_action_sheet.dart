@@ -22,8 +22,6 @@ import '../bloc/parcel/parcel_cubit.dart';
 /// - Confirmation dialog before status update
 /// - Loading states and error handling
 /// - Haptic feedback for important actions
-///
-/// Task Group 3.4: Complete implementation of status update action sheet.
 class StatusUpdateActionSheet extends StatefulWidget {
   final ParcelEntity parcel;
 
@@ -65,23 +63,18 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Task 3.4.1: Drag handle
               _buildDragHandle(),
               AppSpacing.verticalSpacing(SpacingSize.lg),
 
-              // Task 3.4.2: Current status section
               _buildCurrentStatusSection(),
               AppSpacing.verticalSpacing(SpacingSize.xxl),
 
-              // Task 3.4.4: Status progression indicator
               _buildStatusProgressionIndicator(),
               AppSpacing.verticalSpacing(SpacingSize.xxl),
 
-              // Task 3.4.3: Next status action button
               _buildNextStatusButton(),
               AppSpacing.verticalSpacing(SpacingSize.md),
 
-              // Cancel button
               _buildCancelButton(),
             ],
           ),
@@ -90,7 +83,6 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
     );
   }
 
-  /// Task 3.4.1: Build drag handle indicator
   Widget _buildDragHandle() {
     return Center(
       child: Container(
@@ -104,7 +96,6 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
     );
   }
 
-  /// Task 3.4.2: Display current status section
   Widget _buildCurrentStatusSection() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -163,7 +154,6 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
     );
   }
 
-  /// Task 3.4.4: Build status progression indicator
   Widget _buildStatusProgressionIndicator() {
     final allStatuses = [
       ParcelStatus.paid,
@@ -306,7 +296,6 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
     );
   }
 
-  /// Task 3.4.3: Build next status action button
   Widget _buildNextStatusButton() {
     final nextStatus = widget.parcel.status.nextDeliveryStatus;
     final isDisabled = nextStatus == null;
@@ -345,20 +334,15 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
     );
   }
 
-  /// Task 3.4.5 & 3.4.6: Handle status update with confirmation
   Future<void> _handleStatusUpdate(ParcelStatus nextStatus) async {
-    // Trigger haptic feedback
     await HapticHelper.mediumImpact();
 
-    // Show confirmation dialog
     final confirmed = await _showConfirmationDialog(nextStatus);
     if (!confirmed) return;
 
-    // Set updating state
     setState(() => _isUpdating = true);
 
     try {
-      // Task 3.4.6: Dispatch status update
       if (!mounted) return;
       context.read<ParcelCubit>().updateParcelStatus(
             widget.parcel.id,
@@ -399,7 +383,6 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
     }
   }
 
-  /// Task 3.4.5: Show confirmation dialog before status update
   Future<bool> _showConfirmationDialog(ParcelStatus nextStatus) async {
     await HapticHelper.lightImpact();
 
@@ -467,7 +450,6 @@ class _StatusUpdateActionSheetState extends State<StatusUpdateActionSheet> {
     return result ?? false;
   }
 
-  /// Task 3.4.6: Show error snackbar with retry option
   Future<bool> _showErrorSnackbar(String errorMessage) async {
     if (!mounted) return false;
 

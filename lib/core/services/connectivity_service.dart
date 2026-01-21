@@ -7,8 +7,6 @@ import 'package:internet_connection_checker/internet_connection_checker.dart';
 /// - Real-time connectivity monitoring
 /// - Connection status checks
 /// - Stream of connectivity changes
-///
-/// Used for offline handling in Task Group 4.2.1
 class ConnectivityService {
   final InternetConnectionChecker _connectionChecker;
   StreamSubscription<InternetConnectionStatus>? _subscription;

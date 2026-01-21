@@ -38,9 +38,6 @@ class ParcelUseCase {
   /// Returns a stream of Either<Failure, List<ParcelEntity>>
   /// - Left: Failure if there's an error fetching or watching the parcels
   /// - Right: List of ParcelEntity where the user is the traveler
-  ///
-  /// Note: This method will be fully implemented in Task Group 2.4.
-  /// For now, it's a stub that delegates to the repository method.
   Stream<Either<Failure, List<ParcelEntity>>> watchUserAcceptedParcels(String userId) {
     return repository.watchUserAcceptedParcels(userId);
   }

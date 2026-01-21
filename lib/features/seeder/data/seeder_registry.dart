@@ -19,10 +19,6 @@ class SeederRegistry {
   /// All available seeders
   static List<Seeder> get all => [
     BankSeeder(),
-    // Add more seeders here as needed:
-    // CategorySeeder(),
-    // CountrySeeder(),
-    // ConfigSeeder(),
   ];
 
   /// Get a seeder by name

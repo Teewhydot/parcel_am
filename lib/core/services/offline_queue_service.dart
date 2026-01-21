@@ -10,8 +10,6 @@ import '../../features/parcel_am_core/domain/entities/parcel_entity.dart';
 /// - Persist queue to local storage
 /// - Sync queued updates when connection is restored
 /// - Automatic retry with error handling
-///
-/// Task Group 4.2.1: Offline scenario handling
 class OfflineQueueService {
   static const String _queueKey = 'offline_status_update_queue';
   final SharedPreferences _prefs;

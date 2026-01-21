@@ -57,24 +57,20 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     _initializeChat();
     _setupTypingService();
     _requestNotificationPermissionsOnFirstLaunch();
-    // Set current chat ID to suppress notifications while viewing this chat
     di.sl<NotificationService>().setCurrentChatId(widget.chatId);
   }
 
   void _loadCurrentUser() {
-    // Use clean architecture extension for user access
     _currentUserId = context.currentUserId;
     final user = context.user;
     _currentUserName = user.displayName.isNotEmpty ? user.displayName : 'You';
   }
 
   void _initializeChat() {
-    // Streams are handled by StreamBuilder in build method
     _updateLastSeen();
   }
 
   void _setupTypingService() {
-    // Setup onDisconnect to auto-clear typing when connection drops
     _typingService.setupOnDisconnect(widget.chatId);
   }
 
@@ -351,7 +347,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        // Add subtle bottom border for visual separation
         shape: Border(
           bottom: BorderSide(
             color: AppColors.outline.withValues(alpha: 0.3),
@@ -378,7 +373,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   AppText.bodyLarge(widget.otherUserName),
-                  // Use RTDB for faster typing status updates
                   StreamBuilder<bool>(
                     stream: _typingService.watchUserTyping(
                       widget.chatId,
@@ -394,7 +388,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                         );
                       }
 
-                      // Fall back to Firestore for online/last seen status
                       return StreamBuilder<Either<Failure, Chat>>(
                         stream: context.read<ChatCubit>().watchChat(
                           widget.chatId,
@@ -582,7 +575,6 @@ class _MessagesList extends StatelessWidget {
                 final isMe = message.senderId == currentUserId;
                 final screenWidth = MediaQuery.of(context).size.width;
 
-                // Swipe-to-reply: limited to 40% of screen width
                 return Dismissible(
                   key: Key('swipe_${message.id}'),
                   direction: isMe
@@ -595,7 +587,7 @@ class _MessagesList extends StatelessWidget {
                   },
                   confirmDismiss: (direction) async {
                     onReply(message);
-                    return false; // Don't actually dismiss, just trigger reply
+                    return false;
                   },
                   background: Container(
                     constraints: BoxConstraints(maxWidth: screenWidth * 0.4),

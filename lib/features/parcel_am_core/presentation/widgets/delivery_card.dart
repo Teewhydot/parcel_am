@@ -30,9 +30,6 @@ import '../../../chat/domain/usecases/chat_usecase.dart';
 /// - Sender information with chat access
 /// - Delivery urgency indicator for time-sensitive deliveries
 /// - Status update action button
-///
-/// Task Group 3.3: Fully implemented delivery card component.
-/// Task Group 3.6: Added animations and polish (hover, tap effects, skeleton loader).
 class DeliveryCard extends StatefulWidget {
   final ParcelEntity parcel;
   final VoidCallback? onUpdateStatus;
@@ -44,22 +41,17 @@ class DeliveryCard extends StatefulWidget {
 }
 
 class _DeliveryCardState extends State<DeliveryCard> {
-  // Task 3.6.2: Track hover state for elevation changes
   bool _isHovered = false;
-  // Track chat loading state
   bool _isChatLoading = false;
 
   @override
   Widget build(BuildContext context) {
-    // Check if parcel has active/ongoing delivery status
     final isOngoingDelivery = widget.parcel.status.isActive;
 
     final cardContent = MouseRegion(
-      // Task 3.6.2: Add hover and tap effects
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: AnimatedContainer(
-        // Task 3.6.2: Animate elevation change on hover
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeInOut,
         child: Card(
@@ -67,9 +59,7 @@ class _DeliveryCardState extends State<DeliveryCard> {
           elevation: _isHovered ? 6 : 2,
           shape: RoundedRectangleBorder(borderRadius: AppRadius.lg),
           child: InkWell(
-            // Task 3.6.2: Ripple effect on tap
             onTap: () {
-              // Navigate to parcel details (Task 3.3.1)
               sl<NavigationService>().navigateTo(
                 Routes.requestDetails,
                 arguments: widget.parcel.id,
@@ -83,31 +73,25 @@ class _DeliveryCardState extends State<DeliveryCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Task 3.3.1 & 3.3.3: Header row with package icon and status badge
                   _buildHeaderSection(context),
                   AppSpacing.verticalSpacing(SpacingSize.lg),
 
-                  // Task 3.3.2: Parcel information section
                   _buildParcelInfoSection(context),
                   AppSpacing.verticalSpacing(SpacingSize.lg),
 
-                  // Task 3.3.5: Sender information section
                   _buildSenderSection(context),
                   AppSpacing.verticalSpacing(SpacingSize.md),
 
                   const Divider(),
                   AppSpacing.verticalSpacing(SpacingSize.md),
 
-                  // Task 3.3.4: Receiver contact section
                   _buildReceiverSection(context),
 
-                  // Task 3.3.6: Delivery urgency indicator
                   if (widget.parcel.hasUrgentDelivery) ...[
                     AppSpacing.verticalSpacing(SpacingSize.md),
                     _buildUrgencyIndicator(),
                   ],
 
-                  // Task 3.3.7: Update Status button
                   AppSpacing.verticalSpacing(SpacingSize.lg),
                   _buildUpdateStatusButton(context),
                 ],
@@ -118,7 +102,6 @@ class _DeliveryCardState extends State<DeliveryCard> {
       ),
     );
 
-    // Wrap with animated gradient border for ongoing deliveries
     if (isOngoingDelivery) {
       return Padding(
         padding: const EdgeInsets.only(bottom: 16),
@@ -138,12 +121,10 @@ class _DeliveryCardState extends State<DeliveryCard> {
     );
   }
 
-  /// Task 3.3.1 & 3.3.3: Build header with package icon and status badge
   Widget _buildHeaderSection(BuildContext context) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Package icon
         Container(
           width: 56,
           height: 56,
@@ -168,7 +149,6 @@ class _DeliveryCardState extends State<DeliveryCard> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  // Task 3.3.3: Status indicator badge
                   _buildStatusBadge(),
                 ],
               ),
@@ -187,10 +167,8 @@ class _DeliveryCardState extends State<DeliveryCard> {
     );
   }
 
-  /// Task 3.3.3 & 3.6.2: Build status indicator badge with animation
   Widget _buildStatusBadge() {
     return TweenAnimationBuilder<double>(
-      // Task 3.6.2: Animate status badge appearance
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOut,
       tween: Tween<double>(begin: 0.0, end: 1.0),
@@ -230,7 +208,6 @@ class _DeliveryCardState extends State<DeliveryCard> {
     );
   }
 
-  /// Task 3.3.2: Build parcel information section
   Widget _buildParcelInfoSection(BuildContext context) {
     final weight = widget.parcel.weight != null
         ? '${widget.parcel.weight}kg'
@@ -314,7 +291,6 @@ class _DeliveryCardState extends State<DeliveryCard> {
     );
   }
 
-  /// Task 3.3.5: Build sender information section
   Widget _buildSenderSection(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
@@ -389,7 +365,6 @@ class _DeliveryCardState extends State<DeliveryCard> {
     );
   }
 
-  /// Task 3.3.4: Build receiver contact section
   Widget _buildReceiverSection(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -488,7 +463,6 @@ class _DeliveryCardState extends State<DeliveryCard> {
     );
   }
 
-  /// Task 3.3.6: Build delivery urgency indicator
   Widget _buildUrgencyIndicator() {
     final deliveryDateStr = widget.parcel.route.estimatedDeliveryDate;
     if (deliveryDateStr == null || deliveryDateStr.isEmpty) {
@@ -544,8 +518,6 @@ class _DeliveryCardState extends State<DeliveryCard> {
     }
   }
 
-  /// Task 3.3.7 & 3.4: Build Update Status button - now opens StatusUpdateActionSheet
-  /// Shows loading state when this parcel's status is being updated.
   Widget _buildUpdateStatusButton(BuildContext context) {
     final isDelivered = widget.parcel.status == ParcelStatus.delivered;
     final isAwaitingConfirmation =
@@ -599,7 +571,6 @@ class _DeliveryCardState extends State<DeliveryCard> {
           onPressed: isDisabled
               ? null
               : () {
-                  // Task Group 3.4: Open status update action sheet
                   StatusUpdateActionSheet.show(context, widget.parcel);
                 },
           fullWidth: true,
@@ -687,12 +658,9 @@ class _DeliveryCardState extends State<DeliveryCard> {
     );
   }
 
-  /// Task 3.3.5: Handle chat navigation with sender
-  /// Creates chat if it doesn't exist, then navigates to chat screen
   Future<void> _handleChatNavigation(BuildContext context) async {
     if (_isChatLoading) return;
 
-    // Use clean architecture extension for user access
     final currentUserId = context.currentUserId;
     if (currentUserId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -766,8 +734,6 @@ class _DeliveryCardState extends State<DeliveryCard> {
     return '${sortedIds[0]}_${sortedIds[1]}';
   }
 
-  /// Task 3.3.4: Handle phone call to receiver
-  /// Uses url_launcher package for phone link
   Future<void> _handlePhoneCall(String phoneNumber) async {
     try {
       final uri = Uri(scheme: 'tel', path: phoneNumber);
@@ -781,8 +747,6 @@ class _DeliveryCardState extends State<DeliveryCard> {
   }
 }
 
-/// Task 3.6.3: Skeleton loader for delivery card
-/// Shows while parcels are loading to improve perceived performance
 class DeliveryCardSkeleton extends StatefulWidget {
   const DeliveryCardSkeleton({super.key});
 

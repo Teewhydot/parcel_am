@@ -83,7 +83,7 @@ Future<void> init() async {
 
   sl.registerLazySingleton<NavigationService>(() => GetxNavigationService());
 
-  // Connectivity and Offline Queue Services (Task Group 4.2.1)
+  // Connectivity and Offline Queue Services
   sl.registerLazySingleton<ConnectivityService>(
     () => ConnectivityService(connectionChecker: sl()),
   );

@@ -20,7 +20,6 @@ class ParcelCubit extends BaseCubit<BaseState<ParcelData>> {
   final _walletUseCase = WalletUseCase();
   static const _uuid = Uuid();
 
-  // Task Group 4.2.1: Offline handling services
   final ConnectivityService _connectivityService = sl<ConnectivityService>();
   final OfflineQueueService _offlineQueueService = sl<OfflineQueueService>();
 
@@ -49,20 +48,19 @@ class ParcelCubit extends BaseCubit<BaseState<ParcelData>> {
     );
 
     // If hold fails, emit error and return without creating parcel
-    final holdFailed = holdResult.fold(
-      (failure) {
-        emit(AsyncErrorState<ParcelData>(
+    final holdFailed = holdResult.fold((failure) {
+      emit(
+        AsyncErrorState<ParcelData>(
           errorMessage: 'Failed to hold balance: ${failure.failureMessage}',
           data: currentData,
-        ));
-        DFoodUtils.showSnackBar(
-          'Insufficient balance to create parcel',
-          AppColors.error,
-        );
-        return true;
-      },
-      (_) => false,
-    );
+        ),
+      );
+      DFoodUtils.showSnackBar(
+        'Insufficient balance to create parcel',
+        AppColors.error,
+      );
+      return true;
+    }, (_) => false);
 
     if (holdFailed) return;
 
@@ -79,17 +77,21 @@ class ParcelCubit extends BaseCubit<BaseState<ParcelData>> {
           parcelId,
           'parcel_release_$parcelId',
         );
-        emit(AsyncErrorState<ParcelData>(
-          errorMessage: failure.failureMessage,
-          data: currentData,
-        ));
+        emit(
+          AsyncErrorState<ParcelData>(
+            errorMessage: failure.failureMessage,
+            data: currentData,
+          ),
+        );
       },
       (createdParcel) {
         final updatedData = currentData.copyWith(currentParcel: createdParcel);
-        emit(LoadedState<ParcelData>(
-          data: updatedData,
-          lastUpdated: DateTime.now(),
-        ));
+        emit(
+          LoadedState<ParcelData>(
+            data: updatedData,
+            lastUpdated: DateTime.now(),
+          ),
+        );
       },
     );
   }
@@ -156,10 +158,13 @@ class ParcelCubit extends BaseCubit<BaseState<ParcelData>> {
       // Still apply optimistic update to UI
       if (parcelToUpdate != null) {
         final now = DateTime.now();
-        final updatedMetadata = Map<String, dynamic>.from(parcelToUpdate.metadata ?? {});
+        final updatedMetadata = Map<String, dynamic>.from(
+          parcelToUpdate.metadata ?? {},
+        );
 
         final statusHistory = Map<String, dynamic>.from(
-          updatedMetadata['deliveryStatusHistory'] as Map<String, dynamic>? ?? {}
+          updatedMetadata['deliveryStatusHistory'] as Map<String, dynamic>? ??
+              {},
         );
         statusHistory[status.toJson()] = now.toIso8601String();
         updatedMetadata['deliveryStatusHistory'] = statusHistory;
@@ -170,30 +175,39 @@ class ParcelCubit extends BaseCubit<BaseState<ParcelData>> {
           metadata: updatedMetadata,
         );
 
-        final optimisticData = _applyOptimisticUpdate(currentData, optimisticParcel);
-        emit(LoadedState<ParcelData>(
-          data: optimisticData,
-          lastUpdated: DateTime.now(),
-        ));
+        final optimisticData = _applyOptimisticUpdate(
+          currentData,
+          optimisticParcel,
+        );
+        emit(
+          LoadedState<ParcelData>(
+            data: optimisticData,
+            lastUpdated: DateTime.now(),
+          ),
+        );
       }
 
       return;
     }
 
     // Show loading state while preserving current data and tracking which parcel is updating
-    emit(AsyncLoadingState<ParcelData>(
-      data: currentData.copyWith(updatingParcelId: parcelId),
-    ));
+    emit(
+      AsyncLoadingState<ParcelData>(
+        data: currentData.copyWith(updatingParcelId: parcelId),
+      ),
+    );
 
     // Optimistic update - create updated parcel entity
     ParcelEntity? optimisticParcel;
     if (parcelToUpdate != null) {
       final now = DateTime.now();
-      final updatedMetadata = Map<String, dynamic>.from(parcelToUpdate.metadata ?? {});
+      final updatedMetadata = Map<String, dynamic>.from(
+        parcelToUpdate.metadata ?? {},
+      );
 
       // Update status history in metadata
       final statusHistory = Map<String, dynamic>.from(
-        updatedMetadata['deliveryStatusHistory'] as Map<String, dynamic>? ?? {}
+        updatedMetadata['deliveryStatusHistory'] as Map<String, dynamic>? ?? {},
       );
       statusHistory[status.toJson()] = now.toIso8601String();
       updatedMetadata['deliveryStatusHistory'] = statusHistory;
@@ -205,11 +219,16 @@ class ParcelCubit extends BaseCubit<BaseState<ParcelData>> {
       );
 
       // Apply optimistic update to UI
-      final optimisticData = _applyOptimisticUpdate(currentData, optimisticParcel);
-      emit(LoadedState<ParcelData>(
-        data: optimisticData,
-        lastUpdated: DateTime.now(),
-      ));
+      final optimisticData = _applyOptimisticUpdate(
+        currentData,
+        optimisticParcel,
+      );
+      emit(
+        LoadedState<ParcelData>(
+          data: optimisticData,
+          lastUpdated: DateTime.now(),
+        ),
+      );
     }
 
     // Attempt update with retry mechanism
@@ -217,11 +236,12 @@ class ParcelCubit extends BaseCubit<BaseState<ParcelData>> {
 
     result.fold(
       (failure) {
-        // Rollback optimistic update and clear loading state
-        emit(AsyncErrorState<ParcelData>(
-          errorMessage: failure.failureMessage,
-          data: currentData.copyWith(clearUpdatingParcelId: true),
-        ));
+        emit(
+          AsyncErrorState<ParcelData>(
+            errorMessage: failure.failureMessage,
+            data: currentData.copyWith(clearUpdatingParcelId: true),
+          ),
+        );
 
         DFoodUtils.showSnackBar(
           'Failed to update status: ${failure.failureMessage}',
@@ -229,13 +249,13 @@ class ParcelCubit extends BaseCubit<BaseState<ParcelData>> {
         );
       },
       (updatedParcel) {
-        // Clear updating state only - Firestore stream will update the UI
-        // Don't emit LoadedState here to avoid double refresh
         final data = state.data ?? const ParcelData();
-        emit(LoadedState<ParcelData>(
-          data: data.copyWith(clearUpdatingParcelId: true),
-          lastUpdated: DateTime.now(),
-        ));
+        emit(
+          LoadedState<ParcelData>(
+            data: data.copyWith(clearUpdatingParcelId: true),
+            lastUpdated: DateTime.now(),
+          ),
+        );
 
         DFoodUtils.showSnackBar(
           'Status updated to ${status.displayName}',
@@ -246,26 +266,39 @@ class ParcelCubit extends BaseCubit<BaseState<ParcelData>> {
   }
 
   /// Applies an optimistic update to the appropriate parcel list.
-  ParcelData _applyOptimisticUpdate(ParcelData currentData, ParcelEntity updatedParcel) {
+  ParcelData _applyOptimisticUpdate(
+    ParcelData currentData,
+    ParcelEntity updatedParcel,
+  ) {
     // Update in acceptedParcels if present
-    final acceptedIndex = currentData.acceptedParcels.indexWhere((p) => p.id == updatedParcel.id);
+    final acceptedIndex = currentData.acceptedParcels.indexWhere(
+      (p) => p.id == updatedParcel.id,
+    );
     if (acceptedIndex != -1) {
-      final updatedAccepted = List<ParcelEntity>.from(currentData.acceptedParcels);
+      final updatedAccepted = List<ParcelEntity>.from(
+        currentData.acceptedParcels,
+      );
       updatedAccepted[acceptedIndex] = updatedParcel;
       return currentData.copyWith(
         acceptedParcels: updatedAccepted,
-        currentParcel: currentData.currentParcel?.id == updatedParcel.id ? updatedParcel : currentData.currentParcel,
+        currentParcel: currentData.currentParcel?.id == updatedParcel.id
+            ? updatedParcel
+            : currentData.currentParcel,
       );
     }
 
     // Update in userParcels if present
-    final userIndex = currentData.userParcels.indexWhere((p) => p.id == updatedParcel.id);
+    final userIndex = currentData.userParcels.indexWhere(
+      (p) => p.id == updatedParcel.id,
+    );
     if (userIndex != -1) {
       final updatedUser = List<ParcelEntity>.from(currentData.userParcels);
       updatedUser[userIndex] = updatedParcel;
       return currentData.copyWith(
         userParcels: updatedUser,
-        currentParcel: currentData.currentParcel?.id == updatedParcel.id ? updatedParcel : currentData.currentParcel,
+        currentParcel: currentData.currentParcel?.id == updatedParcel.id
+            ? updatedParcel
+            : currentData.currentParcel,
       );
     }
 
@@ -289,34 +322,44 @@ class ParcelCubit extends BaseCubit<BaseState<ParcelData>> {
 
     while (attempt < maxAttempts) {
       try {
-        final result = await _parcelUseCase.updateParcelStatus(parcelId, status);
+        final result = await _parcelUseCase.updateParcelStatus(
+          parcelId,
+          status,
+        );
 
         // Return immediately on success
-        return result.fold(
-          (failure) {
-            attempt++;
-            if (attempt >= maxAttempts) {
-              return Left(failure);
-            }
-            // Continue to next attempt
+        return result.fold((failure) {
+          attempt++;
+          if (attempt >= maxAttempts) {
             return Left(failure);
-          },
-          (parcel) => Right(parcel),
-        );
+          }
+          // Continue to next attempt
+          return Left(failure);
+        }, (parcel) => Right(parcel));
       } catch (e) {
         attempt++;
         if (attempt >= maxAttempts) {
-          return Left(ServerFailure(failureMessage: 'Update failed after $maxAttempts attempts: $e'));
+          return Left(
+            ServerFailure(
+              failureMessage: 'Update failed after $maxAttempts attempts: $e',
+            ),
+          );
         }
       }
 
       // Exponential backoff: 500ms, 1000ms, 2000ms
       if (attempt < maxAttempts) {
-        await Future.delayed(Duration(milliseconds: 500 * (1 << (attempt - 1))));
+        await Future.delayed(
+          Duration(milliseconds: 500 * (1 << (attempt - 1))),
+        );
       }
     }
 
-    return Left(ServerFailure(failureMessage: 'Update failed after $maxAttempts attempts'));
+    return Left(
+      ServerFailure(
+        failureMessage: 'Update failed after $maxAttempts attempts',
+      ),
+    );
   }
 
   /// Loads a specific parcel by ID.
@@ -331,10 +374,9 @@ class ParcelCubit extends BaseCubit<BaseState<ParcelData>> {
     // If we already have the parcel data, show it immediately (no loading!)
     if (existingParcel != null) {
       final updatedData = currentData.copyWith(currentParcel: existingParcel);
-      emit(LoadedState<ParcelData>(
-        data: updatedData,
-        lastUpdated: DateTime.now(),
-      ));
+      emit(
+        LoadedState<ParcelData>(data: updatedData, lastUpdated: DateTime.now()),
+      );
       return;
     }
 
@@ -347,17 +389,21 @@ class ParcelCubit extends BaseCubit<BaseState<ParcelData>> {
     final result = await _parcelUseCase.getParcel(parcelId);
     result.fold(
       (failure) {
-        emit(AsyncErrorState<ParcelData>(
-          errorMessage: failure.failureMessage,
-          data: currentData,
-        ));
+        emit(
+          AsyncErrorState<ParcelData>(
+            errorMessage: failure.failureMessage,
+            data: currentData,
+          ),
+        );
       },
       (parcel) {
         final updatedData = currentData.copyWith(currentParcel: parcel);
-        emit(LoadedState<ParcelData>(
-          data: updatedData,
-          lastUpdated: DateTime.now(),
-        ));
+        emit(
+          LoadedState<ParcelData>(
+            data: updatedData,
+            lastUpdated: DateTime.now(),
+          ),
+        );
       },
     );
   }
@@ -371,17 +417,21 @@ class ParcelCubit extends BaseCubit<BaseState<ParcelData>> {
 
     result.fold(
       (failure) {
-        emit(AsyncErrorState<ParcelData>(
-          errorMessage: failure.failureMessage,
-          data: currentData,
-        ));
+        emit(
+          AsyncErrorState<ParcelData>(
+            errorMessage: failure.failureMessage,
+            data: currentData,
+          ),
+        );
       },
       (parcels) {
         final updatedData = currentData.copyWith(userParcels: parcels);
-        emit(LoadedState<ParcelData>(
-          data: updatedData,
-          lastUpdated: DateTime.now(),
-        ));
+        emit(
+          LoadedState<ParcelData>(
+            data: updatedData,
+            lastUpdated: DateTime.now(),
+          ),
+        );
       },
     );
   }
@@ -391,22 +441,23 @@ class ParcelCubit extends BaseCubit<BaseState<ParcelData>> {
     final currentData = state.data ?? const ParcelData();
     emit(AsyncLoadingState<ParcelData>(data: currentData));
 
-    final result = await _parcelUseCase.assignTraveler(
-      parcelId,
-      travelerId,
-    );
+    final result = await _parcelUseCase.assignTraveler(parcelId, travelerId);
 
     result.fold(
       (failure) {
-        emit(AsyncErrorState<ParcelData>(
-          errorMessage: failure.failureMessage,
-          data: currentData,
-        ));
+        emit(
+          AsyncErrorState<ParcelData>(
+            errorMessage: failure.failureMessage,
+            data: currentData,
+          ),
+        );
       },
       (parcel) {
         // Add parcel to acceptedParcels immediately for instant UI update
         // The Firestore listener will also update, but this ensures immediate feedback
-        final updatedAcceptedParcels = List<ParcelEntity>.from(currentData.acceptedParcels);
+        final updatedAcceptedParcels = List<ParcelEntity>.from(
+          currentData.acceptedParcels,
+        );
         // Remove if already exists (shouldn't happen, but safety check)
         updatedAcceptedParcels.removeWhere((p) => p.id == parcel.id);
         // Add to beginning of list (most recent first)
@@ -416,10 +467,12 @@ class ParcelCubit extends BaseCubit<BaseState<ParcelData>> {
           currentParcel: parcel,
           acceptedParcels: updatedAcceptedParcels,
         );
-        emit(LoadedState<ParcelData>(
-          data: updatedData,
-          lastUpdated: DateTime.now(),
-        ));
+        emit(
+          LoadedState<ParcelData>(
+            data: updatedData,
+            lastUpdated: DateTime.now(),
+          ),
+        );
       },
     );
   }
@@ -437,9 +490,11 @@ class ParcelCubit extends BaseCubit<BaseState<ParcelData>> {
     final currentData = state.data ?? const ParcelData();
 
     // Set loading state with parcel ID tracking
-    emit(AsyncLoadingState<ParcelData>(
-      data: currentData.copyWith(updatingParcelId: parcelId),
-    ));
+    emit(
+      AsyncLoadingState<ParcelData>(
+        data: currentData.copyWith(updatingParcelId: parcelId),
+      ),
+    );
 
     // Find the parcel being confirmed
     ParcelEntity? parcelToConfirm;
@@ -454,10 +509,12 @@ class ParcelCubit extends BaseCubit<BaseState<ParcelData>> {
     // Validate parcel status
     if (parcelToConfirm != null &&
         parcelToConfirm.status != ParcelStatus.awaitingConfirmation) {
-      emit(AsyncErrorState<ParcelData>(
-        errorMessage: 'Parcel is not awaiting confirmation',
-        data: currentData.copyWith(clearUpdatingParcelId: true),
-      ));
+      emit(
+        AsyncErrorState<ParcelData>(
+          errorMessage: 'Parcel is not awaiting confirmation',
+          data: currentData.copyWith(clearUpdatingParcelId: true),
+        ),
+      );
       return;
     }
 
@@ -475,10 +532,12 @@ class ParcelCubit extends BaseCubit<BaseState<ParcelData>> {
 
       await parcelResult.fold(
         (failure) async {
-          emit(AsyncErrorState<ParcelData>(
-            errorMessage: failure.failureMessage,
-            data: currentData.copyWith(clearUpdatingParcelId: true),
-          ));
+          emit(
+            AsyncErrorState<ParcelData>(
+              errorMessage: failure.failureMessage,
+              data: currentData.copyWith(clearUpdatingParcelId: true),
+            ),
+          );
           DFoodUtils.showSnackBar(
             'Failed to confirm delivery: ${failure.failureMessage}',
             AppColors.error,
@@ -495,15 +554,12 @@ class ParcelCubit extends BaseCubit<BaseState<ParcelData>> {
               'delivery_confirm_sender_$parcelId',
             );
 
-            senderClearResult.fold(
-              (failure) {
-                DFoodUtils.showSnackBar(
-                  'Delivery confirmed! Sender balance update pending.',
-                  AppColors.warning,
-                );
-              },
-              (_) {},
-            );
+            senderClearResult.fold((failure) {
+              DFoodUtils.showSnackBar(
+                'Delivery confirmed! Sender balance update pending.',
+                AppColors.warning,
+              );
+            }, (_) {});
           }
 
           // 3. Move traveler's pending balance to available
@@ -515,15 +571,12 @@ class ParcelCubit extends BaseCubit<BaseState<ParcelData>> {
               'delivery_confirm_traveler_$parcelId',
             );
 
-            travelerReleaseResult.fold(
-              (failure) {
-                DFoodUtils.showSnackBar(
-                  'Delivery confirmed! Traveler payment pending.',
-                  AppColors.warning,
-                );
-              },
-              (_) {},
-            );
+            travelerReleaseResult.fold((failure) {
+              DFoodUtils.showSnackBar(
+                'Delivery confirmed! Traveler payment pending.',
+                AppColors.warning,
+              );
+            }, (_) {});
           }
 
           // 4. Release escrow payment
@@ -547,21 +600,22 @@ class ParcelCubit extends BaseCubit<BaseState<ParcelData>> {
 
           // Clear updating state only - Firestore stream will update the UI
           final data = state.data ?? const ParcelData();
-          emit(LoadedState<ParcelData>(
-            data: data.copyWith(clearUpdatingParcelId: true),
-            lastUpdated: DateTime.now(),
-          ));
+          emit(
+            LoadedState<ParcelData>(
+              data: data.copyWith(clearUpdatingParcelId: true),
+              lastUpdated: DateTime.now(),
+            ),
+          );
         },
       );
     } catch (e) {
-      emit(AsyncErrorState<ParcelData>(
-        errorMessage: e.toString(),
-        data: currentData.copyWith(clearUpdatingParcelId: true),
-      ));
-      DFoodUtils.showSnackBar(
-        'Error confirming delivery: $e',
-        AppColors.error,
+      emit(
+        AsyncErrorState<ParcelData>(
+          errorMessage: e.toString(),
+          data: currentData.copyWith(clearUpdatingParcelId: true),
+        ),
       );
+      DFoodUtils.showSnackBar('Error confirming delivery: $e', AppColors.error);
     }
   }
 
@@ -581,9 +635,11 @@ class ParcelCubit extends BaseCubit<BaseState<ParcelData>> {
     final currentData = state.data ?? const ParcelData();
 
     // Show loading state
-    emit(AsyncLoadingState<ParcelData>(
-      data: currentData.copyWith(updatingParcelId: parcelId),
-    ));
+    emit(
+      AsyncLoadingState<ParcelData>(
+        data: currentData.copyWith(updatingParcelId: parcelId),
+      ),
+    );
 
     try {
       // 1. Update parcel status to cancelled
@@ -594,10 +650,12 @@ class ParcelCubit extends BaseCubit<BaseState<ParcelData>> {
 
       await statusResult.fold(
         (failure) async {
-          emit(AsyncErrorState<ParcelData>(
-            errorMessage: failure.failureMessage,
-            data: currentData.copyWith(clearUpdatingParcelId: true),
-          ));
+          emit(
+            AsyncErrorState<ParcelData>(
+              errorMessage: failure.failureMessage,
+              data: currentData.copyWith(clearUpdatingParcelId: true),
+            ),
+          );
           DFoodUtils.showSnackBar(
             'Failed to cancel parcel: ${failure.failureMessage}',
             AppColors.error,
@@ -629,23 +687,26 @@ class ParcelCubit extends BaseCubit<BaseState<ParcelData>> {
           );
 
           // 3. Update state with cancelled parcel
-          final updatedData = _applyOptimisticUpdate(currentData, cancelledParcel)
-              .copyWith(clearUpdatingParcelId: true);
-          emit(LoadedState<ParcelData>(
-            data: updatedData,
-            lastUpdated: DateTime.now(),
-          ));
+          final updatedData = _applyOptimisticUpdate(
+            currentData,
+            cancelledParcel,
+          ).copyWith(clearUpdatingParcelId: true);
+          emit(
+            LoadedState<ParcelData>(
+              data: updatedData,
+              lastUpdated: DateTime.now(),
+            ),
+          );
         },
       );
     } catch (e) {
-      emit(AsyncErrorState<ParcelData>(
-        errorMessage: e.toString(),
-        data: currentData.copyWith(clearUpdatingParcelId: true),
-      ));
-      DFoodUtils.showSnackBar(
-        'Error cancelling parcel: $e',
-        AppColors.error,
+      emit(
+        AsyncErrorState<ParcelData>(
+          errorMessage: e.toString(),
+          data: currentData.copyWith(clearUpdatingParcelId: true),
+        ),
       );
+      DFoodUtils.showSnackBar('Error cancelling parcel: $e', AppColors.error);
     }
   }
 
