@@ -16,6 +16,14 @@ abstract class FileUploadDataSource {
     required String folderPath,
   });
 
+  /// Upload media for chat messages (no profile update)
+  Future<UploadedFileEntity> uploadChatMedia({
+    required File file,
+    required String chatId,
+    required String folder,
+    Function(double progress)? onProgress,
+  });
+
   Future<void> deleteFile({required String fileId});
 
   Future<String> generateUrl({
@@ -108,6 +116,44 @@ class FirebaseFileUploadImpl implements FileUploadDataSource {
       throw Exception('Failed to upload file: $e');
     }
   }
+
+  @override
+  Future<UploadedFileEntity> uploadChatMedia({
+    required File file,
+    required String chatId,
+    required String folder,
+    Function(double progress)? onProgress,
+  }) async {
+    try {
+      final extension = path.extension(file.path);
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final fileName = '${timestamp}$extension';
+
+      final storageRef = _storage
+          .ref()
+          .child('chats')
+          .child(chatId)
+          .child(folder)
+          .child(fileName);
+
+      final uploadTask = storageRef.putFile(file);
+
+      // Listen to progress
+      uploadTask.snapshotEvents.listen((snapshot) {
+        if (onProgress != null && snapshot.totalBytes > 0) {
+          final progress = snapshot.bytesTransferred / snapshot.totalBytes;
+          onProgress(progress);
+        }
+      });
+
+      final snapshot = await uploadTask;
+      final downloadUrl = await snapshot.ref.getDownloadURL();
+
+      return UploadedFileEntity(url: downloadUrl, uploadedAt: DateTime.now());
+    } catch (e) {
+      throw Exception('Failed to upload chat media: $e');
+    }
+  }
 }
 
 
@@ -131,6 +177,33 @@ class ImageKitFileUploadImpl implements FileUploadDataSource {
         });
       return UploadedFileEntity(url: url, uploadedAt: DateTime.now());
   });
+  }
+
+  @override
+  Future<UploadedFileEntity> uploadChatMedia({
+    required File file,
+    required String chatId,
+    required String folder,
+    Function(double progress)? onProgress,
+  }) async {
+    try {
+      // ImageKit doesn't provide native progress tracking,
+      // so we simulate progress milestones
+      onProgress?.call(0.1); // Starting upload
+
+      final folderPath = 'chats/$chatId/$folder';
+      final url = await ImageKit.io(
+        file,
+        folder: folderPath,
+        privateKey: Env.imageKitPrivateKey!,
+      );
+
+      onProgress?.call(1.0); // Upload complete
+
+      return UploadedFileEntity(url: url, uploadedAt: DateTime.now());
+    } catch (e) {
+      throw Exception('Failed to upload chat media: $e');
+    }
   }
 
   @override

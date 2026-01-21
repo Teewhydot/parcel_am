@@ -1,12 +1,14 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:get_it/get_it.dart';
 import '../../domain/entities/message.dart';
 import '../../domain/entities/message_type.dart';
 import '../models/message_model.dart';
 import '../models/message_page_model.dart';
 import '../models/chat_model.dart';
 import '../../../../core/utils/logger.dart';
+import '../../../file_upload/data/remote/data_sources/file_upload.dart';
 
 abstract class ChatRemoteDataSource {
   Stream<List<MessageModel>> getMessagesStream(String chatId);
@@ -46,8 +48,13 @@ abstract class ChatRemoteDataSource {
 class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   final FirebaseFirestore firestore;
   final FirebaseStorage storage;
+  final FileUploadDataSource fileUploadDataSource;
 
-  ChatRemoteDataSourceImpl({required this.firestore, required this.storage});
+  ChatRemoteDataSourceImpl({
+    required this.firestore,
+    required this.storage,
+    FileUploadDataSource? fileUploadDataSource,
+  }) : fileUploadDataSource = fileUploadDataSource ?? GetIt.instance<FileUploadDataSource>();
 
   /// Get reference to the pages subcollection for a chat
   CollectionReference<Map<String, dynamic>> _pagesRef(String chatId) {
@@ -323,29 +330,20 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     Function(double) onProgress,
   ) async {
     final file = File(filePath);
-    final fileName = file.path.split('/').last;
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
     final String folder = type == MessageType.image
         ? 'images'
         : type == MessageType.video
         ? 'videos'
         : 'documents';
 
-    final ref = storage.ref().child(
-      'chats/$chatId/$folder/$timestamp-$fileName',
+    final result = await fileUploadDataSource.uploadChatMedia(
+      file: file,
+      chatId: chatId,
+      folder: folder,
+      onProgress: onProgress,
     );
 
-    final uploadTask = ref.putFile(file);
-
-    uploadTask.snapshotEvents.listen((snapshot) {
-      final progress = snapshot.bytesTransferred / snapshot.totalBytes;
-      onProgress(progress);
-    });
-
-    final snapshot = await uploadTask;
-    final downloadUrl = await snapshot.ref.getDownloadURL();
-
-    return downloadUrl;
+    return result.url;
   }
 
   @override
