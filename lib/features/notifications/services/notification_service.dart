@@ -26,12 +26,6 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     // Already initialized, ignore
   }
 
-  if (kDebugMode) {
-    print(
-      '[NotificationService] Background message received: ${message.messageId}',
-    );
-  }
-
   // Display notification from background handler
   await _showBackgroundNotification(message);
 }
@@ -134,7 +128,7 @@ Future<void> _markNotificationSentInBackground(
   String chatId,
   String messageId,
 ) async {
-  try {
+  
     final firestore = FirebaseFirestore.instance;
 
     // Find and update the message in pages
@@ -168,11 +162,6 @@ Future<void> _markNotificationSentInBackground(
         });
 
         found = true;
-        if (kDebugMode) {
-          print(
-            '[NotificationService] Marked notificationSent=true for message $messageId in page ${pageDoc.id}',
-          );
-        }
         break;
       }
     }
@@ -186,26 +175,11 @@ Future<void> _markNotificationSentInBackground(
             .collection('messages')
             .doc(messageId)
             .update({'notificationSent': true});
-        if (kDebugMode) {
-          print(
-            '[NotificationService] Marked notificationSent=true for message $messageId (old structure)',
-          );
-        }
       } catch (e) {
         // Old structure doesn't exist, that's fine
       }
     }
-
-    if (kDebugMode) {
-      print(
-        '[NotificationService] Marked notificationSent=true for message: $messageId',
-      );
-    }
-  } catch (e) {
-    if (kDebugMode) {
-      print('[NotificationService] Error marking notificationSent: $e');
-    }
-  }
+  
 }
 
 /// Notification Service Singleton
@@ -262,18 +236,12 @@ class NotificationService {
   /// Pass null when leaving the chat screen
   void setCurrentChatId(String? chatId) {
     _currentChatId = chatId;
-    if (kDebugMode) {
-      print('[NotificationService] Current chat ID set to: $chatId');
-    }
   }
 
   /// Initialize notification service
   /// Called from main.dart after Firebase initialization, before runApp
   Future<void> initialize() async {
     if (_isInitialized) {
-      if (kDebugMode) {
-        print('[NotificationService] Already initialized');
-      }
       return;
     }
 
@@ -296,22 +264,12 @@ class NotificationService {
       _tokenRefreshSubscription = repository.onTokenRefresh.listen((newToken) {
         _currentToken = newToken;
         storeToken(newToken);
-        if (kDebugMode) {
-          print('[NotificationService] FCM token refreshed: $newToken');
-        }
       });
 
       // Get and store FCM token (may be null on iOS initially if APNS token not ready)
       final token = await getToken();
       if (token != null) {
         await storeToken(token);
-      } else {
-        if (kDebugMode) {
-          print(
-            '[NotificationService] FCM token not available during initialization. '
-            'Will be retrieved when available via token refresh listener.',
-          );
-        }
       }
 
       // Subscribe to foreground messages
@@ -320,14 +278,7 @@ class NotificationService {
       );
 
       _isInitialized = true;
-
-      if (kDebugMode) {
-        print('[NotificationService] Initialized successfully');
-      }
     } catch (e) {
-      if (kDebugMode) {
-        print('[NotificationService] Error initializing: $e');
-      }
       rethrow;
     }
   }
@@ -403,16 +354,8 @@ class NotificationService {
   Future<String?> getToken() async {
     try {
       _currentToken = await repository.getFCMToken();
-      if (_currentToken != null) {
-        if (kDebugMode) {
-          print('[NotificationService] FCM Token retrieved: $_currentToken');
-        }
-      }
       return _currentToken;
     } catch (e) {
-      if (kDebugMode) {
-        print('[NotificationService] Error getting FCM token: $e');
-      }
       return null;
     }
   }
@@ -420,10 +363,6 @@ class NotificationService {
   /// Manually retry getting FCM token
   /// Useful for iOS when APNS token becomes available after initial initialization
   Future<String?> retryGetToken() async {
-    if (kDebugMode) {
-      print('[NotificationService] Manually retrying FCM token retrieval...');
-    }
-
     final token = await getToken();
     if (token != null) {
       await storeToken(token);
@@ -436,21 +375,12 @@ class NotificationService {
     try {
       final userId = firebaseAuth.currentUser?.uid;
       if (userId == null) {
-        if (kDebugMode) {
-          print('[NotificationService] Cannot store token: No user logged in');
-        }
         return;
       }
 
       await repository.storeFCMToken(userId, token);
-
-      if (kDebugMode) {
-        print('[NotificationService] FCM token stored for user: $userId');
-      }
     } catch (e) {
-      if (kDebugMode) {
-        print('[NotificationService] Error storing FCM token: $e');
-      }
+      // Silent catch
     }
   }
 
@@ -461,14 +391,8 @@ class NotificationService {
       if (userId == null || _currentToken == null) return;
 
       await repository.removeFCMToken(userId, _currentToken!);
-
-      if (kDebugMode) {
-        print('[NotificationService] FCM token removed for user: $userId');
-      }
     } catch (e) {
-      if (kDebugMode) {
-        print('[NotificationService] Error removing FCM token: $e');
-      }
+      // Silent catch
     }
   }
 
@@ -482,12 +406,6 @@ class NotificationService {
   /// This prevents duplicate chat notifications while ensuring escrow updates are shown.
   Future<void> handleForegroundMessage(RemoteMessage message) async {
     try {
-      if (kDebugMode) {
-        print(
-          '[NotificationService] Foreground message received: ${message.messageId}',
-        );
-      }
-
       final userId = firebaseAuth.currentUser?.uid;
       if (userId == null) return;
 
@@ -507,13 +425,7 @@ class NotificationService {
       // Show all other notifications (escrow, parcel updates, etc.) in foreground.
       final isChatMessage = type == 'chat_message';
 
-      if (isChatMessage) {
-        if (kDebugMode) {
-          print(
-            '[NotificationService] Skipping chat notification - handled by ChatNotificationListener',
-          );
-        }
-      } else {
+      if (!isChatMessage) {
         // Display local notification for non-chat messages (escrow, parcel updates, etc.)
         await _displayLocalNotification(
           message: message,
@@ -535,14 +447,8 @@ class NotificationService {
 
       // Update badge count
       await _updateBadgeCount();
-
-      if (kDebugMode) {
-        print('[NotificationService] Foreground message processed');
-      }
     } catch (e) {
-      if (kDebugMode) {
-        print('[NotificationService] Error handling foreground message: $e');
-      }
+      // Silent catch
     }
   }
 
@@ -611,12 +517,6 @@ class NotificationService {
   /// Handle background messages
   /// This is called by the background handler
   Future<void> handleBackgroundMessage(RemoteMessage message) async {
-    try {
-      if (kDebugMode) {
-        print(
-          '[NotificationService] Background message handler: ${message.messageId}',
-        );
-      }
 
       // Extract chat details from data payload
       final data = message.data;
@@ -663,14 +563,6 @@ class NotificationService {
         payload: payload,
       );
 
-      if (kDebugMode) {
-        print('[NotificationService] Background notification displayed');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('[NotificationService] Error handling background message: $e');
-      }
-    }
   }
 
   /// Handle notification tap
@@ -679,9 +571,6 @@ class NotificationService {
     try {
       final payload = response.payload;
       if (payload == null || payload.isEmpty) {
-        if (kDebugMode) {
-          print('[NotificationService] Notification tapped with no payload');
-        }
         return;
       }
 
@@ -690,12 +579,6 @@ class NotificationService {
       final chatId = data['chatId'] as String?;
       final parcelId = data['parcelId'] as String?;
       final notificationId = data['notificationId'] as String?;
-
-      if (kDebugMode) {
-        print(
-          '[NotificationService] Notification tapped - chatId: $chatId, parcelId: $parcelId',
-        );
-      }
 
       // Mark notification as read if notificationId exists
       if (notificationId != null) {
@@ -720,9 +603,7 @@ class NotificationService {
         );
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('[NotificationService] Error handling notification tap: $e');
-      }
+      // Silent catch
     }
   }
 
@@ -730,18 +611,8 @@ class NotificationService {
   Future<AuthorizationStatus> requestPermissions() async {
     try {
       final status = await repository.requestPermissions();
-
-      if (kDebugMode) {
-        print('[NotificationService] Notification permission status: $status');
-      }
-
       return status;
     } catch (e) {
-      if (kDebugMode) {
-        print(
-          '[NotificationService] Error requesting notification permissions: $e',
-        );
-      }
       return AuthorizationStatus.denied;
     }
   }
@@ -750,13 +621,8 @@ class NotificationService {
   Future<void> subscribeToTopic(String topic) async {
     try {
       await repository.subscribeToTopic(topic);
-      if (kDebugMode) {
-        print('[NotificationService] Subscribed to topic: $topic');
-      }
     } catch (e) {
-      if (kDebugMode) {
-        print('[NotificationService] Error subscribing to topic $topic: $e');
-      }
+      // Silent catch
     }
   }
 
@@ -764,15 +630,8 @@ class NotificationService {
   Future<void> unsubscribeFromTopic(String topic) async {
     try {
       await repository.unsubscribeFromTopic(topic);
-      if (kDebugMode) {
-        print('[NotificationService] Unsubscribed from topic: $topic');
-      }
     } catch (e) {
-      if (kDebugMode) {
-        print(
-          '[NotificationService] Error unsubscribing from topic $topic: $e',
-        );
-      }
+      // Silent catch
     }
   }
 
@@ -784,9 +643,6 @@ class NotificationService {
 
       return await repository.getUnreadNotificationCount(userId);
     } catch (e) {
-      if (kDebugMode) {
-        print('[NotificationService] Error getting unread count: $e');
-      }
       return 0;
     }
   }
@@ -797,9 +653,7 @@ class NotificationService {
       final unreadCount = await _getTotalUnreadCount();
       await updateBadgeCount(unreadCount);
     } catch (e) {
-      if (kDebugMode) {
-        print('[NotificationService] Error updating badge count: $e');
-      }
+      // Silent catch
     }
   }
 
@@ -812,21 +666,9 @@ class NotificationService {
 
       if (isSupported) {
         await AppBadgePlus.updateBadge(count);
-
-        if (kDebugMode) {
-          print('[NotificationService] Badge count updated to: $count');
-        }
-      } else {
-        if (kDebugMode) {
-          print(
-            '[NotificationService] App badges not supported on this device',
-          );
-        }
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('[NotificationService] Error updating badge count: $e');
-      }
+      // Silent catch
     }
   }
 
@@ -841,11 +683,6 @@ class NotificationService {
   }) async {
     // Skip if user is currently viewing this chat
     if (_currentChatId == chatId) {
-      if (kDebugMode) {
-        print(
-          '[NotificationService] Suppressing notification - user viewing chat: $chatId',
-        );
-      }
       return false;
     }
 
@@ -887,17 +724,8 @@ class NotificationService {
         payload: payload,
       );
 
-      if (kDebugMode) {
-        print(
-          '[NotificationService] Chat notification shown for message: $messageId',
-        );
-      }
-
       return true;
     } catch (e) {
-      if (kDebugMode) {
-        print('[NotificationService] Error showing chat notification: $e');
-      }
       return false;
     }
   }
@@ -906,13 +734,8 @@ class NotificationService {
   Future<void> clearBadge() async {
     try {
       await AppBadgePlus.updateBadge(0);
-      if (kDebugMode) {
-        print('[NotificationService] Badge cleared');
-      }
     } catch (e) {
-      if (kDebugMode) {
-        print('[NotificationService] Error clearing badge: $e');
-      }
+      // Silent catch
     }
   }
 

@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
-import 'package:flutter/foundation.dart';
 import '../../../../core/errors/failures.dart';
 import '../../domain/entities/notification_settings_entity.dart';
 import '../../domain/repositories/notification_settings_repository.dart';
@@ -27,9 +26,6 @@ class NotificationSettingsRepositoryImpl implements NotificationSettingsReposito
       final settings = NotificationSettingsModel.fromFirestore(doc.data());
       return Right(settings);
     } catch (e) {
-      if (kDebugMode) {
-        print('[NotificationSettingsRepository] Error getting settings: $e');
-      }
       return Left(ServerFailure(failureMessage: 'Failed to load notification settings'));
     }
   }
@@ -46,15 +42,8 @@ class NotificationSettingsRepositoryImpl implements NotificationSettingsReposito
         model.toFirestoreUpdate(),
       );
 
-      if (kDebugMode) {
-        print('[NotificationSettingsRepository] Settings updated for user: $userId');
-      }
-
       return const Right(null);
     } catch (e) {
-      if (kDebugMode) {
-        print('[NotificationSettingsRepository] Error updating settings: $e');
-      }
       return Left(ServerFailure(failureMessage: 'Failed to save notification settings'));
     }
   }
@@ -74,9 +63,6 @@ class NotificationSettingsRepositoryImpl implements NotificationSettingsReposito
         final settings = NotificationSettingsModel.fromFirestore(snapshot.data());
         return Right(settings);
       } catch (e) {
-        if (kDebugMode) {
-          print('[NotificationSettingsRepository] Error in settings stream: $e');
-        }
         return Left(ServerFailure(failureMessage: 'Failed to watch notification settings'));
       }
     });

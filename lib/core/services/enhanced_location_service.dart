@@ -1,9 +1,7 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:permission_handler/permission_handler.dart';
-import '../utils/logger.dart';
 
 class EnhancedLocationService {
   static final EnhancedLocationService _instance = EnhancedLocationService._internal();
@@ -36,12 +34,9 @@ class EnhancedLocationService {
         return false;
       }
 
-      return permission == LocationPermission.whileInUse || 
+      return permission == LocationPermission.whileInUse ||
              permission == LocationPermission.always;
     } catch (e) {
-      if (kDebugMode) {
-        Logger.logError('Error requesting location permission: $e');
-      }
       return false;
     }
   }
@@ -78,9 +73,6 @@ class EnhancedLocationService {
 
       return position;
     } catch (e) {
-      if (kDebugMode) {
-        Logger.logError('Error getting current position: $e');
-      }
       return null;
     }
   }
@@ -97,9 +89,7 @@ class EnhancedLocationService {
         _currentAddress = _formatAddress(placemark);
       }
     } catch (e) {
-      if (kDebugMode) {
-        Logger.logError('Error getting address from coordinates: $e');
-      }
+      // Silent catch
     }
   }
 
@@ -132,9 +122,7 @@ class EnhancedLocationService {
         return _formatAddress(placemarks.first);
       }
     } catch (e) {
-      if (kDebugMode) {
-        Logger.logError('Error getting address from coordinates: $e');
-      }
+      // Silent catch
     }
     return null;
   }
@@ -143,9 +131,6 @@ class EnhancedLocationService {
     try {
       return await locationFromAddress(address);
     } catch (e) {
-      if (kDebugMode) {
-        Logger.logError('Error getting coordinates from address: $e');
-      }
       return null;
     }
   }
@@ -171,9 +156,7 @@ class EnhancedLocationService {
         _updateCurrentAddress(position);
       },
       onError: (error) {
-        if (kDebugMode) {
-          Logger.logError('Error in location tracking: $error');
-        }
+        // Silent error handling
       },
     );
   }
@@ -230,9 +213,6 @@ class EnhancedLocationService {
     try {
       return await Geolocator.getLastKnownPosition();
     } catch (e) {
-      if (kDebugMode) {
-        Logger.logError('Error getting last known position: $e');
-      }
       return null;
     }
   }

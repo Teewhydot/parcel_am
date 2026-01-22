@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:disable_battery_optimization/disable_battery_optimization.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -27,9 +26,6 @@ class BatteryOptimizationService {
     try {
       return await DisableBatteryOptimization.isBatteryOptimizationDisabled;
     } catch (e) {
-      if (kDebugMode) {
-        print('[BatteryOptimizationService] Error checking status: $e');
-      }
       return null;
     }
   }
@@ -42,9 +38,6 @@ class BatteryOptimizationService {
     try {
       return await DisableBatteryOptimization.isAutoStartEnabled;
     } catch (e) {
-      if (kDebugMode) {
-        print('[BatteryOptimizationService] Error checking auto-start: $e');
-      }
       return null;
     }
   }
@@ -59,9 +52,6 @@ class BatteryOptimizationService {
           .showDisableBatteryOptimizationSettings();
       return result ?? false;
     } catch (e) {
-      if (kDebugMode) {
-        print('[BatteryOptimizationService] Error requesting disable: $e');
-      }
       return false;
     }
   }
@@ -79,9 +69,6 @@ class BatteryOptimizationService {
       );
       return result ?? false;
     } catch (e) {
-      if (kDebugMode) {
-        print('[BatteryOptimizationService] Error showing auto-start: $e');
-      }
       return false;
     }
   }
@@ -103,9 +90,7 @@ class BatteryOptimizationService {
             'This is especially important on Xiaomi, Huawei, Oppo, and OnePlus devices.',
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('[BatteryOptimizationService] Error showing all settings: $e');
-      }
+      // Silent catch
     }
   }
 
@@ -139,9 +124,6 @@ class BatteryOptimizationService {
 
       return true;
     } catch (e) {
-      if (kDebugMode) {
-        print('[BatteryOptimizationService] Error checking prompt: $e');
-      }
       return false;
     }
   }
@@ -157,9 +139,7 @@ class BatteryOptimizationService {
       );
       await prefs.setBool(_prefKeyOptimizationPromptShown, true);
     } catch (e) {
-      if (kDebugMode) {
-        print('[BatteryOptimizationService] Error marking dismissed: $e');
-      }
+      // Silent catch
     }
   }
 
