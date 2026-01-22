@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:get_it/get_it.dart';
 import '../../domain/entities/funding_order_entity.dart';
 
 /// Remote data source for funding order operations.
@@ -14,8 +15,8 @@ abstract class FundingOrderRemoteDataSource {
 class FundingOrderRemoteDataSourceImpl implements FundingOrderRemoteDataSource {
   final FirebaseFirestore _firestore;
 
-  FundingOrderRemoteDataSourceImpl({required FirebaseFirestore firestore})
-      : _firestore = firestore;
+  FundingOrderRemoteDataSourceImpl({FirebaseFirestore? firestore})
+      : _firestore = firestore ?? GetIt.instance<FirebaseFirestore>();
 
   @override
   Stream<FundingOrderEntity> watchFundingOrderStatus(String reference) {

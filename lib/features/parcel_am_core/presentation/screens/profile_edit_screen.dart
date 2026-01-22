@@ -7,7 +7,7 @@ import 'package:parcel_am/core/helpers/user_extensions.dart';
 import 'package:parcel_am/core/routes/routes.dart';
 import 'package:parcel_am/features/file_upload/services/file_upload_service.dart';
 import 'package:parcel_am/core/services/navigation_service/nav_config.dart';
-import 'package:parcel_am/features/parcel_am_core/data/models/user_model.dart';
+import 'package:parcel_am/features/parcel_am_core/domain/entities/user_entity.dart';
 import 'package:parcel_am/injection_container.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -230,7 +230,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
     return Column(
       children: [
-        StreamBuilder<Either<Failure, UserModel>>(
+        StreamBuilder<Either<Failure, UserEntity>>(
           stream: userId != null
               ? context.read<AuthCubit>().watchUserData(userId)
               : const Stream.empty(),

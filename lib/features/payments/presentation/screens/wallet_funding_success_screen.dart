@@ -1,14 +1,15 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get_it/get_it.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_font_size.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
+import '../../../../injection_container.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/wallet/wallet_cubit.dart';
 import '../../../parcel_am_core/presentation/bloc/wallet/wallet_data.dart';
 import '../../../../core/bloc/base/base_state.dart';
@@ -38,7 +39,6 @@ class _WalletFundingSuccessScreenState
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
-  final nav = GetIt.instance<NavigationService>();
 
   // Payment status tracking
   String _paymentStatus = 'pending';
@@ -267,7 +267,7 @@ class _WalletFundingSuccessScreenState
                     padding: AppSpacing.paddingXL,
                     decoration: BoxDecoration(
                       color: AppColors.primary.withAlpha((0.1 * 255).toInt()),
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: AppRadius.lg,
                       border: Border.all(
                         color: AppColors.primary.withAlpha((0.2 * 255).toInt()),
                       ),
@@ -291,8 +291,8 @@ class _WalletFundingSuccessScreenState
                         AppSpacing.verticalSpacing(SpacingSize.lg),
 
                         // Divider
-                        Divider(
-                          color: AppColors.outline.withAlpha((0.3 * 255).toInt()),
+                        const Divider(
+                          color: AppColors.outline,
                         ),
 
                         AppSpacing.verticalSpacing(SpacingSize.lg),
@@ -329,17 +329,14 @@ class _WalletFundingSuccessScreenState
                                 color: AppColors.onSurfaceVariant,
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 4,
-                                ),
+                                padding: AppSpacing.paddingSM,
                                 decoration: BoxDecoration(
                                   color: _isSuccessStatus()
                                       ? AppColors.success.withOpacity(0.1)
                                       : _isPendingStatus()
                                           ? AppColors.pending.withOpacity(0.1)
                                           : AppColors.error.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: AppRadius.md,
                                 ),
                                 child: AppText(
                                   _paymentStatus.toUpperCase(),
@@ -384,8 +381,8 @@ class _WalletFundingSuccessScreenState
                   if (_isSuccessStatus())
                     AppButton.primary(
                       onPressed: () {
-                        nav.goBack();
-                        nav.goBack();
+                        sl<NavigationService>().goBack();
+                        sl<NavigationService>().goBack();
                       },
                       child: const AppText(
                         'Back to Wallet',
@@ -399,9 +396,9 @@ class _WalletFundingSuccessScreenState
                       children: [
                         AppButton.primary(
                           onPressed: () {
-                            nav.goBack();
-                            nav.goBack();
-                            nav.goBack();
+                            sl<NavigationService>().goBack();
+                            sl<NavigationService>().goBack();
+                            sl<NavigationService>().goBack();
                           },
                           child: const AppText(
                             'Try Again',
@@ -413,8 +410,8 @@ class _WalletFundingSuccessScreenState
                         AppSpacing.verticalSpacing(SpacingSize.sm),
                         AppButton.secondary(
                           onPressed: () {
-                            nav.goBack();
-                            nav.goBack();
+                            sl<NavigationService>().goBack();
+                            sl<NavigationService>().goBack();
                           },
                           child: const AppText(
                             'Back to Wallet',
@@ -428,8 +425,8 @@ class _WalletFundingSuccessScreenState
                   else if (_isPendingStatus())
                     AppButton.secondary(
                       onPressed: () {
-                        nav.goBack();
-                        nav.goBack();
+                        sl<NavigationService>().goBack();
+                        sl<NavigationService>().goBack();
                       },
                       child: const AppText(
                         'Back to Wallet',

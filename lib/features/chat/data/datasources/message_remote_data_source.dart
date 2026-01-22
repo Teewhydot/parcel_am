@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:get_it/get_it.dart';
 import '../models/message_model.dart';
 import '../models/message_page_model.dart';
 import '../../domain/entities/message.dart';
@@ -38,14 +39,16 @@ abstract class MessageRemoteDataSource {
 }
 
 class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
-  final FirebaseFirestore firestore;
-  final FirebaseStorage storage;
+  final FirebaseFirestore _firestore;
+  final FirebaseStorage _storage;
 
-  MessageRemoteDataSourceImpl({required this.firestore, required this.storage});
+  MessageRemoteDataSourceImpl({FirebaseFirestore? firestore, FirebaseStorage? storage})
+      : _firestore = firestore ?? GetIt.instance<FirebaseFirestore>(),
+        _storage = storage ?? GetIt.instance<FirebaseStorage>();
 
   /// Get reference to the pages subcollection for a chat
   CollectionReference<Map<String, dynamic>> _pagesRef(String chatId) {
-    return firestore.collection('chats').doc(chatId).collection('pages');
+    return _firestore.collection('chats').doc(chatId).collection('pages');
   }
 
   /// Get or create the current (latest) message page for a chat
@@ -148,11 +151,11 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
 
   @override
   Future<MessageModel> sendMessage(MessageModel message) async {
-    final chatRef = firestore.collection('chats').doc(message.chatId);
+    final chatRef = _firestore.collection('chats').doc(message.chatId);
     final pageRef = await _getCurrentPage(message.chatId);
 
     // Generate a unique message ID
-    final messageId = firestore.collection('_').doc().id;
+    final messageId = _firestore.collection('_').doc().id;
     final messageWithId = MessageModel(
       id: messageId,
       chatId: message.chatId,
@@ -177,7 +180,7 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     final messageBytes = MessagePageModel.estimateMessageBytes(messageWithId);
 
     // Use a batch to update both the page and chat metadata atomically
-    final batch = firestore.batch();
+    final batch = _firestore.batch();
 
     // Append message to the page's messages array
     batch.update(pageRef, {
@@ -351,7 +354,7 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final storagePath = 'chats/$chatId/$fileType/$timestamp-$fileName';
 
-    final ref = storage.ref().child(storagePath);
+    final ref = _storage.ref().child(storagePath);
 
     String? contentType;
     if (fileType == 'images') {

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
 import 'package:parcel_am/core/routes/routes.dart';
 import 'package:parcel_am/core/services/navigation_service/nav_config.dart';
@@ -11,6 +10,7 @@ import 'package:parcel_am/core/widgets/app_spacing.dart';
 import 'package:parcel_am/core/widgets/app_text.dart';
 import 'package:parcel_am/core/widgets/app_button.dart';
 import 'package:parcel_am/features/parcel_am_core/domain/entities/withdrawal_order_entity.dart';
+import 'package:parcel_am/injection_container.dart';
 
 /// Screen displaying detailed information about a withdrawal transaction
 ///
@@ -22,9 +22,8 @@ import 'package:parcel_am/features/parcel_am_core/domain/entities/withdrawal_ord
 /// - Option to retry failed withdrawals
 class WithdrawalTransactionDetailScreen extends StatelessWidget {
   final WithdrawalOrderEntity withdrawalOrder;
-  final sl = GetIt.instance;
 
-  WithdrawalTransactionDetailScreen({
+  const WithdrawalTransactionDetailScreen({
     super.key,
     required this.withdrawalOrder,
   });
@@ -109,7 +108,7 @@ class WithdrawalTransactionDetailScreen extends StatelessWidget {
             size: 16,
             color: statusInfo['color'],
           ),
-          const SizedBox(width: 6),
+          AppSpacing.horizontalSpacing(SpacingSize.xs),
           AppText.bodyMedium(
             statusInfo['text'],
             fontWeight: FontWeight.w600,
@@ -227,7 +226,7 @@ class WithdrawalTransactionDetailScreen extends StatelessWidget {
                         ? AppColors.onSurface
                         : AppColors.onSurfaceVariant,
                   ),
-                  const SizedBox(height: 2),
+                  AppSpacing.verticalSpacing(SpacingSize.xs),
                   AppText.bodySmall(
                     timestamp,
                     color: AppColors.onSurfaceVariant,

@@ -6,7 +6,10 @@ import '../../domain/repositories/paystack_payment_repository.dart';
 import '../remote/data_sources/paystack_payment_data_source.dart';
 
 class PaystackPaymentRepositoryImpl implements PaystackPaymentRepository {
-  final _paystackDataSource = GetIt.instance<PaystackPaymentDataSource>();
+  final PaystackPaymentDataSource _paystackDataSource;
+
+  PaystackPaymentRepositoryImpl({PaystackPaymentDataSource? paystackDataSource})
+      : _paystackDataSource = paystackDataSource ?? GetIt.instance<PaystackPaymentDataSource>();
 
 
   @override

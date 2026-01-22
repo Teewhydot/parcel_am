@@ -62,6 +62,52 @@ import 'features/passkey/data/datasources/passkey_remote_data_source.dart';
 import 'features/passkey/data/repositories/passkey_repository_impl.dart';
 import 'features/passkey/domain/repositories/passkey_repository.dart';
 
+// TOTP 2FA Feature
+import 'features/totp_2fa/data/datasources/totp_local_data_source.dart';
+import 'features/totp_2fa/data/datasources/totp_remote_data_source.dart';
+import 'features/totp_2fa/data/repositories/totp_repository_impl.dart';
+import 'features/totp_2fa/domain/repositories/totp_repository.dart';
+
+// KYC Feature
+import 'features/kyc/data/datasources/kyc_remote_data_source.dart';
+import 'features/kyc/data/repositories/kyc_repository_impl.dart';
+import 'features/kyc/domain/repositories/kyc_repository.dart';
+
+// Parcel AM Core Repositories
+import 'features/parcel_am_core/data/repositories/auth_repository_impl.dart';
+import 'features/parcel_am_core/data/repositories/wallet_repository_impl.dart';
+import 'features/parcel_am_core/data/repositories/escrow_repository_impl.dart';
+import 'features/parcel_am_core/data/repositories/parcel_repository_impl.dart';
+import 'features/parcel_am_core/data/repositories/bank_account_repository_impl.dart';
+import 'features/parcel_am_core/data/repositories/withdrawal_repository_impl.dart';
+import 'features/parcel_am_core/data/repositories/dashboard_repository_impl.dart';
+import 'features/parcel_am_core/domain/repositories/auth_repository.dart';
+import 'features/parcel_am_core/domain/repositories/wallet_repository.dart';
+import 'features/parcel_am_core/domain/repositories/escrow_repository.dart';
+import 'features/parcel_am_core/domain/repositories/parcel_repository.dart';
+import 'features/parcel_am_core/domain/repositories/bank_account_repository.dart';
+import 'features/parcel_am_core/domain/repositories/withdrawal_repository.dart';
+import 'features/parcel_am_core/domain/repositories/dashboard_repository.dart';
+
+// Parcel AM Core Data Sources (additional)
+import 'features/parcel_am_core/data/datasources/bank_account_remote_data_source.dart';
+import 'features/parcel_am_core/data/datasources/withdrawal_remote_data_source.dart';
+
+// Chat Feature (additional)
+import 'features/chat/data/datasources/message_remote_data_source.dart';
+import 'features/chat/data/datasources/presence_remote_data_source.dart';
+import 'features/chat/data/repositories/message_repository_impl.dart';
+import 'features/chat/domain/repositories/message_repository.dart';
+
+// Notifications Feature (additional)
+import 'features/notifications/data/repositories/notification_repository_impl.dart';
+import 'features/notifications/domain/repositories/notification_repository.dart';
+
+// Payments Feature (additional)
+import 'features/payments/data/datasources/funding_order_remote_data_source.dart';
+import 'features/payments/data/repositories/funding_order_repository_impl.dart';
+import 'features/payments/domain/repositories/funding_order_repository.dart';
+
 final sl = GetIt.instance;
 
 Future<void> init() async {
@@ -92,7 +138,10 @@ Future<void> init() async {
   );
 
   // Presence System
-  sl.registerLazySingleton<PresenceRepository>(() => PresenceRepositoryImpl(sl()));
+  sl.registerLazySingleton<PresenceRemoteDataSource>(
+    () => PresenceRemoteDataSourceImpl(),
+  );
+  sl.registerLazySingleton<PresenceRepository>(() => PresenceRepositoryImpl());
   sl.registerLazySingleton<PresenceService>(() => PresenceService(repository: sl()));
 
   //! Feature Modules (No longer using DI modules - direct instantiation)
@@ -221,5 +270,94 @@ Future<void> init() async {
   // Passkey Repository
   sl.registerLazySingleton<PasskeyRepository>(
     () => PasskeyRepositoryImpl(),
+  );
+
+  //! Features - TOTP 2FA
+  // TOTP Data Sources
+  sl.registerLazySingleton<TotpLocalDataSource>(
+    () => TotpLocalDataSourceImpl(),
+  );
+  sl.registerLazySingleton<TotpRemoteDataSource>(
+    () => TotpRemoteDataSourceImpl(),
+  );
+
+  // TOTP Repository
+  sl.registerLazySingleton<TotpRepository>(
+    () => TotpRepositoryImpl(),
+  );
+
+  //! Features - KYC
+  // KYC Data Source
+  sl.registerLazySingleton<KycRemoteDataSource>(
+    () => KycRemoteDataSourceImpl(),
+  );
+
+  // KYC Repository
+  sl.registerLazySingleton<KycRepository>(
+    () => KycRepositoryImpl(),
+  );
+
+  //! Features - Parcel AM Core Repositories
+  // Auth Repository
+  sl.registerLazySingleton<AuthRepository>(
+    () => AuthRepositoryImpl(),
+  );
+
+  // Wallet Repository
+  sl.registerLazySingleton<WalletRepository>(
+    () => WalletRepositoryImpl(),
+  );
+
+  // Escrow Repository
+  sl.registerLazySingleton<EscrowRepository>(
+    () => EscrowRepositoryImpl(),
+  );
+
+  // Parcel Repository
+  sl.registerLazySingleton<ParcelRepository>(
+    () => ParcelRepositoryImpl(),
+  );
+
+  // Bank Account Data Source and Repository
+  sl.registerLazySingleton<BankAccountRemoteDataSource>(
+    () => BankAccountRemoteDataSourceImpl(),
+  );
+  sl.registerLazySingleton<BankAccountRepository>(
+    () => BankAccountRepositoryImpl(),
+  );
+
+  // Withdrawal Data Source and Repository
+  sl.registerLazySingleton<WithdrawalRemoteDataSource>(
+    () => WithdrawalRemoteDataSourceImpl(),
+  );
+  sl.registerLazySingleton<WithdrawalRepository>(
+    () => WithdrawalRepositoryImpl(),
+  );
+
+  // Dashboard Repository
+  sl.registerLazySingleton<DashboardRepository>(
+    () => DashboardRepositoryImpl(),
+  );
+
+  //! Features - Chat Additional Repositories
+  // Message Data Source and Repository
+  sl.registerLazySingleton<MessageRemoteDataSource>(
+    () => MessageRemoteDataSourceImpl(),
+  );
+  sl.registerLazySingleton<MessageRepository>(
+    () => MessageRepositoryImpl(),
+  );
+
+  //! Features - Notification Repository
+  sl.registerLazySingleton<NotificationRepository>(
+    () => NotificationRepositoryImpl(),
+  );
+
+  //! Features - Funding Order
+  sl.registerLazySingleton<FundingOrderRemoteDataSource>(
+    () => FundingOrderRemoteDataSourceImpl(),
+  );
+  sl.registerLazySingleton<FundingOrderRepository>(
+    () => FundingOrderRepositoryImpl(),
   );
 }

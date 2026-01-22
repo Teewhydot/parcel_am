@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:get_it/get_it.dart';
 import 'package:http/http.dart' as http;
 import '../../../../core/constants/env.dart';
 import '../../../../core/data/datasources/authenticated_remote_data_source.dart';
@@ -50,22 +51,27 @@ abstract class BankAccountRemoteDataSource {
 class BankAccountRemoteDataSourceImpl
     with AuthenticatedRemoteDataSourceMixin
     implements BankAccountRemoteDataSource {
-  final FirebaseFirestore firestore;
-  @override
-  final FirebaseAuth auth;
-  @override
-  final ConnectivityService connectivityService;
+  final FirebaseFirestore _firestore;
+  final FirebaseAuth _auth;
+  final ConnectivityService _connectivityService;
   final String? baseUrl = Env.firebaseCloudFunctionsUrl;
+
+  @override
+  FirebaseAuth get auth => _auth;
+  @override
+  ConnectivityService get connectivityService => _connectivityService;
 
   // Cache for bank list (refresh daily)
   List<BankInfoModel>? _cachedBankList;
   DateTime? _cacheTimestamp;
 
   BankAccountRemoteDataSourceImpl({
-    required this.firestore,
-    required this.auth,
-    required this.connectivityService,
-  });
+    FirebaseFirestore? firestore,
+    FirebaseAuth? auth,
+    ConnectivityService? connectivityService,
+  })  : _firestore = firestore ?? GetIt.instance<FirebaseFirestore>(),
+        _auth = auth ?? GetIt.instance<FirebaseAuth>(),
+        _connectivityService = connectivityService ?? GetIt.instance<ConnectivityService>();
 
   @override
   Future<List<BankInfoModel>> getBankList() async {
@@ -80,7 +86,7 @@ class BankAccountRemoteDataSourceImpl
 
       // Fetch bank list from Firestore 'banks' collection
       Logger.logBasic('Fetching bank list from Firestore');
-      final querySnapshot = await firestore
+      final querySnapshot = await _firestore
           .collection('banks')
           .get();
 
@@ -210,7 +216,7 @@ class BankAccountRemoteDataSourceImpl
       }
 
       // Create new bank account document
-      final accountRef = firestore
+      final accountRef = _firestore
           .collection('users')
           .doc(userId)
           .collection('user_bank_accounts')
@@ -248,7 +254,7 @@ class BankAccountRemoteDataSourceImpl
   @override
   Future<List<UserBankAccountModel>> getUserBankAccounts(String userId) async {
     try {
-      final querySnapshot = await firestore
+      final querySnapshot = await _firestore
           .collection('users')
           .doc(userId)
           .collection('user_bank_accounts')
@@ -277,7 +283,7 @@ class BankAccountRemoteDataSourceImpl
       await validateConnectivity();
 
       // Soft delete - set active to false
-      await firestore
+      await _firestore
           .collection('users')
           .doc(userId)
           .collection('user_bank_accounts')

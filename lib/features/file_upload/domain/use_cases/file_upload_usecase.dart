@@ -1,25 +1,30 @@
 import 'dart:io';
 
 import 'package:dartz/dartz.dart';
+import 'package:get_it/get_it.dart';
 
 import '../../../../core/errors/failures.dart';
-import '../../data/repositories/file_upload_repository_impl.dart';
+import '../repositories/file_upload_repository.dart';
 import '../entities/uploaded_file_entity.dart';
 
 class FileUploadUseCase {
-  final fileUploadRepo = FileUploadRepositoryImpl();
+  final FileUploadRepository _repository;
+
+  FileUploadUseCase({FileUploadRepository? repository})
+      : _repository = repository ?? GetIt.instance<FileUploadRepository>();
+  
   Future<Either<Failure, void>> deleteFile({
     required String userId,
     required String fileId,
   }) async {
-    return await fileUploadRepo.deleteFile(fileId: fileId);
+    return await _repository.deleteFile(fileId: fileId);
   }
 
   Future<Either<Failure, String>> generateFileUrl({
     required String filePath,
     List<String>? transformations,
   }) {
-    return fileUploadRepo.generateFileUrl(
+    return _repository.generateFileUrl(
       filePath: filePath,
       transformations: transformations,
     );
@@ -30,7 +35,7 @@ class FileUploadUseCase {
     required File file,
     required String folder,
   }) async {
-    return await fileUploadRepo.uploadFile(
+    return await _repository.uploadFile(
       userId: userId, // Replace with actual user ID retrieval logic
       file: file,
       folder: folder,

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:get_it/get_it.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 import '../../../../core/theme/app_colors.dart';
@@ -9,6 +8,7 @@ import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/constants/business_constants.dart';
+import '../../../../injection_container.dart';
 
 class WalletFundingPaymentScreen extends StatefulWidget {
   final String authorizationUrl;
@@ -37,7 +37,6 @@ class _WalletFundingPaymentScreenState
   bool isLoading = true;
   double loadingProgress = 0;
   bool hasProcessedPayment = false;
-  final nav = GetIt.instance<NavigationService>();
   StreamSubscription<DocumentSnapshot>? _transactionStatusSubscription;
 
   @override
@@ -80,7 +79,7 @@ class _WalletFundingPaymentScreenState
   }
 
   void _navigateToConfirmationScreen() {
-    nav.navigateTo(
+    sl<NavigationService>().navigateTo(
       Routes.walletFundingSuccess,
       arguments: {
         'transactionId': widget.transactionId,

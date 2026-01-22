@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:get_it/get_it.dart';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 import '../../../../core/constants/env.dart';
@@ -40,19 +41,24 @@ abstract class WithdrawalRemoteDataSource {
 class WithdrawalRemoteDataSourceImpl
     with AuthenticatedRemoteDataSourceMixin
     implements WithdrawalRemoteDataSource {
-  final FirebaseFirestore firestore;
-  @override
-  final FirebaseAuth auth;
-  @override
-  final ConnectivityService connectivityService;
+  final FirebaseFirestore _firestore;
+  final FirebaseAuth _auth;
+  final ConnectivityService _connectivityService;
   final String? baseUrl = Env.firebaseCloudFunctionsUrl;
   final _uuid = const Uuid();
 
+  @override
+  FirebaseAuth get auth => _auth;
+  @override
+  ConnectivityService get connectivityService => _connectivityService;
+
   WithdrawalRemoteDataSourceImpl({
-    required this.firestore,
-    required this.auth,
-    required this.connectivityService,
-  });
+    FirebaseFirestore? firestore,
+    FirebaseAuth? auth,
+    ConnectivityService? connectivityService,
+  })  : _firestore = firestore ?? GetIt.instance<FirebaseFirestore>(),
+        _auth = auth ?? GetIt.instance<FirebaseAuth>(),
+        _connectivityService = connectivityService ?? GetIt.instance<ConnectivityService>();
 
   @override
   String generateWithdrawalReference() {
@@ -102,7 +108,7 @@ class WithdrawalRemoteDataSourceImpl
         Logger.logSuccess('Withdrawal initiated successfully: $withdrawalReference');
 
         // Fetch the created withdrawal order from Firestore
-        final withdrawalDoc = await firestore
+        final withdrawalDoc = await _firestore
             .collection('withdrawal_orders')
             .doc(withdrawalReference)
             .get();
@@ -128,7 +134,7 @@ class WithdrawalRemoteDataSourceImpl
   @override
   Future<WithdrawalOrderModel> getWithdrawalOrder(String withdrawalId) async {
     try {
-      final doc = await firestore
+      final doc = await _firestore
           .collection('withdrawal_orders')
           .doc(withdrawalId)
           .get();
@@ -149,7 +155,7 @@ class WithdrawalRemoteDataSourceImpl
 
   @override
   Stream<WithdrawalOrderModel> watchWithdrawalOrder(String withdrawalId) {
-    return firestore
+    return _firestore
         .collection('withdrawal_orders')
         .doc(withdrawalId)
         .snapshots()
@@ -168,7 +174,7 @@ class WithdrawalRemoteDataSourceImpl
     DocumentSnapshot? startAfter,
   }) async {
     try {
-      Query query = firestore
+      Query query = _firestore
           .collection('withdrawal_orders')
           .where('userId', isEqualTo: userId)
           .orderBy('createdAt', descending: true)

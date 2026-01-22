@@ -1,15 +1,17 @@
 import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart';
+import 'package:get_it/get_it.dart';
 import '../../../../core/errors/failures.dart';
 import '../repositories/message_repository.dart';
 
 class MarkAsRead {
-  final MessageRepository repository;
+  final MessageRepository _repository;
 
-  MarkAsRead(this.repository);
+  MarkAsRead({MessageRepository? repository})
+      : _repository = repository ?? GetIt.instance<MessageRepository>();
 
   Future<Either<Failure, void>> call(MarkAsReadParams params) async {
-    return await repository.markAsRead(
+    return await _repository.markAsRead(
       params.chatId,
       params.userId,
       params.messageId,

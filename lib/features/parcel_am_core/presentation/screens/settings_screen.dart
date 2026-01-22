@@ -109,6 +109,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   sl<NavigationService>().navigateTo(Routes.passkeyManagement);
                 },
               ),
+              _SettingsTile(
+                icon: Icons.security,
+                title: 'Two-Factor Authentication',
+                subtitle: 'Add extra security with authenticator app',
+                onTap: () {
+                  sl<NavigationService>().navigateTo(Routes.totp2FAManagement);
+                },
+              ),
             ],
           ),
         ],

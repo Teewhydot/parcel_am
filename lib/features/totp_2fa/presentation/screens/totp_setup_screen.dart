@@ -1,0 +1,334 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/bloc/base/base_state.dart';
+import '../../../../core/helpers/user_extensions.dart';
+import '../../../../core/services/navigation_service/nav_config.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
+import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_spacing.dart';
+import '../../../../core/widgets/app_text.dart';
+import '../../../../injection_container.dart';
+import '../bloc/totp_cubit.dart';
+import '../bloc/totp_data.dart';
+import '../widgets/recovery_codes_widget.dart';
+import '../widgets/totp_code_input_widget.dart';
+import '../widgets/totp_qr_code_widget.dart';
+
+/// Screen for setting up TOTP 2FA
+class TotpSetupScreen extends StatefulWidget {
+  const TotpSetupScreen({super.key});
+
+  @override
+  State<TotpSetupScreen> createState() => _TotpSetupScreenState();
+}
+
+class _TotpSetupScreenState extends State<TotpSetupScreen> {
+  int _currentStep = 0;
+
+  String get _userId => context.currentUserId ?? '';
+  String get _userEmail => context.user.email;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<TotpCubit>().startSetup(_userId, _userEmail);
+    });
+  }
+
+  void _onVerificationCodeCompleted(String code) {
+    context.read<TotpCubit>().completeSetup(_userId, code);
+  }
+
+  void _onRecoveryCodesAcknowledged() {
+    context.read<TotpCubit>().hideRecoveryCodes();
+    sl<NavigationService>().goBack<bool>(result: true);
+  }
+
+  void _cancelSetup() {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.lg),
+        title: AppText.titleLarge('Cancel Setup?', color: AppColors.onBackground),
+        content: AppText.bodyMedium(
+          'Are you sure you want to cancel 2FA setup? You will need to start over.',
+          color: AppColors.onSurfaceVariant,
+        ),
+        actions: [
+          AppButton.text(
+            onPressed: () => sl<NavigationService>().goBack(),
+            child: AppText.labelMedium('Continue Setup', color: AppColors.onSurface),
+          ),
+          AppButton.text(
+            onPressed: () {
+              sl<NavigationService>().goBack();
+              context.read<TotpCubit>().cancelSetup(_userId);
+              sl<NavigationService>().goBack<bool>(result: false);
+            },
+            child: AppText.labelMedium('Cancel', color: AppColors.error),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          _cancelSetup();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          title: AppText.titleLarge('Enable 2FA'),
+          backgroundColor: AppColors.surface,
+          elevation: 0,
+          foregroundColor: AppColors.onBackground,
+          leading: IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: _cancelSetup,
+          ),
+        ),
+        body: BlocConsumer<TotpCubit, BaseState<TotpData>>(
+          listener: (context, state) {
+            if (state.isSuccess && state.data?.isEnabled == true) {
+              setState(() {
+                _currentStep = 2;
+              });
+            } else if (state.isError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: AppText.bodyMedium(
+                    state.errorMessage ?? 'Verification failed',
+                    color: AppColors.white,
+                  ),
+                  backgroundColor: AppColors.error,
+                ),
+              );
+            }
+          },
+          builder: (context, state) {
+            final totpData = state.data ?? const TotpData();
+            final isLoading = state.isLoading;
+
+            if (isLoading && totpData.setupResult == null) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            return SingleChildScrollView(
+              padding: AppSpacing.paddingMD,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildStepper(),
+                  AppSpacing.verticalSpacing(SpacingSize.xl),
+                  if (_currentStep == 0) _buildQrCodeStep(totpData, isLoading),
+                  if (_currentStep == 1)
+                    _buildVerificationStep(totpData, isLoading),
+                  if (_currentStep == 2) _buildRecoveryCodesStep(totpData),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStepper() {
+    final steps = ['Scan QR', 'Verify', 'Save Codes'];
+
+    return Row(
+      children: List.generate(steps.length, (index) {
+        final isActive = index == _currentStep;
+        final isCompleted = index < _currentStep;
+
+        return Expanded(
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: isCompleted
+                            ? AppColors.success
+                            : isActive
+                                ? AppColors.primary
+                                : AppColors.surfaceVariant,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: isCompleted
+                            ? const Icon(
+                                Icons.check,
+                                color: AppColors.white,
+                                size: 18,
+                              )
+                            : AppText.bodyMedium(
+                                '${index + 1}',
+                                color: isActive
+                                    ? AppColors.white
+                                    : AppColors.onSurfaceVariant,
+                                fontWeight: FontWeight.bold,
+                              ),
+                      ),
+                    ),
+                    AppSpacing.verticalSpacing(SpacingSize.xs),
+                    AppText.bodySmall(
+                      steps[index],
+                      color: isActive || isCompleted
+                          ? AppColors.onBackground
+                          : AppColors.onSurfaceVariant,
+                      fontWeight:
+                          isActive ? FontWeight.w600 : FontWeight.normal,
+                    ),
+                  ],
+                ),
+              ),
+              if (index < steps.length - 1)
+                Expanded(
+                  child: Container(
+                    height: 2,
+                    color: isCompleted
+                        ? AppColors.success
+                        : AppColors.surfaceVariant,
+                  ),
+                ),
+            ],
+          ),
+        );
+      }),
+    );
+  }
+
+  Widget _buildQrCodeStep(TotpData totpData, bool isLoading) {
+    final setupResult = totpData.setupResult;
+    if (setupResult == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TotpQrCodeWidget(
+          qrCodeUri: setupResult.qrCodeUri,
+          secretForDisplay: setupResult.secretForDisplay,
+        ),
+        AppSpacing.verticalSpacing(SpacingSize.xl),
+        AppButton.primary(
+          onPressed: isLoading
+              ? null
+              : () {
+                  setState(() {
+                    _currentStep = 1;
+                  });
+                },
+          fullWidth: true,
+          child: AppText.bodyMedium('Continue', color: AppColors.white),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildVerificationStep(TotpData totpData, bool isLoading) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: AppSpacing.paddingMD,
+          decoration: BoxDecoration(
+            color: AppColors.info.withOpacity(0.1),
+            borderRadius: AppRadius.md,
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.info_outline, color: AppColors.info),
+              AppSpacing.horizontalSpacing(SpacingSize.md),
+              Expanded(
+                child: AppText.bodyMedium(
+                  'Enter the 6-digit code from your authenticator app to verify setup',
+                  color: AppColors.onBackground,
+                ),
+              ),
+            ],
+          ),
+        ),
+        AppSpacing.verticalSpacing(SpacingSize.xl),
+        TotpCodeInputWidget(
+          onCompleted: isLoading ? null : _onVerificationCodeCompleted,
+          enabled: !isLoading,
+          errorMessage: totpData.errorMessage,
+          autoFocus: true,
+        ),
+        AppSpacing.verticalSpacing(SpacingSize.xl),
+        if (isLoading)
+          const Center(child: CircularProgressIndicator())
+        else
+          AppButton.text(
+            onPressed: () {
+              setState(() {
+                _currentStep = 0;
+              });
+            },
+            leadingIcon: const Icon(Icons.arrow_back, size: 18, color: AppColors.primary),
+            child: AppText.labelMedium('Back to QR code', color: AppColors.primary),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildRecoveryCodesStep(TotpData totpData) {
+    final recoveryCodes = totpData.setupResult?.recoveryCodes ?? [];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: AppSpacing.paddingMD,
+          decoration: BoxDecoration(
+            color: AppColors.success.withOpacity(0.1),
+            borderRadius: AppRadius.md,
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.check_circle, color: AppColors.success),
+              AppSpacing.horizontalSpacing(SpacingSize.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AppText.bodyLarge(
+                      '2FA Enabled Successfully!',
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.onBackground,
+                    ),
+                    AppSpacing.verticalSpacing(SpacingSize.xs),
+                    AppText.bodySmall(
+                      'Save your recovery codes below.',
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        AppSpacing.verticalSpacing(SpacingSize.xl),
+        RecoveryCodesWidget(
+          recoveryCodes: recoveryCodes,
+          onAcknowledged: _onRecoveryCodesAcknowledged,
+          isSetupMode: true,
+        ),
+      ],
+    );
+  }
+}

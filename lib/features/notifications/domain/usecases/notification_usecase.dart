@@ -1,35 +1,39 @@
 import 'package:dartz/dartz.dart';
+import 'package:get_it/get_it.dart';
 import '../../../../core/errors/failures.dart';
 import '../entities/notification_entity.dart';
-import '../../data/repositories/notification_repository_impl.dart';
+import '../repositories/notification_repository.dart';
 
 class NotificationUseCase {
-  final repository = NotificationRepositoryImpl();
+  final NotificationRepository _repository;
+
+  NotificationUseCase({NotificationRepository? repository})
+      : _repository = repository ?? GetIt.instance<NotificationRepository>();
 
   /// Watch notifications stream for a specific user
   Stream<Either<Failure, List<NotificationEntity>>> watchNotifications(
     String userId,
   ) {
-    return repository.watchNotifications(userId);
+    return _repository.watchNotifications(userId);
   }
 
   /// Mark a single notification as read
   Future<Either<Failure, void>> markAsRead(String notificationId) {
-    return repository.markAsRead(notificationId);
+    return _repository.markAsRead(notificationId);
   }
 
   /// Mark all notifications as read for a user
   Future<Either<Failure, void>> markAllAsRead(String userId) {
-    return repository.markAllAsRead(userId);
+    return _repository.markAllAsRead(userId);
   }
 
   /// Delete a specific notification
   Future<Either<Failure, void>> deleteNotification(String notificationId) {
-    return repository.deleteNotification(notificationId);
+    return _repository.deleteNotification(notificationId);
   }
 
   /// Clear all notifications for a user
   Future<Either<Failure, void>> clearAll(String userId) {
-    return repository.clearAll(userId);
+    return _repository.clearAll(userId);
   }
 }

@@ -1,21 +1,23 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:get_it/get_it.dart';
 import '../../../../core/utils/logger.dart';
 import '../../domain/entities/withdrawal_order_entity.dart';
 import '../../domain/repositories/withdrawal_repository.dart';
 import '../datasources/withdrawal_remote_data_source.dart';
 
 class WithdrawalRepositoryImpl implements WithdrawalRepository {
-  final WithdrawalRemoteDataSource remoteDataSource;
+  final WithdrawalRemoteDataSource _remoteDataSource;
 
   // Withdrawal limits in NGN
   static const double minWithdrawalAmount = 100.0;
   static const double maxWithdrawalAmount = 500000.0;
 
-  WithdrawalRepositoryImpl({required this.remoteDataSource});
+  WithdrawalRepositoryImpl({WithdrawalRemoteDataSource? remoteDataSource})
+      : _remoteDataSource = remoteDataSource ?? GetIt.instance<WithdrawalRemoteDataSource>();
 
   @override
   String generateWithdrawalReference() {
-    return remoteDataSource.generateWithdrawalReference();
+    return _remoteDataSource.generateWithdrawalReference();
   }
 
   @override
@@ -60,7 +62,7 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
         throw Exception('Maximum withdrawal amount is NGN ${maxWithdrawalAmount.toStringAsFixed(0)}');
       }
 
-      final withdrawalModel = await remoteDataSource.initiateWithdrawal(
+      final withdrawalModel = await _remoteDataSource.initiateWithdrawal(
         userId: userId,
         amount: amount,
         recipientCode: recipientCode,
@@ -79,7 +81,7 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
   @override
   Future<WithdrawalOrderEntity> getWithdrawalOrder(String withdrawalId) async {
     try {
-      final withdrawalModel = await remoteDataSource.getWithdrawalOrder(withdrawalId);
+      final withdrawalModel = await _remoteDataSource.getWithdrawalOrder(withdrawalId);
       return withdrawalModel.toEntity();
     } catch (e) {
       Logger.logError('Repository: Error fetching withdrawal order: $e');
@@ -90,7 +92,7 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
   @override
   Stream<WithdrawalOrderEntity> watchWithdrawalOrder(String withdrawalId) {
     try {
-      return remoteDataSource
+      return _remoteDataSource
           .watchWithdrawalOrder(withdrawalId)
           .map((model) => model.toEntity());
     } catch (e) {
@@ -106,7 +108,7 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
     DocumentSnapshot? startAfter,
   }) async {
     try {
-      final withdrawalModels = await remoteDataSource.getWithdrawalHistory(
+      final withdrawalModels = await _remoteDataSource.getWithdrawalHistory(
         userId: userId,
         limit: limit,
         startAfter: startAfter,

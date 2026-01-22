@@ -8,14 +8,17 @@ import '../../domain/repositories/notification_repository.dart';
 import '../datasources/notification_remote_datasource.dart';
 
 class NotificationRepositoryImpl implements NotificationRepository {
-  final remoteDataSource = GetIt.instance<NotificationRemoteDataSource>();
+  final NotificationRemoteDataSource _remoteDataSource;
+
+  NotificationRepositoryImpl({NotificationRemoteDataSource? remoteDataSource})
+      : _remoteDataSource = remoteDataSource ?? GetIt.instance<NotificationRemoteDataSource>();
 
   @override
   Stream<Either<Failure, List<NotificationEntity>>> watchNotifications(
     String userId,
   ) {
     return ErrorHandler.handleStream(
-      () => remoteDataSource.watchNotifications(userId).map((notifications) {
+      () => _remoteDataSource.watchNotifications(userId).map((notifications) {
         // Map NotificationModel to NotificationEntity
         return notifications
             .map((model) => model as NotificationEntity)
@@ -32,7 +35,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
     }
 
     try {
-      await remoteDataSource.markAsRead(notificationId);
+      await _remoteDataSource.markAsRead(notificationId);
       return const Right(null);
     } catch (e) {
       return Left(ServerFailure(failureMessage: e.toString()));
@@ -46,7 +49,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
     }
 
     try {
-      await remoteDataSource.markAllAsRead(userId);
+      await _remoteDataSource.markAllAsRead(userId);
       return const Right(null);
     } catch (e) {
       return Left(ServerFailure(failureMessage: e.toString()));
@@ -60,7 +63,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
     }
 
     try {
-      await remoteDataSource.deleteNotification(notificationId);
+      await _remoteDataSource.deleteNotification(notificationId);
       return const Right(null);
     } catch (e) {
       return Left(ServerFailure(failureMessage: e.toString()));
@@ -74,7 +77,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
     }
 
     try {
-      await remoteDataSource.clearAll(userId);
+      await _remoteDataSource.clearAll(userId);
       return const Right(null);
     } catch (e) {
       return Left(ServerFailure(failureMessage: e.toString()));

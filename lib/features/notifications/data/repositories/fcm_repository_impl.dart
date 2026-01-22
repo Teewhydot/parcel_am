@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:get_it/get_it.dart';
 import '../../domain/repositories/fcm_repository.dart';
 
 /// Implementation of FCMRepository using Firebase Messaging and Firestore
@@ -9,10 +10,10 @@ class FCMRepositoryImpl implements FCMRepository {
   final FirebaseFirestore _firestore;
 
   FCMRepositoryImpl({
-    required FirebaseMessaging firebaseMessaging,
-    required FirebaseFirestore firestore,
-  })  : _firebaseMessaging = firebaseMessaging,
-        _firestore = firestore;
+    FirebaseMessaging? firebaseMessaging,
+    FirebaseFirestore? firestore,
+  })  : _firebaseMessaging = firebaseMessaging ?? GetIt.instance<FirebaseMessaging>(),
+        _firestore = firestore ?? GetIt.instance<FirebaseFirestore>();
 
   @override
   Future<String?> getFCMToken() async {

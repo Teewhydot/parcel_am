@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:get_it/get_it.dart';
 import '../models/presence_model.dart';
 import '../../domain/entities/presence_entity.dart';
 import '../../../../core/utils/logger.dart';
@@ -12,13 +13,14 @@ abstract class PresenceRemoteDataSource {
 }
 
 class PresenceRemoteDataSourceImpl implements PresenceRemoteDataSource {
-  final FirebaseFirestore firestore;
+  final FirebaseFirestore _firestore;
 
-  PresenceRemoteDataSourceImpl({required this.firestore});
+  PresenceRemoteDataSourceImpl({FirebaseFirestore? firestore})
+      : _firestore = firestore ?? GetIt.instance<FirebaseFirestore>();
 
   @override
   Stream<PresenceModel> watchUserPresence(String userId) {
-    return firestore
+    return _firestore
         .collection('presence')
         .doc(userId)
         .snapshots()
@@ -43,7 +45,7 @@ class PresenceRemoteDataSourceImpl implements PresenceRemoteDataSource {
   @override
   Future<void> updatePresenceStatus(String userId, PresenceStatus status) async {
     final now = DateTime.now();
-    await firestore.collection('presence').doc(userId).set({
+    await _firestore.collection('presence').doc(userId).set({
       'status': status.name,
       'lastSeen': status == PresenceStatus.offline ? Timestamp.fromDate(now) : null,
       'updatedAt': FieldValue.serverTimestamp(),
@@ -52,7 +54,7 @@ class PresenceRemoteDataSourceImpl implements PresenceRemoteDataSource {
 
   @override
   Future<void> updateTypingStatus(String userId, String? chatId, bool isTyping) async {
-    await firestore.collection('presence').doc(userId).set({
+    await _firestore.collection('presence').doc(userId).set({
       'isTyping': isTyping,
       'typingInChatId': isTyping ? chatId : null,
       'lastTypingAt': isTyping ? FieldValue.serverTimestamp() : null,
@@ -62,7 +64,7 @@ class PresenceRemoteDataSourceImpl implements PresenceRemoteDataSource {
 
   @override
   Future<void> updateLastSeen(String userId) async {
-    await firestore.collection('presence').doc(userId).set({
+    await _firestore.collection('presence').doc(userId).set({
       'lastSeen': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
@@ -70,7 +72,7 @@ class PresenceRemoteDataSourceImpl implements PresenceRemoteDataSource {
 
   @override
   Future<PresenceModel?> getUserPresence(String userId) async {
-    final doc = await firestore.collection('presence').doc(userId).get();
+    final doc = await _firestore.collection('presence').doc(userId).get();
     
     if (!doc.exists) {
       return null;

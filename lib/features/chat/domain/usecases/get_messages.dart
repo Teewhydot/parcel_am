@@ -1,18 +1,20 @@
 import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart';
+import 'package:get_it/get_it.dart';
 import '../../../../core/errors/failures.dart';
 import '../entities/message_entity.dart';
 import '../repositories/message_repository.dart';
 
 class GetMessages {
-  final MessageRepository repository;
+  final MessageRepository _repository;
 
-  GetMessages(this.repository);
+  GetMessages({MessageRepository? repository})
+      : _repository = repository ?? GetIt.instance<MessageRepository>();
 
   Future<Either<Failure, List<MessageEntity>>> call(
     GetMessagesParams params,
   ) async {
-    return await repository.getMessages(
+    return await _repository.getMessages(
       params.chatId,
       limit: params.limit,
       startAfterMessageId: params.startAfterMessageId,

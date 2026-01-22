@@ -86,3 +86,46 @@ class PasskeyAlreadyExistsFailure extends PasskeyFailure {
     super.failureMessage = 'A passkey is already registered for this device',
   });
 }
+
+// TOTP 2FA-specific failures
+class TotpFailure extends Failure {
+  const TotpFailure({required super.failureMessage});
+}
+
+class TotpSetupFailure extends TotpFailure {
+  const TotpSetupFailure({required super.failureMessage});
+}
+
+class TotpVerificationFailure extends TotpFailure {
+  const TotpVerificationFailure({
+    super.failureMessage = 'Invalid verification code',
+  });
+}
+
+class TotpLockedFailure extends TotpFailure {
+  final DateTime lockedUntil;
+
+  const TotpLockedFailure({
+    required super.failureMessage,
+    required this.lockedUntil,
+  });
+
+  @override
+  List<Object> get props => [failureMessage, lockedUntil];
+}
+
+class TotpNotConfiguredFailure extends TotpFailure {
+  const TotpNotConfiguredFailure({
+    super.failureMessage = 'Two-factor authentication is not configured',
+  });
+}
+
+class RecoveryCodeFailure extends TotpFailure {
+  const RecoveryCodeFailure({required super.failureMessage});
+}
+
+class RecoveryCodeExhaustedFailure extends RecoveryCodeFailure {
+  const RecoveryCodeExhaustedFailure({
+    super.failureMessage = 'All recovery codes have been used',
+  });
+}

@@ -1,16 +1,18 @@
 import 'package:dartz/dartz.dart';
+import 'package:get_it/get_it.dart';
 import '../../../../core/errors/failures.dart';
 import '../entities/chat_entity.dart';
 import '../repositories/chat_repository.dart';
 
 class GetChat {
-  final ChatRepository repository;
+  final ChatRepository _repository;
   final String currentUserId;
 
-  GetChat(this.repository, this.currentUserId);
+  GetChat({ChatRepository? repository, required this.currentUserId})
+      : _repository = repository ?? GetIt.instance<ChatRepository>();
 
   Future<Either<Failure, ChatEntity>> call(String chatId) async {
-    final result = await repository.getChat(chatId);
+    final result = await _repository.getChat(chatId);
     return result.fold(
       (failure) => Left(failure),
       (chat) {

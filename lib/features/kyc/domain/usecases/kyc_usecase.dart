@@ -1,9 +1,13 @@
 import 'package:dartz/dartz.dart';
+import 'package:get_it/get_it.dart';
 import '../../../../core/errors/failures.dart';
-import '../../data/repositories/kyc_repository_impl.dart';
+import '../repositories/kyc_repository.dart';
 
 class KycUseCase {
-  final kycRepo = KycRepositoryImpl();
+  final KycRepository _repository;
+
+  KycUseCase({KycRepository? repository})
+      : _repository = repository ?? GetIt.instance<KycRepository>();
 
   Future<Either<Failure, void>> submitKyc({
     required String userId,
@@ -21,7 +25,7 @@ class KycUseCase {
     String? selfieWithIdUrl,
     String? proofOfAddressUrl,
   }) {
-    return kycRepo.submitKyc(
+    return _repository.submitKyc(
       userId: userId,
       fullName: fullName,
       dateOfBirth: dateOfBirth,
@@ -40,6 +44,6 @@ class KycUseCase {
   }
 
   Stream<String> watchKycStatus(String userId) {
-    return kycRepo.watchKycStatus(userId);
+    return _repository.watchKycStatus(userId);
   }
 }

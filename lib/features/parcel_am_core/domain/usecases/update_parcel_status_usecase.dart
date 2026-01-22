@@ -1,17 +1,19 @@
 import 'package:dartz/dartz.dart';
+import 'package:get_it/get_it.dart';
 import '../../../../core/errors/failures.dart';
 import '../entities/parcel_entity.dart';
 import '../repositories/parcel_repository.dart';
 
 class UpdateParcelStatusUseCase {
-  final ParcelRepository repository;
+  final ParcelRepository _repository;
 
-  UpdateParcelStatusUseCase(this.repository);
+  UpdateParcelStatusUseCase({ParcelRepository? repository})
+      : _repository = repository ?? GetIt.instance<ParcelRepository>();
 
   Future<Either<Failure, ParcelEntity>> call(
     String parcelId,
     ParcelStatus status,
   ) {
-    return repository.updateParcelStatus(parcelId, status);
+    return _repository.updateParcelStatus(parcelId, status);
   }
 }

@@ -1,11 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:get_it/get_it.dart';
 import 'package:parcel_am/core/utils/logger.dart';
 import '../../domain/repositories/presence_repository.dart';
 
 class PresenceRepositoryImpl implements PresenceRepository {
   final FirebaseFirestore _firestore;
 
-  PresenceRepositoryImpl(this._firestore);
+  PresenceRepositoryImpl({FirebaseFirestore? firestore})
+      : _firestore = firestore ?? GetIt.instance<FirebaseFirestore>();
 
   @override
   Future<void> setOnline(String userId) async {

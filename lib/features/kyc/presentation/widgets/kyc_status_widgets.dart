@@ -2,7 +2,7 @@ import 'package:dartz/dartz.dart' show Either;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:parcel_am/core/errors/failures.dart' show Failure;
-import 'package:parcel_am/features/parcel_am_core/data/models/user_model.dart';
+import 'package:parcel_am/features/parcel_am_core/domain/entities/user_entity.dart';
 import '../../domain/entities/kyc_status.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -139,7 +139,7 @@ class KycStatusBanner extends StatefulWidget {
 }
 
 class _KycStatusBannerState extends State<KycStatusBanner> {
-      late Stream<Either<Failure, UserModel>> _kycStatusStream;
+      late Stream<Either<Failure, UserEntity>> _kycStatusStream;
 
 
 @override
@@ -153,13 +153,13 @@ class _KycStatusBannerState extends State<KycStatusBanner> {
   }
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<Either<Failure, UserModel>>(
+    return StreamBuilder<Either<Failure, UserEntity>>(
       stream: _kycStatusStream,
       builder: (context, state) {
-        
+
         final user = state.data?.fold(
           (failure) => null,
-          (userModel) => userModel,
+          (userEntity) => userEntity,
         );
         final status = user?.kycStatus ?? KycStatus.notStarted;
         

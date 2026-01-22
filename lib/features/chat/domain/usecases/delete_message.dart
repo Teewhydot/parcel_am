@@ -1,13 +1,15 @@
 import 'package:dartz/dartz.dart';
+import 'package:get_it/get_it.dart';
 import '../../../../core/errors/failures.dart';
 import '../repositories/message_repository.dart';
 
 class DeleteMessage {
-  final MessageRepository repository;
+  final MessageRepository _repository;
 
-  DeleteMessage(this.repository);
+  DeleteMessage({MessageRepository? repository})
+      : _repository = repository ?? GetIt.instance<MessageRepository>();
 
   Future<Either<Failure, void>> call(String messageId) async {
-    return await repository.deleteMessage(messageId);
+    return await _repository.deleteMessage(messageId);
   }
 }

@@ -8,12 +8,15 @@ import '../../domain/exceptions/custom_exceptions.dart';
 import '../datasources/escrow_remote_data_source.dart';
 
 class EscrowRepositoryImpl implements EscrowRepository {
-  final remoteDataSource = GetIt.instance<EscrowRemoteDataSource>();
+  final EscrowRemoteDataSource _remoteDataSource;
+
+  EscrowRepositoryImpl({EscrowRemoteDataSource? remoteDataSource})
+      : _remoteDataSource = remoteDataSource ?? GetIt.instance<EscrowRemoteDataSource>();
 
   @override
   Stream<Either<Failure, EscrowEntity>> watchEscrowStatus(String escrowId) {
     return ErrorHandler.handleStream(
-      () => remoteDataSource.watchEscrowStatus(escrowId).map((escrowModel) {
+      () => _remoteDataSource.watchEscrowStatus(escrowId).map((escrowModel) {
         return escrowModel.toEntity();
       }),
       operationName: 'watchEscrowStatus',
@@ -23,7 +26,7 @@ class EscrowRepositoryImpl implements EscrowRepository {
   @override
   Stream<Either<Failure, EscrowEntity?>> watchEscrowByParcel(String parcelId) {
     return ErrorHandler.handleStream(
-      () => remoteDataSource.watchEscrowByParcel(parcelId).map((escrowModel) {
+      () => _remoteDataSource.watchEscrowByParcel(parcelId).map((escrowModel) {
         return escrowModel?.toEntity();
       }),
       operationName: 'watchEscrowByParcel',
@@ -39,7 +42,7 @@ class EscrowRepositoryImpl implements EscrowRepository {
     String currency,
   ) async {
     try {
-       final escrowModel = await remoteDataSource.createEscrow(
+       final escrowModel = await _remoteDataSource.createEscrow(
           parcelId,
           senderId,
           travelerId,
@@ -57,7 +60,7 @@ class EscrowRepositoryImpl implements EscrowRepository {
   @override
   Future<Either<Failure, EscrowEntity>> holdEscrow(String escrowId) async {
     try {
-    final escrowModel = await remoteDataSource.holdEscrow(escrowId);
+    final escrowModel = await _remoteDataSource.holdEscrow(escrowId);
         return Right(escrowModel.toEntity());
     } on ServerException {
       return const Left(ServerFailure(failureMessage: 'Server error occurred'));
@@ -69,7 +72,7 @@ class EscrowRepositoryImpl implements EscrowRepository {
   @override
   Future<Either<Failure, EscrowEntity>> releaseEscrow(String escrowId) async {
     try {
-     final escrowModel = await remoteDataSource.releaseEscrow(escrowId);
+     final escrowModel = await _remoteDataSource.releaseEscrow(escrowId);
         return Right(escrowModel.toEntity());
     } on ServerException {
       return const Left(ServerFailure(failureMessage: 'Server error occurred'));
@@ -81,7 +84,7 @@ class EscrowRepositoryImpl implements EscrowRepository {
   @override
   Future<Either<Failure, EscrowEntity>> cancelEscrow(String escrowId, String reason) async {
     try {
-     final escrowModel = await remoteDataSource.cancelEscrow(escrowId, reason);
+     final escrowModel = await _remoteDataSource.cancelEscrow(escrowId, reason);
         return Right(escrowModel.toEntity());
     } on ServerException {
       return const Left(ServerFailure(failureMessage: 'Server error occurred'));
@@ -93,7 +96,7 @@ class EscrowRepositoryImpl implements EscrowRepository {
   @override
   Future<Either<Failure, EscrowEntity>> getEscrow(String escrowId) async {
     try {
-    final escrowModel = await remoteDataSource.getEscrow(escrowId);
+    final escrowModel = await _remoteDataSource.getEscrow(escrowId);
         return Right(escrowModel.toEntity());
     } on ServerException {
       return const Left(ServerFailure(failureMessage: 'Server error occurred'));
@@ -105,7 +108,7 @@ class EscrowRepositoryImpl implements EscrowRepository {
   @override
   Future<Either<Failure, List<EscrowEntity>>> getUserEscrows(String userId) async {
     try {
-     final escrowModels = await remoteDataSource.getUserEscrows(userId);
+     final escrowModels = await _remoteDataSource.getUserEscrows(userId);
         return Right(escrowModels.map((model) => model.toEntity()).toList());
     } on ServerException {
       return const Left(ServerFailure(failureMessage: 'Server error occurred'));

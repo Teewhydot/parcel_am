@@ -1,4 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:parcel_am/features/file_upload/domain/use_cases/file_upload_usecase.dart';
+import 'package:parcel_am/features/kyc/domain/usecases/kyc_usecase.dart';
 import 'package:parcel_am/features/kyc/presentation/bloc/kyc_bloc.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/escrow/escrow_cubit.dart';
 import 'package:parcel_am/features/passkey/presentation/bloc/passkey_bloc.dart';
@@ -28,7 +30,10 @@ final List<BlocProvider> blocs = [
     create: (_) => ParcelCubit(),
   ),
   BlocProvider<KycBloc>(
-    create: (_) => KycBloc(),
+    create: (_) => KycBloc(
+      kycUseCase: KycUseCase(),
+      fileUploadUseCase: FileUploadUseCase(),
+    ),
   ),
   BlocProvider<EscrowCubit>(create:(_)=> EscrowCubit()),
   BlocProvider<PasskeyBloc>(create: (_) => PasskeyBloc()),

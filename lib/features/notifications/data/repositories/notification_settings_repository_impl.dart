@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
+import 'package:get_it/get_it.dart';
 import '../../../../core/errors/failures.dart';
 import '../../domain/entities/notification_settings_entity.dart';
 import '../../domain/repositories/notification_settings_repository.dart';
@@ -9,9 +10,8 @@ import '../models/notification_settings_model.dart';
 class NotificationSettingsRepositoryImpl implements NotificationSettingsRepository {
   final FirebaseFirestore _firestore;
 
-  NotificationSettingsRepositoryImpl({
-    required FirebaseFirestore firestore,
-  }) : _firestore = firestore;
+  NotificationSettingsRepositoryImpl({FirebaseFirestore? firestore})
+      : _firestore = firestore ?? GetIt.instance<FirebaseFirestore>();
 
   @override
   Future<Either<Failure, NotificationSettingsEntity>> getSettings(String userId) async {

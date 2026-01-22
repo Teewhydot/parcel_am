@@ -3,7 +3,7 @@ import 'package:parcel_am/core/bloc/base/base_bloc.dart';
 import 'package:parcel_am/core/bloc/base/base_state.dart';
 import 'package:parcel_am/core/errors/failures.dart';
 import 'package:parcel_am/core/utils/logger.dart';
-import 'package:parcel_am/features/parcel_am_core/data/models/user_model.dart';
+import 'package:parcel_am/features/parcel_am_core/domain/entities/user_entity.dart';
 import 'package:parcel_am/features/parcel_am_core/domain/usecases/auth_usecase.dart';
 import 'package:parcel_am/features/passkey/domain/usecases/passkey_usecase.dart';
 import 'package:parcel_am/features/kyc/domain/entities/kyc_status.dart';
@@ -16,7 +16,7 @@ class AuthCubit extends BaseCubit<BaseState<AuthData>> {
   AuthCubit() : super(const InitialState<AuthData>());
 
   /// Stream for watching user data (KYC status updates) - use with StreamBuilder
-  Stream<Either<Failure, UserModel>> watchUserData(String userId) async* {
+  Stream<Either<Failure, UserEntity>> watchUserData(String userId) async* {
     try {
       yield* authUseCase.watchKycStatus(userId);
     } catch (e, stackTrace) {

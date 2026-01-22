@@ -1,15 +1,17 @@
 import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart';
+import 'package:get_it/get_it.dart';
 import '../../../../core/errors/failures.dart';
 import '../repositories/message_repository.dart';
 
 class UpdatePresence {
-  final MessageRepository repository;
+  final MessageRepository _repository;
 
-  UpdatePresence(this.repository);
+  UpdatePresence({MessageRepository? repository})
+      : _repository = repository ?? GetIt.instance<MessageRepository>();
 
   Future<Either<Failure, void>> call(UpdatePresenceParams params) async {
-    return await repository.updatePresence(
+    return await _repository.updatePresence(
       params.userId,
       params.isOnline,
       params.isTyping,

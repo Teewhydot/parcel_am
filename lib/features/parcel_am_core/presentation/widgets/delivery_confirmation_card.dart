@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/bloc/base/base_state.dart';
@@ -8,7 +9,11 @@ import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/helpers/haptic_helper.dart';
+import '../../../../core/helpers/user_extensions.dart';
 import '../../../../core/utils/logger.dart';
+import '../../../../injection_container.dart';
+import '../../../totp_2fa/domain/usecases/totp_usecase.dart';
+import '../../../totp_2fa/presentation/widgets/totp_verification_dialog.dart';
 import '../../domain/entities/parcel_entity.dart';
 import '../bloc/parcel/parcel_cubit.dart';
 import '../bloc/parcel/parcel_state.dart';
@@ -252,7 +257,7 @@ class DeliveryConfirmationCard extends StatelessWidget {
       builder: (bottomSheetContext) => _DeliveryConfirmationSheet(
         parcel: parcel,
         onConfirm: () {
-          Navigator.of(bottomSheetContext).pop();
+          sl<NavigationService>().goBack();
           context.read<ParcelCubit>().confirmDelivery(
             parcel.id,
             parcel.escrowId!,
@@ -294,7 +299,7 @@ class DeliveryConfirmationCard extends StatelessWidget {
         ),
         actions: [
           AppButton.text(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => sl<NavigationService>().goBack(),
             child: AppText.bodyMedium('Close'),
           ),
         ],
@@ -353,7 +358,7 @@ class DeliveryConfirmationCard extends StatelessWidget {
   }
 }
 
-class _DeliveryConfirmationSheet extends StatelessWidget {
+class _DeliveryConfirmationSheet extends StatefulWidget {
   final ParcelEntity parcel;
   final VoidCallback onConfirm;
 
@@ -363,11 +368,58 @@ class _DeliveryConfirmationSheet extends StatelessWidget {
   });
 
   @override
+  State<_DeliveryConfirmationSheet> createState() =>
+      _DeliveryConfirmationSheetState();
+}
+
+class _DeliveryConfirmationSheetState extends State<_DeliveryConfirmationSheet> {
+  bool _isVerifying = false;
+
+  Future<void> _handleConfirm() async {
+    final userId = context.currentUserId;
+    if (userId == null || userId.isEmpty) {
+      widget.onConfirm();
+      return;
+    }
+
+    setState(() => _isVerifying = true);
+
+    try {
+      final totpUseCase = TotpUseCase();
+      final is2FAEnabled = await totpUseCase.is2FAEnabled(userId);
+
+      final enabled = is2FAEnabled.fold((_) => false, (value) => value);
+
+      if (enabled && mounted) {
+        final verified = await TotpVerificationDialog.show(
+          context,
+          userId: userId,
+          title: 'Verify to Release Payment',
+          description: 'Enter your 2FA code to confirm this escrow release',
+        );
+
+        if (verified && mounted) {
+          widget.onConfirm();
+        }
+      } else {
+        widget.onConfirm();
+      }
+    } catch (e) {
+      Logger.logError('2FA check failed: $e', tag: 'DeliveryConfirmationSheet');
+      widget.onConfirm();
+    } finally {
+      if (mounted) {
+        setState(() => _isVerifying = false);
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final parcelPrice = parcel.price ?? 0.0;
+    final parcelPrice = widget.parcel.price ?? 0.0;
     final serviceFee = 150.0;
     final totalAmount = parcelPrice + serviceFee;
-    final currency = parcel.currency ?? 'NGN';
+    final currency = widget.parcel.currency ?? 'NGN';
 
     return Container(
       decoration: const BoxDecoration(
@@ -445,7 +497,7 @@ class _DeliveryConfirmationSheet extends StatelessWidget {
                         const Icon(Icons.contact_phone, size: 20, color: AppColors.primary),
                         AppSpacing.horizontalSpacing(SpacingSize.sm),
                         AppText.bodyMedium(
-                          'Have you verified with ${parcel.receiver.name}?',
+                          'Have you verified with ${widget.parcel.receiver.name}?',
                           fontWeight: FontWeight.w600,
                         ),
                       ],
@@ -499,7 +551,7 @@ class _DeliveryConfirmationSheet extends StatelessWidget {
                 children: [
                   Expanded(
                     child: AppButton.outline(
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed: _isVerifying ? null : () => sl<NavigationService>().goBack(),
                       child: AppText.bodyMedium('Cancel'),
                     ),
                   ),
@@ -507,7 +559,8 @@ class _DeliveryConfirmationSheet extends StatelessWidget {
                   Expanded(
                     flex: 2,
                     child: AppButton.primary(
-                      onPressed: onConfirm,
+                      onPressed: _isVerifying ? null : _handleConfirm,
+                      loading: _isVerifying,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [

@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
+import 'package:get_it/get_it.dart';
 import '../../../../core/errors/failures.dart';
 import '../../domain/entities/message_entity.dart';
 import '../../domain/entities/message_type.dart';
@@ -11,13 +12,14 @@ import '../datasources/presence_remote_data_source.dart';
 import '../models/message_model.dart';
 
 class MessageRepositoryImpl implements MessageRepository {
-  final MessageRemoteDataSource remoteDataSource;
-  final PresenceRemoteDataSource presenceDataSource;
+  final MessageRemoteDataSource _remoteDataSource;
+  final PresenceRemoteDataSource _presenceDataSource;
 
   MessageRepositoryImpl({
-    required this.remoteDataSource,
-    required this.presenceDataSource,
-  });
+    MessageRemoteDataSource? remoteDataSource,
+    PresenceRemoteDataSource? presenceDataSource,
+  })  : _remoteDataSource = remoteDataSource ?? GetIt.instance<MessageRemoteDataSource>(),
+        _presenceDataSource = presenceDataSource ?? GetIt.instance<PresenceRemoteDataSource>();
 
   @override
   Future<Either<Failure, MessageEntity>> sendMessage(
@@ -52,7 +54,7 @@ class MessageRepositoryImpl implements MessageRepository {
         fileSize: metadata?['fileSize'] as int?,
       );
 
-      final sentMessage = await remoteDataSource.sendMessage(message);
+      final sentMessage = await _remoteDataSource.sendMessage(message);
       return Right(sentMessage.toEntity());
     } catch (e) {
       return Left(ServerFailure(failureMessage: e.toString()));
@@ -73,7 +75,7 @@ class MessageRepositoryImpl implements MessageRepository {
       }
 
       // Since watchMessages returns a stream, we'll take first value
-      final messages = await remoteDataSource.watchMessages(chatId).first;
+      final messages = await _remoteDataSource.watchMessages(chatId).first;
       return Right(messages.map((m) => m.toEntity()).toList());
     } catch (e) {
       return Left(ServerFailure(failureMessage: e.toString()));
@@ -82,7 +84,7 @@ class MessageRepositoryImpl implements MessageRepository {
 
   @override
   Stream<List<MessageEntity>> watchMessages(String chatId) {
-    return remoteDataSource
+    return _remoteDataSource
         .watchMessages(chatId)
         .map((messages) => messages.map((m) => m.toEntity()).toList());
   }
@@ -100,7 +102,7 @@ class MessageRepositoryImpl implements MessageRepository {
         );
       }
 
-      await remoteDataSource.updateMessageStatus(
+      await _remoteDataSource.updateMessageStatus(
         chatId,
         messageId,
         MessageStatus.read,
@@ -126,7 +128,7 @@ class MessageRepositoryImpl implements MessageRepository {
       final chatId = parts.length > 1 ? parts[0] : '';
       final actualMessageId = parts.length > 1 ? parts[1] : messageId;
 
-      await remoteDataSource.deleteMessage(chatId, actualMessageId);
+      await _remoteDataSource.deleteMessage(chatId, actualMessageId);
       return const Right(null);
     } catch (e) {
       return Left(ServerFailure(failureMessage: e.toString()));
@@ -148,10 +150,10 @@ class MessageRepositoryImpl implements MessageRepository {
       }
 
       final status = isOnline ? PresenceStatus.online : PresenceStatus.offline;
-      await presenceDataSource.updatePresenceStatus(userId, status);
+      await _presenceDataSource.updatePresenceStatus(userId, status);
 
       if (isTyping) {
-        await presenceDataSource.updateTypingStatus(
+        await _presenceDataSource.updateTypingStatus(
           userId,
           typingInChatId,
           isTyping,
@@ -166,7 +168,7 @@ class MessageRepositoryImpl implements MessageRepository {
 
   @override
   Stream<PresenceEntity> watchPresence(String userId) {
-    return presenceDataSource
+    return _presenceDataSource
         .watchUserPresence(userId)
         .map((model) => model.toEntity());
   }
@@ -183,7 +185,7 @@ class MessageRepositoryImpl implements MessageRepository {
         );
       }
 
-      final messages = await remoteDataSource.loadOlderMessages(
+      final messages = await _remoteDataSource.loadOlderMessages(
         chatId,
         beforePageNumber: beforePageNumber,
       );
@@ -205,7 +207,7 @@ class MessageRepositoryImpl implements MessageRepository {
         );
       }
 
-      final hasMore = await remoteDataSource.hasOlderMessages(
+      final hasMore = await _remoteDataSource.hasOlderMessages(
         chatId,
         currentPageNumber,
       );

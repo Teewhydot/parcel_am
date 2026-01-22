@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:bloc/bloc.dart';
-import 'package:get_it/get_it.dart';
 import '../../../../../core/bloc/base/base_bloc.dart';
 import '../../../../../core/bloc/base/base_state.dart';
 import '../../../file_upload/domain/use_cases/file_upload_usecase.dart';
@@ -10,10 +9,15 @@ import 'kyc_event.dart';
 import 'kyc_data.dart';
 
 class KycBloc extends BaseBloC<KycEvent, BaseState<KycData>> {
-  final _kycUseCase = KycUseCase();
-  final _fileUploadUseCase = GetIt.instance<FileUploadUseCase>();
+  final KycUseCase _kycUseCase;
+  final FileUploadUseCase _fileUploadUseCase;
 
-  KycBloc() : super(const InitialState<KycData>()) {
+  KycBloc({
+    required KycUseCase kycUseCase,
+    required FileUploadUseCase fileUploadUseCase,
+  })  : _kycUseCase = kycUseCase,
+        _fileUploadUseCase = fileUploadUseCase,
+        super(const InitialState<KycData>()) {
     on<KycDocumentUploadRequested>(_onDocumentUploadRequested);
     on<KycFinalSubmitRequested>(_onFinalSubmitRequested);
   }

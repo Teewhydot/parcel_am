@@ -1,3 +1,4 @@
+import 'package:get_it/get_it.dart';
 import '../../domain/entities/bank_info_entity.dart';
 import '../../domain/entities/user_bank_account_entity.dart';
 import '../../domain/repositories/bank_account_repository.dart';
@@ -5,14 +6,15 @@ import '../datasources/bank_account_remote_data_source.dart';
 import '../../../../core/utils/logger.dart';
 
 class BankAccountRepositoryImpl implements BankAccountRepository {
-  final BankAccountRemoteDataSource remoteDataSource;
+  final BankAccountRemoteDataSource _remoteDataSource;
 
-  BankAccountRepositoryImpl({required this.remoteDataSource});
+  BankAccountRepositoryImpl({BankAccountRemoteDataSource? remoteDataSource})
+      : _remoteDataSource = remoteDataSource ?? GetIt.instance<BankAccountRemoteDataSource>();
 
   @override
   Future<List<BankInfoEntity>> getBankList() async {
     try {
-      final bankModels = await remoteDataSource.getBankList();
+      final bankModels = await _remoteDataSource.getBankList();
       return bankModels.map((model) => model.toEntity()).toList();
     } catch (e) {
       Logger.logError('Repository: Error fetching bank list: $e');
@@ -36,7 +38,7 @@ class BankAccountRepositoryImpl implements BankAccountRepository {
         throw Exception('Please select a bank');
       }
 
-      final result = await remoteDataSource.resolveBankAccount(
+      final result = await _remoteDataSource.resolveBankAccount(
         accountNumber: accountNumber,
         bankCode: bankCode,
       );
@@ -71,14 +73,14 @@ class BankAccountRepositoryImpl implements BankAccountRepository {
       }
 
       // Create transfer recipient on Paystack
-      final recipientCode = await remoteDataSource.createTransferRecipient(
+      final recipientCode = await _remoteDataSource.createTransferRecipient(
         accountNumber: accountNumber,
         accountName: accountName,
         bankCode: bankCode,
       );
 
       // Save bank account to Firestore
-      final accountModel = await remoteDataSource.saveUserBankAccount(
+      final accountModel = await _remoteDataSource.saveUserBankAccount(
         userId: userId,
         accountNumber: accountNumber,
         accountName: accountName,
@@ -98,7 +100,7 @@ class BankAccountRepositoryImpl implements BankAccountRepository {
   @override
   Future<List<UserBankAccountEntity>> getUserBankAccounts(String userId) async {
     try {
-      final accountModels = await remoteDataSource.getUserBankAccounts(userId);
+      final accountModels = await _remoteDataSource.getUserBankAccounts(userId);
       return accountModels.map((model) => model.toEntity()).toList();
     } catch (e) {
       Logger.logError('Repository: Error fetching user bank accounts: $e');
@@ -112,7 +114,7 @@ class BankAccountRepositoryImpl implements BankAccountRepository {
     required String accountId,
   }) async {
     try {
-      await remoteDataSource.deleteUserBankAccount(
+      await _remoteDataSource.deleteUserBankAccount(
         userId: userId,
         accountId: accountId,
       );

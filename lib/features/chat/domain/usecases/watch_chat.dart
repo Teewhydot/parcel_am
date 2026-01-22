@@ -1,14 +1,16 @@
+import 'package:get_it/get_it.dart';
 import '../entities/chat_entity.dart';
 import '../repositories/chat_repository.dart';
 
 class WatchChat {
-  final ChatRepository repository;
+  final ChatRepository _repository;
   final String currentUserId;
 
-  WatchChat(this.repository, this.currentUserId);
+  WatchChat({ChatRepository? repository, required this.currentUserId})
+      : _repository = repository ?? GetIt.instance<ChatRepository>();
 
   Stream<ChatEntity> call(String chatId) {
-    return repository.watchChat(chatId).map((chat) {
+    return _repository.watchChat(chatId).map((chat) {
       final otherUserId = chat.participantIds.firstWhere(
         (id) => id != currentUserId,
         orElse: () => chat.participantIds.first,

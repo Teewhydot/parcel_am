@@ -12,7 +12,10 @@ import '../../domain/exceptions/custom_exceptions.dart';
 import '../datasources/wallet_remote_data_source.dart';
 
 class WalletRepositoryImpl implements WalletRepository {
-  final remoteDataSource = GetIt.instance<WalletRemoteDataSource>();
+  final WalletRemoteDataSource _remoteDataSource;
+
+  WalletRepositoryImpl({WalletRemoteDataSource? remoteDataSource})
+      : _remoteDataSource = remoteDataSource ?? GetIt.instance<WalletRemoteDataSource>();
 
   @override
   Future<Either<Failure, WalletEntity>> createWallet(
@@ -20,7 +23,7 @@ class WalletRepositoryImpl implements WalletRepository {
     double initialBalance = 0.0,
   }) async {
     try {
-     final walletModel = await remoteDataSource.createWallet(
+     final walletModel = await _remoteDataSource.createWallet(
           userId,
           initialBalance: initialBalance,
         );
@@ -37,7 +40,7 @@ class WalletRepositoryImpl implements WalletRepository {
   @override
   Future<Either<Failure, WalletEntity>> getWallet(String userId) async {
     try {
-      final walletModel = await remoteDataSource.getWallet(userId);
+      final walletModel = await _remoteDataSource.getWallet(userId);
         return Right(walletModel.toEntity());
     } on WalletNotFoundException catch (e) {
       return Left(ServerFailure(failureMessage: e.message));
@@ -57,7 +60,7 @@ class WalletRepositoryImpl implements WalletRepository {
     String idempotencyKey,
   ) async {
     try {
-     final walletModel = await remoteDataSource.updateBalance(
+     final walletModel = await _remoteDataSource.updateBalance(
           userId,
           amount,
           idempotencyKey,
@@ -83,7 +86,7 @@ class WalletRepositoryImpl implements WalletRepository {
   @override
   Stream<Either<Failure, WalletEntity>> watchBalance(String userId) {
     return ErrorHandler.handleStream(
-      () => remoteDataSource.watchWallet(userId).map((walletModel) {
+      () => _remoteDataSource.watchWallet(userId).map((walletModel) {
         return walletModel.toEntity();
       }),
       operationName: 'watchBalance',
@@ -98,7 +101,7 @@ class WalletRepositoryImpl implements WalletRepository {
     String idempotencyKey,
   ) async {
     try {
-      final walletModel = await remoteDataSource.holdBalance(
+      final walletModel = await _remoteDataSource.holdBalance(
         userId,
         amount,
         referenceId,
@@ -134,7 +137,7 @@ class WalletRepositoryImpl implements WalletRepository {
     String idempotencyKey,
   ) async {
     try {
-     final walletModel = await remoteDataSource.releaseBalance(
+     final walletModel = await _remoteDataSource.releaseBalance(
           userId,
           amount,
           referenceId,
@@ -170,7 +173,7 @@ class WalletRepositoryImpl implements WalletRepository {
     String idempotencyKey,
   ) async {
     try {
-      final walletModel = await remoteDataSource.clearHeldBalance(
+      final walletModel = await _remoteDataSource.clearHeldBalance(
         userId,
         amount,
         referenceId,
@@ -208,7 +211,7 @@ class WalletRepositoryImpl implements WalletRepository {
     String idempotencyKey,
   ) async {
     try {
-        final transactionModel = await remoteDataSource.recordTransaction(
+        final transactionModel = await _remoteDataSource.recordTransaction(
           userId,
           amount,
           type,
@@ -238,7 +241,7 @@ class WalletRepositoryImpl implements WalletRepository {
     TransactionFilter? filter,
   }) async {
     try {
-      final transactions = await remoteDataSource.getTransactions(
+      final transactions = await _remoteDataSource.getTransactions(
         userId,
         limit: limit,
         startAfter: startAfter,
@@ -262,7 +265,7 @@ class WalletRepositoryImpl implements WalletRepository {
     TransactionFilter? filter,
   }) {
     return ErrorHandler.handleStream(
-      () => remoteDataSource.watchTransactions(
+      () => _remoteDataSource.watchTransactions(
         userId,
         limit: limit,
         status: filter?.status,

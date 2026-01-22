@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
 import 'package:parcel_am/core/routes/routes.dart';
 import 'package:parcel_am/core/services/navigation_service/nav_config.dart';
@@ -10,6 +9,7 @@ import 'package:parcel_am/core/widgets/app_text.dart';
 import 'package:parcel_am/core/widgets/app_button.dart';
 import 'package:parcel_am/core/widgets/app_spacing.dart';
 import 'package:parcel_am/features/parcel_am_core/domain/repositories/withdrawal_repository.dart';
+import 'package:parcel_am/injection_container.dart';
 import '../bloc/wallet/wallet_data.dart';
 
 class TransactionDetailsBottomSheet extends StatefulWidget {
@@ -40,7 +40,6 @@ class TransactionDetailsBottomSheet extends StatefulWidget {
 
 class _TransactionDetailsBottomSheetState
     extends State<TransactionDetailsBottomSheet> {
-  final sl = GetIt.instance;
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +55,7 @@ class _TransactionDetailsBottomSheetState
             Expanded(
               child: SingleChildScrollView(
                 controller: scrollController,
-                padding: const EdgeInsets.all(20),
+                padding: AppSpacing.paddingMD,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -162,7 +161,7 @@ class _TransactionDetailsBottomSheetState
           ),
           AppSpacing.verticalSpacing(SpacingSize.sm),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: AppSpacing.paddingSM,
             decoration: BoxDecoration(
               color: _getStatusColor().withOpacity(0.1),
               borderRadius: AppRadius.xl,
@@ -237,15 +236,15 @@ class _TransactionDetailsBottomSheetState
                   child: AppText.bodyMedium(
                     value,
                     fontWeight: FontWeight.w500,
-                    color: Theme.of(context).primaryColor,
+                    color: AppColors.primary,
                     textAlign: TextAlign.right,
                   ),
                 ),
                 AppSpacing.horizontalSpacing(SpacingSize.xs),
-                Icon(
+                const Icon(
                   Icons.copy,
                   size: 16,
-                  color: Theme.of(context).primaryColor,
+                  color: AppColors.primary,
                 ),
               ],
             ),
@@ -265,13 +264,15 @@ class _TransactionDetailsBottomSheetState
         ),
         AppSpacing.verticalSpacing(SpacingSize.md),
         ...widget.transaction.metadata!.entries.map((entry) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _buildDetailRow(
+          return Column(
+            children: [
+              _buildDetailRow(
               context,
               _formatMetadataKey(entry.key),
               entry.value.toString(),
             ),
+              AppSpacing.verticalSpacing(SpacingSize.sm),
+            ],
           );
         }),
       ],
@@ -283,7 +284,7 @@ class _TransactionDetailsBottomSheetState
     return AppButton.outline(
       onPressed: () async {
         // Close the bottom sheet first
-        Navigator.of(context).pop();
+        sl<NavigationService>().goBack();
 
         // Navigate to withdrawal detail screen
         try {

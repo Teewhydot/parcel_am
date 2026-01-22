@@ -1,7 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:get_it/get_it.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/services/error/error_handler.dart';
 import '../../domain/entities/message.dart';
@@ -12,15 +11,15 @@ import '../datasources/chat_remote_data_source.dart';
 import '../models/message_model.dart';
 
 class ChatRepositoryImpl implements ChatRepository {
-  final remoteDataSource = ChatRemoteDataSourceImpl(
-    firestore: FirebaseFirestore.instance,
-    storage: FirebaseStorage.instance,
-  );
+  final ChatRemoteDataSource _remoteDataSource;
+
+  ChatRepositoryImpl({ChatRemoteDataSource? remoteDataSource})
+      : _remoteDataSource = remoteDataSource ?? GetIt.instance<ChatRemoteDataSource>();
 
   @override
   Stream<Either<Failure, List<Message>>> getMessagesStream(String chatId) {
     return ErrorHandler.handleStream(
-      () => remoteDataSource.getMessagesStream(chatId),
+      () => _remoteDataSource.getMessagesStream(chatId),
       operationName: 'getMessagesStream',
     );
   }
@@ -33,7 +32,7 @@ class ChatRepositoryImpl implements ChatRepository {
 
     try {
       final messageModel = MessageModel.fromEntity(message);
-      await remoteDataSource.sendMessage(messageModel);
+      await _remoteDataSource.sendMessage(messageModel);
       return const Right(null);
     } catch (e) {
       return Left(ServerFailure(failureMessage: e.toString()));
@@ -50,7 +49,7 @@ class ChatRepositoryImpl implements ChatRepository {
     }
 
     try {
-      await remoteDataSource.updateMessageStatus(messageId, status);
+      await _remoteDataSource.updateMessageStatus(messageId, status);
       return const Right(null);
     } catch (e) {
       return Left(ServerFailure(failureMessage: e.toString()));
@@ -68,7 +67,7 @@ class ChatRepositoryImpl implements ChatRepository {
     }
 
     try {
-      await remoteDataSource.markMessageAsRead(chatId, messageId, userId);
+      await _remoteDataSource.markMessageAsRead(chatId, messageId, userId);
       return const Right(null);
     } catch (e) {
       return Left(ServerFailure(failureMessage: e.toString()));
@@ -87,7 +86,7 @@ class ChatRepositoryImpl implements ChatRepository {
     }
 
     try {
-      final url = await remoteDataSource.uploadMedia(
+      final url = await _remoteDataSource.uploadMedia(
         filePath,
         chatId,
         type,
@@ -110,7 +109,7 @@ class ChatRepositoryImpl implements ChatRepository {
     }
 
     try {
-      await remoteDataSource.setTypingStatus(chatId, userId, isTyping);
+      await _remoteDataSource.setTypingStatus(chatId, userId, isTyping);
       return const Right(null);
     } catch (e) {
       return Left(ServerFailure(failureMessage: e.toString()));
@@ -124,7 +123,7 @@ class ChatRepositoryImpl implements ChatRepository {
     }
 
     try {
-      await remoteDataSource.updateLastSeen(chatId, userId);
+      await _remoteDataSource.updateLastSeen(chatId, userId);
       return const Right(null);
     } catch (e) {
       return Left(ServerFailure(failureMessage: e.toString()));
@@ -134,7 +133,7 @@ class ChatRepositoryImpl implements ChatRepository {
   @override
   Stream<Either<Failure, Chat>> getChatStream(String chatId) {
     return ErrorHandler.handleStream(
-      () => remoteDataSource.getChatStream(chatId),
+      () => _remoteDataSource.getChatStream(chatId),
       operationName: 'getChatStream',
     );
   }
@@ -146,7 +145,7 @@ class ChatRepositoryImpl implements ChatRepository {
     }
 
     try {
-      await remoteDataSource.deleteMessage(messageId);
+      await _remoteDataSource.deleteMessage(messageId);
       return const Right(null);
     } catch (e) {
       return Left(ServerFailure(failureMessage: e.toString()));
@@ -160,7 +159,7 @@ class ChatRepositoryImpl implements ChatRepository {
     }
 
     try {
-      final chat = await remoteDataSource.createChat(participantIds);
+      final chat = await _remoteDataSource.createChat(participantIds);
       return Right(chat);
     } catch (e) {
       return Left(ServerFailure(failureMessage: e.toString()));
@@ -174,7 +173,7 @@ class ChatRepositoryImpl implements ChatRepository {
     }
 
     try {
-      final chat = await remoteDataSource.getChat(chatId);
+      final chat = await _remoteDataSource.getChat(chatId);
       return Right(chat);
     } catch (e) {
       return Left(ServerFailure(failureMessage: e.toString()));
@@ -188,7 +187,7 @@ class ChatRepositoryImpl implements ChatRepository {
     }
 
     try {
-      final chats = await remoteDataSource.getUserChats(userId);
+      final chats = await _remoteDataSource.getUserChats(userId);
       return Right(chats);
     } catch (e) {
       return Left(ServerFailure(failureMessage: e.toString()));
@@ -197,12 +196,12 @@ class ChatRepositoryImpl implements ChatRepository {
 
   @override
   Stream<Chat> watchChat(String chatId) {
-    return remoteDataSource.watchChat(chatId);
+    return _remoteDataSource.watchChat(chatId);
   }
 
   @override
   Stream<List<Chat>> watchUserChats(String userId) {
-    return remoteDataSource.watchUserChats(userId);
+    return _remoteDataSource.watchUserChats(userId);
   }
 
   @override
@@ -216,7 +215,7 @@ class ChatRepositoryImpl implements ChatRepository {
     }
 
     try {
-      final chat = await remoteDataSource.getOrCreateChat(
+      final chat = await _remoteDataSource.getOrCreateChat(
         chatId: chatId,
         participantIds: participantIds,
         participantNames: participantNames,
@@ -229,6 +228,6 @@ class ChatRepositoryImpl implements ChatRepository {
 
   @override
   Future<void> markMessageNotificationSent(String chatId, String messageId) async {
-    await remoteDataSource.markMessageNotificationSent(chatId, messageId);
+    await _remoteDataSource.markMessageNotificationSent(chatId, messageId);
   }
 }

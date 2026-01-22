@@ -1,10 +1,14 @@
 import 'package:dartz/dartz.dart';
+import 'package:get_it/get_it.dart';
 import '../../../../core/errors/failures.dart';
 import '../entities/escrow_entity.dart';
-import '../../data/repositories/escrow_repository_impl.dart';
+import '../repositories/escrow_repository.dart';
 
 class EscrowUseCase {
-  final repository = EscrowRepositoryImpl();
+  final EscrowRepository _repository;
+
+  EscrowUseCase({EscrowRepository? repository})
+      : _repository = repository ?? GetIt.instance<EscrowRepository>();
 
   Future<Either<Failure, EscrowEntity>> createEscrow({
     required String parcelId,
@@ -13,7 +17,7 @@ class EscrowUseCase {
     required double amount,
     String currency = 'NGN',
   }) {
-    return repository.createEscrow(
+    return _repository.createEscrow(
       parcelId,
       senderId,
       travelerId,
@@ -23,29 +27,29 @@ class EscrowUseCase {
   }
 
   Future<Either<Failure, EscrowEntity>> holdEscrow(String escrowId) {
-    return repository.holdEscrow(escrowId);
+    return _repository.holdEscrow(escrowId);
   }
 
   Future<Either<Failure, EscrowEntity>> releaseEscrow(String escrowId) {
-    return repository.releaseEscrow(escrowId);
+    return _repository.releaseEscrow(escrowId);
   }
 
   Future<Either<Failure, EscrowEntity>> cancelEscrow(
     String escrowId,
     String reason,
   ) {
-    return repository.cancelEscrow(escrowId, reason);
+    return _repository.cancelEscrow(escrowId, reason);
   }
 
   Future<Either<Failure, EscrowEntity>> getEscrow(String escrowId) {
-    return repository.getEscrow(escrowId);
+    return _repository.getEscrow(escrowId);
   }
 
   Stream<Either<Failure, EscrowEntity>> watchEscrowStatus(String escrowId) {
-    return repository.watchEscrowStatus(escrowId);
+    return _repository.watchEscrowStatus(escrowId);
   }
 
   Future<Either<Failure, List<EscrowEntity>>> getUserEscrows(String userId) {
-    return repository.getUserEscrows(userId);
+    return _repository.getUserEscrows(userId);
   }
 }

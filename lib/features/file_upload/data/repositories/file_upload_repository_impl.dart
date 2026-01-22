@@ -10,7 +10,10 @@ import '../../domain/repositories/file_upload_repository.dart';
 import '../remote/data_sources/file_upload.dart';
 
 class FileUploadRepositoryImpl implements FileUploadRepository {
-  final remoteDataSource = GetIt.instance<FileUploadDataSource>();
+  final FileUploadDataSource _remoteDataSource;
+
+  FileUploadRepositoryImpl({FileUploadDataSource? remoteDataSource})
+      : _remoteDataSource = remoteDataSource ?? GetIt.instance<FileUploadDataSource>();
 
   @override
   Future<Either<Failure, UploadedFileEntity>> uploadFile({
@@ -22,7 +25,7 @@ class FileUploadRepositoryImpl implements FileUploadRepository {
     Map<String, dynamic>? customMetadata,
   }) async {
     return ErrorHandler.handle(
-      () async => await remoteDataSource.uploadFile(userId: userId, file: file,folderPath: folder),
+      () async => await _remoteDataSource.uploadFile(userId: userId, file: file,folderPath: folder),
       operationName: "File Upload",
     );
   }
@@ -30,7 +33,7 @@ class FileUploadRepositoryImpl implements FileUploadRepository {
   @override
   Future<Either<Failure, void>> deleteFile({required String fileId}) async {
     return ErrorHandler.handle(
-      () async => await remoteDataSource.deleteFile(fileId: fileId),
+      () async => await _remoteDataSource.deleteFile(fileId: fileId),
       operationName: "File Deletion",
     );
   }
@@ -41,7 +44,7 @@ class FileUploadRepositoryImpl implements FileUploadRepository {
     List<String>? transformations,
   }) async {
     return ErrorHandler.handle(
-      () async => await remoteDataSource.generateUrl(
+      () async => await _remoteDataSource.generateUrl(
         filePath: filePath,
         transformations: transformations,
       ),

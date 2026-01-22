@@ -1,10 +1,14 @@
 import 'package:dartz/dartz.dart';
+import 'package:get_it/get_it.dart';
 import '../../../../core/errors/failures.dart';
 import '../../domain/repositories/kyc_repository.dart';
 import '../datasources/kyc_remote_data_source.dart';
 
 class KycRepositoryImpl implements KycRepository {
-  final remoteDataSource = KycRemoteDataSourceImpl();
+  final KycRemoteDataSource _remoteDataSource;
+
+  KycRepositoryImpl({KycRemoteDataSource? remoteDataSource})
+      : _remoteDataSource = remoteDataSource ?? GetIt.instance<KycRemoteDataSource>();
 
   @override
   Future<Either<Failure, void>> submitKyc({
@@ -24,7 +28,7 @@ class KycRepositoryImpl implements KycRepository {
     String? proofOfAddressUrl,
   }) async {
     try {
-      await remoteDataSource.submitKyc(
+      await _remoteDataSource.submitKyc(
         userId: userId,
         fullName: fullName,
         dateOfBirth: dateOfBirth,
@@ -49,6 +53,6 @@ class KycRepositoryImpl implements KycRepository {
 
   @override
   Stream<String> watchKycStatus(String userId) {
-    return remoteDataSource.watchKycStatus(userId);
+    return _remoteDataSource.watchKycStatus(userId);
   }
 }

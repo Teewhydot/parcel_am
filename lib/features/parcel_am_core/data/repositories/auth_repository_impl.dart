@@ -13,9 +13,15 @@ import '../datasources/auth_remote_data_source.dart';
 import '../models/user_model.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
-  final remoteDataSource = GetIt.instance<AuthRemoteDataSource>();
-  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+  final AuthRemoteDataSource _remoteDataSource;
+  final FlutterSecureStorage _secureStorage;
   static const String _tokenKey = 'auth_token';
+
+  AuthRepositoryImpl({
+    AuthRemoteDataSource? remoteDataSource,
+    FlutterSecureStorage? secureStorage,
+  })  : _remoteDataSource = remoteDataSource ?? GetIt.instance<AuthRemoteDataSource>(),
+        _secureStorage = secureStorage ?? const FlutterSecureStorage();
 
   @override
   Future<Either<Failure, UserEntity>> signInWithEmailAndPassword(
@@ -23,14 +29,14 @@ class AuthRepositoryImpl implements AuthRepository {
     String password,
   ) async {
     return ErrorHandler.handle<UserEntity>(
-      () => remoteDataSource.signInWithEmailAndPassword(email, password),
+      () => _remoteDataSource.signInWithEmailAndPassword(email, password),
     );
   }
 
   @override
   Stream<Either<Failure, UserModel>> watchUserData(String userId) {
     return ErrorHandler.handleStream(
-      () => remoteDataSource.watchUserDetails(userId),
+      () => _remoteDataSource.watchUserDetails(userId),
       operationName: 'watchUserStatus',
     );
   }
@@ -42,7 +48,7 @@ class AuthRepositoryImpl implements AuthRepository {
     String displayName,
   ) async {
     return ErrorHandler.handle<UserEntity>(
-      () => remoteDataSource.signUpWithEmailAndPassword(
+      () => _remoteDataSource.signUpWithEmailAndPassword(
         email,
         password,
         displayName,
@@ -52,20 +58,20 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<Either<Failure, void>> signOut() async {
-    return ErrorHandler.handle(() => remoteDataSource.signOut());
+    return ErrorHandler.handle(() => _remoteDataSource.signOut());
   }
 
   @override
   Future<Either<Failure, UserEntity?>> getCurrentUser() async {
     return ErrorHandler.handle<UserEntity?>(
-      () => remoteDataSource.getCurrentUser(),
+      () => _remoteDataSource.getCurrentUser(),
     );
   }
 
   @override
   Future<Either<Failure, bool>> hasValidSession() async {
     return ErrorHandler.handle<bool>(
-      () => remoteDataSource.getCurrentUser().then((user) => user != null),
+      () => _remoteDataSource.getCurrentUser().then((user) => user != null),
     );
   }
 
@@ -100,12 +106,12 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<Either<Failure, void>> clearStoredData() async {
-    return ErrorHandler.handle(() => remoteDataSource.signOut());
+    return ErrorHandler.handle(() => _remoteDataSource.signOut());
   }
 
   @override
   Stream<UserEntity?> get authStateChanges {
-    return remoteDataSource.authStateChanges.map((userModel) {
+    return _remoteDataSource.authStateChanges.map((userModel) {
       if (userModel != null) {
         return userModel.toEntity();
       }
@@ -116,12 +122,12 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, void>> updateUserProfile(UserEntity user) async {
     return ErrorHandler.handle(
-      () => remoteDataSource.updateUserProfile(UserModel.fromEntity(user)),
+      () => _remoteDataSource.updateUserProfile(UserModel.fromEntity(user)),
     );
   }
 
   @override
   Future<Either<Failure, void>> resetPassword(String email) async {
-    return ErrorHandler.handle(() => remoteDataSource.resetPassword(email));
+    return ErrorHandler.handle(() => _remoteDataSource.resetPassword(email));
   }
 }

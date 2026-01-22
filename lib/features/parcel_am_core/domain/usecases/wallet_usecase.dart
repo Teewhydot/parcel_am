@@ -1,23 +1,27 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
-import 'package:parcel_am/features/parcel_am_core/data/repositories/wallet_repository_impl.dart';
+import 'package:get_it/get_it.dart';
 import '../../../../core/errors/failures.dart';
 import '../entities/wallet_entity.dart';
 import '../entities/transaction_entity.dart';
+import '../repositories/wallet_repository.dart';
 import '../value_objects/transaction_filter.dart';
 
 class WalletUseCase {
-  final walletRepo  = WalletRepositoryImpl();
+  final WalletRepository _repository;
+
+  WalletUseCase({WalletRepository? repository})
+      : _repository = repository ?? GetIt.instance<WalletRepository>();
 
   Future<Either<Failure, WalletEntity>> createWallet(
     String userId, {
     double initialBalance = 0.0,
   }) {
-    return walletRepo.createWallet(userId, initialBalance: initialBalance);
+    return _repository.createWallet(userId, initialBalance: initialBalance);
   }
 
   Future<Either<Failure, WalletEntity>> getWallet(String userId) {
-    return walletRepo.getWallet(userId);
+    return _repository.getWallet(userId);
   }
 
   Future<Either<Failure, WalletEntity>> updateBalance(
@@ -25,11 +29,11 @@ class WalletUseCase {
     double amount,
     String idempotencyKey,
   ) {
-    return walletRepo.updateBalance(userId, amount, idempotencyKey);
+    return _repository.updateBalance(userId, amount, idempotencyKey);
   }
 
   Stream<Either<Failure, WalletEntity>> watchBalance(String userId) {
-    return walletRepo.watchBalance(userId);
+    return _repository.watchBalance(userId);
   }
 
   Future<Either<Failure, WalletEntity>> holdBalance(
@@ -38,7 +42,7 @@ class WalletUseCase {
     String referenceId,
     String idempotencyKey,
   ) {
-    return walletRepo.holdBalance(userId, amount, referenceId, idempotencyKey);
+    return _repository.holdBalance(userId, amount, referenceId, idempotencyKey);
   }
 
   Future<Either<Failure, WalletEntity>> releaseBalance(
@@ -47,7 +51,7 @@ class WalletUseCase {
     String referenceId,
     String idempotencyKey,
   ) {
-    return walletRepo.releaseBalance(userId, amount, referenceId, idempotencyKey);
+    return _repository.releaseBalance(userId, amount, referenceId, idempotencyKey);
   }
 
   Future<Either<Failure, WalletEntity>> clearHeldBalance(
@@ -56,7 +60,7 @@ class WalletUseCase {
     String referenceId,
     String idempotencyKey,
   ) {
-    return walletRepo.clearHeldBalance(userId, amount, referenceId, idempotencyKey);
+    return _repository.clearHeldBalance(userId, amount, referenceId, idempotencyKey);
   }
 
   Future<Either<Failure, TransactionEntity>> recordTransaction(
@@ -67,7 +71,7 @@ class WalletUseCase {
     String? referenceId,
     String idempotencyKey,
   ) {
-    return walletRepo.recordTransaction(
+    return _repository.recordTransaction(
       userId,
       amount,
       type,
@@ -83,7 +87,7 @@ class WalletUseCase {
     DocumentSnapshot? startAfter,
     TransactionFilter? filter,
   }) {
-    return walletRepo.getTransactions(
+    return _repository.getTransactions(
       userId,
       limit: limit,
       startAfter: startAfter,
@@ -96,7 +100,7 @@ class WalletUseCase {
     int limit = 20,
     TransactionFilter? filter,
   }) {
-    return walletRepo.watchTransactions(
+    return _repository.watchTransactions(
       userId,
       limit: limit,
       filter: filter,

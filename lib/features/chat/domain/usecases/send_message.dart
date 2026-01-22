@@ -1,17 +1,19 @@
 import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart';
+import 'package:get_it/get_it.dart';
 import '../../../../core/errors/failures.dart';
 import '../entities/message_entity.dart';
 import '../entities/message_type.dart';
 import '../repositories/message_repository.dart';
 
 class SendMessage {
-  final MessageRepository repository;
+  final MessageRepository _repository;
 
-  SendMessage(this.repository);
+  SendMessage({MessageRepository? repository})
+      : _repository = repository ?? GetIt.instance<MessageRepository>();
 
   Future<Either<Failure, MessageEntity>> call(SendMessageParams params) async {
-    return await repository.sendMessage(
+    return await _repository.sendMessage(
       params.chatId,
       params.senderId,
       params.content,
