@@ -7,6 +7,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_spacing.dart';
+import '../../../../core/widgets/app_stepper.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../injection_container.dart';
 import '../../services/authenticator_app_launcher.dart';
@@ -147,7 +148,10 @@ class _TotpSetupScreenState extends State<TotpSetupScreen> {
         ),
         body: BlocConsumer<TotpCubit, BaseState<TotpData>>(
           listener: (context, state) {
-            if (state.isSuccess && state.data?.isEnabled == true) {
+            // Navigate to recovery codes step when 2FA is successfully enabled
+            // Check for SuccessState OR LoadedState with isEnabled while in verification step
+            if (state.isSuccess ||
+                (_currentStep == 1 && state.data?.isEnabled == true)) {
               setState(() {
                 _currentStep = 2;
               });
@@ -197,71 +201,9 @@ class _TotpSetupScreenState extends State<TotpSetupScreen> {
   }
 
   Widget _buildStepper() {
-    final steps = ['Scan QR', 'Verify', 'Save Codes'];
-
-    return Row(
-      children: List.generate(steps.length, (index) {
-        final isActive = index == _currentStep;
-        final isCompleted = index < _currentStep;
-
-        return Expanded(
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: isCompleted
-                            ? AppColors.success
-                            : isActive
-                                ? AppColors.primary
-                                : AppColors.surfaceVariant,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: isCompleted
-                            ? const Icon(
-                                Icons.check,
-                                color: AppColors.white,
-                                size: 18,
-                              )
-                            : AppText.bodyMedium(
-                                '${index + 1}',
-                                color: isActive
-                                    ? AppColors.white
-                                    : AppColors.onSurfaceVariant,
-                                fontWeight: FontWeight.bold,
-                              ),
-                      ),
-                    ),
-                    AppSpacing.verticalSpacing(SpacingSize.xs),
-                    AppText.bodySmall(
-                      steps[index],
-                      color: isActive || isCompleted
-                          ? AppColors.onBackground
-                          : AppColors.onSurfaceVariant,
-                      fontWeight:
-                          isActive ? FontWeight.w600 : FontWeight.normal,
-                    ),
-                  ],
-                ),
-              ),
-              if (index < steps.length - 1)
-                Expanded(
-                  child: Container(
-                    height: 2,
-                    color: isCompleted
-                        ? AppColors.success
-                        : AppColors.surfaceVariant,
-                  ),
-                ),
-            ],
-          ),
-        );
-      }),
+    return AppStepper(
+      steps: const ['Scan QR', 'Verify', 'Save Codes'],
+      currentStep: _currentStep,
     );
   }
 

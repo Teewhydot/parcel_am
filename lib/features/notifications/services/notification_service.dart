@@ -14,6 +14,8 @@ import '../data/models/notification_model.dart';
 import '../../../core/routes/routes.dart';
 import '../../../core/services/navigation_service/nav_config.dart';
 import '../domain/repositories/fcm_repository.dart';
+import '../domain/repositories/notification_settings_repository.dart';
+import '../domain/entities/notification_settings_entity.dart';
 
 /// Top-level background message handler
 /// Must be a top-level function for Firebase Messaging background handler
@@ -193,6 +195,7 @@ class NotificationService {
   final NotificationRemoteDataSource remoteDataSource;
   final NavigationService navigationService;
   final FirebaseAuth firebaseAuth;
+  final NotificationSettingsRepository settingsRepository;
 
   bool _isInitialized = false;
   String? _currentToken;
@@ -208,6 +211,7 @@ class NotificationService {
     required this.remoteDataSource,
     required this.navigationService,
     required this.firebaseAuth,
+    required this.settingsRepository,
   });
 
   /// Get singleton instance
@@ -217,6 +221,7 @@ class NotificationService {
     required NotificationRemoteDataSource remoteDataSource,
     required NavigationService navigationService,
     required FirebaseAuth firebaseAuth,
+    required NotificationSettingsRepository settingsRepository,
   }) {
     _instance ??= NotificationService(
       repository: repository,
@@ -224,6 +229,7 @@ class NotificationService {
       remoteDataSource: remoteDataSource,
       navigationService: navigationService,
       firebaseAuth: firebaseAuth,
+      settingsRepository: settingsRepository,
     );
     return _instance!;
   }
@@ -236,6 +242,45 @@ class NotificationService {
   /// Pass null when leaving the chat screen
   void setCurrentChatId(String? chatId) {
     _currentChatId = chatId;
+  }
+
+  /// Get user's notification settings
+  /// Returns default settings if user is not logged in or settings fetch fails
+  Future<NotificationSettingsEntity> _getUserSettings() async {
+    final userId = firebaseAuth.currentUser?.uid;
+    if (userId == null) {
+      return NotificationSettingsEntity.defaultSettings();
+    }
+
+    final result = await settingsRepository.getSettings(userId);
+    return result.fold(
+      (_) => NotificationSettingsEntity.defaultSettings(),
+      (settings) => settings,
+    );
+  }
+
+  /// Check if a notification type should be shown based on user settings
+  Future<bool> _shouldShowNotification(String? notificationType) async {
+    final settings = await _getUserSettings();
+
+    switch (notificationType) {
+      case 'chat_message':
+        return settings.chatMessages;
+      case 'parcel_request_accepted':
+      case 'delivery_confirmation_required':
+      case 'parcel_update':
+        return settings.parcelUpdates;
+      case 'escrow_update':
+      case 'payment_received':
+      case 'payment_released':
+        return settings.escrowAlerts;
+      case 'system_announcement':
+      case 'app_update':
+        return settings.systemAnnouncements;
+      default:
+        // For unknown types, show by default
+        return true;
+    }
   }
 
   /// Initialize notification service
@@ -422,16 +467,20 @@ class NotificationService {
       final isChatMessage = type == 'chat_message';
 
       if (!isChatMessage) {
-        // Display local notification for non-chat messages (escrow, parcel updates, etc.)
-        await _displayLocalNotification(
-          message: message,
-          title: title,
-          body: body,
-          chatId: chatId,
-          parcelId: parcelId,
-          travelerId: travelerId,
-          travelerName: travelerName,
-        );
+        // Check user's notification settings before displaying
+        final shouldShow = await _shouldShowNotification(type);
+        if (shouldShow) {
+          // Display local notification for non-chat messages (escrow, parcel updates, etc.)
+          await _displayLocalNotification(
+            message: message,
+            title: title,
+            body: body,
+            chatId: chatId,
+            parcelId: parcelId,
+            travelerId: travelerId,
+            travelerName: travelerName,
+          );
+        }
       }
 
       // Save notification to Firestore for in-app notification center (all types)
@@ -672,6 +721,12 @@ class NotificationService {
   }) async {
     // Skip if user is currently viewing this chat
     if (_currentChatId == chatId) {
+      return false;
+    }
+
+    // Check user's notification settings for chat messages
+    final shouldShow = await _shouldShowNotification('chat_message');
+    if (!shouldShow) {
       return false;
     }
 

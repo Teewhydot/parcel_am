@@ -14,15 +14,14 @@ abstract class BaseBloC<Event, State extends BaseState> extends Bloc<Event, Stat
   }
 
   void _setupCommonHandlers() {
-    // Log state transitions for debugging
+    // Log state transitions for debugging (skip loading states to reduce noise)
     stream.listen((state) {
-      Logger.logBasic('$runtimeType: $state');
-      
+      // Skip logging for loading and initial states to reduce console noise
+      if (state.isLoading || state.isInitial) return;
+
       if (state.isError) {
         Logger.logError('$runtimeType Error: ${state.errorMessage}');
-      }
-      
-      if (state.isSuccess) {
+      } else if (state.isSuccess) {
         Logger.logSuccess('$runtimeType Success: ${state.successMessage}');
       }
     });
@@ -62,6 +61,8 @@ abstract class BaseBloC<Event, State extends BaseState> extends Bloc<Event, Stat
   @override
   void onTransition(Transition<Event, State> transition) {
     super.onTransition(transition);
+    // Skip logging for loading and initial states to reduce console noise
+    if (transition.nextState.isLoading || transition.nextState.isInitial) return;
     Logger.logBasic('$runtimeType Transition: ${transition.currentState} -> ${transition.nextState}');
   }
 
@@ -80,15 +81,14 @@ abstract class BaseCubit<State extends BaseState> extends Cubit<State> {
   }
 
   void _setupCommonHandlers() {
-    // Log state transitions for debugging
+    // Log state transitions for debugging (skip loading states to reduce noise)
     stream.listen((state) {
-      Logger.logBasic('$runtimeType: $state');
-      
+      // Skip logging for loading and initial states to reduce console noise
+      if (state.isLoading || state.isInitial) return;
+
       if (state.isError) {
         Logger.logError('$runtimeType Error: ${state.errorMessage}');
-      }
-      
-      if (state.isSuccess) {
+      } else if (state.isSuccess) {
         Logger.logSuccess('$runtimeType Success: ${state.successMessage}');
       }
     });
@@ -161,6 +161,8 @@ abstract class BaseCubit<State extends BaseState> extends Cubit<State> {
   @override
   void onChange(Change<State> change) {
     super.onChange(change);
+    // Skip logging for loading and initial states to reduce console noise
+    if (change.nextState.isLoading || change.nextState.isInitial) return;
     Logger.logBasic('$runtimeType Change: ${change.currentState} -> ${change.nextState}');
   }
 

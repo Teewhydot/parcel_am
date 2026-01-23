@@ -9,7 +9,6 @@ import '../../../../core/widgets/app_input.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../injection_container.dart';
-import '../../domain/usecases/totp_usecase.dart';
 import '../bloc/totp_cubit.dart';
 import '../bloc/totp_data.dart';
 import 'totp_code_input_widget.dart';
@@ -40,16 +39,16 @@ class TotpVerificationDialog extends StatefulWidget {
     String title = 'Two-Factor Authentication',
     String description = 'Enter the 6-digit code from your authenticator app',
   }) async {
+    // Clear any previous verification state before showing dialog
+    context.read<TotpCubit>().clearVerification();
+
     final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => BlocProvider(
-        create: (_) => TotpCubit(totpUseCase: TotpUseCase()),
-        child: TotpVerificationDialog(
-          userId: userId,
-          title: title,
-          description: description,
-        ),
+      builder: (_) => TotpVerificationDialog(
+        userId: userId,
+        title: title,
+        description: description,
       ),
     );
     return result ?? false;
@@ -132,6 +131,7 @@ class _TotpVerificationDialogState extends State<TotpVerificationDialog> {
               ),
             ],
           ),
+          contentPadding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,

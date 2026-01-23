@@ -35,8 +35,9 @@ class _TotpManagementScreenState extends State<TotpManagementScreen> {
   }
 
   Future<void> _enableTwoFactor() async {
-    final result = await sl<NavigationService>().navigateTo<bool>(Routes.totp2FASetup);
+    final result = await sl<NavigationService>().navigateTo(Routes.totp2FASetup);
 
+    // GetX returns dynamic, so we need to check the result type
     if (result == true && mounted) {
       context.read<TotpCubit>().loadSettings(_userId);
     }

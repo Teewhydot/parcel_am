@@ -81,6 +81,9 @@ class TotpCubit extends BaseCubit<BaseState<TotpData>> {
 
   /// Verify code and complete setup
   Future<void> completeSetup(String userId, String code) async {
+    // Store current data before loading state (to preserve setupResult)
+    final previousData = _currentData;
+
     emit(const LoadingState<TotpData>(message: 'Verifying code...'));
 
     final result = await _totpUseCase.completeSetup(userId, code);
@@ -91,24 +94,22 @@ class TotpCubit extends BaseCubit<BaseState<TotpData>> {
           errorMessage: failure.failureMessage,
           errorCode: 'totp_verification_failed',
         ));
-        // Restore previous state for retry
+        // Restore previous state for retry (use preserved data)
         emit(LoadedState<TotpData>(
-          data: _currentData.copyWith(
+          data: previousData.copyWith(
             errorMessage: failure.failureMessage,
           ),
           lastUpdated: DateTime.now(),
         ));
       },
       (success) {
-        emit(const SuccessState<TotpData>(
-          successMessage: '2FA enabled successfully!',
-        ));
-        // Update state to reflect enabled 2FA
+        // Keep setupResult so recovery codes can be displayed
         emit(LoadedState<TotpData>(
-          data: _currentData.clearSetup().copyWith(
-                isEnabled: true,
-                remainingRecoveryCodes: 8, // Fresh set of recovery codes
-              ),
+          data: previousData.copyWith(
+            isEnabled: true,
+            showRecoveryCodes: true,
+            remainingRecoveryCodes: 8,
+          ),
           lastUpdated: DateTime.now(),
         ));
       },

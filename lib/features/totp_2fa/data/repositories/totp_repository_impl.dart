@@ -5,7 +5,6 @@ import 'package:crypto/crypto.dart';
 import 'package:dartz/dartz.dart';
 import 'package:get_it/get_it.dart';
 import 'package:otp/otp.dart';
-import 'package:base32/base32.dart';
 import 'package:parcel_am/core/services/error/error_handler.dart';
 import '../../../../core/errors/failures.dart';
 import '../../domain/entities/totp_settings_entity.dart';
@@ -83,6 +82,7 @@ class TotpRepositoryImpl implements TotpRepository {
       () async {
         // Get pending secret
         final pendingSecret = await _localDataSource.getPendingSecret(userId);
+
         if (pendingSecret == null) {
           throw const TotpSetupFailure(
             failureMessage: 'No pending 2FA setup found. Please start setup again.',
@@ -406,10 +406,18 @@ class TotpRepositoryImpl implements TotpRepository {
   // ============ Private Helper Methods ============
 
   /// Generate a cryptographically secure random secret (20 bytes = 160 bits)
+  /// Uses RFC 4648 base32 alphabet (A-Z, 2-7) for compatibility with authenticator apps
   String _generateRandomSecret() {
+    // RFC 4648 base32 alphabet (standard, compatible with all authenticator apps)
+    const base32Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+
     final random = Random.secure();
-    final bytes = List<int>.generate(20, (_) => random.nextInt(256));
-    return base32.encode(Uint8List.fromList(bytes));
+    // Generate 32 base32 characters (160 bits of entropy)
+    final buffer = StringBuffer();
+    for (int i = 0; i < 32; i++) {
+      buffer.write(base32Chars[random.nextInt(32)]);
+    }
+    return buffer.toString();
   }
 
   /// Generate otpauth:// URI for QR code
@@ -438,13 +446,18 @@ class TotpRepositoryImpl implements TotpRepository {
   }
 
   /// Validate TOTP code with time window tolerance
-  bool _validateTotp(String secret, String code, {int window = 1}) {
+  bool _validateTotp(String secret, String code, {int window = 2}) {
     final now = DateTime.now().millisecondsSinceEpoch;
+
+    // Normalize the input code (remove any whitespace, ensure 6 digits)
+    final normalizedCode = code.trim().padLeft(_totpDigits, '0');
 
     // Check current time window and adjacent windows
     for (int i = -window; i <= window; i++) {
       final timeMs = now + (i * _totpInterval * 1000);
-      final expectedCode = OTP.generateTOTPCodeString(
+
+      // Try both the otp package and manual implementation
+      final expectedCodeOtp = OTP.generateTOTPCodeString(
         secret,
         timeMs,
         algorithm: Algorithm.SHA1,
@@ -452,12 +465,72 @@ class TotpRepositoryImpl implements TotpRepository {
         interval: _totpInterval,
       );
 
-      if (expectedCode == code) {
+      final expectedCodeManual = _generateTotpManual(secret, timeMs);
+
+      if (expectedCodeOtp == normalizedCode || expectedCodeManual == normalizedCode) {
         return true;
       }
     }
 
     return false;
+  }
+
+  /// Manual TOTP implementation following RFC 6238
+  String _generateTotpManual(String base32Secret, int timeMs) {
+    // Decode base32 secret to bytes
+    final secretBytes = _base32Decode(base32Secret);
+
+    // Calculate time counter (number of 30-second intervals since Unix epoch)
+    final counter = timeMs ~/ 1000 ~/ _totpInterval;
+
+    // Convert counter to 8-byte big-endian
+    final counterBytes = Uint8List(8);
+    var tempCounter = counter;
+    for (int i = 7; i >= 0; i--) {
+      counterBytes[i] = tempCounter & 0xff;
+      tempCounter >>= 8;
+    }
+
+    // HMAC-SHA1
+    final hmac = Hmac(sha1, secretBytes);
+    final digest = hmac.convert(counterBytes);
+    final hash = digest.bytes;
+
+    // Dynamic truncation
+    final offset = hash[hash.length - 1] & 0x0f;
+    final binary = ((hash[offset] & 0x7f) << 24) |
+        ((hash[offset + 1] & 0xff) << 16) |
+        ((hash[offset + 2] & 0xff) << 8) |
+        (hash[offset + 3] & 0xff);
+
+    // Generate 6-digit code
+    final otp = binary % 1000000;
+    return otp.toString().padLeft(6, '0');
+  }
+
+  /// Decode base32 string to bytes (RFC 4648)
+  Uint8List _base32Decode(String input) {
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+    final cleanInput = input.toUpperCase().replaceAll('=', '');
+
+    final output = <int>[];
+    var buffer = 0;
+    var bitsLeft = 0;
+
+    for (final char in cleanInput.codeUnits) {
+      final value = alphabet.indexOf(String.fromCharCode(char));
+      if (value < 0) continue; // Skip invalid characters
+
+      buffer = (buffer << 5) | value;
+      bitsLeft += 5;
+
+      if (bitsLeft >= 8) {
+        bitsLeft -= 8;
+        output.add((buffer >> bitsLeft) & 0xff);
+      }
+    }
+
+    return Uint8List.fromList(output);
   }
 
   /// Generate random recovery codes

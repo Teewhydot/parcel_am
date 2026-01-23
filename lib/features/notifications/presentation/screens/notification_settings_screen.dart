@@ -6,14 +6,12 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_spacing.dart';
-import '../../../../injection_container.dart';
-import '../../domain/repositories/notification_settings_repository.dart';
 import '../bloc/notification_settings_bloc.dart';
 import '../bloc/notification_settings_event.dart';
 import '../bloc/notification_settings_state.dart';
 import '../widgets/notification_toggle_tile.dart';
 
-class NotificationSettingsScreen extends StatelessWidget {
+class NotificationSettingsScreen extends StatefulWidget {
   final String userId;
 
   const NotificationSettingsScreen({
@@ -22,20 +20,19 @@ class NotificationSettingsScreen extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => NotificationSettingsBloc(
-        repository: sl<NotificationSettingsRepository>(),
-      )..add(LoadNotificationSettings(userId)),
-      child: _NotificationSettingsContent(userId: userId),
-    );
-  }
+  State<NotificationSettingsScreen> createState() =>
+      _NotificationSettingsScreenState();
 }
 
-class _NotificationSettingsContent extends StatelessWidget {
-  final String userId;
-
-  const _NotificationSettingsContent({required this.userId});
+class _NotificationSettingsScreenState
+    extends State<NotificationSettingsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    context
+        .read<NotificationSettingsBloc>()
+        .add(LoadNotificationSettings(widget.userId));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +48,7 @@ class _NotificationSettingsContent extends StatelessWidget {
                     ? () {
                         context
                             .read<NotificationSettingsBloc>()
-                            .add(SaveNotificationSettings(userId));
+                            .add(SaveNotificationSettings(widget.userId));
                       }
                     : null,
                 child: AppText.bodyMedium(
@@ -87,7 +84,7 @@ class _NotificationSettingsContent extends StatelessWidget {
                     onPressed: () {
                       context
                           .read<NotificationSettingsBloc>()
-                          .add(LoadNotificationSettings(userId));
+                          .add(LoadNotificationSettings(widget.userId));
                     },
                     child: AppText.bodyMedium('Retry', color: AppColors.white),
                   ),

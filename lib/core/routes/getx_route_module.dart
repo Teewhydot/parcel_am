@@ -25,8 +25,6 @@ import 'package:parcel_am/features/notifications/presentation/screens/notificati
 import 'package:parcel_am/features/parcel_am_core/presentation/screens/settings_screen.dart';
 import 'package:parcel_am/features/passkey/presentation/screens/passkey_management_screen.dart';
 import 'package:parcel_am/features/seeder/presentation/screens/database_seeder_screen.dart';
-import 'package:parcel_am/features/totp_2fa/domain/usecases/totp_usecase.dart';
-import 'package:parcel_am/features/totp_2fa/presentation/bloc/totp_cubit.dart';
 import 'package:parcel_am/features/totp_2fa/presentation/screens/totp_management_screen.dart';
 import 'package:parcel_am/features/totp_2fa/presentation/screens/totp_setup_screen.dart';
 import 'package:parcel_am/features/payments/presentation/screens/wallet_funding_payment_screen.dart';
@@ -332,24 +330,14 @@ class GetXRouteModule {
     ),
     AuthGuard.createProtectedRoute(
       name: Routes.totp2FAManagement,
-      page: () {
-        return BlocProvider(
-          create: (_) => TotpCubit(totpUseCase: TotpUseCase()),
-          child: const TotpManagementScreen(),
-        );
-      },
+      page: () => const TotpManagementScreen(),
       transition: _transition,
       transitionDuration: _transitionDuration,
       requiresKyc: false,
     ),
     AuthGuard.createProtectedRoute(
       name: Routes.totp2FASetup,
-      page: () {
-        return BlocProvider(
-          create: (_) => TotpCubit(totpUseCase: TotpUseCase()),
-          child: const TotpSetupScreen(),
-        );
-      },
+      page: () => const TotpSetupScreen(),
       transition: _transition,
       transitionDuration: _transitionDuration,
       requiresKyc: false,

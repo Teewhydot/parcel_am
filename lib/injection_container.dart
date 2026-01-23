@@ -258,6 +258,7 @@ Future<void> init() async {
       remoteDataSource: sl(),
       navigationService: sl(),
       firebaseAuth: sl(),
+      settingsRepository: sl(),
     ),
   );
 

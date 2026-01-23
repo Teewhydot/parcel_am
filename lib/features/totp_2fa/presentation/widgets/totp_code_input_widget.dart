@@ -54,7 +54,7 @@ class TotpCodeInputWidgetState extends State<TotpCodeInputWidget> {
       enabled: widget.enabled,
       errorMessage: widget.errorMessage,
       autoFocus: widget.autoFocus,
-      showSeparator: true,
+      showSeparator: false,
     );
   }
 }

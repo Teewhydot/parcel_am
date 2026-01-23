@@ -45,9 +45,9 @@ class AppPinInput extends StatefulWidget {
     this.enabled = true,
     this.errorMessage,
     this.autoFocus = true,
-    this.boxWidth = 48,
-    this.boxHeight = 56,
-    this.showSeparator = true,
+    this.boxWidth = 44,
+    this.boxHeight = 52,
+    this.showSeparator = false,
   });
 
   @override
@@ -166,81 +166,83 @@ class AppPinInputState extends State<AppPinInput> {
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(widget.length, (index) {
-            final needsSeparator = index == separatorIndex;
+          children: List.generate(widget.length * 2 - 1, (i) {
+            // Even indices are input boxes, odd indices are spacers
+            if (i.isOdd) {
+              // Check if this is where separator goes
+              final boxIndex = i ~/ 2;
+              if (boxIndex == separatorIndex - 1 && widget.showSeparator) {
+                return Padding(
+                  padding: AppSpacing.horizontalPaddingXS,
+                  child: AppText.titleLarge('-', color: AppColors.outline),
+                );
+              }
+              return const SizedBox(width: 6);
+            }
 
-            return Row(
-              children: [
-                if (needsSeparator)
-                  Padding(
-                    padding: AppSpacing.horizontalPaddingSM,
-                    child: AppText.headlineMedium(
-                      '-',
-                      color: AppColors.outline,
+            final index = i ~/ 2;
+            return Expanded(
+              child: SizedBox(
+                height: widget.boxHeight,
+                child: KeyboardListener(
+                  focusNode: FocusNode(),
+                  onKeyEvent: (event) => _onKeyEvent(index, event),
+                  child: TextFormField(
+                    controller: _controllers[index],
+                    focusNode: _focusNodes[index],
+                    enabled: widget.enabled,
+                    textAlign: TextAlign.center,
+                    keyboardType: TextInputType.number,
+                    maxLength: 1,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.onBackground,
+                      height: 1.2,
                     ),
-                  ),
-                SizedBox(
-                  width: widget.boxWidth,
-                  height: widget.boxHeight,
-                  child: KeyboardListener(
-                    focusNode: FocusNode(),
-                    onKeyEvent: (event) => _onKeyEvent(index, event),
-                    child: TextFormField(
-                      controller: _controllers[index],
-                      focusNode: _focusNodes[index],
-                      enabled: widget.enabled,
-                      textAlign: TextAlign.center,
-                      keyboardType: TextInputType.number,
-                      maxLength: 1,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.onBackground,
+                    decoration: InputDecoration(
+                      counterText: '',
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                      isDense: true,
+                      border: OutlineInputBorder(
+                        borderRadius: AppRadius.sm,
                       ),
-                      decoration: InputDecoration(
-                        counterText: '',
-                        border: OutlineInputBorder(
-                          borderRadius: AppRadius.sm,
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: AppRadius.sm,
+                        borderSide: BorderSide(
+                          color: hasError
+                              ? AppColors.error
+                              : AppColors.outline,
                         ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: AppRadius.sm,
-                          borderSide: BorderSide(
-                            color: hasError
-                                ? AppColors.error
-                                : AppColors.outline,
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: AppRadius.sm,
-                          borderSide: BorderSide(
-                            color: hasError
-                                ? AppColors.error
-                                : AppColors.primary,
-                            width: 2,
-                          ),
-                        ),
-                        errorBorder: OutlineInputBorder(
-                          borderRadius: AppRadius.sm,
-                          borderSide: const BorderSide(
-                            color: AppColors.error,
-                          ),
-                        ),
-                        filled: true,
-                        fillColor: widget.enabled
-                            ? AppColors.surface
-                            : AppColors.surfaceVariant,
                       ),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(1),
-                      ],
-                      onChanged: (value) => _onDigitChanged(index, value),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: AppRadius.sm,
+                        borderSide: BorderSide(
+                          color: hasError
+                              ? AppColors.error
+                              : AppColors.primary,
+                          width: 2,
+                        ),
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderRadius: AppRadius.sm,
+                        borderSide: const BorderSide(
+                          color: AppColors.error,
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: widget.enabled
+                          ? AppColors.surface
+                          : AppColors.surfaceVariant,
                     ),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(1),
+                    ],
+                    onChanged: (value) => _onDigitChanged(index, value),
                   ),
                 ),
-                if (index < widget.length - 1 && index != separatorIndex - 1)
-                  AppSpacing.horizontalSpacing(SpacingSize.xs),
-              ],
+              ),
             );
           }),
         ),

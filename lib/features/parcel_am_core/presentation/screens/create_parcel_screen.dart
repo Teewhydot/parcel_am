@@ -8,6 +8,7 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_input.dart';
 import '../../../../core/widgets/app_spacing.dart';
+import '../../../../core/widgets/app_stepper.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../../../../core/routes/routes.dart';
@@ -243,73 +244,16 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
   }
 
   Widget _buildStepIndicator() {
-    final steps = ['Details', 'Location', 'Review', 'Payment'];
     return Container(
       padding: AppSpacing.paddingLG,
       color: AppColors.surface,
-      child: Row(
-        children: List.generate(steps.length, (index) {
-          final isActive = index == _currentStep;
-          final isCompleted = index < _currentStep;
-          return Expanded(
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    if (index > 0)
-                      Expanded(
-                        child: Container(
-                          height: 2,
-                          color: isCompleted
-                              ? AppColors.primary
-                              : AppColors.outline,
-                        ),
-                      ),
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: isCompleted || isActive
-                            ? AppColors.primary
-                            : AppColors.surfaceVariant,
-                      ),
-                      child: Center(
-                        child: isCompleted
-                            ? const Icon(Icons.check,
-                                color: Colors.white, size: 18)
-                            : AppText(
-                                '${index + 1}',
-                                color: isActive
-                                    ? Colors.white
-                                    : AppColors.onSurfaceVariant,
-                                fontWeight: FontWeight.bold,
-                              ),
-                      ),
-                    ),
-                    if (index < steps.length - 1)
-                      Expanded(
-                        child: Container(
-                          height: 2,
-                          color: isCompleted
-                              ? AppColors.primary
-                              : AppColors.outline,
-                        ),
-                      ),
-                  ],
-                ),
-                AppSpacing.verticalSpacing(SpacingSize.xs),
-                AppText.bodySmall(
-                  steps[index],
-                  fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-                  color: isActive
-                      ? AppColors.primary
-                      : AppColors.onSurfaceVariant,
-                ),
-              ],
-            ),
-          );
-        }),
+      child: AppStepper(
+        steps: const ['Details', 'Location', 'Review', 'Payment'],
+        currentStep: _currentStep,
+        completedColor: AppColors.primary,
+        activeColor: AppColors.primary,
+        inactiveColor: AppColors.surfaceVariant,
+        activeLabelColor: AppColors.primary,
       ),
     );
   }
