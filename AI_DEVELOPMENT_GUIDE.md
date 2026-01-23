@@ -37,8 +37,60 @@ lib/
   - `LoadedState<T>`
   - `ErrorState<T>`
   - `AsyncErrorState<T>`
-- **Pattern**: Use `BlocConsumer` or `BlocBuilder` for listening to state
+- **Pattern**: Use `BlocManager` instead of generic `BlocBuilder` or `BlocListener`
 - **Access**: `context.read<XCubit>()` for actions, `context.watch<XBloc>()` for streams
+
+### BlocManager (REQUIRED)
+**CRITICAL**: ALWAYS use `BlocManager` instead of `BlocBuilder`, `BlocListener`, or `BlocConsumer`.
+
+```dart
+// ✅ CORRECT
+BlocManager<MyCubit, BaseState<MyData>>(
+  bloc: context.read<MyCubit>(),
+  showLoadingIndicator: true,
+  showResultErrorNotifications: true,
+  child: const SizedBox.shrink(),
+  builder: (context, state) {
+    return MyWidget();
+  },
+  listener: (context, state) {
+    // Handle state changes
+  },
+)
+
+// ❌ WRONG
+BlocBuilder<MyCubit, BaseState<MyData>>(
+  builder: (context, state) => MyWidget(),
+)
+BlocListener<MyCubit, BaseState<MyData>>(...)
+BlocConsumer<MyCubit, BaseState<MyData>>(...)
+```
+
+**BlocManager Features**:
+- Automatic loading overlay
+- Automatic error/success notifications
+- Consistent state handling across the app
+
+## User Context Extensions
+
+**CRITICAL**: Use context extensions for user data. NEVER manually extract from AuthCubit state.
+
+```dart
+// ✅ CORRECT - Use context extensions (from user_extensions.dart)
+final userId = context.currentUserId ?? '';
+final user = context.user;
+final displayName = context.user.displayName;
+
+// ❌ WRONG - Verbose manual extraction
+final authState = context.read<AuthCubit>().state;
+final userId = authState is LoadedState<AuthData>
+    ? authState.data?.user?.uid ?? ''
+    : '';
+```
+
+**Available Extensions** (`lib/core/helpers/user_extensions.dart`):
+- `context.currentUserId` - Returns `String?` with current user's UID
+- `context.user` - Returns `UserEntity` with full user data
 
 ## Design System
 
@@ -301,6 +353,10 @@ ListView(children: items.map((item) => ItemWidget(item)).toList())
 ❌ Missing `const` on static widgets
 ❌ Not disposing controllers/subscriptions
 ❌ `ListView(children: [])` for long lists (use `.builder`)
+❌ Using `BlocBuilder`/`BlocListener`/`BlocConsumer` (use `BlocManager`)
+❌ Manually extracting userId from AuthCubit state (use `context.currentUserId`)
+❌ Using `FirebaseAuth.instance.currentUser` directly (use `context.currentUserId`)
+❌ Creating local BlocProviders when bloc is globally provided in `bloc_providers.dart`
 
 ## Quick Reference Checklist
 
@@ -317,6 +373,10 @@ Before committing code, verify:
 - [ ] `.builder` for dynamic lists
 - [ ] Proper error handling with `Either<Failure, T>`
 - [ ] Following established modal bottom sheet pattern
+- [ ] Using `BlocManager` instead of `BlocBuilder`/`BlocListener`
+- [ ] Using `context.currentUserId` for user ID
+- [ ] Using `context.user` for user entity
+- [ ] No local BlocProviders for globally provided blocs
 
 ## Example: Correct Modal Bottom Sheet
 

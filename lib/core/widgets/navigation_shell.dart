@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:parcel_am/core/bloc/base/base_state.dart';
+import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
 import 'package:parcel_am/core/widgets/app_text.dart';
 import 'package:parcel_am/core/widgets/floating_bottom_nav_bar.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/screens/dashboard_screen.dart';
@@ -12,10 +13,11 @@ import 'package:parcel_am/features/chat/presentation/widgets/chat_notification_l
 // import 'package:parcel_am/features/seeder/presentation/screens/database_seeder_screen.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_cubit.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_data.dart';
-import 'package:parcel_am/features/parcel_am_core/presentation/bloc/package/package_bloc.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/dashboard/dashboard_bloc.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/dashboard/dashboard_event.dart';
 import 'package:parcel_am/core/helpers/user_extensions.dart';
+import 'package:parcel_am/core/services/navigation_service/nav_config.dart';
+import 'package:parcel_am/injection_container.dart';
 
 class NavigationShell extends StatefulWidget {
   final int initialIndex;
@@ -32,8 +34,10 @@ class NavigationShell extends StatefulWidget {
 class _NavigationShellState extends State<NavigationShell> {
   late int _currentIndex;
   DateTime? _lastBackPressed;
-  late DashboardBloc _dashboardBloc;
   String? _lastUserId;
+
+  // DashboardBloc is now provided globally from bloc_providers.dart
+  DashboardBloc get _dashboardBloc => context.read<DashboardBloc>();
 
   // Navigation items configuration
   final List<FloatingNavItem> _navItems = const [
@@ -75,15 +79,9 @@ class _NavigationShellState extends State<NavigationShell> {
     }
 
     return [
-      BlocProvider.value(
-        value: _dashboardBloc,
-        child: const DashboardScreen(),
-      ),
+      const DashboardScreen(),
       const BrowseRequestsScreen(),
-      BlocProvider(
-        create: (_) => PackageBloc(),
-        child: const TrackingScreen(),
-      ),
+      const TrackingScreen(),
       ChatsListScreen(currentUserId: userId),
       // const DatabaseSeederScreen(),
     ];
@@ -93,12 +91,10 @@ class _NavigationShellState extends State<NavigationShell> {
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
-    _dashboardBloc = DashboardBloc();
   }
 
   @override
   void dispose() {
-    _dashboardBloc.close();
     super.dispose();
   }
 
@@ -146,10 +142,12 @@ class _NavigationShellState extends State<NavigationShell> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AuthCubit, BaseState<AuthData>>(
+    return BlocManager<AuthCubit, BaseState<AuthData>>(
+      bloc: context.read<AuthCubit>(),
+      showLoadingIndicator: false,
+      child: const SizedBox.shrink(),
       builder: (context, authState) {
-        // Get current user ID from auth state
-        final userId = authState.data?.user?.uid;
+        final userId = context.currentUserId;
 
         // If user is not authenticated, show error
         if (userId == null) {
@@ -162,8 +160,15 @@ class _NavigationShellState extends State<NavigationShell> {
 
         return ChatNotificationListener(
           userId: userId,
-          child: WillPopScope(
-            onWillPop: _onWillPop,
+          child: PopScope(
+            canPop: false,
+            onPopInvokedWithResult: (didPop, result) async {
+              if (didPop) return;
+              final shouldPop = await _onWillPop();
+              if (shouldPop && context.mounted) {
+                sl<NavigationService>().goBack();
+              }
+            },
             child: Scaffold(
               body: AnnotatedRegion<SystemUiOverlayStyle>(
                 value: SystemUiOverlayStyle.dark,

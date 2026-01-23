@@ -22,16 +22,15 @@ class ParcelSeeder {
     final parcelIds = <String>[];
 
     for (final parcel in testParcels) {
-      try {
+      
         final docRef = firestore.collection('parcels').doc();
         final parcelData = parcel.toJson();
         parcelData['createdAt'] = FieldValue.serverTimestamp();
 
         await docRef.set(parcelData);
         parcelIds.add(docRef.id);
-      } catch (e) {
       }
-    }
+  
 
     return parcelIds;
   }

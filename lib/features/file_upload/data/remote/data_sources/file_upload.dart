@@ -127,7 +127,7 @@ class FirebaseFileUploadImpl implements FileUploadDataSource {
     try {
       final extension = path.extension(file.path);
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final fileName = '${timestamp}$extension';
+      final fileName = '$timestamp$extension';
 
       final storageRef = _storage
           .ref()

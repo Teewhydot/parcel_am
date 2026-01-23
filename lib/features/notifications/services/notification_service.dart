@@ -490,8 +490,8 @@ class NotificationService {
       );
       await remoteDataSource.saveNotification(notificationModel);
 
-      // Update badge count
-      await _updateBadgeCount();
+      // Update badge numCount
+      await _updateBadgenumCount();
     } catch (e) {
       // Silent catch
     }
@@ -628,8 +628,8 @@ class NotificationService {
       // Mark notification as read if notificationId exists
       if (notificationId != null) {
         await remoteDataSource.markAsRead(notificationId);
-        // Update badge count after marking as read
-        await _updateBadgeCount();
+        // Update badge numCount after marking as read
+        await _updateBadgenumCount();
       }
 
       // Navigate to appropriate screen based on notification type
@@ -673,37 +673,37 @@ class NotificationService {
     // Fire-and-forget: result not needed, errors are silently handled
   }
 
-  /// Calculate total unread notification count from Firestore
-  Future<int> _getTotalUnreadCount() async {
+  /// Calculate total unread notification numCount from Firestore
+  Future<int> _getTotalUnreadnumCount() async {
     final userId = firebaseAuth.currentUser?.uid;
     if (userId == null) return 0;
 
     final result = await repository.getUnreadNotificationCount(userId);
     return result.fold(
       (failure) => 0,
-      (count) => count,
+      (numCount) => numCount,
     );
   }
 
-  /// Update app badge count based on total unread notifications
-  Future<void> _updateBadgeCount() async {
+  /// Update app badge numCount based on total unread notifications
+  Future<void> _updateBadgenumCount() async {
     try {
-      final unreadCount = await _getTotalUnreadCount();
-      await updateBadgeCount(unreadCount);
+      final unreadnumCount = await _getTotalUnreadnumCount();
+      await updateBadgenumCount(unreadnumCount);
     } catch (e) {
       // Silent catch
     }
   }
 
-  /// Update app badge count
+  /// Update app badge numCount
   /// This method can also be called publicly to manually update badge
-  Future<void> updateBadgeCount(int count) async {
+  Future<void> updateBadgenumCount(int numCount) async {
     try {
       // Check if the device supports app badges
       final isSupported = await AppBadgePlus.isSupported();
 
       if (isSupported) {
-        await AppBadgePlus.updateBadge(count);
+        await AppBadgePlus.updateBadge(numCount);
       }
     } catch (e) {
       // Silent catch

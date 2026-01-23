@@ -30,6 +30,7 @@ import '../../data/constants/verification_constants.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/active_packages/active_packages_cubit.dart';
 import '../../domain/entities/package_entity.dart';
 import 'package:parcel_am/features/chat/services/presence_service.dart';
+import 'package:parcel_am/core/helpers/user_extensions.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -40,8 +41,8 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   PresenceService? _presenceService;
-  late ActivePackagesCubit _activePackagesBloc;
-  // DashboardBloc is now provided from NavigationShell
+  // Blocs are now provided globally from bloc_providers.dart
+  ActivePackagesCubit get _activePackagesBloc => context.read<ActivePackagesCubit>();
   DashboardBloc get _dashboardBloc => context.read<DashboardBloc>();
   String? _lastActivePackagesUserId;
 
@@ -49,7 +50,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
 
-    _activePackagesBloc = ActivePackagesCubit();
     _loadInitialData();
     _initializePresence();
     _checkBatteryOptimization();
@@ -69,16 +69,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void dispose() {
     _presenceService?.dispose();
-    // DashboardBloc is managed by NavigationShell, don't close here
-    _activePackagesBloc.close();
+    // Blocs are managed globally by bloc_providers.dart, don't close here
     super.dispose();
   }
 
   void _initializePresence() {
-    final authState = context.read<AuthCubit>().state;
-    final userId = authState is LoadedState<AuthData>
-        ? authState.data?.user?.uid ?? ''
-        : '';
+    final userId = context.currentUserId ?? '';
 
     if (userId.isNotEmpty) {
       final presenceService = sl<PresenceService>();
@@ -112,31 +108,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   String _resolveCurrentUserId() {
-    final authState = context.read<AuthCubit>().state;
-    if (authState is LoadedState<AuthData>) {
-      return authState.data?.user?.uid ?? '';
-    }
-    return '';
+    return context.currentUserId ?? '';
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocManager<AuthCubit, BaseState<AuthData>>(
       listener: (context, authState) {
-        final userId = authState is LoadedState<AuthData>
-            ? authState.data?.user?.uid ?? ''
-            : '';
-        _requestDataForUser(userId);
+        _requestDataForUser(context.currentUserId ?? '');
       },
       bloc: context.read<AuthCubit>(),
       child: AppScaffold(
         hasGradientBackground: false,
-        body: MultiBlocProvider(
-          providers: [
-            BlocProvider.value(value: _dashboardBloc),
-            BlocProvider.value(value: _activePackagesBloc),
-          ],
-          child: RefreshIndicator(
+        body: RefreshIndicator(
             onRefresh: () async {
               final userId = _resolveCurrentUserId();
               _requestDataForUser(userId, force: true);
@@ -168,10 +152,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         AppSpacing.verticalSpacing(SpacingSize.lg),
                         const UserStatsGrid(),
                         AppSpacing.verticalSpacing(SpacingSize.xxl),
-                        BlocBuilder<
-                          ActivePackagesCubit,
-                          BaseState<List<PackageEntity>>
-                        >(
+                        BlocManager<ActivePackagesCubit, BaseState<List<PackageEntity>>>(
+                          bloc: context.read<ActivePackagesCubit>(),
+                          showLoadingIndicator: false,
+                          child: const SizedBox.shrink(),
                           builder: (context, state) {
                             if (state.isLoading) {
                               return const Center(
@@ -202,7 +186,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
           ),
-        ),
       ),
     );
   }
@@ -211,13 +194,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
 class _HeaderSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AuthCubit, BaseState<AuthData>>(
-      builder: (context, authState) {
-        final user = authState is LoadedState<AuthData>
-            ? authState.data?.user
-            : null;
-        final displayName = user?.displayName;
-        final userName = displayName != null
+    return BlocManager<AuthCubit, BaseState<AuthData>>(
+      bloc: context.read<AuthCubit>(),
+      showLoadingIndicator: false,
+      child: const SizedBox.shrink(),
+      builder: (context, state) {
+        final user = context.user;
+        final displayName = user.displayName;
+        final userName = displayName.isNotEmpty
             ? displayName.split(' ').firstOrNull ?? 'User'
             : 'User';
         final greeting = VerificationConstants.getTimeBasedGreeting();
@@ -294,7 +278,10 @@ class _NotificationButton extends StatelessWidget {
             color: AppColors.black,
           ),
           onPressed: () {
-            sl<NavigationService>().navigateTo(Routes.notifications);
+            sl<NavigationService>().navigateTo(
+              Routes.notifications,
+              arguments: context.currentUserId ?? '',
+            );
           },
         ),
         Positioned(
@@ -382,13 +369,9 @@ class _QuickActionsRow extends StatelessWidget {
         Expanded(
           child: KycGestureDetector(
             onTap: () {
-              final authState = context.read<AuthCubit>().state;
-              final userId = authState is LoadedState<AuthData>
-                  ? authState.data?.user?.uid ?? ''
-                  : '';
               sl<NavigationService>().navigateTo(
                 Routes.wallet,
-                arguments: userId,
+                arguments: context.currentUserId ?? '',
               );
             },
             child: _ActionCard(
@@ -501,7 +484,7 @@ class _RecentActivitySection extends StatelessWidget {
                   final escrowStatus =
                       package.paymentInfo != null &&
                           package.paymentInfo!.isEscrow
-                      ? package.paymentInfo!.escrowStatus ?? 'pending'
+                      ? package.paymentInfo!.escrowStatus
                       : null;
 
                   return _ActivityItem(
@@ -619,7 +602,7 @@ class _ActivityItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppCard.elevated(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: EdgeInsets.only(bottom: SpacingSize.md.value),
       onTap: onTap,
       child: Column(
         children: [
@@ -662,7 +645,7 @@ class _ActivityItem extends StatelessWidget {
               AppContainer(
                 variant: ContainerVariant.filled,
                 color: statusColor.withValues(alpha: 0.1),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: EdgeInsets.symmetric(horizontal: SpacingSize.sm.value, vertical: SpacingSize.xs.value),
                 borderRadius: AppRadius.md,
                 child: AppText.labelSmall(
                   status,
@@ -675,7 +658,7 @@ class _ActivityItem extends StatelessWidget {
           if (escrowStatus != null) ...[
             AppSpacing.verticalSpacing(SpacingSize.sm),
             AppContainer(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: EdgeInsets.symmetric(horizontal: SpacingSize.sm.value, vertical: SpacingSize.xs.value),
               color: _getEscrowStatusColor(
                 escrowStatus!,
               ).withValues(alpha: 0.1),

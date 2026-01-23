@@ -9,6 +9,7 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_input.dart';
 import '../../../../core/bloc/base/base_state.dart';
+import '../../../../core/bloc/managers/bloc_manager.dart';
 import '../../../escrow/domain/entities/escrow_status.dart';
 import '../widgets/bottom_navigation.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/wallet/wallet_cubit.dart';
@@ -16,7 +17,8 @@ import '../bloc/wallet/wallet_data.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/escrow/escrow_cubit.dart';
 import '../bloc/escrow/escrow_state.dart';
 import '../../domain/entities/package_entity.dart';
-import '../../../../core/helpers/user_extensions.dart';
+import '../../../../core/services/navigation_service/nav_config.dart';
+import '../../../../injection_container.dart';
 
 class PaymentScreen extends StatefulWidget {
   const PaymentScreen({super.key});
@@ -30,8 +32,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
   String paymentMethod = 'bank';
   final TextEditingController _accountNumberController = TextEditingController();
   final TextEditingController _bankNameController = TextEditingController();
-  late WalletCubit _walletBloc;
-  late EscrowCubit _escrowBloc;
+  // Blocs are now provided globally from bloc_providers.dart
+  WalletCubit get _walletBloc => context.read<WalletCubit>();
+  EscrowCubit get _escrowBloc => context.read<EscrowCubit>();
   PaymentEntity? _paymentInfo;
 
   final List<Map<String, dynamic>> steps = [
@@ -78,15 +81,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
   @override
   void initState() {
     super.initState();
-    _walletBloc = WalletCubit();
-    _escrowBloc = EscrowCubit();
-    _walletBloc.loadWallet();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _walletBloc.loadWallet();
+    });
   }
 
   @override
   void dispose() {
-    _walletBloc.close();
-    _escrowBloc.close();
     _accountNumberController.dispose();
     _bankNameController.dispose();
     super.dispose();
@@ -136,51 +137,34 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider.value(value: _walletBloc),
-        BlocProvider.value(value: _escrowBloc),
-      ],
-      child: Scaffold(
+    return Scaffold(
         appBar: AppBar(
           title: AppText.titleLarge('Secure Payment'),
           backgroundColor: AppColors.surface,
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => sl<NavigationService>().goBack(),
           ),
         ),
-        body: MultiBlocListener(
-          listeners: [
-            BlocListener<WalletCubit, BaseState<WalletData>>(
-              listener: (context, state) {
-                if (state is ErrorState<WalletData>) {
-                  context.showSnackbar(
-                    message: state.errorMessage,
-                    color: AppColors.error,
-                  );
-                }
-              },
-            ),
-            BlocListener<EscrowCubit, BaseState<EscrowData>>(
-              listener: (context, state) {
-                final escrow = state.data?.currentEscrow;
-                if (escrow?.status == EscrowStatus.held && currentStep == 2) {
-                  setState(() {
-                    currentStep = 3;
-                    _paymentInfo = _paymentInfo?.copyWith(escrowStatus: 'held');
-                  });
-                } else if (state is ErrorState<EscrowData>) {
-                  context.showSnackbar(
-                    message: state.errorMessage,
-                    color: AppColors.error,
-                  );
-                }
-              },
-            ),
-          ],
-          child: Column(
+        body: BlocManager<WalletCubit, BaseState<WalletData>>(
+          bloc: context.read<WalletCubit>(),
+          showLoadingIndicator: false,
+          showResultErrorNotifications: true,
+          child: BlocManager<EscrowCubit, BaseState<EscrowData>>(
+            bloc: context.read<EscrowCubit>(),
+            showLoadingIndicator: false,
+            showResultErrorNotifications: true,
+            listener: (context, state) {
+              final escrow = state.data?.currentEscrow;
+              if (escrow?.status == EscrowStatus.held && currentStep == 2) {
+                setState(() {
+                  currentStep = 3;
+                  _paymentInfo = _paymentInfo?.copyWith(escrowStatus: 'held');
+                });
+              }
+            },
+            child: Column(
         children: [
           // Progress Steps
           Container(
@@ -206,7 +190,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                 ? Icons.check
                                 : steps[i]['icon'] as IconData,
                             color: i <= currentStep
-                                ? Colors.white
+                                ? AppColors.white
                                 : AppColors.onSurfaceVariant,
                             size: 18,
                           ),
@@ -256,15 +240,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   currentStep == 0 ? 'Proceed to Payment' :
                   currentStep == 1 ? 'Confirm Payment Method' :
                   'Complete Payment',
-                  color: Colors.white,
+                  color: AppColors.white,
                 ),
               ),
             ),
         ],
+            ),
           ),
         ),
         bottomNavigationBar: const BottomNavigation(currentIndex: 1),
-      ),
     );
   }
 
@@ -468,7 +452,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   GestureDetector(
                     onTap: () => setState(() => paymentMethod = method['id']),
                     child: Container(
-                      margin: const EdgeInsets.only(bottom: 12),
+                      margin: EdgeInsets.only(bottom: SpacingSize.md.value),
                       padding: AppSpacing.paddingLG,
                       decoration: BoxDecoration(
                         border: Border.all(
@@ -520,7 +504,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                               ),
                               child: AppText.bodySmall(
                                 'Popular',
-                                color: Colors.white,
+                                color: AppColors.white,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -646,7 +630,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     ),
                     child: const Icon(
                       Icons.lock,
-                      color: Colors.white,
+                      color: AppColors.white,
                       size: 32,
                     ),
                   ),
@@ -814,7 +798,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         Container(
           width: 80,
           height: 80,
-          margin: const EdgeInsets.only(bottom: 16),
+          margin: EdgeInsets.only(bottom: SpacingSize.lg.value),
           decoration: BoxDecoration(
             color: AppColors.success,
             borderRadius: AppRadius.pill,
@@ -926,7 +910,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
               fullWidth: true,
               child: AppText.bodyLarge(
                 'Track Package',
-                color: Colors.white,
+                color: AppColors.white,
               ),
             ),
             AppSpacing.verticalSpacing(SpacingSize.md),

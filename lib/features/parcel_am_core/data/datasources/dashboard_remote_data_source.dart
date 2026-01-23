@@ -94,13 +94,13 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
           .where((transaction) =>
               transaction.type == TransactionType.earning &&
               transaction.status == TransactionStatus.completed)
-          .fold<double>(0, (sum, transaction) => sum + transaction.amount);
+          .fold<double>(0, (total, transaction) => total + transaction.amount);
 
       final pendingEarnings = transactions
           .where((transaction) =>
               transaction.type == TransactionType.earning &&
               transaction.status == TransactionStatus.pending)
-          .fold<double>(0, (sum, transaction) => sum + transaction.amount);
+          .fold<double>(0, (total, transaction) => total + transaction.amount);
 
       WalletModel? walletModel;
       try {

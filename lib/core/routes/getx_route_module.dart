@@ -1,5 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_bloc/flutter_bloc.dart' hide Transition;
 import 'package:get/get.dart';
 import 'package:parcel_am/core/routes/routes.dart';
 import 'package:parcel_am/core/widgets/navigation_shell.dart';
@@ -29,12 +27,7 @@ import 'package:parcel_am/features/totp_2fa/presentation/screens/totp_management
 import 'package:parcel_am/features/totp_2fa/presentation/screens/totp_setup_screen.dart';
 import 'package:parcel_am/features/payments/presentation/screens/wallet_funding_payment_screen.dart';
 import 'package:parcel_am/features/payments/presentation/screens/wallet_funding_success_screen.dart';
-import 'package:parcel_am/injection_container.dart';
 
-import '../../features/parcel_am_core/domain/repositories/bank_account_repository.dart';
-import '../../features/parcel_am_core/domain/repositories/withdrawal_repository.dart';
-import '../../features/parcel_am_core/presentation/bloc/bank_account/bank_account_bloc.dart';
-import '../../features/parcel_am_core/presentation/bloc/withdrawal/withdrawal_bloc.dart';
 import '../../features/parcel_am_core/presentation/screens/splash_screen.dart';
 import '../services/auth/auth_guard.dart';
 
@@ -183,19 +176,9 @@ class GetXRouteModule {
         final userId = args['userId'] as String? ?? '';
         final availableBalance = args['availableBalance'] as double? ?? 0.0;
 
-        return MultiBlocProvider(
-          providers: [
-            BlocProvider<BankAccountBloc>(
-              create: (_) => BankAccountBloc(repository: sl<BankAccountRepository>()),
-            ),
-            BlocProvider<WithdrawalBloc>(
-              create: (_) => WithdrawalBloc(repository: sl<WithdrawalRepository>()),
-            ),
-          ],
-          child: WithdrawalScreen(
-            userId: userId,
-            availableBalance: availableBalance,
-          ),
+        return WithdrawalScreen(
+          userId: userId,
+          availableBalance: availableBalance,
         );
       },
       transition: _transition,
@@ -208,10 +191,7 @@ class GetXRouteModule {
         final args = Get.arguments as Map<String, dynamic>? ?? {};
         final withdrawalId = args['withdrawalId'] as String? ?? '';
 
-        return BlocProvider<WithdrawalBloc>(
-          create: (_) => WithdrawalBloc(repository: sl<WithdrawalRepository>()),
-          child: WithdrawalStatusScreen(withdrawalId: withdrawalId),
-        );
+        return WithdrawalStatusScreen(withdrawalId: withdrawalId);
       },
       transition: _transition,
       transitionDuration: _transitionDuration,
@@ -223,10 +203,7 @@ class GetXRouteModule {
         final args = Get.arguments as Map<String, dynamic>? ?? {};
         final userId = args['userId'] as String? ?? '';
 
-        return BlocProvider<BankAccountBloc>(
-          create: (_) => BankAccountBloc(repository: sl<BankAccountRepository>()),
-          child: AddBankAccountScreen(userId: userId),
-        );
+        return AddBankAccountScreen(userId: userId);
       },
       transition: _transition,
       transitionDuration: _transitionDuration,
@@ -238,10 +215,7 @@ class GetXRouteModule {
         final args = Get.arguments as Map<String, dynamic>? ?? {};
         final userId = args['userId'] as String? ?? '';
 
-        return BlocProvider<BankAccountBloc>(
-          create: (_) => BankAccountBloc(repository: sl<BankAccountRepository>()),
-          child: BankAccountListScreen(userId: userId),
-        );
+        return BankAccountListScreen(userId: userId);
       },
       transition: _transition,
       transitionDuration: _transitionDuration,
@@ -306,8 +280,8 @@ class GetXRouteModule {
     AuthGuard.createProtectedRoute(
       name: Routes.notifications,
       page: () {
-        // Get current user ID from Firebase Auth
-        final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+        // Get userId from route arguments (passed by navigation)
+        final userId = Get.arguments as String? ?? '';
         return NotificationsScreen(userId: userId);
       },
       transition: _transition,

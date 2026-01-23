@@ -43,8 +43,6 @@ class _LoginScreenState extends State<LoginScreen>
   // Real-time validation states
   String? _emailError;
   String? _passwordError;
-  String? _displayNameError;
-  String? _resetEmailError;
   bool _emailTouched = false;
   bool _passwordTouched = false;
   final bool _displayNameTouched = false;
@@ -104,9 +102,7 @@ class _LoginScreenState extends State<LoginScreen>
     setState(() {
       final displayName = _displayNameController.text.trim();
       if (displayName.isEmpty) {
-        _displayNameError = 'Name is required';
       } else {
-        _displayNameError = null;
       }
     });
   }
@@ -116,11 +112,8 @@ class _LoginScreenState extends State<LoginScreen>
     setState(() {
       final email = _resetEmailController.text.trim();
       if (email.isEmpty) {
-        _resetEmailError = 'Email is required';
       } else if (!_isValidEmail(email)) {
-        _resetEmailError = 'Please enter a valid email';
       } else {
-        _resetEmailError = null;
       }
     });
   }
