@@ -8,7 +8,6 @@ import '../../domain/entities/user_entity.dart';
 import '../../domain/entities/auth_token_entity.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../../../core/errors/failures.dart';
-import '../../domain/exceptions/auth_exceptions.dart';
 import '../datasources/auth_remote_data_source.dart';
 import '../models/user_model.dart';
 
@@ -76,32 +75,29 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, AuthTokenEntity?>> getStoredToken() async {
-    try {
-      final tokenJson = await _secureStorage.read(key: _tokenKey);
-      if (tokenJson == null) {
-        return const Right(null);
-      }
-      final tokenMap = jsonDecode(tokenJson) as Map<String, dynamic>;
-      return Right(AuthTokenEntity.fromJson(tokenMap));
-    } on CacheException catch (e) {
-      return Left(CacheFailure(failureMessage: e.message));
-    } catch (e) {
-      return Left(UnknownFailure(failureMessage: e.toString()));
-    }
+  Future<Either<Failure, AuthTokenEntity?>> getStoredToken() {
+    return ErrorHandler.handle(
+      () async {
+        final tokenJson = await _secureStorage.read(key: _tokenKey);
+        if (tokenJson == null) {
+          return null;
+        }
+        final tokenMap = jsonDecode(tokenJson) as Map<String, dynamic>;
+        return AuthTokenEntity.fromJson(tokenMap);
+      },
+      operationName: 'getStoredToken',
+    );
   }
 
   @override
-  Future<Either<Failure, void>> storeToken(AuthTokenEntity token) async {
-    try {
-      final tokenJson = jsonEncode(token.toJson());
-      await _secureStorage.write(key: _tokenKey, value: tokenJson);
-      return const Right(null);
-    } on CacheException catch (e) {
-      return Left(CacheFailure(failureMessage: e.message));
-    } catch (e) {
-      return Left(UnknownFailure(failureMessage: e.toString()));
-    }
+  Future<Either<Failure, void>> storeToken(AuthTokenEntity token) {
+    return ErrorHandler.handle(
+      () async {
+        final tokenJson = jsonEncode(token.toJson());
+        await _secureStorage.write(key: _tokenKey, value: tokenJson);
+      },
+      operationName: 'storeToken',
+    );
   }
 
   @override

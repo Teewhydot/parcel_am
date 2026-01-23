@@ -25,35 +25,33 @@ class ChatRepositoryImpl implements ChatRepository {
   }
 
   @override
-  Future<Either<Failure, void>> sendMessage(Message message) async {
-    if (!await InternetConnectionChecker.instance.hasConnection) {
-      return const Left(NetworkFailure(failureMessage: 'No internet connection'));
-    }
-
-    try {
-      final messageModel = MessageModel.fromEntity(message);
-      await _remoteDataSource.sendMessage(messageModel);
-      return const Right(null);
-    } catch (e) {
-      return Left(ServerFailure(failureMessage: e.toString()));
-    }
+  Future<Either<Failure, void>> sendMessage(Message message) {
+    return ErrorHandler.handle(
+      () async {
+        if (!await InternetConnectionChecker.instance.hasConnection) {
+          throw const NetworkFailure(failureMessage: 'No internet connection');
+        }
+        final messageModel = MessageModel.fromEntity(message);
+        await _remoteDataSource.sendMessage(messageModel);
+      },
+      operationName: 'sendMessage',
+    );
   }
 
   @override
   Future<Either<Failure, void>> updateMessageStatus(
     String messageId,
     MessageStatus status,
-  ) async {
-    if (!await InternetConnectionChecker.instance.hasConnection) {
-      return const Left(NetworkFailure(failureMessage: 'No internet connection'));
-    }
-
-    try {
-      await _remoteDataSource.updateMessageStatus(messageId, status);
-      return const Right(null);
-    } catch (e) {
-      return Left(ServerFailure(failureMessage: e.toString()));
-    }
+  ) {
+    return ErrorHandler.handle(
+      () async {
+        if (!await InternetConnectionChecker.instance.hasConnection) {
+          throw const NetworkFailure(failureMessage: 'No internet connection');
+        }
+        await _remoteDataSource.updateMessageStatus(messageId, status);
+      },
+      operationName: 'updateMessageStatus',
+    );
   }
 
   @override
@@ -61,17 +59,16 @@ class ChatRepositoryImpl implements ChatRepository {
     String chatId,
     String messageId,
     String userId,
-  ) async {
-    if (!await InternetConnectionChecker.instance.hasConnection) {
-      return const Left(NetworkFailure(failureMessage: 'No internet connection'));
-    }
-
-    try {
-      await _remoteDataSource.markMessageAsRead(chatId, messageId, userId);
-      return const Right(null);
-    } catch (e) {
-      return Left(ServerFailure(failureMessage: e.toString()));
-    }
+  ) {
+    return ErrorHandler.handle(
+      () async {
+        if (!await InternetConnectionChecker.instance.hasConnection) {
+          throw const NetworkFailure(failureMessage: 'No internet connection');
+        }
+        await _remoteDataSource.markMessageAsRead(chatId, messageId, userId);
+      },
+      operationName: 'markMessageAsRead',
+    );
   }
 
   @override
@@ -80,22 +77,21 @@ class ChatRepositoryImpl implements ChatRepository {
     String chatId,
     MessageType type,
     Function(double) onProgress,
-  ) async {
-    if (!await InternetConnectionChecker.instance.hasConnection) {
-      return const Left(NetworkFailure(failureMessage: 'No internet connection'));
-    }
-
-    try {
-      final url = await _remoteDataSource.uploadMedia(
-        filePath,
-        chatId,
-        type,
-        onProgress,
-      );
-      return Right(url);
-    } catch (e) {
-      return Left(ServerFailure(failureMessage: e.toString()));
-    }
+  ) {
+    return ErrorHandler.handle(
+      () async {
+        if (!await InternetConnectionChecker.instance.hasConnection) {
+          throw const NetworkFailure(failureMessage: 'No internet connection');
+        }
+        return await _remoteDataSource.uploadMedia(
+          filePath,
+          chatId,
+          type,
+          onProgress,
+        );
+      },
+      operationName: 'uploadMedia',
+    );
   }
 
   @override
@@ -103,31 +99,29 @@ class ChatRepositoryImpl implements ChatRepository {
     String chatId,
     String userId,
     bool isTyping,
-  ) async {
-    if (!await InternetConnectionChecker.instance.hasConnection) {
-      return const Left(NetworkFailure(failureMessage: 'No internet connection'));
-    }
-
-    try {
-      await _remoteDataSource.setTypingStatus(chatId, userId, isTyping);
-      return const Right(null);
-    } catch (e) {
-      return Left(ServerFailure(failureMessage: e.toString()));
-    }
+  ) {
+    return ErrorHandler.handle(
+      () async {
+        if (!await InternetConnectionChecker.instance.hasConnection) {
+          throw const NetworkFailure(failureMessage: 'No internet connection');
+        }
+        await _remoteDataSource.setTypingStatus(chatId, userId, isTyping);
+      },
+      operationName: 'setTypingStatus',
+    );
   }
 
   @override
-  Future<Either<Failure, void>> updateLastSeen(String chatId, String userId) async {
-    if (!await InternetConnectionChecker.instance.hasConnection) {
-      return const Left(NetworkFailure(failureMessage: 'No internet connection'));
-    }
-
-    try {
-      await _remoteDataSource.updateLastSeen(chatId, userId);
-      return const Right(null);
-    } catch (e) {
-      return Left(ServerFailure(failureMessage: e.toString()));
-    }
+  Future<Either<Failure, void>> updateLastSeen(String chatId, String userId) {
+    return ErrorHandler.handle(
+      () async {
+        if (!await InternetConnectionChecker.instance.hasConnection) {
+          throw const NetworkFailure(failureMessage: 'No internet connection');
+        }
+        await _remoteDataSource.updateLastSeen(chatId, userId);
+      },
+      operationName: 'updateLastSeen',
+    );
   }
 
   @override
@@ -139,59 +133,55 @@ class ChatRepositoryImpl implements ChatRepository {
   }
 
   @override
-  Future<Either<Failure, void>> deleteMessage(String messageId) async {
-    if (!await InternetConnectionChecker.instance.hasConnection) {
-      return const Left(NetworkFailure(failureMessage: 'No internet connection'));
-    }
-
-    try {
-      await _remoteDataSource.deleteMessage(messageId);
-      return const Right(null);
-    } catch (e) {
-      return Left(ServerFailure(failureMessage: e.toString()));
-    }
+  Future<Either<Failure, void>> deleteMessage(String messageId) {
+    return ErrorHandler.handle(
+      () async {
+        if (!await InternetConnectionChecker.instance.hasConnection) {
+          throw const NetworkFailure(failureMessage: 'No internet connection');
+        }
+        await _remoteDataSource.deleteMessage(messageId);
+      },
+      operationName: 'deleteMessage',
+    );
   }
 
   @override
-  Future<Either<Failure, Chat>> createChat(List<String> participantIds) async {
-    if (!await InternetConnectionChecker.instance.hasConnection) {
-      return const Left(NetworkFailure(failureMessage: 'No internet connection'));
-    }
-
-    try {
-      final chat = await _remoteDataSource.createChat(participantIds);
-      return Right(chat);
-    } catch (e) {
-      return Left(ServerFailure(failureMessage: e.toString()));
-    }
+  Future<Either<Failure, Chat>> createChat(List<String> participantIds) {
+    return ErrorHandler.handle(
+      () async {
+        if (!await InternetConnectionChecker.instance.hasConnection) {
+          throw const NetworkFailure(failureMessage: 'No internet connection');
+        }
+        return await _remoteDataSource.createChat(participantIds);
+      },
+      operationName: 'createChat',
+    );
   }
 
   @override
-  Future<Either<Failure, Chat>> getChat(String chatId) async {
-    if (!await InternetConnectionChecker.instance.hasConnection) {
-      return const Left(NetworkFailure(failureMessage: 'No internet connection'));
-    }
-
-    try {
-      final chat = await _remoteDataSource.getChat(chatId);
-      return Right(chat);
-    } catch (e) {
-      return Left(ServerFailure(failureMessage: e.toString()));
-    }
+  Future<Either<Failure, Chat>> getChat(String chatId) {
+    return ErrorHandler.handle(
+      () async {
+        if (!await InternetConnectionChecker.instance.hasConnection) {
+          throw const NetworkFailure(failureMessage: 'No internet connection');
+        }
+        return await _remoteDataSource.getChat(chatId);
+      },
+      operationName: 'getChat',
+    );
   }
 
   @override
-  Future<Either<Failure, List<Chat>>> getUserChats(String userId) async {
-    if (!await InternetConnectionChecker.instance.hasConnection) {
-      return const Left(NetworkFailure(failureMessage: 'No internet connection'));
-    }
-
-    try {
-      final chats = await _remoteDataSource.getUserChats(userId);
-      return Right(chats);
-    } catch (e) {
-      return Left(ServerFailure(failureMessage: e.toString()));
-    }
+  Future<Either<Failure, List<Chat>>> getUserChats(String userId) {
+    return ErrorHandler.handle(
+      () async {
+        if (!await InternetConnectionChecker.instance.hasConnection) {
+          throw const NetworkFailure(failureMessage: 'No internet connection');
+        }
+        return await _remoteDataSource.getUserChats(userId);
+      },
+      operationName: 'getUserChats',
+    );
   }
 
   @override
@@ -209,21 +199,20 @@ class ChatRepositoryImpl implements ChatRepository {
     required String chatId,
     required List<String> participantIds,
     required Map<String, String> participantNames,
-  }) async {
-    if (!await InternetConnectionChecker.instance.hasConnection) {
-      return const Left(NetworkFailure(failureMessage: 'No internet connection'));
-    }
-
-    try {
-      final chat = await _remoteDataSource.getOrCreateChat(
-        chatId: chatId,
-        participantIds: participantIds,
-        participantNames: participantNames,
-      );
-      return Right(chat);
-    } catch (e) {
-      return Left(ServerFailure(failureMessage: e.toString()));
-    }
+  }) {
+    return ErrorHandler.handle(
+      () async {
+        if (!await InternetConnectionChecker.instance.hasConnection) {
+          throw const NetworkFailure(failureMessage: 'No internet connection');
+        }
+        return await _remoteDataSource.getOrCreateChat(
+          chatId: chatId,
+          participantIds: participantIds,
+          participantNames: participantNames,
+        );
+      },
+      operationName: 'getOrCreateChat',
+    );
   }
 
   @override

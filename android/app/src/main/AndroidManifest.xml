@@ -93,5 +93,10 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        <!-- Authenticator app query for TOTP 2FA setup -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="otpauth"/>
+        </intent>
     </queries>
 </manifest>

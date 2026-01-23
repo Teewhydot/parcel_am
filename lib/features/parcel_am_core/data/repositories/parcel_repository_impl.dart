@@ -4,7 +4,6 @@ import '../../domain/entities/parcel_entity.dart';
 import '../../domain/repositories/parcel_repository.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/services/error/error_handler.dart';
-import '../../domain/exceptions/custom_exceptions.dart';
 import '../datasources/parcel_remote_data_source.dart';
 import '../models/parcel_model.dart';
 
@@ -56,123 +55,115 @@ class ParcelRepositoryImpl implements ParcelRepository {
   @override
   Future<Either<Failure, ParcelEntity>> createParcel(
     ParcelEntity parcel,
-  ) async {
-    try {
-      final parcelModel = ParcelModel.fromEntity(parcel);
-      final createdModel = await _remoteDataSource.createParcel(parcelModel);
-      return Right(createdModel.toEntity());
-    } on ServerException {
-      return const Left(ServerFailure(failureMessage: 'Server error occurred'));
-    } catch (e) {
-      return Left(UnknownFailure(failureMessage: e.toString()));
-    }
+  ) {
+    return ErrorHandler.handle(
+      () async {
+        final parcelModel = ParcelModel.fromEntity(parcel);
+        final createdModel = await _remoteDataSource.createParcel(parcelModel);
+        return createdModel.toEntity();
+      },
+      operationName: 'createParcel',
+    );
   }
 
   @override
   Future<Either<Failure, ParcelEntity>> updateParcel(
     String parcelId,
     Map<String, dynamic> data,
-  ) async {
-    try {
-      final parcelModel = await _remoteDataSource.updateParcel(parcelId, data);
-      return Right(parcelModel.toEntity());
-    } on ServerException {
-      return const Left(ServerFailure(failureMessage: 'Server error occurred'));
-    } catch (e) {
-      return Left(UnknownFailure(failureMessage: e.toString()));
-    }
+  ) {
+    return ErrorHandler.handle(
+      () async {
+        final parcelModel = await _remoteDataSource.updateParcel(parcelId, data);
+        return parcelModel.toEntity();
+      },
+      operationName: 'updateParcel',
+    );
   }
 
   @override
   Future<Either<Failure, ParcelEntity>> updateParcelStatus(
     String parcelId,
     ParcelStatus status,
-  ) async {
-    try {
-      final parcelModel = await _remoteDataSource.updateParcelStatus(
-        parcelId,
-        status,
-      );
-      return Right(parcelModel.toEntity());
-    } on ServerException {
-      return const Left(ServerFailure(failureMessage: 'Server error occurred'));
-    } catch (e) {
-      return Left(UnknownFailure(failureMessage: e.toString()));
-    }
+  ) {
+    return ErrorHandler.handle(
+      () async {
+        final parcelModel = await _remoteDataSource.updateParcelStatus(
+          parcelId,
+          status,
+        );
+        return parcelModel.toEntity();
+      },
+      operationName: 'updateParcelStatus',
+    );
   }
 
   @override
   Future<Either<Failure, ParcelEntity>> assignTraveler(
     String parcelId,
     String travelerId,
-  ) async {
-    try {
-      final parcelModel = await _remoteDataSource.assignTraveler(
-        parcelId,
-        travelerId,
-      );
-      return Right(parcelModel.toEntity());
-    } on ServerException {
-      return const Left(ServerFailure(failureMessage: 'Server error occurred'));
-    } catch (e) {
-      return Left(UnknownFailure(failureMessage: e.toString()));
-    }
+  ) {
+    return ErrorHandler.handle(
+      () async {
+        final parcelModel = await _remoteDataSource.assignTraveler(
+          parcelId,
+          travelerId,
+        );
+        return parcelModel.toEntity();
+      },
+      operationName: 'assignTraveler',
+    );
   }
 
   @override
-  Future<Either<Failure, ParcelEntity>> getParcel(String parcelId) async {
-    try {
-      final parcelModel = await _remoteDataSource.getParcel(parcelId);
-      return Right(parcelModel.toEntity());
-    } on ServerException {
-      return const Left(ServerFailure(failureMessage: 'Server error occurred'));
-    } catch (e) {
-      return Left(UnknownFailure(failureMessage: e.toString()));
-    }
+  Future<Either<Failure, ParcelEntity>> getParcel(String parcelId) {
+    return ErrorHandler.handle(
+      () async {
+        final parcelModel = await _remoteDataSource.getParcel(parcelId);
+        return parcelModel.toEntity();
+      },
+      operationName: 'getParcel',
+    );
   }
 
   @override
   Future<Either<Failure, List<ParcelEntity>>> getUserParcels(
     String userId, {
     ParcelStatus? status,
-  }) async {
-    try {
-      final parcelModels = await _remoteDataSource.getUserParcels(
-        userId,
-        status: status,
-      );
-      return Right(parcelModels.map((model) => model.toEntity()).toList());
-    } on ServerException {
-      return const Left(ServerFailure(failureMessage: 'Server error occurred'));
-    } catch (e) {
-      return Left(UnknownFailure(failureMessage: e.toString()));
-    }
+  }) {
+    return ErrorHandler.handle(
+      () async {
+        final parcelModels = await _remoteDataSource.getUserParcels(
+          userId,
+          status: status,
+        );
+        return parcelModels.map((model) => model.toEntity()).toList();
+      },
+      operationName: 'getUserParcels',
+    );
   }
 
   @override
   Future<Either<Failure, List<ParcelEntity>>> getParcelsByUser(
     String userId,
-  ) async {
-    try {
-      final parcelModels = await _remoteDataSource.getParcelsByUser(userId);
-      return Right(parcelModels.map((model) => model.toEntity()).toList());
-    } on ServerException {
-      return const Left(ServerFailure(failureMessage: 'Server error occurred'));
-    } catch (e) {
-      return Left(UnknownFailure(failureMessage: e.toString()));
-    }
+  ) {
+    return ErrorHandler.handle(
+      () async {
+        final parcelModels = await _remoteDataSource.getParcelsByUser(userId);
+        return parcelModels.map((model) => model.toEntity()).toList();
+      },
+      operationName: 'getParcelsByUser',
+    );
   }
 
   @override
-  Future<Either<Failure, List<ParcelEntity>>> getAvailableParcels() async {
-    try {
-      final parcelModels = await _remoteDataSource.getAvailableParcels();
-      return Right(parcelModels.map((model) => model.toEntity()).toList());
-    } on ServerException {
-      return const Left(ServerFailure(failureMessage: 'Server error occurred'));
-    } catch (e) {
-      return Left(UnknownFailure(failureMessage: e.toString()));
-    }
+  Future<Either<Failure, List<ParcelEntity>>> getAvailableParcels() {
+    return ErrorHandler.handle(
+      () async {
+        final parcelModels = await _remoteDataSource.getAvailableParcels();
+        return parcelModels.map((model) => model.toEntity()).toList();
+      },
+      operationName: 'getAvailableParcels',
+    );
   }
 
   @override

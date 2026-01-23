@@ -1,5 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dartz/dartz.dart';
 import 'package:get_it/get_it.dart';
+import '../../../../core/errors/failures.dart';
+import '../../../../core/services/error/error_handler.dart';
 import '../../../../core/utils/logger.dart';
 import '../../domain/entities/withdrawal_order_entity.dart';
 import '../../domain/repositories/withdrawal_repository.dart';
@@ -41,83 +44,80 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
   }
 
   @override
-  Future<WithdrawalOrderEntity> initiateWithdrawal({
+  Future<Either<Failure, WithdrawalOrderEntity>> initiateWithdrawal({
     required String userId,
     required double amount,
     required String recipientCode,
     required String withdrawalReference,
     required BankAccountInfo bankAccount,
-  }) async {
-    try {
-      // Validate amount format
-      if (amount <= 0) {
-        throw Exception('Amount must be greater than zero');
-      }
+  }) {
+    return ErrorHandler.handle(
+      () async {
+        // Validate amount format
+        if (amount <= 0) {
+          throw const ValidationFailure(failureMessage: 'Amount must be greater than zero');
+        }
 
-      if (amount < minWithdrawalAmount) {
-        throw Exception('Minimum withdrawal amount is NGN ${minWithdrawalAmount.toStringAsFixed(0)}');
-      }
+        if (amount < minWithdrawalAmount) {
+          throw ValidationFailure(failureMessage: 'Minimum withdrawal amount is NGN ${minWithdrawalAmount.toStringAsFixed(0)}');
+        }
 
-      if (amount > maxWithdrawalAmount) {
-        throw Exception('Maximum withdrawal amount is NGN ${maxWithdrawalAmount.toStringAsFixed(0)}');
-      }
+        if (amount > maxWithdrawalAmount) {
+          throw ValidationFailure(failureMessage: 'Maximum withdrawal amount is NGN ${maxWithdrawalAmount.toStringAsFixed(0)}');
+        }
 
-      final withdrawalModel = await _remoteDataSource.initiateWithdrawal(
-        userId: userId,
-        amount: amount,
-        recipientCode: recipientCode,
-        withdrawalReference: withdrawalReference,
-        bankAccountId: bankAccount.id,
-      );
+        final withdrawalModel = await _remoteDataSource.initiateWithdrawal(
+          userId: userId,
+          amount: amount,
+          recipientCode: recipientCode,
+          withdrawalReference: withdrawalReference,
+          bankAccountId: bankAccount.id,
+        );
 
-      Logger.logSuccess('Withdrawal initiated successfully: $withdrawalReference');
-      return withdrawalModel.toEntity();
-    } catch (e) {
-      Logger.logError('Repository: Error initiating withdrawal: $e');
-      rethrow;
-    }
+        return withdrawalModel.toEntity();
+      },
+      operationName: 'initiateWithdrawal',
+    );
   }
 
   @override
-  Future<WithdrawalOrderEntity> getWithdrawalOrder(String withdrawalId) async {
-    try {
-      final withdrawalModel = await _remoteDataSource.getWithdrawalOrder(withdrawalId);
-      return withdrawalModel.toEntity();
-    } catch (e) {
-      Logger.logError('Repository: Error fetching withdrawal order: $e');
-      rethrow;
-    }
+  Future<Either<Failure, WithdrawalOrderEntity>> getWithdrawalOrder(String withdrawalId) {
+    return ErrorHandler.handle(
+      () async {
+        final withdrawalModel = await _remoteDataSource.getWithdrawalOrder(withdrawalId);
+        return withdrawalModel.toEntity();
+      },
+      operationName: 'getWithdrawalOrder',
+    );
   }
 
   @override
-  Stream<WithdrawalOrderEntity> watchWithdrawalOrder(String withdrawalId) {
-    try {
-      return _remoteDataSource
+  Stream<Either<Failure, WithdrawalOrderEntity>> watchWithdrawalOrder(String withdrawalId) {
+    return ErrorHandler.handleStream(
+      () => _remoteDataSource
           .watchWithdrawalOrder(withdrawalId)
-          .map((model) => model.toEntity());
-    } catch (e) {
-      Logger.logError('Repository: Error watching withdrawal order: $e');
-      rethrow;
-    }
+          .map((model) => model.toEntity()),
+      operationName: 'watchWithdrawalOrder',
+    );
   }
 
   @override
-  Future<List<WithdrawalOrderEntity>> getWithdrawalHistory({
+  Future<Either<Failure, List<WithdrawalOrderEntity>>> getWithdrawalHistory({
     required String userId,
     int limit = 20,
     DocumentSnapshot? startAfter,
-  }) async {
-    try {
-      final withdrawalModels = await _remoteDataSource.getWithdrawalHistory(
-        userId: userId,
-        limit: limit,
-        startAfter: startAfter,
-      );
+  }) {
+    return ErrorHandler.handle(
+      () async {
+        final withdrawalModels = await _remoteDataSource.getWithdrawalHistory(
+          userId: userId,
+          limit: limit,
+          startAfter: startAfter,
+        );
 
-      return withdrawalModels.map((model) => model.toEntity()).toList();
-    } catch (e) {
-      Logger.logError('Repository: Error fetching withdrawal history: $e');
-      rethrow;
-    }
+        return withdrawalModels.map((model) => model.toEntity()).toList();
+      },
+      operationName: 'getWithdrawalHistory',
+    );
   }
 }

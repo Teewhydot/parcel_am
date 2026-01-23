@@ -287,27 +287,30 @@ class _TransactionDetailsBottomSheetState
         sl<NavigationService>().goBack();
 
         // Navigate to withdrawal detail screen
-        try {
-          final withdrawalRepo = sl<WithdrawalRepository>();
-          final withdrawalOrder = await withdrawalRepo
-              .getWithdrawalOrder(widget.transaction.referenceId!);
+        final withdrawalRepo = sl<WithdrawalRepository>();
+        final result = await withdrawalRepo
+            .getWithdrawalOrder(widget.transaction.referenceId!);
 
-          if (context.mounted) {
-            sl<NavigationService>().navigateTo(
-              Routes.withdrawalTransactionDetail,
-              arguments: {'withdrawalOrder': withdrawalOrder},
-            );
-          }
-        } catch (e) {
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: AppText.bodyMedium('Failed to load withdrawal details: $e', color: AppColors.white),
-                backgroundColor: AppColors.error,
-              ),
-            );
-          }
-        }
+        result.fold(
+          (failure) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: AppText.bodyMedium('Failed to load withdrawal details: ${failure.failureMessage}', color: AppColors.white),
+                  backgroundColor: AppColors.error,
+                ),
+              );
+            }
+          },
+          (withdrawalOrder) {
+            if (context.mounted) {
+              sl<NavigationService>().navigateTo(
+                Routes.withdrawalTransactionDetail,
+                arguments: {'withdrawalOrder': withdrawalOrder},
+              );
+            }
+          },
+        );
       },
       fullWidth: true,
       child: Row(

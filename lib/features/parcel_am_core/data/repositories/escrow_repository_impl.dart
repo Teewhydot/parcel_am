@@ -4,7 +4,6 @@ import '../../domain/entities/escrow_entity.dart';
 import '../../domain/repositories/escrow_repository.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/services/error/error_handler.dart';
-import '../../domain/exceptions/custom_exceptions.dart';
 import '../datasources/escrow_remote_data_source.dart';
 
 class EscrowRepositoryImpl implements EscrowRepository {
@@ -40,80 +39,74 @@ class EscrowRepositoryImpl implements EscrowRepository {
     String travelerId,
     double amount,
     String currency,
-  ) async {
-    try {
-       final escrowModel = await _remoteDataSource.createEscrow(
+  ) {
+    return ErrorHandler.handle(
+      () async {
+        final escrowModel = await _remoteDataSource.createEscrow(
           parcelId,
           senderId,
           travelerId,
           amount,
           currency,
         );
-        return Right(escrowModel.toEntity());
-    } on ServerException {
-      return const Left(ServerFailure(failureMessage: 'Server error occurred'));
-    } catch (e) {
-      return Left(UnknownFailure(failureMessage: e.toString()));
-    }
+        return escrowModel.toEntity();
+      },
+      operationName: 'createEscrow',
+    );
   }
 
   @override
-  Future<Either<Failure, EscrowEntity>> holdEscrow(String escrowId) async {
-    try {
-    final escrowModel = await _remoteDataSource.holdEscrow(escrowId);
-        return Right(escrowModel.toEntity());
-    } on ServerException {
-      return const Left(ServerFailure(failureMessage: 'Server error occurred'));
-    } catch (e) {
-      return Left(UnknownFailure(failureMessage: e.toString()));
-    }
+  Future<Either<Failure, EscrowEntity>> holdEscrow(String escrowId) {
+    return ErrorHandler.handle(
+      () async {
+        final escrowModel = await _remoteDataSource.holdEscrow(escrowId);
+        return escrowModel.toEntity();
+      },
+      operationName: 'holdEscrow',
+    );
   }
 
   @override
-  Future<Either<Failure, EscrowEntity>> releaseEscrow(String escrowId) async {
-    try {
-     final escrowModel = await _remoteDataSource.releaseEscrow(escrowId);
-        return Right(escrowModel.toEntity());
-    } on ServerException {
-      return const Left(ServerFailure(failureMessage: 'Server error occurred'));
-    } catch (e) {
-      return Left(UnknownFailure(failureMessage: e.toString()));
-    }
+  Future<Either<Failure, EscrowEntity>> releaseEscrow(String escrowId) {
+    return ErrorHandler.handle(
+      () async {
+        final escrowModel = await _remoteDataSource.releaseEscrow(escrowId);
+        return escrowModel.toEntity();
+      },
+      operationName: 'releaseEscrow',
+    );
   }
 
   @override
-  Future<Either<Failure, EscrowEntity>> cancelEscrow(String escrowId, String reason) async {
-    try {
-     final escrowModel = await _remoteDataSource.cancelEscrow(escrowId, reason);
-        return Right(escrowModel.toEntity());
-    } on ServerException {
-      return const Left(ServerFailure(failureMessage: 'Server error occurred'));
-    } catch (e) {
-      return Left(UnknownFailure(failureMessage: e.toString()));
-    }
+  Future<Either<Failure, EscrowEntity>> cancelEscrow(String escrowId, String reason) {
+    return ErrorHandler.handle(
+      () async {
+        final escrowModel = await _remoteDataSource.cancelEscrow(escrowId, reason);
+        return escrowModel.toEntity();
+      },
+      operationName: 'cancelEscrow',
+    );
   }
 
   @override
-  Future<Either<Failure, EscrowEntity>> getEscrow(String escrowId) async {
-    try {
-    final escrowModel = await _remoteDataSource.getEscrow(escrowId);
-        return Right(escrowModel.toEntity());
-    } on ServerException {
-      return const Left(ServerFailure(failureMessage: 'Server error occurred'));
-    } catch (e) {
-      return Left(UnknownFailure(failureMessage: e.toString()));
-    }
+  Future<Either<Failure, EscrowEntity>> getEscrow(String escrowId) {
+    return ErrorHandler.handle(
+      () async {
+        final escrowModel = await _remoteDataSource.getEscrow(escrowId);
+        return escrowModel.toEntity();
+      },
+      operationName: 'getEscrow',
+    );
   }
 
   @override
-  Future<Either<Failure, List<EscrowEntity>>> getUserEscrows(String userId) async {
-    try {
-     final escrowModels = await _remoteDataSource.getUserEscrows(userId);
-        return Right(escrowModels.map((model) => model.toEntity()).toList());
-    } on ServerException {
-      return const Left(ServerFailure(failureMessage: 'Server error occurred'));
-    } catch (e) {
-      return Left(UnknownFailure(failureMessage: e.toString()));
-    }
+  Future<Either<Failure, List<EscrowEntity>>> getUserEscrows(String userId) {
+    return ErrorHandler.handle(
+      () async {
+        final escrowModels = await _remoteDataSource.getUserEscrows(userId);
+        return escrowModels.map((model) => model.toEntity()).toList();
+      },
+      operationName: 'getUserEscrows',
+    );
   }
 }

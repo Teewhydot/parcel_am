@@ -1,6 +1,8 @@
+import 'package:dartz/dartz.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../core/bloc/base/base_bloc.dart';
 import '../../../../../core/bloc/base/base_state.dart';
+import '../../../../../core/errors/failures.dart';
 import '../../../../../core/utils/logger.dart';
 import '../../../domain/entities/withdrawal_order_entity.dart';
 import '../../../domain/repositories/withdrawal_repository.dart';
@@ -88,99 +90,103 @@ class WithdrawalBloc extends BaseBloC<WithdrawalEvent, BaseState<WithdrawalData>
     WithdrawalInitiateRequested event,
     Emitter<BaseState<WithdrawalData>> emit,
   ) async {
-    try {
-      final currentData = state.data ?? const WithdrawalData();
+    final currentData = state.data ?? const WithdrawalData();
 
-      // Validate amount against available balance
-      if (event.amount > event.availableBalance) {
-        emit(AsyncErrorState<WithdrawalData>(
-          errorMessage: 'Insufficient balance. Available: NGN ${event.availableBalance.toStringAsFixed(2)}',
-          data: currentData,
-        ));
-        return;
-      }
-
-      emit(LoadedState<WithdrawalData>(
-        data: currentData.copyWith(isInitiating: true),
-        lastUpdated: DateTime.now(),
-      ));
-
-      // Generate withdrawal reference
-      final withdrawalReference = _repository.generateWithdrawalReference();
-
-      Logger.logBasic('Initiating withdrawal with reference: $withdrawalReference');
-
-      // Initiate withdrawal
-      final withdrawalOrder = await _repository.initiateWithdrawal(
-        userId: event.userId,
-        amount: event.amount,
-        recipientCode: event.bankAccount.recipientCode,
-        withdrawalReference: withdrawalReference,
-        bankAccount: BankAccountInfo(
-          id: event.bankAccount.id,
-          accountNumber: event.bankAccount.accountNumber,
-          accountName: event.bankAccount.accountName,
-          bankCode: event.bankAccount.bankCode,
-          bankName: event.bankAccount.bankName,
-        ),
-      );
-
-      emit(LoadedState<WithdrawalData>(
-        data: currentData.copyWith(
-          withdrawalOrder: withdrawalOrder,
-          isInitiating: false,
-        ),
-        lastUpdated: DateTime.now(),
-      ));
-
-      Logger.logSuccess('Withdrawal initiated successfully: ${withdrawalOrder.id}');
-
-      // Start watching withdrawal status
-      add(WithdrawalStatusWatchRequested(withdrawalId: withdrawalOrder.id));
-    } catch (e) {
-      Logger.logError('Error initiating withdrawal: $e');
-      final currentData = state.data ?? const WithdrawalData();
-      final updatedData = currentData.copyWith(isInitiating: false);
+    // Validate amount against available balance
+    if (event.amount > event.availableBalance) {
       emit(AsyncErrorState<WithdrawalData>(
-        errorMessage: _getErrorMessage(e),
-        data: updatedData,
+        errorMessage: 'Insufficient balance. Available: NGN ${event.availableBalance.toStringAsFixed(2)}',
+        data: currentData,
       ));
+      return;
     }
+
+    emit(LoadedState<WithdrawalData>(
+      data: currentData.copyWith(isInitiating: true),
+      lastUpdated: DateTime.now(),
+    ));
+
+    // Generate withdrawal reference
+    final withdrawalReference = _repository.generateWithdrawalReference();
+
+    Logger.logBasic('Initiating withdrawal with reference: $withdrawalReference');
+
+    // Initiate withdrawal
+    final result = await _repository.initiateWithdrawal(
+      userId: event.userId,
+      amount: event.amount,
+      recipientCode: event.bankAccount.recipientCode,
+      withdrawalReference: withdrawalReference,
+      bankAccount: BankAccountInfo(
+        id: event.bankAccount.id,
+        accountNumber: event.bankAccount.accountNumber,
+        accountName: event.bankAccount.accountName,
+        bankCode: event.bankAccount.bankCode,
+        bankName: event.bankAccount.bankName,
+      ),
+    );
+
+    result.fold(
+      (failure) {
+        Logger.logError('Error initiating withdrawal: ${failure.failureMessage}');
+        final updatedData = currentData.copyWith(isInitiating: false);
+        emit(AsyncErrorState<WithdrawalData>(
+          errorMessage: failure.failureMessage,
+          data: updatedData,
+        ));
+      },
+      (withdrawalOrder) {
+        emit(LoadedState<WithdrawalData>(
+          data: currentData.copyWith(
+            withdrawalOrder: withdrawalOrder,
+            isInitiating: false,
+          ),
+          lastUpdated: DateTime.now(),
+        ));
+
+        Logger.logSuccess('Withdrawal initiated successfully: ${withdrawalOrder.id}');
+
+        // Start watching withdrawal status
+        add(WithdrawalStatusWatchRequested(withdrawalId: withdrawalOrder.id));
+      },
+    );
   }
 
   Future<void> _onStatusWatchRequested(
     WithdrawalStatusWatchRequested event,
     Emitter<BaseState<WithdrawalData>> emit,
   ) async {
-    try {
-      // Use emit.forEach for proper stream handling in bloc
-      await emit.forEach<WithdrawalOrderEntity>(
-        _repository.watchWithdrawalOrder(event.withdrawalId),
-        onData: (withdrawalOrder) {
-          final currentData = state.data ?? const WithdrawalData();
-          Logger.logBasic('Withdrawal status updated: ${withdrawalOrder.status.name}');
-          return LoadedState<WithdrawalData>(
-            data: currentData.copyWith(withdrawalOrder: withdrawalOrder),
-            lastUpdated: DateTime.now(),
-          );
-        },
-        onError: (error, stackTrace) {
-          Logger.logError('Error watching withdrawal status: $error');
-          final currentData = state.data ?? const WithdrawalData();
-          return AsyncErrorState<WithdrawalData>(
-            errorMessage: 'Failed to get withdrawal status updates',
-            data: currentData,
-          );
-        },
-      );
-    } catch (e) {
-      Logger.logError('Error setting up withdrawal status watch: $e');
-      final currentData = state.data ?? const WithdrawalData();
-      emit(AsyncErrorState<WithdrawalData>(
-        errorMessage: 'Failed to watch withdrawal status',
-        data: currentData,
-      ));
-    }
+    // Use emit.forEach for proper stream handling in bloc
+    await emit.forEach<Either<Failure, WithdrawalOrderEntity>>(
+      _repository.watchWithdrawalOrder(event.withdrawalId),
+      onData: (result) {
+        final currentData = state.data ?? const WithdrawalData();
+        return result.fold(
+          (failure) {
+            Logger.logError('Error watching withdrawal status: ${failure.failureMessage}');
+            return AsyncErrorState<WithdrawalData>(
+              errorMessage: 'Failed to get withdrawal status updates',
+              data: currentData,
+            );
+          },
+          (withdrawalOrder) {
+            Logger.logBasic('Withdrawal status updated: ${withdrawalOrder.status.name}');
+            return LoadedState<WithdrawalData>(
+              data: currentData.copyWith(withdrawalOrder: withdrawalOrder),
+              lastUpdated: DateTime.now(),
+            );
+          },
+        );
+      },
+      onError: (error, stackTrace) {
+        Logger.logError('Error watching withdrawal status: $error');
+        final currentData = state.data ?? const WithdrawalData();
+        return AsyncErrorState<WithdrawalData>(
+          errorMessage: 'Failed to get withdrawal status updates',
+          data: currentData,
+        );
+      },
+    );
   }
 
   Future<void> _onRetryRequested(
@@ -208,42 +214,5 @@ class WithdrawalBloc extends BaseBloC<WithdrawalEvent, BaseState<WithdrawalData>
     // Reset to initial state
     emit(const InitialState<WithdrawalData>());
     Logger.logBasic('Withdrawal state reset');
-  }
-
-  String _getErrorMessage(dynamic error) {
-    final errorMsg = error.toString();
-
-    if (errorMsg.contains('No internet') || errorMsg.contains('network')) {
-      return 'No internet connection. Please check your network and try again.';
-    }
-
-    if (errorMsg.contains('timeout') || errorMsg.contains('Timeout')) {
-      return 'Request timeout. Please check withdrawal status.';
-    }
-
-    if (errorMsg.contains('Insufficient balance')) {
-      return errorMsg.contains('Available:')
-          ? errorMsg.substring(errorMsg.indexOf('Insufficient'))
-          : 'Insufficient balance for this withdrawal';
-    }
-
-    if (errorMsg.contains('Minimum withdrawal')) {
-      return 'Minimum withdrawal amount is NGN ${minWithdrawalAmount.toStringAsFixed(0)}';
-    }
-
-    if (errorMsg.contains('Maximum withdrawal')) {
-      return 'Maximum withdrawal amount is NGN ${maxWithdrawalAmount.toStringAsFixed(0)}';
-    }
-
-    if (errorMsg.contains('User not authenticated')) {
-      return 'Please login and try again';
-    }
-
-    // Extract error message if it's in Exception format
-    if (errorMsg.startsWith('Exception: ')) {
-      return errorMsg.substring(11);
-    }
-
-    return 'Failed to process withdrawal. Please try again.';
   }
 }

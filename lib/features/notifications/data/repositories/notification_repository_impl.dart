@@ -29,58 +29,54 @@ class NotificationRepositoryImpl implements NotificationRepository {
   }
 
   @override
-  Future<Either<Failure, void>> markAsRead(String notificationId) async {
-    if (!await InternetConnectionChecker.instance.hasConnection) {
-      return const Left(NetworkFailure(failureMessage: 'No internet connection'));
-    }
-
-    try {
-      await _remoteDataSource.markAsRead(notificationId);
-      return const Right(null);
-    } catch (e) {
-      return Left(ServerFailure(failureMessage: e.toString()));
-    }
+  Future<Either<Failure, void>> markAsRead(String notificationId) {
+    return ErrorHandler.handle(
+      () async {
+        if (!await InternetConnectionChecker.instance.hasConnection) {
+          throw const NetworkFailure(failureMessage: 'No internet connection');
+        }
+        await _remoteDataSource.markAsRead(notificationId);
+      },
+      operationName: 'markAsRead',
+    );
   }
 
   @override
-  Future<Either<Failure, void>> markAllAsRead(String userId) async {
-    if (!await InternetConnectionChecker.instance.hasConnection) {
-      return const Left(NetworkFailure(failureMessage: 'No internet connection'));
-    }
-
-    try {
-      await _remoteDataSource.markAllAsRead(userId);
-      return const Right(null);
-    } catch (e) {
-      return Left(ServerFailure(failureMessage: e.toString()));
-    }
+  Future<Either<Failure, void>> markAllAsRead(String userId) {
+    return ErrorHandler.handle(
+      () async {
+        if (!await InternetConnectionChecker.instance.hasConnection) {
+          throw const NetworkFailure(failureMessage: 'No internet connection');
+        }
+        await _remoteDataSource.markAllAsRead(userId);
+      },
+      operationName: 'markAllAsRead',
+    );
   }
 
   @override
-  Future<Either<Failure, void>> deleteNotification(String notificationId) async {
-    if (!await InternetConnectionChecker.instance.hasConnection) {
-      return const Left(NetworkFailure(failureMessage: 'No internet connection'));
-    }
-
-    try {
-      await _remoteDataSource.deleteNotification(notificationId);
-      return const Right(null);
-    } catch (e) {
-      return Left(ServerFailure(failureMessage: e.toString()));
-    }
+  Future<Either<Failure, void>> deleteNotification(String notificationId) {
+    return ErrorHandler.handle(
+      () async {
+        if (!await InternetConnectionChecker.instance.hasConnection) {
+          throw const NetworkFailure(failureMessage: 'No internet connection');
+        }
+        await _remoteDataSource.deleteNotification(notificationId);
+      },
+      operationName: 'deleteNotification',
+    );
   }
 
   @override
-  Future<Either<Failure, void>> clearAll(String userId) async {
-    if (!await InternetConnectionChecker.instance.hasConnection) {
-      return const Left(NetworkFailure(failureMessage: 'No internet connection'));
-    }
-
-    try {
-      await _remoteDataSource.clearAll(userId);
-      return const Right(null);
-    } catch (e) {
-      return Left(ServerFailure(failureMessage: e.toString()));
-    }
+  Future<Either<Failure, void>> clearAll(String userId) {
+    return ErrorHandler.handle(
+      () async {
+        if (!await InternetConnectionChecker.instance.hasConnection) {
+          throw const NetworkFailure(failureMessage: 'No internet connection');
+        }
+        await _remoteDataSource.clearAll(userId);
+      },
+      operationName: 'clearAll',
+    );
   }
 }

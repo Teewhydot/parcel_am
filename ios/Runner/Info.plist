@@ -69,5 +69,10 @@
 	<!-- Face ID usage for passkey authentication -->
 	<key>NSFaceIDUsageDescription</key>
 	<string>We use Face ID for secure passkey authentication to protect your account.</string>
+	<!-- Query scheme for authenticator apps (TOTP 2FA) -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>otpauth</string>
+	</array>
 </dict>
 </plist>

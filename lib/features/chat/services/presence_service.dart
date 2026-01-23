@@ -128,28 +128,34 @@ class PresenceService with WidgetsBindingObserver {
 
   Future<void> _setOnline() async {
     if (_currentUserId == null) return;
-    
-    try {
-      await _repository.setOnline(_currentUserId!);
-      _startHeartbeat();
-      Logger.logSuccess('User $_currentUserId set to online', tag: 'PresenceService');
-    } catch (e) {
-      Logger.logError('Failed to set online status: $e', tag: 'PresenceService');
-    }
+
+    final result = await _repository.setOnline(_currentUserId!);
+    result.fold(
+      (failure) => Logger.logError('Failed to set online status: ${failure.failureMessage}', tag: 'PresenceService'),
+      (_) {
+        _startHeartbeat();
+        Logger.logSuccess('User $_currentUserId set to online', tag: 'PresenceService');
+      },
+    );
   }
 
   Future<void> _setOffline() async {
     if (_currentUserId == null) return;
-    
+
     _stopHeartbeat();
-    
-    try {
-      await _repository.setOffline(_currentUserId!);
-      await _repository.updateLastSeen(_currentUserId!);
-      Logger.logBasic('User $_currentUserId set to offline', tag: 'PresenceService');
-    } catch (e) {
-      Logger.logError('Failed to set offline status: $e', tag: 'PresenceService');
-    }
+
+    final offlineResult = await _repository.setOffline(_currentUserId!);
+    final lastSeenResult = await _repository.updateLastSeen(_currentUserId!);
+
+    offlineResult.fold(
+      (failure) => Logger.logError('Failed to set offline status: ${failure.failureMessage}', tag: 'PresenceService'),
+      (_) => Logger.logBasic('User $_currentUserId set to offline', tag: 'PresenceService'),
+    );
+
+    lastSeenResult.fold(
+      (failure) => Logger.logError('Failed to update last seen: ${failure.failureMessage}', tag: 'PresenceService'),
+      (_) {},
+    );
   }
 
   /// Start periodic heartbeat to keep presence fresh
@@ -158,11 +164,11 @@ class PresenceService with WidgetsBindingObserver {
 
     _heartbeatTimer = Timer.periodic(_heartbeatInterval, (_) async {
       if (_currentUserId != null) {
-        try {
-          await _repository.setOnline(_currentUserId!);
-        } catch (e) {
-          Logger.logError('Heartbeat failed: $e', tag: 'PresenceService');
-        }
+        final result = await _repository.setOnline(_currentUserId!);
+        result.fold(
+          (failure) => Logger.logError('Heartbeat failed: ${failure.failureMessage}', tag: 'PresenceService'),
+          (_) {},
+        );
       }
     });
   }
@@ -182,7 +188,11 @@ class PresenceService with WidgetsBindingObserver {
   /// Update last seen timestamp
   Future<void> updateLastSeen() async {
     if (_currentUserId == null) return;
-    await _repository.updateLastSeen(_currentUserId!);
+    final result = await _repository.updateLastSeen(_currentUserId!);
+    result.fold(
+      (failure) => Logger.logError('Failed to update last seen: ${failure.failureMessage}', tag: 'PresenceService'),
+      (_) {},
+    );
   }
 
   /// Static helper to cleanup presence (e.g., on logout)

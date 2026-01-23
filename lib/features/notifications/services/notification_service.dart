@@ -352,12 +352,14 @@ class NotificationService {
 
   /// Get FCM token
   Future<String?> getToken() async {
-    try {
-      _currentToken = await repository.getFCMToken();
-      return _currentToken;
-    } catch (e) {
-      return null;
-    }
+    final result = await repository.getFCMToken();
+    return result.fold(
+      (failure) => null,
+      (token) {
+        _currentToken = token;
+        return _currentToken;
+      },
+    );
   }
 
   /// Manually retry getting FCM token
@@ -372,28 +374,22 @@ class NotificationService {
 
   /// Store FCM token to Firestore users/{userId}/fcmTokens array
   Future<void> storeToken(String token) async {
-    try {
-      final userId = firebaseAuth.currentUser?.uid;
-      if (userId == null) {
-        return;
-      }
-
-      await repository.storeFCMToken(userId, token);
-    } catch (e) {
-      // Silent catch
+    final userId = firebaseAuth.currentUser?.uid;
+    if (userId == null) {
+      return;
     }
+
+    await repository.storeFCMToken(userId, token);
+    // Fire-and-forget: result not needed, errors are silently handled
   }
 
   /// Remove FCM token on logout
   Future<void> removeToken() async {
-    try {
-      final userId = firebaseAuth.currentUser?.uid;
-      if (userId == null || _currentToken == null) return;
+    final userId = firebaseAuth.currentUser?.uid;
+    if (userId == null || _currentToken == null) return;
 
-      await repository.removeFCMToken(userId, _currentToken!);
-    } catch (e) {
-      // Silent catch
-    }
+    await repository.removeFCMToken(userId, _currentToken!);
+    // Fire-and-forget: result not needed, errors are silently handled
   }
 
   /// Handle foreground messages
@@ -609,42 +605,35 @@ class NotificationService {
 
   /// Request notification permissions
   Future<AuthorizationStatus> requestPermissions() async {
-    try {
-      final status = await repository.requestPermissions();
-      return status;
-    } catch (e) {
-      return AuthorizationStatus.denied;
-    }
+    final result = await repository.requestPermissions();
+    return result.fold(
+      (failure) => AuthorizationStatus.denied,
+      (status) => status,
+    );
   }
 
   /// Subscribe to FCM topic
   Future<void> subscribeToTopic(String topic) async {
-    try {
-      await repository.subscribeToTopic(topic);
-    } catch (e) {
-      // Silent catch
-    }
+    await repository.subscribeToTopic(topic);
+    // Fire-and-forget: result not needed, errors are silently handled
   }
 
   /// Unsubscribe from FCM topic
   Future<void> unsubscribeFromTopic(String topic) async {
-    try {
-      await repository.unsubscribeFromTopic(topic);
-    } catch (e) {
-      // Silent catch
-    }
+    await repository.unsubscribeFromTopic(topic);
+    // Fire-and-forget: result not needed, errors are silently handled
   }
 
   /// Calculate total unread notification count from Firestore
   Future<int> _getTotalUnreadCount() async {
-    try {
-      final userId = firebaseAuth.currentUser?.uid;
-      if (userId == null) return 0;
+    final userId = firebaseAuth.currentUser?.uid;
+    if (userId == null) return 0;
 
-      return await repository.getUnreadNotificationCount(userId);
-    } catch (e) {
-      return 0;
-    }
+    final result = await repository.getUnreadNotificationCount(userId);
+    return result.fold(
+      (failure) => 0,
+      (count) => count,
+    );
   }
 
   /// Update app badge count based on total unread notifications

@@ -1,55 +1,44 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dartz/dartz.dart';
 import 'package:get_it/get_it.dart';
-import 'package:parcel_am/core/utils/logger.dart';
+import '../../../../core/errors/failures.dart';
+import '../../../../core/services/error/error_handler.dart';
+import '../../domain/entities/presence_entity.dart';
 import '../../domain/repositories/presence_repository.dart';
+import '../datasources/presence_remote_data_source.dart';
 
 class PresenceRepositoryImpl implements PresenceRepository {
-  final FirebaseFirestore _firestore;
+  final PresenceRemoteDataSource _remoteDataSource;
 
-  PresenceRepositoryImpl({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? GetIt.instance<FirebaseFirestore>();
+  PresenceRepositoryImpl({PresenceRemoteDataSource? remoteDataSource})
+      : _remoteDataSource = remoteDataSource ?? GetIt.instance<PresenceRemoteDataSource>();
 
   @override
-  Future<void> setOnline(String userId) async {
-    try {
-      await _firestore.collection('users').doc(userId).set({
-        'presence': {
-          'isOnline': true,
-          'lastSeen': FieldValue.serverTimestamp(),
-        }
-      }, SetOptions(merge: true));
-    } catch (e) {
-      Logger.logError('Error setting online status: $e', tag: 'PresenceRepository');
-      rethrow;
-    }
+  Future<Either<Failure, void>> setOnline(String userId) {
+    return ErrorHandler.handle(
+      () async {
+        await _remoteDataSource.updatePresenceStatus(userId, PresenceStatus.online);
+      },
+      operationName: 'setOnline',
+    );
   }
 
   @override
-  Future<void> setOffline(String userId) async {
-    try {
-      await _firestore.collection('users').doc(userId).set({
-        'presence': {
-          'isOnline': false,
-          'lastSeen': FieldValue.serverTimestamp(),
-        }
-      }, SetOptions(merge: true));
-    } catch (e) {
-      Logger.logError('Error setting offline status: $e', tag: 'PresenceRepository');
-      rethrow;
-    }
+  Future<Either<Failure, void>> setOffline(String userId) {
+    return ErrorHandler.handle(
+      () async {
+        await _remoteDataSource.updatePresenceStatus(userId, PresenceStatus.offline);
+      },
+      operationName: 'setOffline',
+    );
   }
 
   @override
-  Future<void> updateLastSeen(String userId) async {
-    try {
-      await _firestore.collection('users').doc(userId).set({
-        'presence': {
-          'lastSeen': FieldValue.serverTimestamp(),
-        }
-      }, SetOptions(merge: true));
-    } catch (e) {
-      Logger.logError('Error updating last seen: $e', tag: 'PresenceRepository');
-      rethrow;
-    }
+  Future<Either<Failure, void>> updateLastSeen(String userId) {
+    return ErrorHandler.handle(
+      () async {
+        await _remoteDataSource.updateLastSeen(userId);
+      },
+      operationName: 'updateLastSeen',
+    );
   }
 }

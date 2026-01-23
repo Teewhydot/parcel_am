@@ -1,11 +1,14 @@
 import 'dart:convert';
+import 'package:dartz/dartz.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get_it/get_it.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:parcel_am/features/notifications/domain/repositories/fcm_repository.dart';
+import 'package:parcel_am/features/notifications/domain/repositories/notification_repository.dart';
 import 'package:parcel_am/core/routes/routes.dart';
 import 'package:parcel_am/core/services/navigation_service/nav_config.dart';
 import 'package:parcel_am/features/notifications/services/notification_service.dart';
@@ -18,6 +21,7 @@ import 'notification_service_parcel_test.mocks.dart';
   FCMRepository,
   FlutterLocalNotificationsPlugin,
   NotificationRemoteDataSource,
+  NotificationRepository,
   NavigationService,
   FirebaseAuth,
   User,
@@ -28,6 +32,7 @@ void main() {
   late MockFCMRepository mockRepository;
   late MockFlutterLocalNotificationsPlugin mockLocalNotifications;
   late MockNotificationRemoteDataSource mockRemoteDataSource;
+  late MockNotificationRepository mockNotificationRepository;
   late MockNavigationService mockNavigationService;
   late MockFirebaseAuth mockFirebaseAuth;
   late MockUser mockUser;
@@ -36,9 +41,17 @@ void main() {
     mockRepository = MockFCMRepository();
     mockLocalNotifications = MockFlutterLocalNotificationsPlugin();
     mockRemoteDataSource = MockNotificationRemoteDataSource();
+    mockNotificationRepository = MockNotificationRepository();
     mockNavigationService = MockNavigationService();
     mockFirebaseAuth = MockFirebaseAuth();
     mockUser = MockUser();
+
+    // Register NotificationRepository in GetIt for NotificationUseCase
+    final getIt = GetIt.instance;
+    if (getIt.isRegistered<NotificationRepository>()) {
+      getIt.unregister<NotificationRepository>();
+    }
+    getIt.registerSingleton<NotificationRepository>(mockNotificationRepository);
 
     notificationService = NotificationService(
       repository: mockRepository,
@@ -51,6 +64,13 @@ void main() {
     // Setup default mock behavior
     when(mockFirebaseAuth.currentUser).thenReturn(mockUser);
     when(mockUser.uid).thenReturn('test-user-id');
+  });
+
+  tearDown(() {
+    final getIt = GetIt.instance;
+    if (getIt.isRegistered<NotificationRepository>()) {
+      getIt.unregister<NotificationRepository>();
+    }
   });
 
   group('NotificationService - Parcel Updates Channel', () {
@@ -83,7 +103,7 @@ void main() {
       when(mockRemoteDataSource.saveNotification(any))
           .thenAnswer((_) async => {});
       when(mockRepository.getUnreadNotificationCount(any))
-          .thenAnswer((_) async => 5);
+          .thenAnswer((_) async => const Right(5));
       when(mockLocalNotifications.show(
         any,
         any,
@@ -125,7 +145,7 @@ void main() {
       when(mockRemoteDataSource.saveNotification(any))
           .thenAnswer((_) async => {});
       when(mockRepository.getUnreadNotificationCount(any))
-          .thenAnswer((_) async => 3);
+          .thenAnswer((_) async => const Right(3));
       when(mockLocalNotifications.show(
         any,
         any,
@@ -165,7 +185,7 @@ void main() {
 
       when(mockRemoteDataSource.markAsRead(any)).thenAnswer((_) async => {});
       when(mockRepository.getUnreadNotificationCount(any))
-          .thenAnswer((_) async => 2);
+          .thenAnswer((_) async => const Right(2));
       when(mockNavigationService.navigateTo(
         any,
         arguments: anyNamed('arguments'),
@@ -195,7 +215,7 @@ void main() {
 
       when(mockRemoteDataSource.markAsRead(any)).thenAnswer((_) async => {});
       when(mockRepository.getUnreadNotificationCount(any))
-          .thenAnswer((_) async => 1);
+          .thenAnswer((_) async => const Right(1));
       when(mockNavigationService.navigateTo(
         any,
         arguments: anyNamed('arguments'),
@@ -225,7 +245,7 @@ void main() {
 
       when(mockRemoteDataSource.markAsRead(any)).thenAnswer((_) async => {});
       when(mockRepository.getUnreadNotificationCount(any))
-          .thenAnswer((_) async => 0);
+          .thenAnswer((_) async => const Right(0));
       when(mockNavigationService.navigateTo(
         any,
         arguments: anyNamed('arguments'),
@@ -255,7 +275,7 @@ void main() {
 
       when(mockRemoteDataSource.markAsRead(any)).thenAnswer((_) async => {});
       when(mockRepository.getUnreadNotificationCount(any))
-          .thenAnswer((_) async => 0);
+          .thenAnswer((_) async => const Right(0));
       when(mockNavigationService.navigateTo(
         any,
         arguments: anyNamed('arguments'),
@@ -289,7 +309,7 @@ void main() {
 
       when(mockRemoteDataSource.markAsRead(any)).thenAnswer((_) async => {});
       when(mockRepository.getUnreadNotificationCount(any))
-          .thenAnswer((_) async => 0);
+          .thenAnswer((_) async => const Right(0));
       when(mockNavigationService.navigateTo(
         any,
         arguments: anyNamed('arguments'),
@@ -325,7 +345,7 @@ void main() {
       when(mockRemoteDataSource.saveNotification(any))
           .thenAnswer((_) async => {});
       when(mockRepository.getUnreadNotificationCount(any))
-          .thenAnswer((_) async => 7);
+          .thenAnswer((_) async => const Right(7));
       when(mockLocalNotifications.show(
         any,
         any,

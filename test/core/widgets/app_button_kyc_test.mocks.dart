@@ -12,7 +12,7 @@ import 'package:mockito/src/dummies.dart' as _i7;
 import 'package:parcel_am/core/bloc/base/base_state.dart' as _i5;
 import 'package:parcel_am/core/errors/failures.dart' as _i10;
 import 'package:parcel_am/features/kyc/domain/entities/kyc_status.dart' as _i12;
-import 'package:parcel_am/features/parcel_am_core/data/models/user_model.dart'
+import 'package:parcel_am/features/parcel_am_core/domain/entities/user_entity.dart'
     as _i11;
 import 'package:parcel_am/features/parcel_am_core/domain/usecases/auth_usecase.dart'
     as _i2;
@@ -103,15 +103,15 @@ class MockAuthCubit extends _i1.Mock implements _i4.AuthCubit {
           as bool);
 
   @override
-  _i8.Stream<_i9.Either<_i10.Failure, _i11.UserModel>> watchUserData(
+  _i8.Stream<_i9.Either<_i10.Failure, _i11.UserEntity>> watchUserData(
     String? userId,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#watchUserData, [userId]),
             returnValue:
-                _i8.Stream<_i9.Either<_i10.Failure, _i11.UserModel>>.empty(),
+                _i8.Stream<_i9.Either<_i10.Failure, _i11.UserEntity>>.empty(),
           )
-          as _i8.Stream<_i9.Either<_i10.Failure, _i11.UserModel>>);
+          as _i8.Stream<_i9.Either<_i10.Failure, _i11.UserEntity>>);
 
   @override
   _i8.Future<void> checkCurrentUser() =>

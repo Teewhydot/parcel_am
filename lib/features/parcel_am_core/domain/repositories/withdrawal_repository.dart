@@ -1,4 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dartz/dartz.dart';
+import '../../../../core/errors/failures.dart';
 import '../entities/withdrawal_order_entity.dart';
 
 abstract class WithdrawalRepository {
@@ -9,7 +11,7 @@ abstract class WithdrawalRepository {
   bool validateWithdrawalAmount(double amount, double availableBalance);
 
   /// Initiate withdrawal
-  Future<WithdrawalOrderEntity> initiateWithdrawal({
+  Future<Either<Failure, WithdrawalOrderEntity>> initiateWithdrawal({
     required String userId,
     required double amount,
     required String recipientCode,
@@ -18,13 +20,13 @@ abstract class WithdrawalRepository {
   });
 
   /// Get withdrawal order by ID
-  Future<WithdrawalOrderEntity> getWithdrawalOrder(String withdrawalId);
+  Future<Either<Failure, WithdrawalOrderEntity>> getWithdrawalOrder(String withdrawalId);
 
   /// Watch withdrawal order for real-time updates
-  Stream<WithdrawalOrderEntity> watchWithdrawalOrder(String withdrawalId);
+  Stream<Either<Failure, WithdrawalOrderEntity>> watchWithdrawalOrder(String withdrawalId);
 
   /// Get user's withdrawal history
-  Future<List<WithdrawalOrderEntity>> getWithdrawalHistory({
+  Future<Either<Failure, List<WithdrawalOrderEntity>>> getWithdrawalHistory({
     required String userId,
     int limit = 20,
     DocumentSnapshot? startAfter,

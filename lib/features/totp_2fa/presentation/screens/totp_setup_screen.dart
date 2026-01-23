@@ -9,6 +9,7 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../injection_container.dart';
+import '../../services/authenticator_app_launcher.dart';
 import '../bloc/totp_cubit.dart';
 import '../bloc/totp_data.dart';
 import '../widgets/recovery_codes_widget.dart';
@@ -25,6 +26,11 @@ class TotpSetupScreen extends StatefulWidget {
 
 class _TotpSetupScreenState extends State<TotpSetupScreen> {
   int _currentStep = 0;
+  bool _isAuthenticatorAppAvailable = false;
+  bool _isLaunchingApp = false;
+  bool _hasCheckedAppAvailability = false;
+
+  final _authenticatorLauncher = AuthenticatorAppLauncher();
 
   String get _userId => context.currentUserId ?? '';
   String get _userEmail => context.user.email;
@@ -35,6 +41,50 @@ class _TotpSetupScreenState extends State<TotpSetupScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<TotpCubit>().startSetup(_userId, _userEmail);
     });
+  }
+
+  Future<void> _checkAuthenticatorAppAvailability(String qrCodeUri) async {
+    if (_hasCheckedAppAvailability) return;
+
+    final canLaunch = await _authenticatorLauncher.canLaunchAuthenticatorApp(
+      qrCodeUri,
+    );
+
+    if (mounted) {
+      setState(() {
+        _isAuthenticatorAppAvailable = canLaunch;
+        _hasCheckedAppAvailability = true;
+      });
+    }
+  }
+
+  Future<void> _handleOpenInAuthenticatorApp(String qrCodeUri) async {
+    setState(() {
+      _isLaunchingApp = true;
+    });
+
+    final launched = await _authenticatorLauncher.launchAuthenticatorApp(
+      qrCodeUri,
+    );
+
+    if (mounted) {
+      setState(() {
+        _isLaunchingApp = false;
+      });
+
+      if (!launched) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: AppText.bodyMedium(
+              _authenticatorLauncher.getNoAppInstalledShortMessage(),
+              color: AppColors.white,
+            ),
+            backgroundColor: AppColors.warning,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
   }
 
   void _onVerificationCodeCompleted(String code) {
@@ -116,6 +166,11 @@ class _TotpSetupScreenState extends State<TotpSetupScreen> {
           builder: (context, state) {
             final totpData = state.data ?? const TotpData();
             final isLoading = state.isLoading;
+
+            // Check authenticator app availability when setup result is available
+            if (totpData.setupResult != null && !_hasCheckedAppAvailability) {
+              _checkAuthenticatorAppAvailability(totpData.setupResult!.qrCodeUri);
+            }
 
             if (isLoading && totpData.setupResult == null) {
               return const Center(child: CircularProgressIndicator());
@@ -222,6 +277,10 @@ class _TotpSetupScreenState extends State<TotpSetupScreen> {
         TotpQrCodeWidget(
           qrCodeUri: setupResult.qrCodeUri,
           secretForDisplay: setupResult.secretForDisplay,
+          isAuthenticatorAppAvailable: _isAuthenticatorAppAvailable,
+          isLaunchingApp: _isLaunchingApp,
+          onOpenInAuthenticatorApp: () =>
+              _handleOpenInAuthenticatorApp(setupResult.qrCodeUri),
         ),
         AppSpacing.verticalSpacing(SpacingSize.xl),
         AppButton.primary(
