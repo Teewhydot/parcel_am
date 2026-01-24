@@ -44,8 +44,8 @@ const {
 const {
   onParcelAwaitingConfirmation,
   onParcelStatusUpdate,
-  onChatMessageNotification,
-  onChatPageUpdated
+  onChatMessageCreated,
+  onChatMessageNotification
 } = require('./triggers');
 
 // ========================================================================
@@ -80,8 +80,10 @@ exports.autoReleaseEscrow = autoReleaseEscrow;
 // Triggers
 exports.onParcelAwaitingConfirmation = onParcelAwaitingConfirmation;
 exports.onParcelStatusUpdate = onParcelStatusUpdate;
+// New RTDB trigger for chat messages (replaces Firestore-based trigger)
+exports.onChatMessageCreated = onChatMessageCreated;
+// Legacy alias for backward compatibility
 exports.onChatMessageNotification = onChatMessageNotification;
-exports.onChatPageUpdated = onChatPageUpdated;
 
 // ========================================================================
 // Startup Complete

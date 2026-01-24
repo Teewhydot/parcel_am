@@ -31,4 +31,5 @@ class Routes {
   static const String totp2FAManagement = '/settings/2fa';
   static const String totp2FASetup = '/settings/2fa/setup';
   static const String seedBanks = '/admin/seed-banks';
+  static const String imageViewer = '/imageViewer';
 }

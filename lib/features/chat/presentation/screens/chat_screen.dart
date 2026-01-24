@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/bloc/base/base_state.dart';
+import '../../../../core/bloc/managers/bloc_manager.dart';
 import '../../../notifications/services/notification_service.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_button.dart';
@@ -22,6 +22,9 @@ import '../widgets/message_bubble.dart';
 import '../widgets/message_input.dart';
 import '../widgets/typing_indicator.dart';
 import '../../../../core/helpers/user_extensions.dart';
+import '../../../../core/routes/routes.dart';
+import '../../../../core/services/navigation_service/nav_config.dart';
+import '../../../../injection_container.dart';
 import '../../services/typing_service.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -62,7 +65,10 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
 
   /// Set viewing status in RTDB for notification suppression
   void _setupViewingStatus() {
-    _typingService.setViewingChat(widget.chatId);
+    final userId = _currentUserId;
+    if (userId != null && userId.isNotEmpty) {
+      _typingService.setViewingChat(widget.chatId, userId);
+    }
   }
 
   void _loadCurrentUser() {
@@ -76,7 +82,10 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   }
 
   void _setupTypingService() {
-    _typingService.setupOnDisconnect(widget.chatId);
+    final userId = _currentUserId;
+    if (userId != null && userId.isNotEmpty) {
+      _typingService.setupOnDisconnect(widget.chatId, userId);
+    }
   }
 
   /// Request notification permissions on first app launch
@@ -154,23 +163,29 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     _scrollController.dispose();
     _updateLastSeen();
     // Clear typing status when leaving chat
-    _typingService.clearTypingStatus(widget.chatId);
-    // Clear viewing status in RTDB so notifications can be shown again
-    _typingService.clearViewingChat();
+    final userId = _currentUserId;
+    if (userId != null && userId.isNotEmpty) {
+      _typingService.clearTypingStatus(widget.chatId, userId);
+      // Clear viewing status in RTDB so notifications can be shown again
+      _typingService.clearViewingChat(userId);
+    }
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    final userId = _currentUserId;
+    if (userId == null || userId.isEmpty) return;
+
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
       _updateLastSeen();
       // Clear viewing status when app goes to background
-      _typingService.clearViewingChat();
+      _typingService.clearViewingChat(userId);
     } else if (state == AppLifecycleState.resumed) {
       _updateLastSeen();
       // Restore viewing status when app comes back to foreground
-      _typingService.setViewingChat(widget.chatId);
+      _typingService.setViewingChat(widget.chatId, userId);
     }
   }
 
@@ -242,32 +257,17 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
 
   void _handleTyping(bool isTyping) {
     // Use Realtime Database for faster typing updates
-    _typingService.setTypingStatus(widget.chatId, isTyping);
+    final userId = _currentUserId;
+    if (userId != null && userId.isNotEmpty) {
+      _typingService.setTypingStatus(widget.chatId, userId, isTyping);
+    }
   }
 
   void _handleMessageTap(Message message) {
     if (message.type == MessageType.image && message.mediaUrl != null) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => Scaffold(
-            backgroundColor: AppColors.black,
-            appBar: AppBar(
-              backgroundColor: AppColors.black,
-              iconTheme: const IconThemeData(color: AppColors.white),
-            ),
-            body: Center(
-              child: InteractiveViewer(
-                child: CachedNetworkImage(
-                  imageUrl: message.mediaUrl!,
-                  placeholder: (context, url) =>
-                      const CircularProgressIndicator(),
-                  errorWidget: (context, url, error) =>
-                      const Icon(Icons.error, color: AppColors.white),
-                ),
-              ),
-            ),
-          ),
-        ),
+      sl<NavigationService>().navigateTo(
+        Routes.imageViewer,
+        arguments: {'imageUrl': message.mediaUrl},
       );
     } else if (message.type == MessageType.document &&
         message.mediaUrl != null) {
@@ -294,7 +294,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (bottomSheetContext) => Container(
-        padding: const EdgeInsets.all(20),
+        padding: AppSpacing.paddingXL,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -312,7 +312,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                 title: AppText.bodyLarge('Delete', color: AppColors.error),
                 onTap: () {
                   Navigator.pop(bottomSheetContext);
-                  chatCubit.deleteMessage(message.id);
+                  chatCubit.deleteMessage(message.id, chatId: widget.chatId);
                 },
               ),
           ],
@@ -386,6 +386,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                     stream: _typingService.watchUserTyping(
                       widget.chatId,
                       widget.otherUserId,
+                      _currentUserId ?? '',
                     ),
                     builder: (context, typingSnapshot) {
                       final isTyping = typingSnapshot.data ?? false;
@@ -427,7 +428,10 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           ],
         ),
       ),
-      body: BlocConsumer<ChatCubit, BaseState<ChatMessageData>>(
+      body: BlocManager<ChatCubit, BaseState<ChatMessageData>>(
+        bloc: context.read<ChatCubit>(),
+        showLoadingIndicator: false,
+        showResultErrorNotifications: true,
         listener: (context, state) {
           if (state is AsyncErrorState<ChatMessageData>) {
             context.showSnackbar(message: state.errorMessage);
@@ -469,6 +473,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
             ],
           );
         },
+        child: const SizedBox.shrink(),
       ),
     );
   }
@@ -528,7 +533,7 @@ class _MessagesList extends StatelessWidget {
 
         // Use RTDB for faster typing indicator
         return StreamBuilder<bool>(
-          stream: _typingService.watchUserTyping(chatId, otherUserId),
+          stream: _typingService.watchUserTyping(chatId, otherUserId, currentUserId ?? ''),
           builder: (context, typingSnapshot) {
             final showTypingIndicator = typingSnapshot.data ?? false;
 
@@ -569,7 +574,7 @@ class _MessagesList extends StatelessWidget {
             return ListView.builder(
               controller: scrollController,
               reverse: true,
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              padding: AppSpacing.verticalPaddingSM,
               itemCount: allMessages.length + (showTypingIndicator ? 1 : 0),
               itemBuilder: (context, index) {
                 if (showTypingIndicator && index == 0) {
@@ -603,7 +608,7 @@ class _MessagesList extends StatelessWidget {
                     alignment: isMe
                         ? Alignment.centerRight
                         : Alignment.centerLeft,
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    padding: AppSpacing.horizontalPaddingXL,
                     child: Icon(Icons.reply, color: AppColors.info, size: 28),
                   ),
                   child: MessageBubble(

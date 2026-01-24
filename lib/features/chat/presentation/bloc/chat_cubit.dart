@@ -250,11 +250,11 @@ class ChatCubit extends BaseCubit<BaseState<ChatMessageData>> {
     ));
   }
 
-  Future<void> deleteMessage(String messageId) async {
+  Future<void> deleteMessage(String messageId, {String? chatId}) async {
     final currentData = state.data ?? const ChatMessageData();
     emit(AsyncLoadingState<ChatMessageData>(data: currentData));
 
-    final result = await chatUseCase.deleteMessage(messageId);
+    final result = await chatUseCase.deleteMessage(messageId, chatId: chatId);
 
     result.fold(
       (failure) {

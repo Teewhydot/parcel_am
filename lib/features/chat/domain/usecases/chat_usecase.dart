@@ -60,8 +60,8 @@ class ChatUseCase {
     return repository.getChatStream(chatId);
   }
 
-  Future<Either<Failure, void>> deleteMessage(String messageId) {
-    return repository.deleteMessage(messageId);
+  Future<Either<Failure, void>> deleteMessage(String messageId, {String? chatId}) {
+    return repository.deleteMessage(messageId, chatId: chatId);
   }
 
   Future<Either<Failure, Chat>> getOrCreateChat({

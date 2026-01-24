@@ -1,0 +1,42 @@
+{
+  "rules": {
+    "messages": {
+      "$chatId": {
+        ".read": "auth != null",
+        ".indexOn": ["timestamp"],
+        "$messageId": {
+          ".write": "auth != null && (!data.exists() || data.child('senderId').val() === auth.uid || newData.child('readBy/' + auth.uid).exists())",
+          ".validate": "newData.hasChildren(['id', 'chatId', 'senderId', 'content', 'type', 'status', 'timestamp'])"
+        }
+      }
+    },
+    "chats": {
+      "$chatId": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        ".indexOn": ["lastMessageTime"]
+      }
+    },
+    "user_chats": {
+      "$userId": {
+        ".read": "auth != null && auth.uid === $userId",
+        ".write": "auth != null && auth.uid === $userId",
+        ".indexOn": ["lastMessageTime"]
+      }
+    },
+    "typing": {
+      "$chatId": {
+        ".read": "auth != null",
+        "$userId": {
+          ".write": "auth != null && auth.uid === $userId"
+        }
+      }
+    },
+    "viewing": {
+      "$userId": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.uid === $userId"
+      }
+    }
+  }
+}

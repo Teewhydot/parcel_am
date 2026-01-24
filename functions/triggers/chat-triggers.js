@@ -1,87 +1,97 @@
 // ========================================================================
-// Chat Triggers - Firestore Document Triggers for Chat Notifications
+// Chat Triggers - RTDB Triggers for Chat Notifications
+// ========================================================================
+// Migrated from Firestore to RTDB for lower latency (~50ms vs 2-4s)
 // ========================================================================
 
-const { onDocumentUpdated } = require('firebase-functions/v2/firestore');
+const { onValueCreated } = require('firebase-functions/v2/database');
 const admin = require('firebase-admin');
-const { FUNCTIONS_CONFIG } = require('../utils/constants');
+const { FUNCTIONS_CONFIG, RTDB_CONFIG } = require('../utils/constants');
 const { logger } = require('../utils/logger');
-const { dbHelper } = require('../utils/database');
 const { notificationService } = require('../services/notification-service');
 
+// RTDB Database URL from centralized config
+const DATABASE_URL = RTDB_CONFIG.DATABASE_URL;
+
 /**
- * Helper function to update notificationSent flag in a message within a page
- * @param {string} chatId - The chat ID
- * @param {string} messageId - The message ID to mark as sent
- * @param {string} executionId - Execution ID for logging
+ * Get RTDB reference
  */
-async function markMessageNotificationSent(chatId, messageId, executionId) {
-  if (!messageId) {
-    logger.warning('No messageId provided, cannot mark notificationSent', executionId);
-    return;
-  }
+function getRtdb() {
+  return admin.database(admin.app(), DATABASE_URL);
+}
+
+/**
+ * Atomically claim notification to prevent duplicates.
+ * Uses RTDB transaction to ensure only one function instance sends the notification.
+ *
+ * @param {string} chatId - The chat ID
+ * @param {string} messageId - The message ID
+ * @returns {Promise<boolean>} - True if this instance claimed the notification
+ */
+async function tryClaimNotification(chatId, messageId) {
+  const db = getRtdb();
+  const ref = db.ref(`messages/${chatId}/${messageId}/notificationSent`);
 
   try {
-    const db = admin.firestore();
-    const pagesRef = db.collection('chats').doc(chatId).collection('pages');
-    const pagesSnapshot = await pagesRef.get();
-
-    for (const pageDoc of pagesSnapshot.docs) {
-      const pageData = pageDoc.data();
-      const messages = pageData.messages || [];
-      
-      const messageIndex = messages.findIndex(m => m.id === messageId);
-      if (messageIndex !== -1) {
-        // Found the message, update it
-        const updatedMessages = messages.map(m => {
-          if (m.id === messageId) {
-            return { ...m, notificationSent: true };
-          }
-          return m;
-        });
-
-        await pageDoc.ref.update({
-          messages: updatedMessages,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp()
-        });
-
-        logger.info(`Marked message ${messageId} as notificationSent in page ${pageDoc.id}`, executionId);
-        return;
+    const result = await ref.transaction((currentValue) => {
+      if (currentValue === true) {
+        // Already claimed by another instance
+        return; // Abort transaction
       }
-    }
+      return true; // Claim the notification
+    });
 
-    logger.warning(`Message ${messageId} not found in any page for chat ${chatId}`, executionId);
+    return result.committed;
   } catch (error) {
-    logger.error(`Failed to mark message ${messageId} notificationSent: ${error.message}`, executionId);
+    logger.error(`tryClaimNotification failed: ${error.message}`, 'claim-notif');
+    return false;
   }
 }
 
 /**
- * Trigger: onChatMessageNotification
+ * Get chat metadata from RTDB
+ * @param {string} chatId - The chat ID
+ * @returns {Promise<Object|null>} - Chat data or null
+ */
+async function getChatMetadata(chatId) {
+  const db = getRtdb();
+  const snapshot = await db.ref(`chats/${chatId}`).once('value');
+  return snapshot.exists() ? snapshot.val() : null;
+}
+
+/**
+ * Trigger: onChatMessageCreated
  *
- * Fires when a chat document is updated in Firestore.
- * When the pendingNotification field is added or updated:
+ * Fires when a new message is created in RTDB at /messages/{chatId}/{messageId}.
+ * - Atomically claims the notification to prevent duplicates
  * - Sends push notification to all participants except the sender
- * - Marks the message as notificationSent in the page
- * - Clears the pendingNotification field after sending
+ * - Marks the message as notificationSent
  *
- * Expected pendingNotification structure:
+ * RTDB Message structure at /messages/{chatId}/{messageId}:
  * {
+ *   id: string,
+ *   chatId: string,
  *   senderId: string,
  *   senderName: string,
- *   messagePreview: string,
- *   chatId: string,
- *   messageId: string,
- *   timestamp: Timestamp,
- *   type: string (e.g., 'text', 'image')
+ *   senderAvatar: string | null,
+ *   content: string,
+ *   type: "text" | "image" | "video" | "document",
+ *   status: "sending" | "sent" | "delivered" | "read" | "failed",
+ *   timestamp: number (ServerValue.timestamp),
+ *   mediaUrl: string | null,
+ *   thumbnailUrl: string | null,
+ *   fileName: string | null,
+ *   fileSize: number | null,
+ *   replyToMessageId: string | null,
+ *   isDeleted: boolean,
+ *   notificationSent: boolean,
+ *   readBy: { [userId]: number }
  * }
- *
- * Note: Messages are now stored in paged structure under chats/{chatId}/pages/{pageId}
- * but the notification trigger still fires from pendingNotification on the chat doc.
  */
-const onChatMessageNotification = onDocumentUpdated(
+const onChatMessageCreated = onValueCreated(
   {
-    document: 'chats/{chatId}',
+    ref: '/messages/{chatId}/{messageId}',
+    instance: DATABASE_URL,
     region: FUNCTIONS_CONFIG.REGION,
     timeoutSeconds: FUNCTIONS_CONFIG.TRIGGER_TIMEOUT_SECONDS,
     memory: FUNCTIONS_CONFIG.MEMORY,
@@ -89,73 +99,90 @@ const onChatMessageNotification = onDocumentUpdated(
     maxInstances: FUNCTIONS_CONFIG.MAX_INSTANCES
   },
   async (event) => {
-    const executionId = `chat-notify-trigger-${Date.now()}`;
+    const executionId = `rtdb-chat-notify-${Date.now()}`;
 
     try {
-      logger.startFunction('onChatMessageNotification', executionId);
+      logger.startFunction('onChatMessageCreated', executionId);
 
-      const beforeData = event.data.before.data();
-      const afterData = event.data.after.data();
-      const chatId = event.params.chatId;
+      const { chatId, messageId } = event.params;
+      const messageData = event.data.val();
 
-      // Check if pendingNotification was added or updated
-      const beforeNotification = beforeData.pendingNotification;
-      const afterNotification = afterData.pendingNotification;
-
-      // Skip if no pending notification in after data
-      if (!afterNotification) {
-        logger.info('No pending notification, skipping', executionId);
+      if (!messageData) {
+        logger.warning('Message data is null, skipping', executionId);
         return;
       }
 
-      // Check if it's a new notification (different timestamp or didn't exist before)
-      const beforeTimestamp = beforeNotification?.timestamp?.toMillis?.();
-      const afterTimestamp = afterNotification?.timestamp?.toMillis?.();
+      const { senderId, senderName, content, type, isDeleted, notificationSent } = messageData;
 
-      if (beforeTimestamp && beforeTimestamp === afterTimestamp) {
-        logger.info('Same notification timestamp, skipping', executionId);
+      // Skip if message is deleted
+      if (isDeleted) {
+        logger.info('Message is deleted, skipping notification', executionId);
         return;
       }
 
-      const { senderId, senderName, messagePreview, type, messageId } = afterNotification;
-
-      if (!senderId || !messagePreview) {
-        logger.warning('Missing required notification data', executionId);
-        // Clear invalid notification
-        await dbHelper.updateDocument('chats', chatId, {
-          pendingNotification: null
-        }, executionId);
+      // Skip if notification was already sent (shouldn't happen on create, but safety check)
+      if (notificationSent === true) {
+        logger.info('Notification already sent, skipping', executionId);
         return;
       }
 
-      if (!messageId) {
-        logger.warning('Missing messageId in notification data', executionId);
+      // Skip if sender info is missing
+      if (!senderId || !content) {
+        logger.warning('Missing senderId or content, skipping', executionId);
+        return;
       }
 
-      logger.info(`Processing chat notification from ${senderName} in chat ${chatId}`, executionId);
+      logger.info(`Processing message: chatId=${chatId}, messageId=${messageId}, sender=${senderName}`, executionId);
 
-      // Get all participants except sender
-      const participantIds = afterData.participantIds || [];
+      // Atomically claim the notification to prevent duplicates
+      const claimed = await tryClaimNotification(chatId, messageId);
+      if (!claimed) {
+        logger.info('Notification already claimed by another instance, skipping', executionId);
+        return;
+      }
+
+      logger.info('Notification claimed successfully', executionId);
+
+      // Get chat metadata for participant list
+      const chatData = await getChatMetadata(chatId);
+      if (!chatData) {
+        logger.warning(`Chat ${chatId} not found in RTDB`, executionId);
+        return;
+      }
+
+      const participantIds = chatData.participantIds || [];
       const recipientIds = participantIds.filter(id => id !== senderId);
 
       if (recipientIds.length === 0) {
         logger.info('No recipients to notify', executionId);
-        await dbHelper.updateDocument('chats', chatId, {
-          pendingNotification: null
-        }, executionId);
         return;
       }
 
       // Prepare notification content
       const notificationTitle = senderName || 'New Message';
-      const notificationBody = messagePreview.length > 100
-        ? messagePreview.substring(0, 97) + '...'
-        : messagePreview;
+
+      // Customize message preview based on type
+      let messagePreview;
+      switch (type) {
+        case 'image':
+          messagePreview = '📷 Image';
+          break;
+        case 'video':
+          messagePreview = '🎬 Video';
+          break;
+        case 'document':
+          messagePreview = '📄 Document';
+          break;
+        default:
+          messagePreview = content.length > 100
+            ? content.substring(0, 97) + '...'
+            : content;
+      }
 
       const notificationData = {
         type: 'chat_message',
         chatId: chatId,
-        messageId: messageId || '', // Include messageId for notification tracking
+        messageId: messageId,
         senderId: senderId,
         senderName: senderName || '',
         action: 'open_chat'
@@ -167,7 +194,7 @@ const onChatMessageNotification = onDocumentUpdated(
           notificationService.sendNotificationToUser(
             recipientId,
             notificationTitle,
-            notificationBody,
+            messagePreview,
             notificationData,
             `${executionId}-${recipientId}`
           )
@@ -186,184 +213,43 @@ const onChatMessageNotification = onDocumentUpdated(
         executionId
       );
 
-      // Mark the message as notificationSent in the page
-      if (successCount > 0 && messageId) {
-        await markMessageNotificationSent(chatId, messageId, executionId);
-      }
-
-      // Clear the pendingNotification field
-      await dbHelper.updateDocument('chats', chatId, {
-        pendingNotification: null
-      }, executionId);
-
-      logger.success(`Chat notification trigger completed for chat ${chatId}`, executionId);
+      logger.success(`RTDB chat notification trigger completed for message ${messageId}`, executionId);
 
     } catch (error) {
-      logger.error('Error in onChatMessageNotification trigger', executionId, error);
-
-      // Attempt to clear pendingNotification even on error to prevent infinite retries
-      try {
-        const chatId = event.params.chatId;
-        await dbHelper.updateDocument('chats', chatId, {
-          pendingNotification: null
-        }, executionId);
-      } catch (clearError) {
-        logger.error('Failed to clear pendingNotification after error', executionId, clearError);
-      }
-
+      logger.error('Error in onChatMessageCreated trigger', executionId, error);
       throw error;
     }
   }
 );
 
-/**
- * Trigger: onChatPageUpdated
- *
- * DISABLED - This trigger was causing duplicate notifications.
- * The primary notification path is onChatMessageNotification which
- * watches pendingNotification on the chat document.
- *
- * This backup trigger is kept for reference but not exported.
- * It could be re-enabled if the pendingNotification approach fails.
- *
- * Fires when a message page document is updated (messages appended).
- * This is an alternative/backup notification path that watches the
- * paged message structure directly.
- *
- * Message page structure:
- * chats/{chatId}/pages/{pageId}
- * {
- *   chatId: string,
- *   pageNumber: int,
- *   messages: [MessageModel, ...],
- *   messageCount: int,
- *   bytesUsed: int,
- *   hasOlderPages: bool,
- *   createdAt: Timestamp,
- *   updatedAt: Timestamp
- * }
- *
- * This trigger can be used to:
- * - Send notifications for messages that missed the pendingNotification path
- * - Track message analytics
- * - Trigger read receipts or delivery confirmations
- */
+// ========================================================================
+// Legacy Firestore Triggers (Deprecated - kept for reference)
+// ========================================================================
+// The following Firestore triggers have been replaced by RTDB triggers.
+// They are kept here commented out for reference during migration.
+// Once RTDB migration is confirmed working, these can be removed.
+// ========================================================================
+
 /*
-const onChatPageUpdated = onDocumentUpdated(
+// OLD: Firestore-based trigger (DEPRECATED)
+const { onDocumentUpdated } = require('firebase-functions/v2/firestore');
+
+const onChatMessageNotification_DEPRECATED = onDocumentUpdated(
   {
-    document: 'chats/{chatId}/pages/{pageId}',
+    document: 'chats/{chatId}',
     region: FUNCTIONS_CONFIG.REGION,
-    timeoutSeconds: FUNCTIONS_CONFIG.TRIGGER_TIMEOUT_SECONDS,
-    memory: FUNCTIONS_CONFIG.MEMORY,
-    cpu: FUNCTIONS_CONFIG.CPU,
-    maxInstances: FUNCTIONS_CONFIG.MAX_INSTANCES
+    ...
   },
   async (event) => {
-    const executionId = `chat-page-trigger-${Date.now()}`;
-
-    try {
-      logger.startFunction('onChatPageUpdated', executionId);
-
-      const beforeData = event.data.before.data();
-      const afterData = event.data.after.data();
-      const { chatId, pageId } = event.params;
-
-      const beforeMessages = beforeData.messages || [];
-      const afterMessages = afterData.messages || [];
-
-      // Find new messages (appended since last update)
-      const newMessagesCount = afterMessages.length - beforeMessages.length;
-
-      if (newMessagesCount <= 0) {
-        logger.info('No new messages detected (update was edit/delete), skipping', executionId);
-        return;
-      }
-
-      // Get the new messages (they are appended at the end)
-      const newMessages = afterMessages.slice(-newMessagesCount);
-
-      logger.info(
-        `Detected ${newMessagesCount} new message(s) in chat ${chatId}, page ${pageId}`,
-        executionId
-      );
-
-      // Process each new message for notifications that weren't sent yet
-      for (const message of newMessages) {
-        if (message.notificationSent) {
-          logger.info(`Message ${message.id} notification already sent, skipping`, executionId);
-          continue;
-        }
-
-        // Get the chat document for participant info
-        const chatResult = await dbHelper.getDocument('chats', chatId, executionId);
-        if (!chatResult || !chatResult.data) {
-          logger.warning(`Chat ${chatId} not found`, executionId);
-          continue;
-        }
-
-        const chatData = chatResult.data;
-        const participantIds = chatData.participantIds || [];
-        const recipientIds = participantIds.filter(id => id !== message.senderId);
-
-        if (recipientIds.length === 0) {
-          logger.info('No recipients for message', executionId);
-          continue;
-        }
-
-        // Prepare notification
-        const notificationTitle = message.senderName || 'New Message';
-        const messagePreview = message.content?.length > 100
-          ? message.content.substring(0, 97) + '...'
-          : message.content || '';
-
-        const notificationData = {
-          type: 'chat_message',
-          chatId: chatId,
-          messageId: message.id || '',
-          senderId: message.senderId,
-          senderName: message.senderName || '',
-          action: 'open_chat'
-        };
-
-        // Send notifications
-        const results = await Promise.allSettled(
-          recipientIds.map(recipientId =>
-            notificationService.sendNotificationToUser(
-              recipientId,
-              notificationTitle,
-              messagePreview,
-              notificationData,
-              `${executionId}-${recipientId}`
-            )
-          )
-        );
-
-        const successCount = results.filter(
-          r => r.status === 'fulfilled' && r.value && r.value.success
-        ).length;
-
-        logger.info(
-          `Page trigger: sent ${successCount}/${recipientIds.length} notifications for message ${message.id}`,
-          executionId
-        );
-
-        // Mark notification as sent using the helper function
-        if (successCount > 0 && message.id) {
-          await markMessageNotificationSent(chatId, message.id, executionId);
-        }
-      }
-
-      logger.success(`Page trigger completed for chat ${chatId}, page ${pageId}`, executionId);
-
-    } catch (error) {
-      logger.error('Error in onChatPageUpdated trigger', executionId, error);
-      throw error;
-    }
+    // Old Firestore logic using pendingNotification field
+    // Replaced by RTDB onValueCreated trigger
   }
 );
 */
 
 module.exports = {
-  onChatMessageNotification,
-  // onChatPageUpdated - DISABLED to prevent duplicate notifications
+  onChatMessageCreated,
+  // Legacy exports for backward compatibility during migration
+  // These are now no-ops or can be removed after confirming RTDB works
+  onChatMessageNotification: onChatMessageCreated, // Alias for existing index.js references
 };

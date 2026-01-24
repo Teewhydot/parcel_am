@@ -133,13 +133,13 @@ class ChatRepositoryImpl implements ChatRepository {
   }
 
   @override
-  Future<Either<Failure, void>> deleteMessage(String messageId) {
+  Future<Either<Failure, void>> deleteMessage(String messageId, {String? chatId}) {
     return ErrorHandler.handle(
       () async {
         if (!await InternetConnectionChecker.instance.hasConnection) {
           throw const NetworkFailure(failureMessage: 'No internet connection');
         }
-        await _remoteDataSource.deleteMessage(messageId);
+        await _remoteDataSource.deleteMessage(messageId, chatId: chatId);
       },
       operationName: 'deleteMessage',
     );

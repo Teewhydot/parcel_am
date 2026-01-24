@@ -180,10 +180,9 @@ Future<void> init() async {
   );
 
 
-  //! Features - Chat Remote Data Source
+  //! Features - Chat Remote Data Source (RTDB-based for low latency)
   sl.registerLazySingleton<ChatRemoteDataSource>(
     () => ChatRemoteDataSourceImpl(
-      firestore: sl(),
       storage: sl(),
     ),
   );

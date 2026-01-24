@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:parcel_am/core/utils/logger.dart' show Logger, LogTag;
 
 /// Service for real-time typing status and chat presence using Firebase Realtime Database.
 /// RTDB provides lower latency (~50ms) compared to Firestore (~200-500ms)
 /// for presence-like features.
+///
+/// NOTE: All methods that require user identification accept userId as a parameter.
+/// The userId should be obtained from context.currentUserId in the presentation layer.
 class TypingService {
   static final TypingService _instance = TypingService._internal();
   factory TypingService() => _instance;
@@ -25,20 +27,18 @@ class TypingService {
     return _database!;
   }
 
-  FirebaseAuth get _auth => FirebaseAuth.instance;
-
   /// Reference to typing status in RTDB
   /// Structure: /typing/{chatId}/{userId} = { isTyping: bool, timestamp: int }
   DatabaseReference _typingRef(String chatId) {
     return database.ref('typing/$chatId');
   }
 
-  /// Set typing status for current user in a chat
-  Future<void> setTypingStatus(String chatId, bool isTyping) async {
-    final userId = _auth.currentUser?.uid;
-    if (userId == null) {
+  /// Set typing status for a user in a chat
+  /// [userId] should be obtained from context.currentUserId in presentation layer
+  Future<void> setTypingStatus(String chatId, String userId, bool isTyping) async {
+    if (userId.isEmpty) {
       Logger.logWarning(
-        'setTypingStatus: No user logged in',
+        'setTypingStatus: Empty userId provided',
         tag: 'TypingService',
       );
       return;
@@ -53,9 +53,13 @@ class TypingService {
 
       if (isTyping) {
         // Set typing with timestamp for auto-cleanup
-        await ref.set({
-          'isTyping': true,
-          'timestamp': ServerValue.timestamp,
+        // Also update chat metadata for chat list display
+        await database.ref().update({
+          'typing/$chatId/$userId': {
+            'isTyping': true,
+            'timestamp': ServerValue.timestamp,
+          },
+          'chats/$chatId/isTyping/$userId': true,
         });
         Logger.logSuccess(
           'setTypingStatus: Successfully set typing=true',
@@ -64,6 +68,8 @@ class TypingService {
       } else {
         // Remove typing status completely for efficiency
         await ref.remove();
+        // Also clear from chat metadata
+        await database.ref('chats/$chatId/isTyping/$userId').remove();
         Logger.logSuccess(
           'setTypingStatus: Successfully removed typing status',
           tag: 'TypingService',
@@ -76,8 +82,8 @@ class TypingService {
 
   /// Listen to other user's typing status in a chat
   /// Returns a stream of (userId, isTyping) pairs
-  Stream<Map<String, bool>> watchTypingStatus(String chatId) {
-    final currentUserId = _auth.currentUser?.uid;
+  /// [currentUserId] should be obtained from context.currentUserId in presentation layer
+  Stream<Map<String, bool>> watchTypingStatus(String chatId, String currentUserId) {
     Logger.logBasic(
       'watchTypingStatus: Starting for chatId=$chatId, currentUserId=$currentUserId',
       tag: 'TypingService',
@@ -130,15 +136,17 @@ class TypingService {
   }
 
   /// Check if a specific user is typing in a chat
-  Stream<bool> watchUserTyping(String chatId, String userId) {
+  /// [targetUserId] is the user whose typing status to watch
+  /// [currentUserId] should be obtained from context.currentUserId in presentation layer
+  Stream<bool> watchUserTyping(String chatId, String targetUserId, String currentUserId) {
     Logger.logBasic(
-      'watchUserTyping: chatId=$chatId, userId=$userId',
+      'watchUserTyping: chatId=$chatId, targetUserId=$targetUserId',
       tag: 'TypingService',
     );
-    return watchTypingStatus(chatId).map((status) {
-      final isTyping = status[userId] ?? false;
+    return watchTypingStatus(chatId, currentUserId).map((status) {
+      final isTyping = status[targetUserId] ?? false;
       Logger.logBasic(
-        'watchUserTyping: User $userId isTyping=$isTyping',
+        'watchUserTyping: User $targetUserId isTyping=$isTyping',
         tag: 'TypingService',
       );
       return isTyping;
@@ -146,24 +154,28 @@ class TypingService {
   }
 
   /// Clear typing status when leaving chat or on disconnect
-  Future<void> clearTypingStatus(String chatId) async {
-    final userId = _auth.currentUser?.uid;
-    if (userId == null) return;
+  /// [userId] should be obtained from context.currentUserId in presentation layer
+  Future<void> clearTypingStatus(String chatId, String userId) async {
+    if (userId.isEmpty) return;
 
     try {
       await _typingRef(chatId).child(userId).remove();
+      // Also clear from chat metadata
+      await database.ref('chats/$chatId/isTyping/$userId').remove();
     } catch (e) {
       // Silently fail
     }
   }
 
   /// Set up onDisconnect handler to auto-clear typing when connection drops
-  Future<void> setupOnDisconnect(String chatId) async {
-    final userId = _auth.currentUser?.uid;
-    if (userId == null) return;
+  /// [userId] should be obtained from context.currentUserId in presentation layer
+  Future<void> setupOnDisconnect(String chatId, String userId) async {
+    if (userId.isEmpty) return;
 
     try {
       await _typingRef(chatId).child(userId).onDisconnect().remove();
+      // Also clear from chat metadata on disconnect
+      await database.ref('chats/$chatId/isTyping/$userId').onDisconnect().remove();
     } catch (e) {
       // Silently fail
     }
@@ -181,9 +193,9 @@ class TypingService {
 
   /// Set which chat the user is currently viewing
   /// Call when entering a chat screen
-  Future<void> setViewingChat(String chatId) async {
-    final userId = _auth.currentUser?.uid;
-    if (userId == null) return;
+  /// [userId] should be obtained from context.currentUserId in presentation layer
+  Future<void> setViewingChat(String chatId, String userId) async {
+    if (userId.isEmpty) return;
 
     try {
       final ref = _viewingRef(userId);
@@ -200,9 +212,9 @@ class TypingService {
   }
 
   /// Clear viewing status when leaving a chat screen
-  Future<void> clearViewingChat() async {
-    final userId = _auth.currentUser?.uid;
-    if (userId == null) return;
+  /// [userId] should be obtained from context.currentUserId in presentation layer
+  Future<void> clearViewingChat(String userId) async {
+    if (userId.isEmpty) return;
 
     try {
       await _viewingRef(userId).remove();

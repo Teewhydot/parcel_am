@@ -3,11 +3,13 @@
 // ========================================================================
 
 const { onParcelAwaitingConfirmation, onParcelStatusUpdate } = require('./parcel-triggers');
-const { onChatMessageNotification, onChatPageUpdated } = require('./chat-triggers');
+const { onChatMessageCreated, onChatMessageNotification } = require('./chat-triggers');
 
 module.exports = {
   onParcelAwaitingConfirmation,
   onParcelStatusUpdate,
+  // New RTDB trigger for chat messages
+  onChatMessageCreated,
+  // Legacy alias (maps to onChatMessageCreated for backward compatibility)
   onChatMessageNotification,
-  onChatPageUpdated
 };

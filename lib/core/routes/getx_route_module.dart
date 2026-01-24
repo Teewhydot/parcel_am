@@ -19,6 +19,7 @@ import 'package:parcel_am/features/parcel_am_core/presentation/screens/create_pa
 import 'package:parcel_am/features/parcel_am_core/presentation/screens/profile_edit_screen.dart';
 import 'package:parcel_am/features/chat/presentation/screens/chats_list_screen.dart';
 import 'package:parcel_am/features/chat/presentation/screens/chat_screen.dart';
+import 'package:parcel_am/features/chat/presentation/screens/image_viewer_screen.dart';
 import 'package:parcel_am/features/notifications/presentation/screens/notifications_screen.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/screens/settings_screen.dart';
 import 'package:parcel_am/features/passkey/presentation/screens/passkey_management_screen.dart';
@@ -287,6 +288,17 @@ class GetXRouteModule {
       transition: _transition,
       transitionDuration: _transitionDuration,
       requiresKyc: false,
+    ),
+    // Image viewer for chat media
+    GetPage(
+      name: Routes.imageViewer,
+      page: () {
+        final args = Get.arguments as Map<String, dynamic>? ?? {};
+        final imageUrl = args['imageUrl'] as String? ?? '';
+        return ImageViewerScreen(imageUrl: imageUrl);
+      },
+      transition: Transition.fade,
+      transitionDuration: _transitionDuration,
     ),
     AuthGuard.createProtectedRoute(
       name: Routes.settings,

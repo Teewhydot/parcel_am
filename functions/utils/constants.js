@@ -8,7 +8,11 @@ const ENVIRONMENT = {
   GMAIL_PASSWORD: process.env.PASSWORD?.trim(),
   PAYSTACK_SECRET_KEY: process.env.PAYSTACK_SECRET_KEY?.trim(),
   PROJECT_ID: process.env.GOOGLE_CLOUD_PROJECT || process.env.GCLOUD_PROJECT,
+};
 
+// Firebase Realtime Database configuration
+const RTDB_CONFIG = {
+  DATABASE_URL: 'https://parcel-am-default-rtdb.europe-west1.firebasedatabase.app',
 };
 
 // Contact information configuration (can be updated remotely)
@@ -96,6 +100,7 @@ const NOTIFICATION_TYPE_MAP = {
 
 module.exports = {
   ENVIRONMENT,
+  RTDB_CONFIG,
   CONTACT_INFO,
   TRANSACTION_PREFIX_MAP,
   TRANSACTION_TYPES,
