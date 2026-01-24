@@ -128,17 +128,17 @@ class _LoginScreenState extends State<LoginScreen>
     super.dispose();
   }
 
-  void _login() {
+  void _login(BuildContext context) {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
-      _showError('Please enter your email and password');
+      context.showErrorMessage('Please fill in all fields');
       return;
     }
 
     if (!_isValidEmail(email)) {
-      _showError('Please enter a valid email address');
+      context.showErrorMessage('Please enter a valid email address');
       return;
     }
 
@@ -151,17 +151,17 @@ class _LoginScreenState extends State<LoginScreen>
     final displayName = _displayNameController.text.trim();
 
     if (email.isEmpty || password.isEmpty || displayName.isEmpty) {
-      _showError('Please fill in all fields');
+      context.showErrorMessage('Please fill in all fields');
       return;
     }
 
     if (!_isValidEmail(email)) {
-      _showError('Please enter a valid email address');
+      context.showErrorMessage('Please enter a valid email address');
       return;
     }
 
     if (password.length < 6) {
-      _showError('Password must be at least 6 characters');
+      context.showErrorMessage('Password must be at least 6 characters');
       return;
     }
 
@@ -176,12 +176,12 @@ class _LoginScreenState extends State<LoginScreen>
     final email = _resetEmailController.text.trim();
 
     if (email.isEmpty) {
-      _showError('Please enter your email address');
+      context.showErrorMessage('Please enter your email address');
       return;
     }
 
     if (!_isValidEmail(email)) {
-      _showError('Please enter a valid email address');
+      context.showErrorMessage('Please enter a valid email address');
       return;
     }
 
@@ -194,17 +194,6 @@ class _LoginScreenState extends State<LoginScreen>
 
   void _navigateToDashboard() {
     sl<NavigationService>().navigateAndReplace(Routes.home);
-  }
-
-  void _showError(String message) {
-    context.showErrorMessage(message);
-  }
-
-  void _showSuccess(String message) {
-    context.showSnackbar(
-      message: message,
-      color: AppColors.success,
-    );
   }
 
   void _togglePasswordResetView() {
@@ -423,7 +412,7 @@ class _LoginScreenState extends State<LoginScreen>
               ),
               AppSpacing.verticalSpacing(SpacingSize.lg),
               AppButton.primary(
-                onPressed: state.isLoading ? null : _login,
+                onPressed: state.isLoading ? null : () => _login(context),
                 fullWidth: true,
                 loading: state.isLoading,
                 child: AppText.bodyLarge(
@@ -448,7 +437,7 @@ class _LoginScreenState extends State<LoginScreen>
         if (passkeyState.isSuccess) {
           _navigateToDashboard();
         } else if (passkeyState.isError) {
-          _showError(passkeyState.errorMessage ?? 'Passkey authentication failed');
+          context.showErrorMessage(passkeyState.errorMessage ?? 'Passkey authentication failed');
         }
       },
       builder: (context, passkeyState) {
@@ -553,8 +542,9 @@ class _LoginScreenState extends State<LoginScreen>
     return BlocConsumer<AuthCubit, BaseState<AuthData>>(
       listener: (context, state) {
         if (state is SuccessState) {
-          _showSuccess(
-            'Password reset email sent! Check your inbox.',
+          context.showSnackbar(
+            color: AppColors.primary,
+            message: 'Password reset email sent successfully',
           );
           Future.delayed(const Duration(seconds: 2), () {
             if (mounted) {

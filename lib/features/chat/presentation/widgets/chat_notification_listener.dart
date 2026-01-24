@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../../../../core/utils/logger.dart';
+import '../../../../core/utils/logger.dart' show Logger, LogTag;
 import '../../../../injection_container.dart' as di;
 import '../../../notifications/services/notification_service.dart';
 import '../../domain/entities/chat.dart';
@@ -51,7 +51,6 @@ class _ChatNotificationListenerState extends State<ChatNotificationListener> {
   }
 
   void _startListening() {
-    // Subscribe to user's chats stream
     _chatsSubscription = _chatUseCase.repository
         .watchUserChats(widget.userId)
         .listen(_handleChatsUpdate);
@@ -75,15 +74,27 @@ class _ChatNotificationListenerState extends State<ChatNotificationListener> {
     // Skip if this is from the current user
     if (lastMessage.senderId == widget.userId) return;
 
-    // Skip if notification was already sent for this message
+    // Skip if notification was already sent (from Firestore flag)
     if (lastMessage.notificationSent) return;
 
-    // Show notification
+    // Try to show notification (will atomically claim it)
     _showNotificationForMessage(chat, lastMessage);
   }
 
   Future<void> _showNotificationForMessage(Chat chat, Message message) async {
     try {
+      // Atomically try to claim this notification
+      // Returns false if another instance already claimed it
+      final claimed = await _chatUseCase.repository.tryClaimNotification(
+        chat.id,
+        message.id,
+      );
+
+      if (!claimed) {
+        // Already claimed by another process/instance, skip
+        return;
+      }
+
       final notificationService = di.sl<NotificationService>();
 
       // Get sender name from chat participants
@@ -110,25 +121,20 @@ class _ChatNotificationListenerState extends State<ChatNotificationListener> {
         messageId: message.id,
         senderName: senderName,
         messagePreview: messagePreview,
+        userId: widget.userId,
         senderAvatar: message.senderAvatar,
       );
 
       if (shown) {
-        // Mark the message as notified in Firestore
-        await _chatUseCase.repository.markMessageNotificationSent(
-          chat.id,
-          message.id,
-        );
-
-        Logger.logBasic(
-          'ChatNotificationListener: Showed notification for message ${message.id}',
-          tag: 'ChatNotificationListener',
+        Logger.logSuccess(
+          'Notification shown for message ${message.id}',
+          tag: LogTag.notification,
         );
       }
     } catch (e) {
       Logger.logError(
-        'ChatNotificationListener: Failed to show notification - $e',
-        tag: 'ChatNotificationListener',
+        'Failed to show notification: $e',
+        tag: LogTag.notification,
       );
     }
   }

@@ -1,6 +1,27 @@
 import 'package:flutter/foundation.dart';
 import 'package:ansicolor/ansicolor.dart';
 
+/// Standard log tags for filtering in debug console.
+/// Usage: Logger.logBasic('message', tag: LogTag.auth);
+/// Filter in console: Search for "[Auth]" or "[Wallet]" etc.
+abstract class LogTag {
+  static const String auth = 'Auth';
+  static const String wallet = 'Wallet';
+  static const String chat = 'Chat';
+  static const String parcel = 'Parcel';
+  static const String notification = 'Notification';
+  static const String kyc = 'KYC';
+  static const String escrow = 'Escrow';
+  static const String network = 'Network';
+  static const String firebase = 'Firebase';
+  static const String bloc = 'Bloc';
+  static const String navigation = 'Navigation';
+  static const String storage = 'Storage';
+  static const String passkey = 'Passkey';
+  static const String totp = 'TOTP';
+  static const String withdrawal = 'Withdrawal';
+}
+
 enum ColorLogger {
   black,
   red,
@@ -40,28 +61,29 @@ enum ColorLogger {
 }
 
 class Logger {
+  static String _formatTag(String? tag) => tag != null ? '[$tag]' : '[App]';
+
   static void logBasic(String message, {String? tag}) {
     if (kDebugMode) {
-      ColorLogger.blue.log("[ 📌📌📌 ${tag ?? 'No tag'}: $message]");
+      ColorLogger.blue.log("📌 ${_formatTag(tag)} $message");
     }
   }
 
   static void logError(String message, {String? tag}) {
     if (kDebugMode) {
-      ColorLogger.red.log("[ 🚨🚨🚨 ${tag ?? 'No tag'}: $message]");
+      ColorLogger.red.log("🚨 ${_formatTag(tag)} $message");
     }
   }
 
   static void logSuccess(String message, {String? tag}) {
     if (kDebugMode) {
-      ColorLogger.green.log("[✅✅✅ ${tag ?? 'No tag'}: $message]");
+      ColorLogger.green.log("✅ ${_formatTag(tag)} $message");
     }
   }
 
   static void logWarning(String message, {String? tag}) {
     if (kDebugMode) {
-      ColorLogger.yellow.log("""
-        [⚡⚡⚡ ${tag ?? 'No tag'} :$message]""");
+      ColorLogger.yellow.log("⚡ ${_formatTag(tag)} $message");
     }
   }
 }

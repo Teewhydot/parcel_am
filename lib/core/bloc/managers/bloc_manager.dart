@@ -3,9 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:loading_overlay/loading_overlay.dart';
 import 'package:parcel_am/core/theme/app_colors.dart';
+import 'package:parcel_am/core/helpers/user_extensions.dart';
 
 import '../../../core/constants/app_constants.dart';
-import '../../../core/utils/app_utils.dart';
 import '../../../core/utils/logger.dart';
 import '../base/base_state.dart';
 
@@ -100,6 +100,16 @@ class BlocManager<T extends BlocBase<S>, S extends BaseState>
     return BlocProvider<T>.value(
       value: bloc,
       child: BlocConsumer<T, S>(
+        listenWhen: (previous, current) {
+          // Only listen when transitioning TO error/success/loaded states
+          // This prevents duplicate notifications on widget rebuilds
+          if (current.isError && !previous.isError) return true;
+          if (current.isSuccess && !previous.isSuccess) return true;
+          if (current is LoadedState && previous is! LoadedState) return true;
+          // Also listen for custom listener if state actually changed
+          if (listener != null && previous != current) return true;
+          return false;
+        },
         buildWhen: (previous, current) {
           // Always rebuild for initial load, loading states, errors, and empty states
           if (previous is InitialState ||
@@ -155,7 +165,7 @@ class BlocManager<T extends BlocBase<S>, S extends BaseState>
             _logFirestoreError(errorMessage);
 
             if (showResultErrorNotifications) {
-              DFoodUtils.showSnackBar(errorMessage, AppColors.error);
+              context.showErrorMessage(errorMessage);
             }
             if (onError != null) {
               onError!(context, state);
@@ -169,9 +179,9 @@ class BlocManager<T extends BlocBase<S>, S extends BaseState>
               onSuccess!(context, state);
             }
             if (showResultSuccessNotifications) {
-              DFoodUtils.showSnackBar(
-                state.successMessage ?? AppConstants.defaultSuccessMessage,
-              AppColors.primaryLight,
+              context.showSnackbar(
+                message: state.successMessage ?? AppConstants.defaultSuccessMessage,
+                color: AppColors.success,
               );
             }
           }
@@ -182,9 +192,9 @@ class BlocManager<T extends BlocBase<S>, S extends BaseState>
               onSuccess!(context, state);
             }
             if (showResultSuccessNotifications) {
-              DFoodUtils.showSnackBar(
-                state.successMessage ?? AppConstants.defaultSuccessMessage,
-                AppColors.primaryLight,
+              context.showSnackbar(
+                message: state.successMessage ?? AppConstants.defaultSuccessMessage,
+                color: AppColors.success,
               );
             }
           }

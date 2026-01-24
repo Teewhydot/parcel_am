@@ -7,7 +7,7 @@ import '../../domain/entities/message_type.dart';
 import '../models/message_model.dart';
 import '../models/message_page_model.dart';
 import '../models/chat_model.dart';
-import '../../../../core/utils/logger.dart';
+import '../../../../core/utils/logger.dart' show Logger, LogTag;
 import '../../../file_upload/data/remote/data_sources/file_upload.dart';
 
 abstract class ChatRemoteDataSource {
@@ -43,6 +43,11 @@ abstract class ChatRemoteDataSource {
   });
 
   Future<void> markMessageNotificationSent(String chatId, String messageId);
+
+  /// Atomically check if notification can be claimed and mark it as sent.
+  /// Returns true if notification should be shown (was not previously sent).
+  /// Returns false if notification was already sent (skip showing).
+  Future<bool> tryClaimNotification(String chatId, String messageId);
 }
 
 class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
@@ -316,8 +321,10 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     String messageId,
     String userId,
   ) async {
+    // Use Timestamp.now() instead of FieldValue.serverTimestamp()
+    // because serverTimestamp is not supported inside arrays
     await _updateMessageInPages(chatId, messageId, {
-      'readBy.$userId': FieldValue.serverTimestamp(),
+      'readBy.$userId': Timestamp.now(),
       'status': MessageStatus.read.name,
     });
   }
@@ -706,8 +713,58 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     } catch (e) {
       Logger.logError(
         'markMessageNotificationSent failed: $e',
-        tag: 'ChatDataSource',
+        tag: LogTag.notification,
       );
+    }
+  }
+
+  @override
+  Future<bool> tryClaimNotification(
+    String chatId,
+    String messageId,
+  ) async {
+    try {
+      final chatRef = firestore.collection('chats').doc(chatId);
+
+      // Use transaction to atomically check and set notificationSent
+      final claimed = await firestore.runTransaction<bool>((transaction) async {
+        final chatDoc = await transaction.get(chatRef);
+
+        if (!chatDoc.exists) return false;
+
+        final data = chatDoc.data();
+        if (data == null || data['lastMessage'] == null) return false;
+
+        final lastMessage = data['lastMessage'] as Map<String, dynamic>;
+
+        // Check if this is the message we're looking for
+        if (lastMessage['id'] != messageId) return false;
+
+        // Check if already notified
+        if (lastMessage['notificationSent'] == true) return false;
+
+        // Claim the notification by setting the flag
+        transaction.update(chatRef, {
+          'lastMessage.notificationSent': true,
+        });
+
+        return true;
+      });
+
+      if (claimed) {
+        // Also update in paged structure (fire-and-forget, main flag is on chat doc)
+        _updateMessageInPages(chatId, messageId, {
+          'notificationSent': true,
+        }).catchError((_) {});
+      }
+
+      return claimed;
+    } catch (e) {
+      Logger.logError(
+        'tryClaimNotification failed: $e',
+        tag: LogTag.notification,
+      );
+      return false;
     }
   }
 }

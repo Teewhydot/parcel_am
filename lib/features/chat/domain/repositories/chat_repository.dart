@@ -44,4 +44,7 @@ abstract class ChatRepository {
   Stream<Either<Failure, Chat>> getChatStream(String chatId);
   Future<Either<Failure, void>> deleteMessage(String messageId);
   Future<void> markMessageNotificationSent(String chatId, String messageId);
+
+  /// Atomically claim a notification. Returns true if should show, false if already claimed.
+  Future<bool> tryClaimNotification(String chatId, String messageId);
 }

@@ -56,8 +56,13 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     _loadCurrentUser();
     _initializeChat();
     _setupTypingService();
+    _setupViewingStatus();
     _requestNotificationPermissionsOnFirstLaunch();
-    di.sl<NotificationService>().setCurrentChatId(widget.chatId);
+  }
+
+  /// Set viewing status in RTDB for notification suppression
+  void _setupViewingStatus() {
+    _typingService.setViewingChat(widget.chatId);
   }
 
   void _loadCurrentUser() {
@@ -150,8 +155,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     _updateLastSeen();
     // Clear typing status when leaving chat
     _typingService.clearTypingStatus(widget.chatId);
-    // Clear current chat ID so notifications can be shown again
-    di.sl<NotificationService>().setCurrentChatId(null);
+    // Clear viewing status in RTDB so notifications can be shown again
+    _typingService.clearViewingChat();
     super.dispose();
   }
 
@@ -160,8 +165,12 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
       _updateLastSeen();
+      // Clear viewing status when app goes to background
+      _typingService.clearViewingChat();
     } else if (state == AppLifecycleState.resumed) {
       _updateLastSeen();
+      // Restore viewing status when app comes back to foreground
+      _typingService.setViewingChat(widget.chatId);
     }
   }
 

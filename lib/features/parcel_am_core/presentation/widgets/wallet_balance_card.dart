@@ -1,5 +1,7 @@
+import 'package:dartz/dartz.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/errors/failures.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/widgets/app_card.dart';
@@ -8,59 +10,44 @@ import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_icon.dart';
 import '../../../../core/widgets/app_container.dart';
 import '../../../../core/widgets/app_button.dart';
-import '../../../../core/bloc/base/base_state.dart';
+import '../../../parcel_am_core/domain/entities/wallet_entity.dart';
 import '../bloc/wallet/wallet_cubit.dart';
-import '../bloc/wallet/wallet_data.dart';
 import '../bloc/auth/auth_cubit.dart';
 
-class WalletBalanceCard extends StatefulWidget {
+class WalletBalanceCard extends StatelessWidget {
   const WalletBalanceCard({super.key});
-
-  @override
-  State<WalletBalanceCard> createState() => _WalletBalanceCardState();
-}
-
-class _WalletBalanceCardState extends State<WalletBalanceCard> {
-  bool _initialized = false;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initializeWallet();
-    });
-  }
-
-  void _initializeWallet() {
-    if (_initialized) return;
-
-    final authState = context.read<AuthCubit>().state;
-    final userId = authState.data?.user?.uid;
-
-    if (userId != null && userId.isNotEmpty) {
-      final walletState = context.read<WalletCubit>().state;
-      // Only initialize if wallet is in initial state
-      if (walletState.isInitial) {
-        _initialized = true;
-        context.read<WalletCubit>().start(userId);
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     final userId = context.read<AuthCubit>().state.data?.user?.uid ?? '';
 
-    return BlocBuilder<WalletCubit, BaseState<WalletData>>(
-      builder: (context, state) {
-        if (state.isLoading && !state.hasData) {
+    if (userId.isEmpty) {
+      return _buildErrorCard(context, 'User not authenticated', userId);
+    }
+
+    return StreamBuilder<Either<Failure, WalletEntity>>(
+      stream: context.read<WalletCubit>().watchBalance(userId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
           return _buildLoadingCard();
-        } else if (state.hasData) {
-          return _buildBalanceCard(context, state.data!, userId);
-        } else if (state.isError) {
-          return _buildErrorCard(context, state.errorMessage ?? 'Error loading wallet', userId);
         }
-        return _buildLoadingCard();
+
+        if (snapshot.hasError) {
+          return _buildErrorCard(
+            context,
+            snapshot.error.toString(),
+            userId,
+          );
+        }
+
+        if (!snapshot.hasData) {
+          return _buildLoadingCard();
+        }
+
+        return snapshot.data!.fold(
+          (failure) => _buildErrorCard(context, failure.failureMessage, userId),
+          (wallet) => _buildBalanceCard(context, wallet, userId),
+        );
       },
     );
   }
@@ -95,7 +82,7 @@ class _WalletBalanceCardState extends State<WalletBalanceCard> {
     );
   }
 
-  Widget _buildBalanceCard(BuildContext context, WalletData data, String userId) {
+  Widget _buildBalanceCard(BuildContext context, WalletEntity wallet, String userId) {
     return AppCard.elevated(
       padding: AppSpacing.paddingXL,
       child: Column(
@@ -122,7 +109,7 @@ class _WalletBalanceCardState extends State<WalletBalanceCard> {
               Expanded(
                 child: _BalanceItem(
                   label: 'Available',
-                  amount: data.availableBalance,
+                  amount: wallet.availableBalance,
                   color: AppColors.success,
                   icon: Icons.check_circle,
                 ),
@@ -137,7 +124,7 @@ class _WalletBalanceCardState extends State<WalletBalanceCard> {
               Expanded(
                 child: _BalanceItem(
                   label: 'Pending',
-                  amount: data.pendingBalance,
+                  amount: wallet.heldBalance,
                   color: AppColors.accent,
                   icon: Icons.pending,
                 ),
@@ -159,7 +146,7 @@ class _WalletBalanceCardState extends State<WalletBalanceCard> {
                   color: AppColors.primary,
                 ),
                 AppText.titleLarge(
-                  '₦${_formatAmount(data.balance)}',
+                  '₦${_formatAmount(wallet.availableBalance + wallet.heldBalance)}',
                   fontWeight: FontWeight.bold,
                   color: AppColors.primary,
                 ),
@@ -225,7 +212,6 @@ class _WalletBalanceCardState extends State<WalletBalanceCard> {
           (Match m) => '${m[1]},',
         );
   }
-
 }
 
 class _BalanceItem extends StatelessWidget {

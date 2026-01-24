@@ -5,10 +5,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:parcel_am/app/bloc_providers.dart';
-import 'package:parcel_am/core/theme/app_colors.dart';
-import 'package:parcel_am/core/theme/app_font_size.dart';
-import 'package:parcel_am/core/widgets/app_text.dart';
-import 'package:parcel_am/core/widgets/app_button.dart';
 import 'package:provider/provider.dart';
 import 'package:parcel_am/app/init.dart';
 import 'package:parcel_am/features/notifications/services/notification_service.dart';
@@ -20,7 +16,6 @@ import 'package:parcel_am/injection_container.dart' as di;
 import 'core/routes/getx_route_module.dart';
 import 'core/routes/routes.dart';
 import 'core/theme/app_theme.dart';
-import 'core/widgets/app_spacing.dart';
 import 'features/parcel_am_core/data/providers/theme_provider.dart';
 
 void main() async {
@@ -115,6 +110,7 @@ class FirebaseErrorApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Note: Cannot use AppSpacing/AppText here as ScreenUtil is not initialized
     return MaterialApp(
       title: 'Parcel AM - Firebase Error',
       home: Scaffold(
@@ -127,29 +123,29 @@ class FirebaseErrorApp extends StatelessWidget {
                 const Icon(
                   Icons.error_outline,
                   size: 80,
-                  color: AppColors.error,
+                  color: Colors.red,
                 ),
-                AppSpacing.verticalSpacing(SpacingSize.xl),
-                AppText(
+                const SizedBox(height: 24),
+                const Text(
                   'Firebase Initialization Failed',
-                  variant: TextVariant.headlineSmall,
-                  fontSize: AppFontSize.headlineSmall,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.error,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red,
+                  ),
                 ),
-                AppSpacing.verticalSpacing(SpacingSize.xl),
-                AppText(
+                const SizedBox(height: 24),
+                Text(
                   'Please check your Firebase configuration:\n\n$error',
-                  variant: TextVariant.bodyLarge,
-                  fontSize: AppFontSize.bodyLarge,
+                  style: const TextStyle(fontSize: 14),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 30),
-                AppButton.primary(
+                ElevatedButton(
                   onPressed: () {
-                    // Restart app
+                    // Cannot restart app programmatically - user must restart manually
                   },
-                  child: AppText.bodyMedium('Retry'),
+                  child: const Text('Restart App Manually'),
                 ),
               ],
             ),

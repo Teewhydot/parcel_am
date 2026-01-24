@@ -219,4 +219,9 @@ class ChatRepositoryImpl implements ChatRepository {
   Future<void> markMessageNotificationSent(String chatId, String messageId) async {
     await _remoteDataSource.markMessageNotificationSent(chatId, messageId);
   }
+
+  @override
+  Future<bool> tryClaimNotification(String chatId, String messageId) async {
+    return _remoteDataSource.tryClaimNotification(chatId, messageId);
+  }
 }

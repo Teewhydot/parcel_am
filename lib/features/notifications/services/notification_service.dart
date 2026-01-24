@@ -13,9 +13,11 @@ import '../data/datasources/notification_remote_datasource.dart';
 import '../data/models/notification_model.dart';
 import '../../../core/routes/routes.dart';
 import '../../../core/services/navigation_service/nav_config.dart';
+import '../../../core/utils/logger.dart' show Logger, LogTag;
 import '../domain/repositories/fcm_repository.dart';
 import '../domain/repositories/notification_settings_repository.dart';
 import '../domain/entities/notification_settings_entity.dart';
+import '../../chat/services/typing_service.dart';
 
 /// Top-level background message handler
 /// Must be a top-level function for Firebase Messaging background handler
@@ -202,9 +204,6 @@ class NotificationService {
   StreamSubscription<String>? _tokenRefreshSubscription;
   StreamSubscription<RemoteMessage>? _foregroundMessageSubscription;
 
-  /// Currently viewed chat ID - used to suppress notifications for active chat
-  String? _currentChatId;
-
   NotificationService({
     required this.repository,
     required this.localNotifications,
@@ -236,13 +235,6 @@ class NotificationService {
 
   bool get isInitialized => _isInitialized;
   String? get currentToken => _currentToken;
-  String? get currentChatId => _currentChatId;
-
-  /// Set the current chat ID when user enters a chat screen
-  /// Pass null when leaving the chat screen
-  void setCurrentChatId(String? chatId) {
-    _currentChatId = chatId;
-  }
 
   /// Get user's notification settings
   /// Returns default settings if user is not logged in or settings fetch fails
@@ -287,16 +279,21 @@ class NotificationService {
   /// Called from main.dart after Firebase initialization, before runApp
   Future<void> initialize() async {
     if (_isInitialized) {
+      Logger.logBasic('NotificationService already initialized, skipping', tag: LogTag.notification);
       return;
     }
+
+    Logger.logBasic('Initializing NotificationService...', tag: LogTag.notification);
 
     try {
       // Request notification permissions for iOS/web
       if (Platform.isIOS || kIsWeb) {
+        Logger.logBasic('Requesting notification permissions for ${Platform.isIOS ? 'iOS' : 'Web'}', tag: LogTag.notification);
         await requestPermissions();
       }
 
       // Initialize flutter_local_notifications with platform-specific settings
+      Logger.logBasic('Initializing local notifications', tag: LogTag.notification);
       await _initializeLocalNotifications();
 
       // Configure Android notification channels
@@ -307,6 +304,7 @@ class NotificationService {
 
       // Subscribe to token refresh first (this will capture the token when it becomes available)
       _tokenRefreshSubscription = repository.onTokenRefresh.listen((newToken) {
+        Logger.logBasic('FCM token refreshed', tag: LogTag.notification);
         _currentToken = newToken;
         storeToken(newToken);
       });
@@ -314,7 +312,10 @@ class NotificationService {
       // Get and store FCM token (may be null on iOS initially if APNS token not ready)
       final token = await getToken();
       if (token != null) {
+        Logger.logSuccess('FCM token obtained: ${token.substring(0, 20)}...', tag: LogTag.notification);
         await storeToken(token);
+      } else {
+        Logger.logWarning('FCM token is null (APNS may not be ready on iOS)', tag: LogTag.notification);
       }
 
       // Subscribe to foreground messages
@@ -323,7 +324,9 @@ class NotificationService {
       );
 
       _isInitialized = true;
+      Logger.logSuccess('NotificationService initialized successfully', tag: LogTag.notification);
     } catch (e) {
+      Logger.logError('Failed to initialize NotificationService: $e', tag: LogTag.notification);
       rethrow;
     }
   }
@@ -446,9 +449,13 @@ class NotificationService {
   ///
   /// This prevents duplicate chat notifications while ensuring escrow updates are shown.
   Future<void> handleForegroundMessage(RemoteMessage message) async {
+    Logger.logBasic('Received foreground message: ${message.messageId}', tag: LogTag.notification);
     try {
       final userId = firebaseAuth.currentUser?.uid;
-      if (userId == null) return;
+      if (userId == null) {
+        Logger.logWarning('No user logged in, ignoring foreground message', tag: LogTag.notification);
+        return;
+      }
 
       // Extract notification data
       final notification = message.notification;
@@ -462,6 +469,8 @@ class NotificationService {
       final travelerName = data['travelerName'] as String?;
       final type = data['type'] as String?;
 
+      Logger.logBasic('Foreground message type: $type, title: $title', tag: LogTag.notification);
+
       // Only skip chat_message type - these are handled by ChatNotificationListener.
       // Show all other notifications (escrow, parcel updates, etc.) in foreground.
       final isChatMessage = type == 'chat_message';
@@ -469,6 +478,7 @@ class NotificationService {
       if (!isChatMessage) {
         // Check user's notification settings before displaying
         final shouldShow = await _shouldShowNotification(type);
+        Logger.logBasic('Should show notification for type $type: $shouldShow', tag: LogTag.notification);
         if (shouldShow) {
           // Display local notification for non-chat messages (escrow, parcel updates, etc.)
           await _displayLocalNotification(
@@ -480,7 +490,10 @@ class NotificationService {
             travelerId: travelerId,
             travelerName: travelerName,
           );
+          Logger.logSuccess('Displayed local notification: $title', tag: LogTag.notification);
         }
+      } else {
+        Logger.logBasic('Skipping chat message notification (handled by ChatNotificationListener)', tag: LogTag.notification);
       }
 
       // Save notification to Firestore for in-app notification center (all types)
@@ -489,11 +502,12 @@ class NotificationService {
         userId,
       );
       await remoteDataSource.saveNotification(notificationModel);
+      Logger.logBasic('Saved notification to Firestore', tag: LogTag.notification);
 
       // Update badge numCount
       await _updateBadgenumCount();
     } catch (e) {
-      // Silent catch
+      Logger.logError('Error handling foreground message: $e', tag: LogTag.notification);
     }
   }
 
@@ -613,9 +627,11 @@ class NotificationService {
   /// Handle notification tap
   /// Parse notification payload JSON and navigate to appropriate screen
   Future<void> handleNotificationTap(NotificationResponse response) async {
+    Logger.logBasic('Notification tapped', tag: LogTag.notification);
     try {
       final payload = response.payload;
       if (payload == null || payload.isEmpty) {
+        Logger.logWarning('Notification tap with empty payload', tag: LogTag.notification);
         return;
       }
 
@@ -624,6 +640,8 @@ class NotificationService {
       final chatId = data['chatId'] as String?;
       final parcelId = data['parcelId'] as String?;
       final notificationId = data['notificationId'] as String?;
+
+      Logger.logBasic('Notification payload: chatId=$chatId, parcelId=$parcelId', tag: LogTag.notification);
 
       // Mark notification as read if notificationId exists
       if (notificationId != null) {
@@ -635,12 +653,14 @@ class NotificationService {
       // Navigate to appropriate screen based on notification type
       // Priority: parcelId > chatId
       if (parcelId != null) {
+        Logger.logBasic('Navigating to request details: $parcelId', tag: LogTag.notification);
         // Navigate to RequestDetailsScreen with parcelId parameter
         await navigationService.navigateTo(
           Routes.requestDetails,
           arguments: {'parcelId': parcelId},
         );
       } else if (chatId != null) {
+        Logger.logBasic('Navigating to chat: $chatId', tag: LogTag.notification);
         // Navigate to ChatScreen with chatId parameter
         await navigationService.navigateTo(
           Routes.chat,
@@ -648,16 +668,23 @@ class NotificationService {
         );
       }
     } catch (e) {
-      // Silent catch
+      Logger.logError('Error handling notification tap: $e', tag: LogTag.notification);
     }
   }
 
   /// Request notification permissions
   Future<AuthorizationStatus> requestPermissions() async {
+    Logger.logBasic('Requesting notification permissions...', tag: LogTag.notification);
     final result = await repository.requestPermissions();
     return result.fold(
-      (failure) => AuthorizationStatus.denied,
-      (status) => status,
+      (failure) {
+        Logger.logError('Permission request failed: ${failure.failureMessage}', tag: LogTag.notification);
+        return AuthorizationStatus.denied;
+      },
+      (status) {
+        Logger.logSuccess('Permission status: $status', tag: LogTag.notification);
+        return status;
+      },
     );
   }
 
@@ -712,21 +739,28 @@ class NotificationService {
 
   /// Show local notification for a chat message
   /// Returns true if notification was shown, false if suppressed
+  /// [userId] - The current user's ID (from context.currentUserId)
   Future<bool> showChatMessageNotification({
     required String chatId,
     required String messageId,
     required String senderName,
     required String messagePreview,
+    required String userId,
     String? senderAvatar,
   }) async {
-    // Skip if user is currently viewing this chat
-    if (_currentChatId == chatId) {
+    Logger.logBasic('showChatMessageNotification: chatId=$chatId, sender=$senderName', tag: LogTag.notification);
+
+    // Check if user is currently viewing this chat using RTDB (more reliable than local state)
+    final isViewing = await TypingService().isUserViewingChat(userId, chatId);
+    if (isViewing) {
+      Logger.logBasic('Skipping notification - user is viewing this chat (RTDB)', tag: LogTag.notification);
       return false;
     }
 
     // Check user's notification settings for chat messages
     final shouldShow = await _shouldShowNotification('chat_message');
     if (!shouldShow) {
+      Logger.logBasic('Skipping notification - disabled in settings', tag: LogTag.notification);
       return false;
     }
 
@@ -768,8 +802,10 @@ class NotificationService {
         payload: payload,
       );
 
+      Logger.logSuccess('Chat notification displayed: $senderName', tag: LogTag.notification);
       return true;
     } catch (e) {
+      Logger.logError('Failed to show chat notification: $e', tag: LogTag.notification);
       return false;
     }
   }
