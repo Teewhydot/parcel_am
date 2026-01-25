@@ -133,24 +133,16 @@ class WithdrawalRemoteDataSourceImpl
 
   @override
   Future<WithdrawalOrderModel> getWithdrawalOrder(String withdrawalId) async {
-    try {
-      final doc = await _firestore
-          .collection('withdrawal_orders')
-          .doc(withdrawalId)
-          .get();
+    final doc = await _firestore
+        .collection('withdrawal_orders')
+        .doc(withdrawalId)
+        .get();
 
-      if (!doc.exists) {
-        throw Exception('Withdrawal order not found');
-      }
-
-      return WithdrawalOrderModel.fromFirestore(doc);
-    } on FirebaseException catch (e) {
-      Logger.logError('Firestore error fetching withdrawal order: $e');
-      throw ServerException();
-    } catch (e) {
-      Logger.logError('Error fetching withdrawal order: $e');
-      rethrow;
+    if (!doc.exists) {
+      throw const NotFoundException('Withdrawal order not found');
     }
+
+    return WithdrawalOrderModel.fromFirestore(doc);
   }
 
   @override
@@ -161,7 +153,7 @@ class WithdrawalRemoteDataSourceImpl
         .snapshots()
         .map((doc) {
       if (!doc.exists) {
-        throw Exception('Withdrawal order not found');
+        throw const NotFoundException('Withdrawal order not found');
       }
       return WithdrawalOrderModel.fromFirestore(doc);
     });
@@ -173,28 +165,20 @@ class WithdrawalRemoteDataSourceImpl
     int limit = 20,
     DocumentSnapshot? startAfter,
   }) async {
-    try {
-      Query query = _firestore
-          .collection('withdrawal_orders')
-          .where('userId', isEqualTo: userId)
-          .orderBy('createdAt', descending: true)
-          .limit(limit);
+    Query query = _firestore
+        .collection('withdrawal_orders')
+        .where('userId', isEqualTo: userId)
+        .orderBy('createdAt', descending: true)
+        .limit(limit);
 
-      if (startAfter != null) {
-        query = query.startAfterDocument(startAfter);
-      }
-
-      final querySnapshot = await query.get();
-
-      return querySnapshot.docs
-          .map((doc) => WithdrawalOrderModel.fromFirestore(doc))
-          .toList();
-    } on FirebaseException catch (e) {
-      Logger.logError('Firestore error fetching withdrawal history: $e');
-      throw ServerException();
-    } catch (e) {
-      Logger.logError('Error fetching withdrawal history: $e');
-      throw ServerException();
+    if (startAfter != null) {
+      query = query.startAfterDocument(startAfter);
     }
+
+    final querySnapshot = await query.get();
+
+    return querySnapshot.docs
+        .map((doc) => WithdrawalOrderModel.fromFirestore(doc))
+        .toList();
   }
 }

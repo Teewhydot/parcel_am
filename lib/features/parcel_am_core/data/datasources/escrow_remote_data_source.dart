@@ -33,54 +33,46 @@ class EscrowRemoteDataSourceImpl implements EscrowRemoteDataSource {
 
   @override
   Stream<EscrowModel> watchEscrowStatus(String escrowId) {
-    try {
-      return firestore
-          .collection('escrows')
-          .doc(escrowId)
-          .snapshots()
-          .handleError((error) {
-        Logger.logError('Firestore Error (watchEscrowStatus): $error', tag: 'EscrowRemoteDataSource');
-        if (error.toString().contains('index')) {
-          Logger.logError('INDEX REQUIRED: Check Firebase Console for index requirements', tag: 'EscrowRemoteDataSource');
-        }
-      })
-          .map((snapshot) {
-        if (!snapshot.exists) {
-          throw ServerException();
-        }
-        return EscrowModel.fromFirestore(snapshot);
-      });
-    } catch (e) {
-      throw ServerException();
-    }
+    return firestore
+        .collection('escrows')
+        .doc(escrowId)
+        .snapshots()
+        .handleError((error) {
+      Logger.logError('Firestore Error (watchEscrowStatus): $error', tag: 'EscrowRemoteDataSource');
+      if (error.toString().contains('index')) {
+        Logger.logError('INDEX REQUIRED: Check Firebase Console for index requirements', tag: 'EscrowRemoteDataSource');
+      }
+    })
+        .map((snapshot) {
+      if (!snapshot.exists) {
+        throw const NotFoundException('Escrow not found');
+      }
+      return EscrowModel.fromFirestore(snapshot);
+    });
   }
 
   @override
   Stream<EscrowModel?> watchEscrowByParcel(String parcelId) {
-    try {
-      return firestore
-          .collection('escrows')
-          .where('parcelId', isEqualTo: parcelId)
-          .limit(1)
-          .snapshots()
-          .handleError((error) {
-        Logger.logError('Firestore Error (watchEscrowByParcel): $error', tag: 'EscrowRemoteDataSource');
-        if (error.toString().contains('index')) {
-          Logger.logError('INDEX REQUIRED: Create a composite index for:', tag: 'EscrowRemoteDataSource');
-          Logger.logError('   Collection: escrows', tag: 'EscrowRemoteDataSource');
-          Logger.logError('   Fields: parcelId (Ascending)', tag: 'EscrowRemoteDataSource');
-          Logger.logError('   Or visit the Firebase Console to create the index automatically.', tag: 'EscrowRemoteDataSource');
-        }
-      })
-          .map((snapshot) {
-        if (snapshot.docs.isEmpty) {
-          return null;
-        }
-        return EscrowModel.fromFirestore(snapshot.docs.first);
-      });
-    } catch (e) {
-      throw ServerException();
-    }
+    return firestore
+        .collection('escrows')
+        .where('parcelId', isEqualTo: parcelId)
+        .limit(1)
+        .snapshots()
+        .handleError((error) {
+      Logger.logError('Firestore Error (watchEscrowByParcel): $error', tag: 'EscrowRemoteDataSource');
+      if (error.toString().contains('index')) {
+        Logger.logError('INDEX REQUIRED: Create a composite index for:', tag: 'EscrowRemoteDataSource');
+        Logger.logError('   Collection: escrows', tag: 'EscrowRemoteDataSource');
+        Logger.logError('   Fields: parcelId (Ascending)', tag: 'EscrowRemoteDataSource');
+        Logger.logError('   Or visit the Firebase Console to create the index automatically.', tag: 'EscrowRemoteDataSource');
+      }
+    })
+        .map((snapshot) {
+      if (snapshot.docs.isEmpty) {
+        return null;
+      }
+      return EscrowModel.fromFirestore(snapshot.docs.first);
+    });
   }
 
   @override
@@ -91,29 +83,23 @@ class EscrowRemoteDataSourceImpl implements EscrowRemoteDataSource {
     double amount,
     String currency,
   ) async {
-    try {
-      final escrowRef = firestore.collection('escrows').doc();
+    final escrowRef = firestore.collection('escrows').doc();
 
-      final escrowData = {
-        'parcelId': parcelId,
-        'senderId': senderId,
-        'travelerId': travelerId,
-        'amount': amount,
-        'currency': currency,
-        'status': 'pending',
-        'createdAt': FieldValue.serverTimestamp(),
-        'metadata': {},
-      };
+    final escrowData = {
+      'parcelId': parcelId,
+      'senderId': senderId,
+      'travelerId': travelerId,
+      'amount': amount,
+      'currency': currency,
+      'status': 'pending',
+      'createdAt': FieldValue.serverTimestamp(),
+      'metadata': {},
+    };
 
-      await escrowRef.set(escrowData);
+    await escrowRef.set(escrowData);
 
-      final createdDoc = await escrowRef.get();
-      return EscrowModel.fromFirestore(createdDoc);
-    } on FirebaseException {
-      throw ServerException();
-    } catch (e) {
-      throw ServerException();
-    }
+    final createdDoc = await escrowRef.get();
+    return EscrowModel.fromFirestore(createdDoc);
   }
 
   @override
@@ -121,32 +107,26 @@ class EscrowRemoteDataSourceImpl implements EscrowRemoteDataSource {
     String escrowId,
     EscrowStatus status,
   ) async {
-    try {
-      final docRef = firestore.collection('escrows').doc(escrowId);
+    final docRef = firestore.collection('escrows').doc(escrowId);
 
-      final updateData = {
-        'status': status.name,
-        'updatedAt': FieldValue.serverTimestamp(),
-      };
+    final updateData = {
+      'status': status.name,
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
 
-      if (status == EscrowStatus.held) {
-        updateData['heldAt'] = FieldValue.serverTimestamp();
-      } else if (status == EscrowStatus.released) {
-        updateData['releasedAt'] = FieldValue.serverTimestamp();
-      }
-
-      await docRef.update(updateData);
-
-      final updatedDoc = await docRef.get();
-      if (!updatedDoc.exists) {
-        throw ServerException();
-      }
-      return EscrowModel.fromFirestore(updatedDoc);
-    } on FirebaseException {
-      throw ServerException();
-    } catch (e) {
-      throw ServerException();
+    if (status == EscrowStatus.held) {
+      updateData['heldAt'] = FieldValue.serverTimestamp();
+    } else if (status == EscrowStatus.released) {
+      updateData['releasedAt'] = FieldValue.serverTimestamp();
     }
+
+    await docRef.update(updateData);
+
+    final updatedDoc = await docRef.get();
+    if (!updatedDoc.exists) {
+      throw const NotFoundException('Escrow not found after update');
+    }
+    return EscrowModel.fromFirestore(updatedDoc);
   }
 
   @override
@@ -161,78 +141,60 @@ class EscrowRemoteDataSourceImpl implements EscrowRemoteDataSource {
 
   @override
   Future<EscrowModel> cancelEscrow(String escrowId, String reason) async {
-    try {
-      final docRef = firestore.collection('escrows').doc(escrowId);
+    final docRef = firestore.collection('escrows').doc(escrowId);
 
-      final updateData = {
-        'status': EscrowStatus.cancelled.name,
-        'cancelReason': reason,
-        'cancelledAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      };
+    final updateData = {
+      'status': EscrowStatus.cancelled.name,
+      'cancelReason': reason,
+      'cancelledAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
 
-      await docRef.update(updateData);
+    await docRef.update(updateData);
 
-      final updatedDoc = await docRef.get();
-      if (!updatedDoc.exists) {
-        throw ServerException();
-      }
-      return EscrowModel.fromFirestore(updatedDoc);
-    } on FirebaseException {
-      throw ServerException();
-    } catch (e) {
-      throw ServerException();
+    final updatedDoc = await docRef.get();
+    if (!updatedDoc.exists) {
+      throw const NotFoundException('Escrow not found after cancellation');
     }
+    return EscrowModel.fromFirestore(updatedDoc);
   }
 
   @override
   Future<EscrowModel> getEscrow(String escrowId) async {
-    try {
-      final doc = await firestore.collection('escrows').doc(escrowId).get();
+    final doc = await firestore.collection('escrows').doc(escrowId).get();
 
-      if (!doc.exists) {
-        throw ServerException();
-      }
-
-      return EscrowModel.fromFirestore(doc);
-    } on FirebaseException {
-      throw ServerException();
-    } catch (e) {
-      throw ServerException();
+    if (!doc.exists) {
+      throw const NotFoundException('Escrow not found');
     }
+
+    return EscrowModel.fromFirestore(doc);
   }
 
   @override
   Future<List<EscrowModel>> getUserEscrows(String userId) async {
-    try {
-      final snapshot = await firestore
-          .collection('escrows')
-          .where('senderId', isEqualTo: userId)
-          .orderBy('createdAt', descending: true)
-          .get();
+    final snapshot = await firestore
+        .collection('escrows')
+        .where('senderId', isEqualTo: userId)
+        .orderBy('createdAt', descending: true)
+        .get();
 
-      final senderEscrows = snapshot.docs
-          .map((doc) => EscrowModel.fromFirestore(doc))
-          .toList();
+    final senderEscrows = snapshot.docs
+        .map((doc) => EscrowModel.fromFirestore(doc))
+        .toList();
 
-      final travelerSnapshot = await firestore
-          .collection('escrows')
-          .where('travelerId', isEqualTo: userId)
-          .orderBy('createdAt', descending: true)
-          .get();
+    final travelerSnapshot = await firestore
+        .collection('escrows')
+        .where('travelerId', isEqualTo: userId)
+        .orderBy('createdAt', descending: true)
+        .get();
 
-      final travelerEscrows = travelerSnapshot.docs
-          .map((doc) => EscrowModel.fromFirestore(doc))
-          .toList();
+    final travelerEscrows = travelerSnapshot.docs
+        .map((doc) => EscrowModel.fromFirestore(doc))
+        .toList();
 
-      final allEscrows = [...senderEscrows, ...travelerEscrows];
-      allEscrows.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final allEscrows = [...senderEscrows, ...travelerEscrows];
+    allEscrows.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
-      return allEscrows;
-    } on FirebaseException {
-      throw ServerException();
-    } catch (e) {
-      throw ServerException();
-    }
+    return allEscrows;
   }
 }

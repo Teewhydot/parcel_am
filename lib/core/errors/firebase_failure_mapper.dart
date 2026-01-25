@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../features/parcel_am_core/domain/exceptions/custom_exceptions.dart';
 import 'failure_mapper.dart';
 import 'failures.dart';
 
@@ -11,6 +12,10 @@ class FirebaseFailureMapper implements FailureMapper {
     } else if (error is FirebaseException) {
       final message = _getFirebaseMessage(error);
       return ServerFailure(failureMessage: message);
+    } else if (error is NotFoundException) {
+      return NotFoundFailure(
+        failureMessage: error.message ?? 'The requested resource was not found',
+      );
     }
     return null;
   }

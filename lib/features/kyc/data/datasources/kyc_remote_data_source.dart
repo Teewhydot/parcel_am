@@ -44,36 +44,32 @@ class KycRemoteDataSourceImpl implements KycRemoteDataSource {
     String? selfieWithIdUrl,
     String? proofOfAddressUrl,
   }) async {
-    try {
-      final kycData = {
-        'userId': userId,
-        'fullName': fullName,
-        'dateOfBirth': Timestamp.fromDate(dateOfBirth),
-        'phoneNumber': phoneNumber,
-        'email': email,
-        'address': address,
-        'city': city,
-        'country': country,
-        'postalCode': postalCode,
-        'governmentIdNumber': governmentIdNumber,
-        'idType': idType,
-        'governmentIdUrl': governmentIdUrl,
-        'selfieWithIdUrl': selfieWithIdUrl,
-        'proofOfAddressUrl': proofOfAddressUrl,
-        'status': 'pending',
-        'submittedAt': FieldValue.serverTimestamp(),
-      };
+    final kycData = {
+      'userId': userId,
+      'fullName': fullName,
+      'dateOfBirth': Timestamp.fromDate(dateOfBirth),
+      'phoneNumber': phoneNumber,
+      'email': email,
+      'address': address,
+      'city': city,
+      'country': country,
+      'postalCode': postalCode,
+      'governmentIdNumber': governmentIdNumber,
+      'idType': idType,
+      'governmentIdUrl': governmentIdUrl,
+      'selfieWithIdUrl': selfieWithIdUrl,
+      'proofOfAddressUrl': proofOfAddressUrl,
+      'status': 'pending',
+      'submittedAt': FieldValue.serverTimestamp(),
+    };
 
-      // Save to kyc_submissions collection
-      await firestore.collection('kyc_submissions').doc(userId).set(kycData);
+    // Save to kyc_submissions collection
+    await firestore.collection('kyc_submissions').doc(userId).set(kycData);
 
-      // Update user's KYC status
-      await firestore.collection('users').doc(userId).update({
-        'kycStatus': 'pending',
-      });
-    } catch (e) {
-      throw Exception('Failed to submit KYC: $e');
-    }
+    // Update user's KYC status
+    await firestore.collection('users').doc(userId).update({
+      'kycStatus': 'pending',
+    });
   }
 
   @override

@@ -7,7 +7,7 @@ import '../../../../core/constants/env.dart';
 import '../../../../core/data/datasources/authenticated_remote_data_source.dart';
 import '../../../../core/services/connectivity_service.dart';
 import '../../../../core/utils/logger.dart';
-import '../../domain/exceptions/custom_exceptions.dart';
+import '../../domain/exceptions/custom_exceptions.dart' show NoInternetException;
 import '../models/bank_info_model.dart';
 import '../models/user_bank_account_model.dart';
 
@@ -75,43 +75,35 @@ class BankAccountRemoteDataSourceImpl
 
   @override
   Future<List<BankInfoModel>> getBankList() async {
-    try {
-      // Check if cache is valid (less than 24 hours old)
-      if (_cachedBankList != null &&
-          _cacheTimestamp != null &&
-          DateTime.now().difference(_cacheTimestamp!).inHours < 24) {
-        Logger.logBasic('Returning cached bank list');
-        return _cachedBankList!;
-      }
-
-      // Fetch bank list from Firestore 'banks' collection
-      Logger.logBasic('Fetching bank list from Firestore');
-      final querySnapshot = await _firestore
-          .collection('banks')
-          .get();
-
-      // Sort by name in memory
-      final banksList = querySnapshot.docs
-          .map((doc) => BankInfoModel.fromFirestore(doc.data()))
-          .toList()
-        ..sort((a, b) => a.name.compareTo(b.name));
-
-      if (banksList.isEmpty) {
-        Logger.logBasic('No banks found in Firestore');
-      }
-
-      _cachedBankList = banksList;
-      _cacheTimestamp = DateTime.now();
-
-      Logger.logSuccess('Bank list loaded from Firestore: ${banksList.length} banks');
-      return banksList;
-    } on FirebaseException catch (e) {
-      Logger.logError('Firestore error fetching bank list: $e');
-      throw ServerException();
-    } catch (e) {
-      Logger.logError('Error fetching bank list: $e');
-      throw ServerException();
+    // Check if cache is valid (less than 24 hours old)
+    if (_cachedBankList != null &&
+        _cacheTimestamp != null &&
+        DateTime.now().difference(_cacheTimestamp!).inHours < 24) {
+      Logger.logBasic('Returning cached bank list');
+      return _cachedBankList!;
     }
+
+    // Fetch bank list from Firestore 'banks' collection
+    Logger.logBasic('Fetching bank list from Firestore');
+    final querySnapshot = await _firestore
+        .collection('banks')
+        .get();
+
+    // Sort by name in memory
+    final banksList = querySnapshot.docs
+        .map((doc) => BankInfoModel.fromFirestore(doc.data()))
+        .toList()
+      ..sort((a, b) => a.name.compareTo(b.name));
+
+    if (banksList.isEmpty) {
+      Logger.logBasic('No banks found in Firestore');
+    }
+
+    _cachedBankList = banksList;
+    _cacheTimestamp = DateTime.now();
+
+    Logger.logSuccess('Bank list loaded from Firestore: ${banksList.length} banks');
+    return banksList;
   }
 
   @override
@@ -206,72 +198,55 @@ class BankAccountRemoteDataSourceImpl
     required String bankName,
     required String recipientCode,
   }) async {
-    try {
-      await validateConnectivity();
+    await validateConnectivity();
 
-      // Check if user already has 5 bank accounts
-      final existingAccounts = await getUserBankAccounts(userId);
-      if (existingAccounts.length >= 5) {
-        throw Exception('Maximum of 5 bank accounts allowed');
-      }
-
-      // Create new bank account document
-      final accountRef = _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('user_bank_accounts')
-          .doc();
-
-      final accountData = {
-        'id': accountRef.id,
-        'userId': userId,
-        'accountNumber': accountNumber,
-        'accountName': accountName,
-        'bankCode': bankCode,
-        'bankName': bankName,
-        'recipientCode': recipientCode,
-        'verified': true,
-        'active': true,
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      };
-
-      await accountRef.set(accountData);
-
-      final savedDoc = await accountRef.get();
-      Logger.logSuccess('Bank account saved successfully: $accountName');
-      return UserBankAccountModel.fromFirestore(savedDoc);
-    } on FirebaseException catch (e) {
-      Logger.logError('Firestore error saving bank account: $e');
-      throw ServerException();
-    } catch (e) {
-      Logger.logError('Error saving bank account: $e');
-      if (e is NoInternetException) rethrow;
-      rethrow;
+    // Check if user already has 5 bank accounts
+    final existingAccounts = await getUserBankAccounts(userId);
+    if (existingAccounts.length >= 5) {
+      throw Exception('Maximum of 5 bank accounts allowed');
     }
+
+    // Create new bank account document
+    final accountRef = _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('user_bank_accounts')
+        .doc();
+
+    final accountData = {
+      'id': accountRef.id,
+      'userId': userId,
+      'accountNumber': accountNumber,
+      'accountName': accountName,
+      'bankCode': bankCode,
+      'bankName': bankName,
+      'recipientCode': recipientCode,
+      'verified': true,
+      'active': true,
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+
+    await accountRef.set(accountData);
+
+    final savedDoc = await accountRef.get();
+    Logger.logSuccess('Bank account saved successfully: $accountName');
+    return UserBankAccountModel.fromFirestore(savedDoc);
   }
 
   @override
   Future<List<UserBankAccountModel>> getUserBankAccounts(String userId) async {
-    try {
-      final querySnapshot = await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('user_bank_accounts')
-          .where('active', isEqualTo: true)
-          .orderBy('createdAt', descending: false)
-          .get();
+    final querySnapshot = await _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('user_bank_accounts')
+        .where('active', isEqualTo: true)
+        .orderBy('createdAt', descending: false)
+        .get();
 
-      return querySnapshot.docs
-          .map((doc) => UserBankAccountModel.fromFirestore(doc))
-          .toList();
-    } on FirebaseException catch (e) {
-      Logger.logError('Firestore error fetching bank accounts: $e');
-      throw ServerException();
-    } catch (e) {
-      Logger.logError('Error fetching bank accounts: $e');
-      throw ServerException();
-    }
+    return querySnapshot.docs
+        .map((doc) => UserBankAccountModel.fromFirestore(doc))
+        .toList();
   }
 
   @override
@@ -279,28 +254,19 @@ class BankAccountRemoteDataSourceImpl
     required String userId,
     required String accountId,
   }) async {
-    try {
-      await validateConnectivity();
+    await validateConnectivity();
 
-      // Soft delete - set active to false
-      await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('user_bank_accounts')
-          .doc(accountId)
-          .update({
-        'active': false,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+    // Soft delete - set active to false
+    await _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('user_bank_accounts')
+        .doc(accountId)
+        .update({
+      'active': false,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
 
-      Logger.logSuccess('Bank account deleted: $accountId');
-    } on FirebaseException catch (e) {
-      Logger.logError('Firestore error deleting bank account: $e');
-      throw ServerException();
-    } catch (e) {
-      Logger.logError('Error deleting bank account: $e');
-      if (e is NoInternetException) rethrow;
-      rethrow;
-    }
+    Logger.logSuccess('Bank account deleted: $accountId');
   }
 }

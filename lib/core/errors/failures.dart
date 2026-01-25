@@ -41,6 +41,10 @@ class UnknownFailure extends Failure {
   const UnknownFailure({required super.failureMessage});
 }
 
+class NotFoundFailure extends Failure {
+  const NotFoundFailure({required super.failureMessage});
+}
+
 class FirebaseAuthFailure extends AuthFailure {
   const FirebaseAuthFailure({required super.failureMessage});
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../domain/exceptions/custom_exceptions.dart';
 
 abstract class PackageRemoteDataSource {
   Stream<Map<String, dynamic>> getPackageStream(String packageId);
@@ -32,7 +33,7 @@ class PackageRemoteDataSourceImpl implements PackageRemoteDataSource {
         .snapshots()
         .map((snapshot) {
       if (!snapshot.exists) {
-        throw Exception('Package not found');
+        throw const NotFoundException('Package not found');
       }
       return {'id': snapshot.id, ...snapshot.data()!};
     });
@@ -43,35 +44,31 @@ class PackageRemoteDataSourceImpl implements PackageRemoteDataSource {
     required String packageId,
     required String transactionId,
   }) async {
-    try {
-      await firestore.runTransaction((transaction) async {
-        final packageRef = firestore.collection('packages').doc(packageId);
-        final packageSnapshot = await transaction.get(packageRef);
+    await firestore.runTransaction((transaction) async {
+      final packageRef = firestore.collection('packages').doc(packageId);
+      final packageSnapshot = await transaction.get(packageRef);
 
-        if (!packageSnapshot.exists) {
-          throw Exception('Package not found');
-        }
+      if (!packageSnapshot.exists) {
+        throw const NotFoundException('Package not found');
+      }
 
-        final paymentInfo = packageSnapshot.data()!['paymentInfo'] as Map<String, dynamic>?;
-        
-        if (paymentInfo == null || !paymentInfo['isEscrow']) {
-          throw Exception('No escrow payment found for this package');
-        }
+      final paymentInfo = packageSnapshot.data()!['paymentInfo'] as Map<String, dynamic>?;
 
-        transaction.update(packageRef, {
-          'paymentInfo.escrowStatus': 'released',
-          'paymentInfo.escrowReleaseDate': FieldValue.serverTimestamp(),
-        });
+      if (paymentInfo == null || !paymentInfo['isEscrow']) {
+        throw Exception('No escrow payment found for this package');
+      }
 
-        final transactionRef = firestore.collection('transactions').doc(transactionId);
-        transaction.update(transactionRef, {
-          'status': 'released',
-          'releasedAt': FieldValue.serverTimestamp(),
-        });
+      transaction.update(packageRef, {
+        'paymentInfo.escrowStatus': 'released',
+        'paymentInfo.escrowReleaseDate': FieldValue.serverTimestamp(),
       });
-    } catch (e) {
-      throw Exception('Failed to release escrow: $e');
-    }
+
+      final transactionRef = firestore.collection('transactions').doc(transactionId);
+      transaction.update(transactionRef, {
+        'status': 'released',
+        'releasedAt': FieldValue.serverTimestamp(),
+      });
+    });
   }
 
   @override
@@ -80,33 +77,29 @@ class PackageRemoteDataSourceImpl implements PackageRemoteDataSource {
     required String transactionId,
     required String reason,
   }) async {
-    try {
-      final disputeRef = await firestore.collection('disputes').add({
-        'packageId': packageId,
-        'transactionId': transactionId,
-        'reason': reason,
-        'status': 'pending',
-        'createdAt': FieldValue.serverTimestamp(),
+    final disputeRef = await firestore.collection('disputes').add({
+      'packageId': packageId,
+      'transactionId': transactionId,
+      'reason': reason,
+      'status': 'pending',
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+
+    await firestore.runTransaction((transaction) async {
+      final packageRef = firestore.collection('packages').doc(packageId);
+      transaction.update(packageRef, {
+        'paymentInfo.escrowStatus': 'disputed',
+        'disputeId': disputeRef.id,
       });
 
-      await firestore.runTransaction((transaction) async {
-        final packageRef = firestore.collection('packages').doc(packageId);
-        transaction.update(packageRef, {
-          'paymentInfo.escrowStatus': 'disputed',
-          'disputeId': disputeRef.id,
-        });
-
-        final transactionRef = firestore.collection('transactions').doc(transactionId);
-        transaction.update(transactionRef, {
-          'status': 'disputed',
-          'disputeId': disputeRef.id,
-        });
+      final transactionRef = firestore.collection('transactions').doc(transactionId);
+      transaction.update(transactionRef, {
+        'status': 'disputed',
+        'disputeId': disputeRef.id,
       });
+    });
 
-      return disputeRef.id;
-    } catch (e) {
-      throw Exception('Failed to create dispute: $e');
-    }
+    return disputeRef.id;
   }
 
   @override
@@ -114,25 +107,21 @@ class PackageRemoteDataSourceImpl implements PackageRemoteDataSource {
     required String packageId,
     required String confirmationCode,
   }) async {
-    try {
-      await firestore.runTransaction((transaction) async {
-        final packageRef = firestore.collection('packages').doc(packageId);
-        final packageSnapshot = await transaction.get(packageRef);
+    await firestore.runTransaction((transaction) async {
+      final packageRef = firestore.collection('packages').doc(packageId);
+      final packageSnapshot = await transaction.get(packageRef);
 
-        if (!packageSnapshot.exists) {
-          throw Exception('Package not found');
-        }
+      if (!packageSnapshot.exists) {
+        throw const NotFoundException('Package not found');
+      }
 
-        transaction.update(packageRef, {
-          'status': 'delivered',
-          'deliveredAt': FieldValue.serverTimestamp(),
-          'confirmationCode': confirmationCode,
-          'progress': 100,
-        });
+      transaction.update(packageRef, {
+        'status': 'delivered',
+        'deliveredAt': FieldValue.serverTimestamp(),
+        'confirmationCode': confirmationCode,
+        'progress': 100,
       });
-    } catch (e) {
-      throw Exception('Failed to confirm delivery: $e');
-    }
+    });
   }
 
   @override
