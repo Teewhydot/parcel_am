@@ -19,6 +19,7 @@ abstract class ChatRepository {
 
   // Message management
   Stream<Either<Failure, List<Message>>> getMessagesStream(String chatId);
+  /// Sends a message using the client-provided message ID
   Future<Either<Failure, void>> sendMessage(Message message);
   Future<Either<Failure, void>> updateMessageStatus(
     String messageId,

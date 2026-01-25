@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import 'package:uuid/uuid.dart';
 import '../../../../core/bloc/base/base_bloc.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../../../../core/errors/failures.dart';
@@ -10,6 +11,7 @@ import 'chat_message_data.dart';
 
 class ChatCubit extends BaseCubit<BaseState<ChatMessageData>> {
   final chatUseCase = ChatUseCase();
+  static const _uuid = Uuid();
 
   ChatCubit() : super(const InitialState<ChatMessageData>());
 
@@ -37,10 +39,43 @@ class ChatCubit extends BaseCubit<BaseState<ChatMessageData>> {
     emit(const LoadingState<ChatMessageData>());
   }
 
-  void updateMessages(List<Message> messages) {
+  /// Updates messages by merging with existing ones
+  /// - If message ID exists: update it (status change)
+  /// - If message ID is new: add it
+  void updateMessages(List<Message> incomingMessages) {
     final currentData = state.data ?? const ChatMessageData();
+    final currentMessages = List<Message>.from(currentData.messages);
+
+    // Build a map of current messages by ID for quick lookup
+    final messageMap = {for (var m in currentMessages) m.id: m};
+
+    // Merge incoming messages
+    for (final incoming in incomingMessages) {
+      final existing = messageMap[incoming.id];
+      if (existing != null) {
+        // Update existing message (preserve local status if server hasn't caught up)
+        if (existing.status == MessageStatus.sending &&
+            incoming.status == MessageStatus.sent) {
+          // Server confirmed - update to server version
+          messageMap[incoming.id] = incoming;
+        } else if (existing.status != MessageStatus.sending) {
+          // Normal update from server
+          messageMap[incoming.id] = incoming;
+        }
+        // If still "sending" locally but server says "sent", use server version
+        // This handles the case where our optimistic update is behind
+      } else {
+        // New message from server (e.g., from other user)
+        messageMap[incoming.id] = incoming;
+      }
+    }
+
+    // Convert back to list and sort by timestamp (oldest first for chat display)
+    final mergedMessages = messageMap.values.toList()
+      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
     emit(LoadedState<ChatMessageData>(
-      data: currentData.copyWith(messages: messages),
+      data: currentData.copyWith(messages: mergedMessages),
       lastUpdated: DateTime.now(),
     ));
   }
@@ -56,16 +91,19 @@ class ChatCubit extends BaseCubit<BaseState<ChatMessageData>> {
   Future<void> sendMessage(Message message) async {
     final currentData = state.data ?? const ChatMessageData();
 
-    // Optimistic update: Add message to pending list immediately
-    final pendingMessage = Message(
-      id: message.id,
+    // Generate a unique ID for this message
+    final messageId = _uuid.v4();
+
+    // Create message with the generated ID and "sending" status
+    final outgoingMessage = Message(
+      id: messageId,
       chatId: message.chatId,
       senderId: message.senderId,
       senderName: message.senderName,
       senderAvatar: message.senderAvatar,
       content: message.content,
       type: message.type,
-      status: MessageStatus.sending, // Show as sending
+      status: MessageStatus.sending,
       timestamp: message.timestamp,
       mediaUrl: message.mediaUrl,
       thumbnailUrl: message.thumbnailUrl,
@@ -75,23 +113,26 @@ class ChatCubit extends BaseCubit<BaseState<ChatMessageData>> {
       replyToMessage: message.replyToMessage,
     );
 
-    // Add to pending and clear reply immediately for instant feedback
+    // Add to messages list immediately (optimistic update)
+    final updatedMessages = [...currentData.messages, outgoingMessage]
+      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
     emit(LoadedState<ChatMessageData>(
       data: currentData.copyWith(
-        pendingMessages: [...currentData.pendingMessages, pendingMessage],
+        messages: updatedMessages,
         clearReplyToMessage: true,
       ),
       lastUpdated: DateTime.now(),
     ));
 
-    // Send message to server in background
-    final result = await chatUseCase.sendMessage(message);
+    // Send to server
+    final result = await chatUseCase.sendMessage(outgoingMessage);
 
     result.fold(
       (failure) {
-        // Update pending message status to failed
-        final updatedPending = currentData.pendingMessages.map((m) {
-          if (m.id == message.id) {
+        // Mark message as failed
+        final messages = (state.data ?? currentData).messages.map((m) {
+          if (m.id == messageId) {
             return Message(
               id: m.id,
               chatId: m.chatId,
@@ -100,7 +141,7 @@ class ChatCubit extends BaseCubit<BaseState<ChatMessageData>> {
               senderAvatar: m.senderAvatar,
               content: m.content,
               type: m.type,
-              status: MessageStatus.failed, // Mark as failed
+              status: MessageStatus.failed,
               timestamp: m.timestamp,
               mediaUrl: m.mediaUrl,
               thumbnailUrl: m.thumbnailUrl,
@@ -113,32 +154,14 @@ class ChatCubit extends BaseCubit<BaseState<ChatMessageData>> {
           return m;
         }).toList();
 
-        // Also add the failed message to show it
-        updatedPending.add(Message(
-          id: message.id,
-          chatId: message.chatId,
-          senderId: message.senderId,
-          senderName: message.senderName,
-          senderAvatar: message.senderAvatar,
-          content: message.content,
-          type: message.type,
-          status: MessageStatus.failed,
-          timestamp: message.timestamp,
-          mediaUrl: message.mediaUrl,
-          replyToMessageId: message.replyToMessageId,
-        ));
-
         emit(AsyncErrorState<ChatMessageData>(
           errorMessage: failure.failureMessage,
-          data: (state.data ?? currentData).copyWith(
-            pendingMessages: updatedPending,
-            clearReplyToMessage: true,
-          ),
+          data: (state.data ?? currentData).copyWith(messages: messages),
         ));
       },
       (_) {
-        // Success - the stream will pick up the confirmed message
-        // Pending message will be filtered out in allMessages getter
+        // Success - stream will update the message status
+        // No action needed here
       },
     );
   }
@@ -168,12 +191,11 @@ class ChatCubit extends BaseCubit<BaseState<ChatMessageData>> {
       chatId,
       type,
       (progress) {
-        final updatedData = currentData.copyWith(
-          uploadProgress: progress,
-          isUploading: true,
-        );
         emit(LoadedState<ChatMessageData>(
-          data: updatedData,
+          data: (state.data ?? currentData).copyWith(
+            uploadProgress: progress,
+            isUploading: true,
+          ),
           lastUpdated: DateTime.now(),
         ));
       },
@@ -183,14 +205,14 @@ class ChatCubit extends BaseCubit<BaseState<ChatMessageData>> {
       (failure) async {
         emit(AsyncErrorState<ChatMessageData>(
           errorMessage: failure.failureMessage,
-          data: currentData.copyWith(isUploading: false),
+          data: (state.data ?? currentData).copyWith(isUploading: false),
         ));
       },
       (mediaUrl) async {
         final fileName = filePath.split('/').last;
 
         final message = Message(
-          id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
+          id: '', // Will be generated in sendMessage
           chatId: chatId,
           senderId: senderId,
           senderName: senderName,
@@ -207,12 +229,11 @@ class ChatCubit extends BaseCubit<BaseState<ChatMessageData>> {
         await sendMessage(message);
 
         // Reset uploading state
-        final resetData = (state.data ?? currentData).copyWith(
-          isUploading: false,
-          uploadProgress: 0.0,
-        );
         emit(LoadedState<ChatMessageData>(
-          data: resetData,
+          data: (state.data ?? const ChatMessageData()).copyWith(
+            isUploading: false,
+            uploadProgress: 0.0,
+          ),
           lastUpdated: DateTime.now(),
         ));
       },

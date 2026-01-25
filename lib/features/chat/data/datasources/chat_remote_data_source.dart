@@ -11,6 +11,7 @@ import '../../services/message_rtdb_service.dart';
 
 abstract class ChatRemoteDataSource {
   Stream<List<MessageModel>> getMessagesStream(String chatId);
+  /// Sends a message using the client-provided message ID
   Future<void> sendMessage(MessageModel message);
   Future<void> updateMessageStatus(String messageId, MessageStatus status);
   Future<void> markMessageAsRead(
@@ -79,6 +80,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   @override
   Future<void> sendMessage(MessageModel message) async {
     await _rtdbService.sendMessage(
+      messageId: message.id,
       chatId: message.chatId,
       senderId: message.senderId,
       senderName: message.senderName,

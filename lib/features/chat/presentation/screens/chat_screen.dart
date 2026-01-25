@@ -450,7 +450,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                   chatId: widget.chatId,
                   otherUserId: widget.otherUserId,
                   currentUserId: _currentUserId,
-                  pendingMessages: chatData.pendingMessages,
+                  messages: chatData.messages,
                   scrollController: _scrollController,
                   onMessageTap: _handleMessageTap,
                   onMessageLongPress: _handleMessageLongPress,
@@ -484,7 +484,7 @@ class _MessagesList extends StatelessWidget {
   final String chatId;
   final String otherUserId;
   final String? currentUserId;
-  final List<Message> pendingMessages;
+  final List<Message> messages;
   final ScrollController scrollController;
   final void Function(Message) onMessageTap;
   final void Function(Message) onMessageLongPress;
@@ -496,7 +496,7 @@ class _MessagesList extends StatelessWidget {
     required this.chatId,
     required this.otherUserId,
     required this.currentUserId,
-    required this.pendingMessages,
+    required this.messages,
     required this.scrollController,
     required this.onMessageTap,
     required this.onMessageLongPress,
@@ -506,30 +506,31 @@ class _MessagesList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Stream updates the cubit's messages list
     return StreamBuilder<Either<Failure, List<Message>>>(
       stream: context.read<ChatCubit>().watchMessages(chatId),
       builder: (context, messagesSnapshot) {
-        // Get stream messages (or empty list if loading/error)
-        List<Message> streamMessages = [];
         bool isLoading =
             messagesSnapshot.connectionState == ConnectionState.waiting;
         String? errorMessage;
 
+        // When stream emits, update the cubit
         if (messagesSnapshot.hasData) {
           messagesSnapshot.data!.fold(
             (failure) => errorMessage = failure.failureMessage,
-            (messages) {
-              streamMessages = messages;
-              // Mark messages as read
+            (streamMessages) {
+              // Update cubit with incoming messages (merges with local messages)
               WidgetsBinding.instance.addPostFrameCallback((_) {
-                onMarkAsRead(messages);
+                context.read<ChatCubit>().updateMessages(streamMessages);
+                onMarkAsRead(streamMessages);
               });
             },
           );
         }
 
-        // Merge stream messages with pending messages for instant display
-        final allMessages = _mergeMessages(streamMessages, pendingMessages);
+        // Sort messages for reverse ListView (newest first)
+        final displayMessages = List<Message>.from(messages)
+          ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
         // Use RTDB for faster typing indicator
         return StreamBuilder<bool>(
@@ -537,16 +538,16 @@ class _MessagesList extends StatelessWidget {
           builder: (context, typingSnapshot) {
             final showTypingIndicator = typingSnapshot.data ?? false;
 
-            // Show loading only if no messages at all (pending or stream)
-            if (isLoading && allMessages.isEmpty) {
+            // Show loading only if no messages at all
+            if (isLoading && displayMessages.isEmpty) {
               return const Center(child: CircularProgressIndicator());
             }
 
-            if (errorMessage != null && allMessages.isEmpty) {
+            if (errorMessage != null && displayMessages.isEmpty) {
               return Center(child: AppText.bodyMedium(errorMessage!));
             }
 
-            if (allMessages.isEmpty) {
+            if (displayMessages.isEmpty) {
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -575,7 +576,7 @@ class _MessagesList extends StatelessWidget {
               controller: scrollController,
               reverse: true,
               padding: AppSpacing.verticalPaddingSM,
-              itemCount: allMessages.length + (showTypingIndicator ? 1 : 0),
+              itemCount: displayMessages.length + (showTypingIndicator ? 1 : 0),
               itemBuilder: (context, index) {
                 if (showTypingIndicator && index == 0) {
                   return const Align(
@@ -585,7 +586,7 @@ class _MessagesList extends StatelessWidget {
                 }
 
                 final messageIndex = showTypingIndicator ? index - 1 : index;
-                final message = allMessages[messageIndex];
+                final message = displayMessages[messageIndex];
                 final isMe = message.senderId == currentUserId;
                 final screenWidth = MediaQuery.of(context).size.width;
 
@@ -626,39 +627,4 @@ class _MessagesList extends StatelessWidget {
     );
   }
 
-  /// Merge stream messages with pending messages, removing duplicates
-  List<Message> _mergeMessages(
-    List<Message> streamMessages,
-    List<Message> pending,
-  ) {
-    // Always sort messages for reverse ListView (descending = newest at index 0)
-    if (pending.isEmpty) {
-      final sorted = List<Message>.from(streamMessages);
-      sorted.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-      return sorted;
-    }
-
-    // Filter out pending messages that are now confirmed in stream
-    final confirmedIds = streamMessages.map((m) => m.id).toSet();
-    final stillPending = pending
-        .where(
-          (p) =>
-              !confirmedIds.contains(p.id) &&
-              !streamMessages.any((m) => _isSameMessage(m, p)),
-        )
-        .toList();
-
-    // Merge and sort by timestamp (descending for reverse list)
-    final merged = [...stillPending, ...streamMessages];
-    merged.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-    return merged;
-  }
-
-  /// Check if two messages are the same (for matching temp IDs with real IDs)
-  bool _isSameMessage(Message a, Message b) {
-    return a.senderId == b.senderId &&
-        a.content == b.content &&
-        a.type == b.type &&
-        (a.timestamp.difference(b.timestamp).inSeconds.abs() < 5);
-  }
 }

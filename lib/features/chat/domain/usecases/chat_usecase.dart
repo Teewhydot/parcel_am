@@ -16,6 +16,7 @@ class ChatUseCase {
     return repository.getMessagesStream(chatId);
   }
 
+  /// Sends a message using the client-provided message ID
   Future<Either<Failure, void>> sendMessage(Message message) {
     return repository.sendMessage(message);
   }

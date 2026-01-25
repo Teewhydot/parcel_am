@@ -52,8 +52,9 @@ class MessageRtdbService {
   // ============================================
 
   /// Send a new message to a chat
-  /// Returns the generated message ID
-  Future<String> sendMessage({
+  /// Uses the provided messageId (client-generated) for consistency
+  Future<void> sendMessage({
+    required String messageId,
     required String chatId,
     required String senderId,
     required String senderName,
@@ -67,8 +68,6 @@ class MessageRtdbService {
     String? replyToMessageId,
   }) async {
     try {
-      final messageRef = _messagesRef(chatId).push();
-      final messageId = messageRef.key!;
       final timestamp = ServerValue.timestamp;
 
       final messageData = {
@@ -93,9 +92,20 @@ class MessageRtdbService {
 
       // Get participant IDs to update their user_chats index
       final chatSnapshot = await _chatRef(chatId).child('participantIds').get();
-      final participantIds = chatSnapshot.exists && chatSnapshot.value != null
-          ? List<String>.from(chatSnapshot.value as List)
-          : <String>[];
+      final List<String> participantIds;
+      if (chatSnapshot.exists && chatSnapshot.value != null) {
+        final value = chatSnapshot.value;
+        if (value is List) {
+          participantIds = List<String>.from(value);
+        } else if (value is Map) {
+          // Firebase RTDB can convert arrays to maps with numeric keys
+          participantIds = (value.values).whereType<String>().toList();
+        } else {
+          participantIds = <String>[];
+        }
+      } else {
+        participantIds = <String>[];
+      }
 
       // Write message and update chat metadata atomically
       final updates = <String, dynamic>{
@@ -115,8 +125,6 @@ class MessageRtdbService {
         'Message sent: chatId=$chatId, messageId=$messageId',
         tag: LogTag.chat,
       );
-
-      return messageId;
     } catch (e) {
       Logger.logError('sendMessage failed: $e', tag: LogTag.chat);
       rethrow;
@@ -449,9 +457,15 @@ class MessageRtdbService {
       if (!chatSnapshot.exists) return;
 
       final chatData = Map<String, dynamic>.from(chatSnapshot.value as Map);
-      final participantIds = List<String>.from(
-        chatData['participantIds'] as List? ?? [],
-      );
+      final List<String> participantIds;
+      final rawIds = chatData['participantIds'];
+      if (rawIds is List) {
+        participantIds = List<String>.from(rawIds);
+      } else if (rawIds is Map) {
+        participantIds = (rawIds.values).whereType<String>().toList();
+      } else {
+        participantIds = <String>[];
+      }
 
       for (final participantId in participantIds) {
         if (participantId != senderId) {
