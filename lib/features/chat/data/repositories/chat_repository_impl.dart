@@ -1,5 +1,4 @@
 import 'package:dartz/dartz.dart';
-import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:get_it/get_it.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/services/error/error_handler.dart';
@@ -48,9 +47,6 @@ class ChatRepositoryImpl implements ChatRepository {
   ) {
     return ErrorHandler.handle(
       () async {
-        if (!await InternetConnectionChecker.instance.hasConnection) {
-          throw const NetworkFailure(failureMessage: 'No internet connection');
-        }
         await _remoteDataSource.updateMessageStatus(messageId, status);
       },
       operationName: 'updateMessageStatus',
@@ -65,9 +61,6 @@ class ChatRepositoryImpl implements ChatRepository {
   ) {
     return ErrorHandler.handle(
       () async {
-        if (!await InternetConnectionChecker.instance.hasConnection) {
-          throw const NetworkFailure(failureMessage: 'No internet connection');
-        }
         await _remoteDataSource.markMessageAsRead(chatId, messageId, userId);
       },
       operationName: 'markMessageAsRead',
@@ -83,9 +76,6 @@ class ChatRepositoryImpl implements ChatRepository {
   ) {
     return ErrorHandler.handle(
       () async {
-        if (!await InternetConnectionChecker.instance.hasConnection) {
-          throw const NetworkFailure(failureMessage: 'No internet connection');
-        }
         return await _remoteDataSource.uploadMedia(
           filePath,
           chatId,
@@ -105,9 +95,6 @@ class ChatRepositoryImpl implements ChatRepository {
   ) {
     return ErrorHandler.handle(
       () async {
-        if (!await InternetConnectionChecker.instance.hasConnection) {
-          throw const NetworkFailure(failureMessage: 'No internet connection');
-        }
         await _remoteDataSource.setTypingStatus(chatId, userId, isTyping);
       },
       operationName: 'setTypingStatus',
@@ -118,9 +105,6 @@ class ChatRepositoryImpl implements ChatRepository {
   Future<Either<Failure, void>> updateLastSeen(String chatId, String userId) {
     return ErrorHandler.handle(
       () async {
-        if (!await InternetConnectionChecker.instance.hasConnection) {
-          throw const NetworkFailure(failureMessage: 'No internet connection');
-        }
         await _remoteDataSource.updateLastSeen(chatId, userId);
       },
       operationName: 'updateLastSeen',
@@ -139,9 +123,6 @@ class ChatRepositoryImpl implements ChatRepository {
   Future<Either<Failure, void>> deleteMessage(String messageId, {String? chatId}) {
     return ErrorHandler.handle(
       () async {
-        if (!await InternetConnectionChecker.instance.hasConnection) {
-          throw const NetworkFailure(failureMessage: 'No internet connection');
-        }
         await _remoteDataSource.deleteMessage(messageId, chatId: chatId);
       },
       operationName: 'deleteMessage',
@@ -152,9 +133,6 @@ class ChatRepositoryImpl implements ChatRepository {
   Future<Either<Failure, Chat>> createChat(List<String> participantIds) {
     return ErrorHandler.handle(
       () async {
-        if (!await InternetConnectionChecker.instance.hasConnection) {
-          throw const NetworkFailure(failureMessage: 'No internet connection');
-        }
         return await _remoteDataSource.createChat(participantIds);
       },
       operationName: 'createChat',
@@ -165,9 +143,6 @@ class ChatRepositoryImpl implements ChatRepository {
   Future<Either<Failure, Chat>> getChat(String chatId) {
     return ErrorHandler.handle(
       () async {
-        if (!await InternetConnectionChecker.instance.hasConnection) {
-          throw const NetworkFailure(failureMessage: 'No internet connection');
-        }
         return await _remoteDataSource.getChat(chatId);
       },
       operationName: 'getChat',
@@ -178,9 +153,6 @@ class ChatRepositoryImpl implements ChatRepository {
   Future<Either<Failure, List<Chat>>> getUserChats(String userId) {
     return ErrorHandler.handle(
       () async {
-        if (!await InternetConnectionChecker.instance.hasConnection) {
-          throw const NetworkFailure(failureMessage: 'No internet connection');
-        }
         return await _remoteDataSource.getUserChats(userId);
       },
       operationName: 'getUserChats',
@@ -205,9 +177,6 @@ class ChatRepositoryImpl implements ChatRepository {
   }) {
     return ErrorHandler.handle(
       () async {
-        if (!await InternetConnectionChecker.instance.hasConnection) {
-          throw const NetworkFailure(failureMessage: 'No internet connection');
-        }
         return await _remoteDataSource.getOrCreateChat(
           chatId: chatId,
           participantIds: participantIds,

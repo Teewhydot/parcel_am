@@ -6,7 +6,6 @@ import '../models/wallet_model.dart';
 import '../models/transaction_model.dart';
 import '../../domain/entities/transaction_entity.dart';
 import '../../domain/exceptions/wallet_exceptions.dart';
-import '../../domain/exceptions/custom_exceptions.dart' show NoInternetException;
 
 abstract class WalletRemoteDataSource {
   Future<WalletModel> createWallet(String userId, {double initialBalance = 0.0});
@@ -69,14 +68,6 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
     required this.firestore,
     required this.connectivityService,
   });
-
-  /// Checks for connectivity and throws NoInternetException if offline
-  Future<void> _validateConnectivity() async {
-    final isConnected = await connectivityService.checkConnection();
-    if (!isConnected) {
-      throw NoInternetException();
-    }
-  }
 
   /// Checks for duplicate transaction by idempotencyKey
   /// Returns existing transaction if found with completed status
@@ -166,9 +157,6 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
     double amount,
     String idempotencyKey,
   ) async {
-    // Validate connectivity
-    await _validateConnectivity();
-
     // Check for duplicate transaction
     final duplicate = await _checkDuplicateTransaction(idempotencyKey);
     if (duplicate != null) {
@@ -213,9 +201,6 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
     String referenceId,
     String idempotencyKey,
   ) async {
-    // Validate connectivity
-    await _validateConnectivity();
-
     if (amount <= 0) {
       throw const InvalidAmountException();
     }
@@ -264,9 +249,6 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
     String referenceId,
     String idempotencyKey,
   ) async {
-    // Validate connectivity
-    await _validateConnectivity();
-
     if (amount <= 0) {
       throw const InvalidAmountException();
     }
@@ -318,9 +300,6 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
     String referenceId,
     String idempotencyKey,
   ) async {
-    // Validate connectivity
-    await _validateConnectivity();
-
     if (amount <= 0) {
       throw const InvalidAmountException();
     }
@@ -438,27 +417,7 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
 
     fundingQuery = fundingQuery.orderBy('time_created', descending: true).limit(limit);
 
-    final fundingSnapshot = await fundingQuery.get();
-    final fundingTransactions = fundingSnapshot.docs.map((doc) {
-      final data = doc.data();
-      return TransactionModel(
-        id: doc.id,
-        walletId: userId,
-        userId: userId,
-        amount: (data['amount'] as num?)?.toDouble() ?? 0.0,
-        type: TransactionType.deposit,
-        status: _mapFundingStatus(data['status'] as String?),
-        currency: 'NGN',
-        timestamp: _parseTimestamp(data['time_created']),
-        description: 'Wallet Funding',
-        referenceId: data['reference'] as String?,
-        metadata: data['metadata'] as Map<String, dynamic>? ?? {},
-        idempotencyKey: doc.id,
-      );
-    }).toList();
-    allTransactions.addAll(fundingTransactions);
-
-    // 2. Fetch withdrawal orders
+    // 2. Build withdrawal orders query
     Query<Map<String, dynamic>> withdrawalQuery = firestore
         .collection('withdrawal_orders')
         .where('userId', isEqualTo: userId);
@@ -481,7 +440,36 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
 
     withdrawalQuery = withdrawalQuery.orderBy('createdAt', descending: true).limit(limit);
 
-    final withdrawalSnapshot = await withdrawalQuery.get();
+    // Execute both queries in parallel for better performance
+    final results = await Future.wait([
+      fundingQuery.get(),
+      withdrawalQuery.get(),
+    ]);
+
+    final fundingSnapshot = results[0];
+    final withdrawalSnapshot = results[1];
+
+    // Process funding transactions
+    final fundingTransactions = fundingSnapshot.docs.map((doc) {
+      final data = doc.data();
+      return TransactionModel(
+        id: doc.id,
+        walletId: userId,
+        userId: userId,
+        amount: (data['amount'] as num?)?.toDouble() ?? 0.0,
+        type: TransactionType.deposit,
+        status: _mapFundingStatus(data['status'] as String?),
+        currency: 'NGN',
+        timestamp: _parseTimestamp(data['time_created']),
+        description: 'Wallet Funding',
+        referenceId: data['reference'] as String?,
+        metadata: data['metadata'] as Map<String, dynamic>? ?? {},
+        idempotencyKey: doc.id,
+      );
+    }).toList();
+    allTransactions.addAll(fundingTransactions);
+
+    // Process withdrawal transactions
     final withdrawalTransactions = withdrawalSnapshot.docs.map((doc) {
       final data = doc.data();
       return TransactionModel(

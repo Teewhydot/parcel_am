@@ -544,59 +544,70 @@ class ParcelCubit extends BaseCubit<BaseState<ParcelData>> {
           );
         },
         (updatedParcel) async {
+          // Run wallet and escrow operations in parallel for better performance
+          final futures = <Future<void>>[];
+
           // 2. Clear sender's held balance (money is transferred out)
           if (senderId != null && parcelPrice > 0) {
             final totalAmount = parcelPrice + 150.0; // price + service fee
-            final senderClearResult = await _walletUseCase.clearHeldBalance(
-              senderId,
-              totalAmount,
-              parcelId,
-              'delivery_confirm_sender_$parcelId',
+            futures.add(
+              _walletUseCase.clearHeldBalance(
+                senderId,
+                totalAmount,
+                parcelId,
+                'delivery_confirm_sender_$parcelId',
+              ).then((result) {
+                result.fold((failure) {
+                  DFoodUtils.showSnackBar(
+                    'Delivery confirmed! Sender balance update pending.',
+                    AppColors.warning,
+                  );
+                }, (_) {});
+              }),
             );
-
-            senderClearResult.fold((failure) {
-              DFoodUtils.showSnackBar(
-                'Delivery confirmed! Sender balance update pending.',
-                AppColors.warning,
-              );
-            }, (_) {});
           }
 
           // 3. Move traveler's pending balance to available
           if (travelerId != null && parcelPrice > 0) {
-            final travelerReleaseResult = await _walletUseCase.releaseBalance(
-              travelerId,
-              parcelPrice,
-              parcelId,
-              'delivery_confirm_traveler_$parcelId',
+            futures.add(
+              _walletUseCase.releaseBalance(
+                travelerId,
+                parcelPrice,
+                parcelId,
+                'delivery_confirm_traveler_$parcelId',
+              ).then((result) {
+                result.fold((failure) {
+                  DFoodUtils.showSnackBar(
+                    'Delivery confirmed! Traveler payment pending.',
+                    AppColors.warning,
+                  );
+                }, (_) {});
+              }),
             );
-
-            travelerReleaseResult.fold((failure) {
-              DFoodUtils.showSnackBar(
-                'Delivery confirmed! Traveler payment pending.',
-                AppColors.warning,
-              );
-            }, (_) {});
           }
 
           // 4. Release escrow payment
-          final escrowResult = await _escrowUseCase.releaseEscrow(escrowId);
-
-          escrowResult.fold(
-            (failure) {
-              // Log escrow failure but delivery is confirmed
-              DFoodUtils.showSnackBar(
-                'Delivery confirmed! Payment release pending.',
-                AppColors.warning,
+          futures.add(
+            _escrowUseCase.releaseEscrow(escrowId).then((result) {
+              result.fold(
+                (failure) {
+                  DFoodUtils.showSnackBar(
+                    'Delivery confirmed! Payment release pending.',
+                    AppColors.warning,
+                  );
+                },
+                (escrow) {
+                  DFoodUtils.showSnackBar(
+                    'Delivery confirmed! Payment released to courier.',
+                    AppColors.success,
+                  );
+                },
               );
-            },
-            (escrow) {
-              DFoodUtils.showSnackBar(
-                'Delivery confirmed! Payment released to courier.',
-                AppColors.success,
-              );
-            },
+            }),
           );
+
+          // Wait for all parallel operations to complete
+          await Future.wait(futures);
 
           // Clear updating state only - Firestore stream will update the UI
           final data = state.data ?? const ParcelData();

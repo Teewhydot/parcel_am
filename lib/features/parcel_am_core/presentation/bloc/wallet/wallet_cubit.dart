@@ -373,22 +373,26 @@ class WalletCubit extends BaseCubit<BaseState<WalletData>> {
         return;
       }
 
-      final walletResult = await _walletUseCase.getWallet(_currentUserId!);
+      // Create futures for parallel execution
+      final walletFuture = _walletUseCase.getWallet(_currentUserId!);
+      final transactionsFuture = _walletUseCase.getTransactions(
+        _currentUserId!,
+        limit: 10,
+      );
+
+      // Await both in parallel
+      final walletResult = await walletFuture;
+      final transactionsResult = await transactionsFuture;
 
       walletResult.fold(
         (failure) {
           emit(ErrorState<WalletData>(errorMessage: failure.failureMessage));
         },
-        (wallet) async {
+        (wallet) {
           currentWalletId = wallet.id;
 
-          // Fetch recent transactions
+          // Process transactions result
           List<Transaction> recentTransactions = [];
-          final transactionsResult = await _walletUseCase.getTransactions(
-            _currentUserId!,
-            limit: 10,
-          );
-
           transactionsResult.fold(
             (failure) {
               Logger.logWarning(

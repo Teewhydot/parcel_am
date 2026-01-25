@@ -275,23 +275,25 @@ class MessageRtdbService {
       final snapshot = await chatRef.get();
 
       if (!snapshot.exists) {
-        // Create new chat
-        await chatRef.set({
-          'id': chatId,
-          'participantIds': participantIds,
-          'participantNames': participantNames,
-          'participantAvatars': participantAvatars ?? {},
-          'createdAt': ServerValue.timestamp,
-          'lastMessageTime': ServerValue.timestamp,
-          'unreadCount': {for (var id in participantIds) id: 0},
-        });
+        // Build atomic update for chat and all user_chats indexes
+        final updates = <String, dynamic>{
+          'chats/$chatId/id': chatId,
+          'chats/$chatId/participantIds': participantIds,
+          'chats/$chatId/participantNames': participantNames,
+          'chats/$chatId/participantAvatars': participantAvatars ?? {},
+          'chats/$chatId/createdAt': ServerValue.timestamp,
+          'chats/$chatId/lastMessageTime': ServerValue.timestamp,
+          'chats/$chatId/unreadCount': {for (var id in participantIds) id: 0},
+        };
 
-        // Add to user_chats index for each participant
+        // Add user_chats index entries for each participant
         for (final userId in participantIds) {
-          await _userChatsRef(userId).child(chatId).set({
-            'lastMessageTime': ServerValue.timestamp,
-          });
+          updates['user_chats/$userId/$chatId/lastMessageTime'] =
+              ServerValue.timestamp;
         }
+
+        // Single atomic write for chat creation and all user indexes
+        await database.ref().update(updates);
 
         Logger.logSuccess('Created new chat: $chatId', tag: LogTag.chat);
       }
