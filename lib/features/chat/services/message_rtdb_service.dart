@@ -53,6 +53,7 @@ class MessageRtdbService {
 
   /// Send a new message to a chat
   /// Uses the provided messageId (client-generated) for consistency
+  /// Pass participantIds from client to avoid a read operation (faster)
   Future<void> sendMessage({
     required String messageId,
     required String chatId,
@@ -67,6 +68,7 @@ class MessageRtdbService {
     int? fileSize,
     String? replyToMessageId,
     Map<String, dynamic>? replyToMessageData,
+    List<String>? participantIds,
   }) async {
     try {
       final timestamp = ServerValue.timestamp;
@@ -92,23 +94,6 @@ class MessageRtdbService {
         'readBy': <String, dynamic>{},
       };
 
-      // Get participant IDs to update their user_chats index
-      final chatSnapshot = await _chatRef(chatId).child('participantIds').get();
-      final List<String> participantIds;
-      if (chatSnapshot.exists && chatSnapshot.value != null) {
-        final value = chatSnapshot.value;
-        if (value is List) {
-          participantIds = List<String>.from(value);
-        } else if (value is Map) {
-          // Firebase RTDB can convert arrays to maps with numeric keys
-          participantIds = (value.values).whereType<String>().toList();
-        } else {
-          participantIds = <String>[];
-        }
-      } else {
-        participantIds = <String>[];
-      }
-
       // Write message and update chat metadata atomically
       final updates = <String, dynamic>{
         'messages/$chatId/$messageId': messageData,
@@ -117,7 +102,9 @@ class MessageRtdbService {
       };
 
       // Update user_chats index for all participants (triggers notification listeners)
-      for (final participantId in participantIds) {
+      // Use provided participantIds to avoid read operation (low latency)
+      final ids = participantIds ?? <String>[];
+      for (final participantId in ids) {
         updates['user_chats/$participantId/$chatId/lastMessageTime'] = timestamp;
       }
 
@@ -450,26 +437,35 @@ class MessageRtdbService {
   }
 
   /// Increment unread count for all participants except sender
+  /// Pass [participantIds] to avoid a read operation for lower latency
   Future<void> incrementUnreadForOthers(
     String chatId,
-    String senderId,
-  ) async {
+    String senderId, {
+    List<String>? participantIds,
+  }) async {
     try {
-      final chatSnapshot = await _chatRef(chatId).get();
-      if (!chatSnapshot.exists) return;
+      List<String> ids;
 
-      final chatData = Map<String, dynamic>.from(chatSnapshot.value as Map);
-      final List<String> participantIds;
-      final rawIds = chatData['participantIds'];
-      if (rawIds is List) {
-        participantIds = List<String>.from(rawIds);
-      } else if (rawIds is Map) {
-        participantIds = (rawIds.values).whereType<String>().toList();
+      if (participantIds != null && participantIds.isNotEmpty) {
+        // Use provided participantIds (low latency path)
+        ids = participantIds;
       } else {
-        participantIds = <String>[];
+        // Fallback: read from database (slower)
+        final chatSnapshot = await _chatRef(chatId).get();
+        if (!chatSnapshot.exists) return;
+
+        final chatData = Map<String, dynamic>.from(chatSnapshot.value as Map);
+        final rawIds = chatData['participantIds'];
+        if (rawIds is List) {
+          ids = List<String>.from(rawIds);
+        } else if (rawIds is Map) {
+          ids = (rawIds.values).whereType<String>().toList();
+        } else {
+          ids = <String>[];
+        }
       }
 
-      for (final participantId in participantIds) {
+      for (final participantId in ids) {
         if (participantId != senderId) {
           await _chatRef(chatId)
               .child('unreadCount')

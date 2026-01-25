@@ -17,8 +17,12 @@ class ChatUseCase {
   }
 
   /// Sends a message using the client-provided message ID
-  Future<Either<Failure, void>> sendMessage(Message message) {
-    return repository.sendMessage(message);
+  /// Pass [participantIds] to avoid a read operation for lower latency
+  Future<Either<Failure, void>> sendMessage(
+    Message message, {
+    List<String>? participantIds,
+  }) {
+    return repository.sendMessage(message, participantIds: participantIds);
   }
 
   Future<Either<Failure, void>> updateMessageStatus(

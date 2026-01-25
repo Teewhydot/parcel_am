@@ -480,7 +480,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
 }
 
 /// Separate widget for messages list to handle stream independently
-class _MessagesList extends StatelessWidget {
+/// Uses StatefulWidget to cache streams and prevent infinite rebuild loops
+class _MessagesList extends StatefulWidget {
   final String chatId;
   final String otherUserId;
   final String? currentUserId;
@@ -490,9 +491,8 @@ class _MessagesList extends StatelessWidget {
   final void Function(Message) onMessageLongPress;
   final void Function(Message) onReply;
   final void Function(List<Message>) onMarkAsRead;
-  final TypingService _typingService = TypingService();
 
-  _MessagesList({
+  const _MessagesList({
     required this.chatId,
     required this.otherUserId,
     required this.currentUserId,
@@ -505,36 +505,55 @@ class _MessagesList extends StatelessWidget {
   });
 
   @override
+  State<_MessagesList> createState() => _MessagesListState();
+}
+
+class _MessagesListState extends State<_MessagesList> {
+  final TypingService _typingService = TypingService();
+  late Stream<Either<Failure, List<Message>>> _messagesStream;
+  late Stream<bool> _typingStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _messagesStream = context.read<ChatCubit>().watchMessages(widget.chatId);
+    _typingStream = _typingService.watchUserTyping(
+      widget.chatId,
+      widget.otherUserId,
+      widget.currentUserId ?? '',
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Stream updates the cubit's messages list
     return StreamBuilder<Either<Failure, List<Message>>>(
-      stream: context.read<ChatCubit>().watchMessages(chatId),
+      stream: _messagesStream,
       builder: (context, messagesSnapshot) {
         bool isLoading =
             messagesSnapshot.connectionState == ConnectionState.waiting;
         String? errorMessage;
 
-        // When stream emits, update the cubit
         if (messagesSnapshot.hasData) {
           messagesSnapshot.data!.fold(
             (failure) => errorMessage = failure.failureMessage,
             (streamMessages) {
-              // Update cubit with incoming messages (merges with local messages)
               WidgetsBinding.instance.addPostFrameCallback((_) {
-                context.read<ChatCubit>().updateMessages(streamMessages);
-                onMarkAsRead(streamMessages);
+                if (mounted) {
+                  context.read<ChatCubit>().updateMessages(streamMessages);
+                  widget.onMarkAsRead(streamMessages);
+                }
               });
             },
           );
         }
 
         // Sort messages for reverse ListView (newest first)
-        final displayMessages = List<Message>.from(messages)
+        final displayMessages = List<Message>.from(widget.messages)
           ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
-        // Use RTDB for faster typing indicator
+        // Use cached typing stream
         return StreamBuilder<bool>(
-          stream: _typingService.watchUserTyping(chatId, otherUserId, currentUserId ?? ''),
+          stream: _typingStream,
           builder: (context, typingSnapshot) {
             final showTypingIndicator = typingSnapshot.data ?? false;
 
@@ -573,7 +592,7 @@ class _MessagesList extends StatelessWidget {
             }
 
             return ListView.builder(
-              controller: scrollController,
+              controller: widget.scrollController,
               reverse: true,
               padding: AppSpacing.verticalPaddingSM,
               itemCount: displayMessages.length + (showTypingIndicator ? 1 : 0),
@@ -587,7 +606,7 @@ class _MessagesList extends StatelessWidget {
 
                 final messageIndex = showTypingIndicator ? index - 1 : index;
                 final message = displayMessages[messageIndex];
-                final isMe = message.senderId == currentUserId;
+                final isMe = message.senderId == widget.currentUserId;
                 final screenWidth = MediaQuery.of(context).size.width;
 
                 return Dismissible(
@@ -601,7 +620,7 @@ class _MessagesList extends StatelessWidget {
                     DismissDirection.startToEnd: 0.2,
                   },
                   confirmDismiss: (direction) async {
-                    onReply(message);
+                    widget.onReply(message);
                     return false;
                   },
                   background: Container(
@@ -615,8 +634,8 @@ class _MessagesList extends StatelessWidget {
                   child: MessageBubble(
                     message: message,
                     isMe: isMe,
-                    onTap: () => onMessageTap(message),
-                    onLongPress: () => onMessageLongPress(message),
+                    onTap: () => widget.onMessageTap(message),
+                    onLongPress: () => widget.onMessageLongPress(message),
                   ),
                 );
               },
@@ -626,5 +645,4 @@ class _MessagesList extends StatelessWidget {
       },
     );
   }
-
 }

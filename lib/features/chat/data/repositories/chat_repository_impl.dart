@@ -25,14 +25,20 @@ class ChatRepositoryImpl implements ChatRepository {
   }
 
   @override
-  Future<Either<Failure, void>> sendMessage(Message message) {
+  Future<Either<Failure, void>> sendMessage(
+    Message message, {
+    List<String>? participantIds,
+  }) {
     return ErrorHandler.handle(
       () async {
         if (!await InternetConnectionChecker.instance.hasConnection) {
           throw const NetworkFailure(failureMessage: 'No internet connection');
         }
         final messageModel = MessageModel.fromEntity(message);
-        await _remoteDataSource.sendMessage(messageModel);
+        await _remoteDataSource.sendMessage(
+          messageModel,
+          participantIds: participantIds,
+        );
       },
       operationName: 'sendMessage',
     );

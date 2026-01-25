@@ -131,8 +131,12 @@ class ChatCubit extends BaseCubit<BaseState<ChatMessageData>> {
       lastUpdated: DateTime.now(),
     ));
 
-    // Send to server
-    final result = await chatUseCase.sendMessage(outgoingMessage);
+    // Send to server (pass participantIds to avoid read operation for lower latency)
+    final participantIds = currentData.chat?.participantIds;
+    final result = await chatUseCase.sendMessage(
+      outgoingMessage,
+      participantIds: participantIds,
+    );
 
     result.fold(
       (failure) {
@@ -232,16 +236,18 @@ class ChatCubit extends BaseCubit<BaseState<ChatMessageData>> {
           replyToMessageId: replyToMessageId,
         );
 
-        await sendMessage(message);
-
-        // Reset uploading state
-        emit(LoadedState<ChatMessageData>(
-          data: (state.data ?? const ChatMessageData()).copyWith(
-            isUploading: false,
-            uploadProgress: 0.0,
-          ),
-          lastUpdated: DateTime.now(),
-        ));
+        try {
+          await sendMessage(message);
+        } finally {
+          // Always reset uploading state, even if sendMessage fails
+          emit(LoadedState<ChatMessageData>(
+            data: (state.data ?? const ChatMessageData()).copyWith(
+              isUploading: false,
+              uploadProgress: 0.0,
+            ),
+            lastUpdated: DateTime.now(),
+          ));
+        }
       },
     );
   }

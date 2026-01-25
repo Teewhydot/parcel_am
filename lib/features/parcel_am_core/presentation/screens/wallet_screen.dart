@@ -38,6 +38,15 @@ class WalletScreen extends StatefulWidget {
 class _WalletScreenState extends State<WalletScreen> {
   double amount = 0.0;
 
+  @override
+  void initState() {
+    super.initState();
+    // Initialize wallet data for this user
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<WalletCubit>().start(widget.userId);
+    });
+  }
+
   void _showFundingModal(BuildContext context) {
     showModalBottomSheet(
       context: context,

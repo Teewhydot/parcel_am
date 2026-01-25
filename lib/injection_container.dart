@@ -95,10 +95,7 @@ import 'features/parcel_am_core/data/datasources/bank_account_remote_data_source
 import 'features/parcel_am_core/data/datasources/withdrawal_remote_data_source.dart';
 
 // Chat Feature (additional)
-import 'features/chat/data/datasources/message_remote_data_source.dart';
 import 'features/chat/data/datasources/presence_remote_data_source.dart';
-import 'features/chat/data/repositories/message_repository_impl.dart';
-import 'features/chat/domain/repositories/message_repository.dart';
 
 // Notifications Feature (additional)
 import 'features/notifications/data/repositories/notification_repository_impl.dart';
@@ -346,15 +343,6 @@ Future<void> init() async {
   // Dashboard Repository
   sl.registerLazySingleton<DashboardRepository>(
     () => DashboardRepositoryImpl(),
-  );
-
-  //! Features - Chat Additional Repositories
-  // Message Data Source and Repository
-  sl.registerLazySingleton<MessageRemoteDataSource>(
-    () => MessageRemoteDataSourceImpl(),
-  );
-  sl.registerLazySingleton<MessageRepository>(
-    () => MessageRepositoryImpl(),
   );
 
   //! Features - Notification Repository

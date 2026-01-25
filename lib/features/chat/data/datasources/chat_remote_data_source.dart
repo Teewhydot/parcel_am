@@ -12,7 +12,8 @@ import '../../services/message_rtdb_service.dart';
 abstract class ChatRemoteDataSource {
   Stream<List<MessageModel>> getMessagesStream(String chatId);
   /// Sends a message using the client-provided message ID
-  Future<void> sendMessage(MessageModel message);
+  /// Pass [participantIds] to avoid a read operation for lower latency
+  Future<void> sendMessage(MessageModel message, {List<String>? participantIds});
   Future<void> updateMessageStatus(String messageId, MessageStatus status);
   Future<void> markMessageAsRead(
     String chatId,
@@ -78,7 +79,10 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   }
 
   @override
-  Future<void> sendMessage(MessageModel message) async {
+  Future<void> sendMessage(
+    MessageModel message, {
+    List<String>? participantIds,
+  }) async {
     // Prepare reply message data if replying
     Map<String, dynamic>? replyToMessageData;
     if (message.replyToMessage != null) {
@@ -108,12 +112,14 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       fileSize: message.fileSize,
       replyToMessageId: message.replyToMessageId,
       replyToMessageData: replyToMessageData,
+      participantIds: participantIds,
     );
 
     // Increment unread count for other participants
     await _rtdbService.incrementUnreadForOthers(
       message.chatId,
       message.senderId,
+      participantIds: participantIds,
     );
   }
 
