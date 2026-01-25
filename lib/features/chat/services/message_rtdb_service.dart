@@ -541,7 +541,7 @@ class MessageRtdbService {
           orElse: () => MessageType.text,
         ),
         status: MessageStatus.sent,
-        timestamp: DateTime.now(), // Timestamp not critical for reply preview
+        timestamp: DateTime.now(),
       );
     }
 

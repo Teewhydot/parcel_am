@@ -435,6 +435,27 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       }
     }
 
+    // Parse replyToMessage if data exists
+    Message? replyToMessage;
+    final replyData = data['replyToMessageData'];
+    if (replyData != null && replyData is Map) {
+      final replyMap = Map<String, dynamic>.from(replyData);
+      replyToMessage = Message(
+        id: replyMap['id'] as String? ?? '',
+        chatId: replyMap['chatId'] as String? ?? '',
+        senderId: replyMap['senderId'] as String? ?? '',
+        senderName: replyMap['senderName'] as String? ?? '',
+        senderAvatar: replyMap['senderAvatar'] as String?,
+        content: replyMap['content'] as String? ?? '',
+        type: MessageType.values.firstWhere(
+          (e) => e.name == replyMap['type'],
+          orElse: () => MessageType.text,
+        ),
+        status: MessageStatus.sent,
+        timestamp: DateTime.now(),
+      );
+    }
+
     return MessageModel(
       id: id,
       chatId: data['chatId'] as String? ?? '',
@@ -456,6 +477,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       fileName: data['fileName'] as String?,
       fileSize: data['fileSize'] as int?,
       replyToMessageId: data['replyToMessageId'] as String?,
+      replyToMessage: replyToMessage,
       isDeleted: data['isDeleted'] as bool? ?? false,
       readBy: readBy,
       notificationSent: data['notificationSent'] as bool? ?? false,
