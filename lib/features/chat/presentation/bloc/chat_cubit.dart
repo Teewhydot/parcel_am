@@ -53,17 +53,23 @@ class ChatCubit extends BaseCubit<BaseState<ChatMessageData>> {
     for (final incoming in incomingMessages) {
       final existing = messageMap[incoming.id];
       if (existing != null) {
-        // Update existing message (preserve local status if server hasn't caught up)
+        // Preserve replyToMessage from either source (prefer server, fallback to local)
+        final replyToMessage = incoming.replyToMessage ?? existing.replyToMessage;
+
+        // Update existing message with server data, preserving reply
+        final mergedMessage = incoming.replyToMessage != null
+            ? incoming
+            : incoming.copyWith(replyToMessage: replyToMessage);
+
         if (existing.status == MessageStatus.sending &&
             incoming.status == MessageStatus.sent) {
           // Server confirmed - update to server version
-          messageMap[incoming.id] = incoming;
+          messageMap[incoming.id] = mergedMessage;
         } else if (existing.status != MessageStatus.sending) {
           // Normal update from server
-          messageMap[incoming.id] = incoming;
+          messageMap[incoming.id] = mergedMessage;
         }
-        // If still "sending" locally but server says "sent", use server version
-        // This handles the case where our optimistic update is behind
+        // If still "sending" locally, keep local version (with replyToMessage intact)
       } else {
         // New message from server (e.g., from other user)
         messageMap[incoming.id] = incoming;

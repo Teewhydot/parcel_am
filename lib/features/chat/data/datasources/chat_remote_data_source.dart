@@ -79,6 +79,21 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
 
   @override
   Future<void> sendMessage(MessageModel message) async {
+    // Prepare reply message data if replying
+    Map<String, dynamic>? replyToMessageData;
+    if (message.replyToMessage != null) {
+      final reply = message.replyToMessage!;
+      replyToMessageData = {
+        'id': reply.id,
+        'chatId': reply.chatId,
+        'senderId': reply.senderId,
+        'senderName': reply.senderName,
+        'senderAvatar': reply.senderAvatar,
+        'content': reply.content,
+        'type': reply.type.name,
+      };
+    }
+
     await _rtdbService.sendMessage(
       messageId: message.id,
       chatId: message.chatId,
@@ -92,6 +107,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       fileName: message.fileName,
       fileSize: message.fileSize,
       replyToMessageId: message.replyToMessageId,
+      replyToMessageData: replyToMessageData,
     );
 
     // Increment unread count for other participants
