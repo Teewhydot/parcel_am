@@ -161,9 +161,6 @@ abstract class BaseCubit<State extends BaseState> extends Cubit<State> {
   @override
   void onChange(Change<State> change) {
     super.onChange(change);
-    // Skip logging for loading and initial states to reduce console noise
-    if (change.nextState.isLoading || change.nextState.isInitial) return;
-    Logger.logBasic('$runtimeType Change: ${change.currentState} -> ${change.nextState}');
   }
 
   @override

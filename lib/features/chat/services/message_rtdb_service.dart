@@ -465,16 +465,24 @@ class MessageRtdbService {
         }
       }
 
-      for (final participantId in ids) {
-        if (participantId != senderId) {
-          await _chatRef(chatId)
-              .child('unreadCount')
-              .child(participantId)
-              .runTransaction((currentValue) {
-            final current = (currentValue as int?) ?? 0;
-            return Transaction.success(current + 1);
-          });
-        }
+      // Filter out sender and build list of participants to update
+      final participantsToUpdate = ids.where((id) => id != senderId).toList();
+      if (participantsToUpdate.isEmpty) return;
+
+      // Read current unread counts in one call
+      final unreadSnapshot = await _chatRef(chatId).child('unreadCount').get();
+
+      // Build atomic update
+      final updates = <String, dynamic>{};
+      for (final participantId in participantsToUpdate) {
+        final currentValue = unreadSnapshot.child(participantId).value;
+        final current = (currentValue as int?) ?? 0;
+        updates['chats/$chatId/unreadCount/$participantId'] = current + 1;
+      }
+
+      // Write all updates atomically (single network call)
+      if (updates.isNotEmpty) {
+        await database.ref().update(updates);
       }
     } catch (e) {
       Logger.logError('incrementUnreadForOthers failed: $e', tag: LogTag.chat);

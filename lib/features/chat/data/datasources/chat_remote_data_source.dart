@@ -98,29 +98,30 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       };
     }
 
-    await _rtdbService.sendMessage(
-      messageId: message.id,
-      chatId: message.chatId,
-      senderId: message.senderId,
-      senderName: message.senderName,
-      senderAvatar: message.senderAvatar,
-      content: message.content,
-      type: message.type,
-      mediaUrl: message.mediaUrl,
-      thumbnailUrl: message.thumbnailUrl,
-      fileName: message.fileName,
-      fileSize: message.fileSize,
-      replyToMessageId: message.replyToMessageId,
-      replyToMessageData: replyToMessageData,
-      participantIds: participantIds,
-    );
-
-    // Increment unread count for other participants
-    await _rtdbService.incrementUnreadForOthers(
-      message.chatId,
-      message.senderId,
-      participantIds: participantIds,
-    );
+    // Run message send and unread increment in parallel for lower latency
+    await Future.wait([
+      _rtdbService.sendMessage(
+        messageId: message.id,
+        chatId: message.chatId,
+        senderId: message.senderId,
+        senderName: message.senderName,
+        senderAvatar: message.senderAvatar,
+        content: message.content,
+        type: message.type,
+        mediaUrl: message.mediaUrl,
+        thumbnailUrl: message.thumbnailUrl,
+        fileName: message.fileName,
+        fileSize: message.fileSize,
+        replyToMessageId: message.replyToMessageId,
+        replyToMessageData: replyToMessageData,
+        participantIds: participantIds,
+      ),
+      _rtdbService.incrementUnreadForOthers(
+        message.chatId,
+        message.senderId,
+        participantIds: participantIds,
+      ),
+    ]);
   }
 
   @override

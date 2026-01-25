@@ -31,9 +31,6 @@ class ChatRepositoryImpl implements ChatRepository {
   }) {
     return ErrorHandler.handle(
       () async {
-        if (!await InternetConnectionChecker.instance.hasConnection) {
-          throw const NetworkFailure(failureMessage: 'No internet connection');
-        }
         final messageModel = MessageModel.fromEntity(message);
         await _remoteDataSource.sendMessage(
           messageModel,
