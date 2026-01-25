@@ -7,7 +7,6 @@ import 'package:parcel_am/core/widgets/app_text.dart';
 import 'package:parcel_am/core/widgets/floating_bottom_nav_bar.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/screens/dashboard_screen.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/screens/browse_requests_screen.dart';
-import 'package:parcel_am/features/parcel_am_core/presentation/screens/tracking_screen.dart';
 import 'package:parcel_am/features/chat/presentation/screens/chats_list_screen.dart';
 import 'package:parcel_am/features/chat/presentation/widgets/chat_notification_listener.dart';
 // import 'package:parcel_am/features/seeder/presentation/screens/database_seeder_screen.dart';
@@ -52,11 +51,6 @@ class _NavigationShellState extends State<NavigationShell> {
       label: 'Browse',
     ),
     FloatingNavItem(
-      icon: Icons.location_on_outlined,
-      activeIcon: Icons.location_on,
-      label: 'Tracking',
-    ),
-    FloatingNavItem(
       icon: Icons.chat_bubble_outline,
       activeIcon: Icons.chat_bubble,
       label: 'Chat',
@@ -81,7 +75,6 @@ class _NavigationShellState extends State<NavigationShell> {
     return [
       const DashboardScreen(),
       const BrowseRequestsScreen(),
-      const TrackingScreen(),
       ChatsListScreen(currentUserId: userId),
       // const DatabaseSeederScreen(),
     ];

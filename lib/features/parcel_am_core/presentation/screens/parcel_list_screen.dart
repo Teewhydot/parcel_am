@@ -14,7 +14,6 @@ import '../bloc/parcel/parcel_state.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_cubit.dart';
 import '../bloc/auth/auth_data.dart';
 import '../../domain/entities/parcel_entity.dart';
-import '../widgets/bottom_navigation.dart';
 import '../widgets/delivery_confirmation_card.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_card.dart';
@@ -158,7 +157,6 @@ class _ParcelListScreenState extends State<ParcelListScreen> {
           backgroundColor: AppColors.primary,
           child: const Icon(Icons.add, color: Colors.white),
         ),
-        bottomNavigationBar: const BottomNavigation(currentIndex: 0),
       ),
     );
   }
@@ -270,6 +268,24 @@ class _ParcelCard extends StatelessWidget {
                       color: _getStatusColor(parcel.status),
                     ),
                 ],
+              ),
+            ),
+          ],
+          // Show track button for parcels in transit
+          if (_isTrackable(parcel.status)) ...[
+            AppSpacing.verticalSpacing(SpacingSize.md),
+            SizedBox(
+              width: double.infinity,
+              child: AppButton.primary(
+                onPressed: () => _navigateToTracking(context),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.location_on, size: 18, color: Colors.white),
+                    AppSpacing.horizontalSpacing(SpacingSize.xs),
+                    AppText.bodyMedium('Track Delivery', color: Colors.white),
+                  ],
+                ),
               ),
             ),
           ],
@@ -398,5 +414,21 @@ class _ParcelCard extends StatelessWidget {
       ParcelStatus.cancelled => Icons.cancel,
       ParcelStatus.disputed => Icons.warning,
     };
+  }
+
+  bool _isTrackable(ParcelStatus status) {
+    return switch (status) {
+      ParcelStatus.pickedUp => true,
+      ParcelStatus.inTransit => true,
+      ParcelStatus.arrived => true,
+      _ => false,
+    };
+  }
+
+  void _navigateToTracking(BuildContext context) {
+    sl<NavigationService>().navigateTo(
+      Routes.tracking,
+      arguments: {'packageId': parcel.id},
+    );
   }
 }

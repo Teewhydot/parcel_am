@@ -11,7 +11,6 @@ import '../../../../core/widgets/app_input.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../../../../core/bloc/managers/bloc_manager.dart';
 import '../../../escrow/domain/entities/escrow_status.dart';
-import '../widgets/bottom_navigation.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/wallet/wallet_cubit.dart';
 import '../bloc/wallet/wallet_data.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/escrow/escrow_cubit.dart';
@@ -248,7 +247,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
             ),
           ),
         ),
-        bottomNavigationBar: const BottomNavigation(currentIndex: 1),
     );
   }
 

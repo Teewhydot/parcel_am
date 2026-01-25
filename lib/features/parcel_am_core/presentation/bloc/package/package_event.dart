@@ -45,9 +45,21 @@ class EscrowDisputeRequested extends PackageEvent {
 class DeliveryConfirmationRequested extends PackageEvent {
   final String packageId;
   final String confirmationCode;
-  
+
   const DeliveryConfirmationRequested({
     required this.packageId,
     required this.confirmationCode,
   });
+}
+
+class ParcelDataReceived extends PackageEvent {
+  final dynamic parcelEntity;
+
+  const ParcelDataReceived(this.parcelEntity);
+}
+
+class ParcelLoadFailed extends PackageEvent {
+  final String errorMessage;
+
+  const ParcelLoadFailed(this.errorMessage);
 }

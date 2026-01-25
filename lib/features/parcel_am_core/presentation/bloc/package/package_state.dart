@@ -1,43 +1,46 @@
+import 'package:equatable/equatable.dart';
 import '../../../domain/entities/package_entity.dart';
 
-class PackageState {
-  final bool isLoading;
+/// Data class holding all package-related state
+class PackageData extends Equatable {
   final PackageEntity? package;
-  final String? error;
-  final EscrowReleaseStatus? escrowReleaseStatus;
+  final EscrowReleaseStatus escrowReleaseStatus;
   final String? escrowMessage;
   final bool deliveryConfirmed;
   final String? disputeId;
 
-  const PackageState({
-    this.isLoading = false,
+  const PackageData({
     this.package,
-    this.error,
-    this.escrowReleaseStatus,
+    this.escrowReleaseStatus = EscrowReleaseStatus.idle,
     this.escrowMessage,
     this.deliveryConfirmed = false,
     this.disputeId,
   });
 
-  PackageState copyWith({
-    bool? isLoading,
+  PackageData copyWith({
     PackageEntity? package,
-    String? error,
     EscrowReleaseStatus? escrowReleaseStatus,
     String? escrowMessage,
     bool? deliveryConfirmed,
     String? disputeId,
   }) {
-    return PackageState(
-      isLoading: isLoading ?? this.isLoading,
+    return PackageData(
       package: package ?? this.package,
-      error: error,
       escrowReleaseStatus: escrowReleaseStatus ?? this.escrowReleaseStatus,
       escrowMessage: escrowMessage,
       deliveryConfirmed: deliveryConfirmed ?? this.deliveryConfirmed,
       disputeId: disputeId,
     );
   }
+
+  @override
+  List<Object?> get props => [
+        package,
+        escrowReleaseStatus,
+        escrowMessage,
+        deliveryConfirmed,
+        disputeId,
+      ];
 }
 
 enum EscrowReleaseStatus {

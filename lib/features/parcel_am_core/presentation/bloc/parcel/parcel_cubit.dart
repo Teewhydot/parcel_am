@@ -1,10 +1,13 @@
+import 'dart:async';
 import 'package:dartz/dartz.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../../../../core/bloc/base/base_bloc.dart';
 import '../../../../../core/bloc/base/base_state.dart';
 import '../../../../../core/errors/failures.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/utils/app_utils.dart';
 import '../../../../../core/services/connectivity_service.dart';
+import '../../../../../core/services/enhanced_location_service.dart';
 import '../../../../../core/services/offline_queue_service.dart';
 import '../../../../../injection_container.dart';
 import 'parcel_state.dart';
@@ -12,6 +15,7 @@ import '../../../domain/entities/parcel_entity.dart';
 import '../../../domain/usecases/parcel_usecase.dart';
 import '../../../domain/usecases/escrow_usecase.dart';
 import '../../../domain/usecases/wallet_usecase.dart';
+import '../../../data/services/location_rtdb_service.dart';
 import 'package:uuid/uuid.dart';
 
 class ParcelCubit extends BaseCubit<BaseState<ParcelData>> {
@@ -22,6 +26,12 @@ class ParcelCubit extends BaseCubit<BaseState<ParcelData>> {
 
   final ConnectivityService _connectivityService = sl<ConnectivityService>();
   final OfflineQueueService _offlineQueueService = sl<OfflineQueueService>();
+
+  // Location broadcasting for carrier tracking
+  final LocationRtdbService _locationRtdbService = LocationRtdbService();
+  final EnhancedLocationService _locationService = EnhancedLocationService();
+  StreamSubscription<Position>? _locationBroadcastSubscription;
+  String? _broadcastingParcelId;
 
   ParcelCubit() : super(const InitialState<ParcelData>());
 
@@ -721,8 +731,85 @@ class ParcelCubit extends BaseCubit<BaseState<ParcelData>> {
     }
   }
 
+  // ==================== Location Broadcasting ====================
+
+  /// Start broadcasting carrier location for a parcel
+  /// Called when carrier accepts a parcel and starts delivering
+  Future<void> startLocationBroadcast({
+    required String parcelId,
+    required String carrierId,
+  }) async {
+    // Stop any existing broadcast
+    await stopLocationBroadcast();
+
+    _broadcastingParcelId = parcelId;
+
+    // Request location permission
+    final hasPermission = await _locationService.requestLocationPermission();
+    if (!hasPermission) {
+      DFoodUtils.showSnackBar(
+        'Location permission required for tracking',
+        AppColors.warning,
+      );
+      return;
+    }
+
+    // Start location tracking
+    _locationService.startLocationTracking(
+      distanceFilter: 50, // Update every 50 meters or 10 seconds
+    );
+
+    // Listen to location updates and broadcast to RTDB
+    _locationBroadcastSubscription = _locationService.positionStream.listen(
+      (position) async {
+        if (_broadcastingParcelId == null) return;
+
+        // Get address for current position
+        final address = await _locationService.getAddressFromCoordinates(
+          position.latitude,
+          position.longitude,
+        );
+
+        // Update location in RTDB
+        await _locationRtdbService.updateCarrierLocation(
+          parcelId: _broadcastingParcelId!,
+          carrierId: carrierId,
+          position: position,
+          address: address,
+        );
+      },
+      onError: (error) {
+        DFoodUtils.showSnackBar(
+          'Location tracking error: $error',
+          AppColors.error,
+        );
+      },
+    );
+  }
+
+  /// Stop broadcasting carrier location
+  /// Called when delivery is completed or cancelled
+  Future<void> stopLocationBroadcast() async {
+    _locationBroadcastSubscription?.cancel();
+    _locationBroadcastSubscription = null;
+
+    if (_broadcastingParcelId != null) {
+      await _locationRtdbService.stopLocationUpdates(_broadcastingParcelId!);
+      _broadcastingParcelId = null;
+    }
+
+    _locationService.stopLocationTracking();
+  }
+
+  /// Check if currently broadcasting location for a parcel
+  bool get isBroadcastingLocation => _broadcastingParcelId != null;
+
+  /// Get the parcel ID currently being broadcast
+  String? get broadcastingParcelId => _broadcastingParcelId;
+
   @override
   Future<void> close() {
+    stopLocationBroadcast();
     _connectivityService.dispose();
     return super.close();
   }
