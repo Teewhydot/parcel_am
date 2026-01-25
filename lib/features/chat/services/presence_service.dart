@@ -1,21 +1,26 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:parcel_am/core/utils/logger.dart';
-import '../domain/repositories/presence_repository.dart';
+import 'presence_rtdb_service.dart';
 
 /// Global presence service that manages user online/offline status
 /// based on app lifecycle (foreground/background).
 ///
 /// This service uses [WidgetsBindingObserver] to detect app state changes
-/// and automatically updates the user's presence in Firestore.
+/// and automatically updates the user's presence in RTDB.
+///
+/// Key features:
+/// - Automatic offline detection via RTDB onDisconnect()
+/// - Connection state monitoring with auto-reconnect handling
+/// - Heartbeat to keep presence fresh
 class PresenceService with WidgetsBindingObserver {
-  final PresenceRepository _repository;
+  final PresenceRtdbService _rtdbService;
   final FirebaseAuth _firebaseAuth;
-  
+
   String? _currentUserId;
   StreamSubscription<User?>? _authSubscription;
+  StreamSubscription<bool>? _connectionSubscription;
   Timer? _heartbeatTimer;
   bool _isInitialized = false;
 
@@ -23,9 +28,9 @@ class PresenceService with WidgetsBindingObserver {
   static const Duration _heartbeatInterval = Duration(seconds: 60);
 
   PresenceService({
-    required PresenceRepository repository,
+    PresenceRtdbService? rtdbService,
     FirebaseAuth? firebaseAuth,
-  })  : _repository = repository,
+  })  : _rtdbService = rtdbService ?? PresenceRtdbService(),
         _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance;
 
   /// Get the current user ID
@@ -44,12 +49,17 @@ class PresenceService with WidgetsBindingObserver {
       if (user != null) {
         _currentUserId = user.uid;
         _setOnline();
-        Logger.logBasic('Auth state: User ${user.uid} signed in, setting online', tag: 'PresenceService');
+        _setupConnectionListener();
+        Logger.logBasic(
+          'Auth state: User ${user.uid} signed in, setting online',
+          tag: 'PresenceService',
+        );
       } else {
         // User signed out, clean up
         if (_currentUserId != null) {
           _setOffline();
         }
+        _cancelConnectionListener();
         _currentUserId = null;
         _stopHeartbeat();
         Logger.logBasic('Auth state: User signed out', tag: 'PresenceService');
@@ -61,9 +71,10 @@ class PresenceService with WidgetsBindingObserver {
     if (currentUser != null) {
       _currentUserId = currentUser.uid;
       _setOnline();
+      _setupConnectionListener();
     }
 
-    Logger.logSuccess('PresenceService initialized', tag: 'PresenceService');
+    Logger.logSuccess('PresenceService initialized (RTDB)', tag: 'PresenceService');
   }
 
   /// Legacy initialize method for backwards compatibility
@@ -75,6 +86,7 @@ class PresenceService with WidgetsBindingObserver {
       _isInitialized = true;
     }
     _setOnline();
+    _setupConnectionListener();
   }
 
   /// Dispose the service and stop observing
@@ -83,15 +95,16 @@ class PresenceService with WidgetsBindingObserver {
 
     _authSubscription?.cancel();
     _authSubscription = null;
-    
+
+    _cancelConnectionListener();
     WidgetsBinding.instance.removeObserver(this);
     _stopHeartbeat();
-    
+
     // Set offline before disposing
     if (_currentUserId != null) {
       _setOffline();
     }
-    
+
     _isInitialized = false;
     Logger.logBasic('PresenceService disposed', tag: 'PresenceService');
   }
@@ -109,7 +122,8 @@ class PresenceService with WidgetsBindingObserver {
         break;
       case AppLifecycleState.inactive:
         // App is inactive (e.g., phone call, control center)
-        // Keep online but don't do anything special
+        // Set away status but don't go fully offline
+        _setAway();
         break;
       case AppLifecycleState.paused:
         // App went to background
@@ -117,6 +131,7 @@ class PresenceService with WidgetsBindingObserver {
         break;
       case AppLifecycleState.detached:
         // App is being terminated
+        // Note: onDisconnect handler will take care of this automatically
         _setOffline();
         break;
       case AppLifecycleState.hidden:
@@ -126,17 +141,54 @@ class PresenceService with WidgetsBindingObserver {
     }
   }
 
+  /// Set up connection state listener for auto-reconnect handling
+  void _setupConnectionListener() {
+    _cancelConnectionListener();
+
+    if (_currentUserId == null) return;
+
+    _connectionSubscription = _rtdbService.watchConnectionState().listen(
+      (connected) {
+        if (connected && _currentUserId != null) {
+          Logger.logBasic(
+            'RTDB connection restored, re-establishing presence',
+            tag: 'PresenceService',
+          );
+          // Re-establish presence and onDisconnect handler
+          _rtdbService.setOnline(_currentUserId!);
+        }
+      },
+      onError: (error) {
+        Logger.logError(
+          'Connection state listener error: $error',
+          tag: 'PresenceService',
+        );
+      },
+    );
+  }
+
+  void _cancelConnectionListener() {
+    _connectionSubscription?.cancel();
+    _connectionSubscription = null;
+  }
+
   Future<void> _setOnline() async {
     if (_currentUserId == null) return;
 
-    final result = await _repository.setOnline(_currentUserId!);
-    result.fold(
-      (failure) => Logger.logError('Failed to set online status: ${failure.failureMessage}', tag: 'PresenceService'),
-      (_) {
-        _startHeartbeat();
-        Logger.logSuccess('User $_currentUserId set to online', tag: 'PresenceService');
-      },
-    );
+    try {
+      // setOnline also sets up onDisconnect handler automatically
+      await _rtdbService.setOnline(_currentUserId!);
+      _startHeartbeat();
+      Logger.logSuccess(
+        'User $_currentUserId set to online',
+        tag: 'PresenceService',
+      );
+    } catch (e) {
+      Logger.logError(
+        'Failed to set online status: $e',
+        tag: 'PresenceService',
+      );
+    }
   }
 
   Future<void> _setOffline() async {
@@ -144,18 +196,35 @@ class PresenceService with WidgetsBindingObserver {
 
     _stopHeartbeat();
 
-    final offlineResult = await _repository.setOffline(_currentUserId!);
-    final lastSeenResult = await _repository.updateLastSeen(_currentUserId!);
+    try {
+      await _rtdbService.setOffline(_currentUserId!);
+      Logger.logBasic(
+        'User $_currentUserId set to offline',
+        tag: 'PresenceService',
+      );
+    } catch (e) {
+      Logger.logError(
+        'Failed to set offline status: $e',
+        tag: 'PresenceService',
+      );
+    }
+  }
 
-    offlineResult.fold(
-      (failure) => Logger.logError('Failed to set offline status: ${failure.failureMessage}', tag: 'PresenceService'),
-      (_) => Logger.logBasic('User $_currentUserId set to offline', tag: 'PresenceService'),
-    );
+  Future<void> _setAway() async {
+    if (_currentUserId == null) return;
 
-    lastSeenResult.fold(
-      (failure) => Logger.logError('Failed to update last seen: ${failure.failureMessage}', tag: 'PresenceService'),
-      (_) {},
-    );
+    try {
+      await _rtdbService.setAway(_currentUserId!);
+      Logger.logBasic(
+        'User $_currentUserId set to away',
+        tag: 'PresenceService',
+      );
+    } catch (e) {
+      Logger.logError(
+        'Failed to set away status: $e',
+        tag: 'PresenceService',
+      );
+    }
   }
 
   /// Start periodic heartbeat to keep presence fresh
@@ -164,11 +233,12 @@ class PresenceService with WidgetsBindingObserver {
 
     _heartbeatTimer = Timer.periodic(_heartbeatInterval, (_) async {
       if (_currentUserId != null) {
-        final result = await _repository.setOnline(_currentUserId!);
-        result.fold(
-          (failure) => Logger.logError('Heartbeat failed: ${failure.failureMessage}', tag: 'PresenceService'),
-          (_) {},
-        );
+        try {
+          // Refresh online status and onDisconnect handler
+          await _rtdbService.setOnline(_currentUserId!);
+        } catch (e) {
+          Logger.logError('Heartbeat failed: $e', tag: 'PresenceService');
+        }
       }
     });
   }
@@ -185,26 +255,38 @@ class PresenceService with WidgetsBindingObserver {
   /// Manually set user as offline (can be called from outside)
   Future<void> setOffline() => _setOffline();
 
+  /// Manually set user as away (can be called from outside)
+  Future<void> setAway() => _setAway();
+
   /// Update last seen timestamp
   Future<void> updateLastSeen() async {
     if (_currentUserId == null) return;
-    final result = await _repository.updateLastSeen(_currentUserId!);
-    result.fold(
-      (failure) => Logger.logError('Failed to update last seen: ${failure.failureMessage}', tag: 'PresenceService'),
-      (_) {},
-    );
+    try {
+      await _rtdbService.updateLastSeen(_currentUserId!);
+    } catch (e) {
+      Logger.logError(
+        'Failed to update last seen: $e',
+        tag: 'PresenceService',
+      );
+    }
+  }
+
+  /// Watch another user's presence
+  Stream<PresenceData> watchUserPresence(String userId) {
+    return _rtdbService.watchPresence(userId);
+  }
+
+  /// Check if a user is currently online
+  Future<bool> isUserOnline(String userId) async {
+    final presence = await _rtdbService.getPresence(userId);
+    return presence?.isOnline ?? false;
   }
 
   /// Static helper to cleanup presence (e.g., on logout)
-  static Future<void> cleanupPresence(
-      FirebaseFirestore firestore, String userId) async {
+  /// This is now handled automatically by onDisconnect, but kept for explicit cleanup
+  static Future<void> cleanupPresence(String userId) async {
     try {
-      await firestore.collection('users').doc(userId).set({
-        'presence': {
-          'isOnline': false,
-          'lastSeen': FieldValue.serverTimestamp(),
-        }
-      }, SetOptions(merge: true));
+      await PresenceRtdbService().setOffline(userId);
     } catch (e) {
       Logger.logError('Error cleaning up presence: $e', tag: 'PresenceService');
     }

@@ -21,6 +21,7 @@ import 'features/chat/domain/repositories/chat_repository.dart';
 import 'features/chat/data/repositories/presence_repository_impl.dart';
 import 'features/chat/data/repositories/chat_repository_impl.dart';
 import 'features/chat/services/presence_service.dart';
+import 'features/chat/services/presence_rtdb_service.dart';
 
 // Notifications Feature Module
 import 'features/notifications/services/notification_service.dart';
@@ -137,12 +138,20 @@ Future<void> init() async {
     () => OfflineQueueService(sl()),
   );
 
-  // Presence System
+  // Presence System (RTDB-based for low latency)
+  sl.registerLazySingleton<PresenceRtdbService>(
+    () => PresenceRtdbService(),
+  );
   sl.registerLazySingleton<PresenceRemoteDataSource>(
-    () => PresenceRemoteDataSourceImpl(),
+    () => PresenceRemoteDataSourceImpl(rtdbService: sl()),
   );
   sl.registerLazySingleton<PresenceRepository>(() => PresenceRepositoryImpl());
-  sl.registerLazySingleton<PresenceService>(() => PresenceService(repository: sl()));
+  sl.registerLazySingleton<PresenceService>(
+    () => PresenceService(
+      rtdbService: sl(),
+      firebaseAuth: sl(),
+    ),
+  );
 
   //! Feature Modules (No longer using DI modules - direct instantiation)
 

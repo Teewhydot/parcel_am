@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/presence_entity.dart';
 
 class PresenceModel {
@@ -18,18 +17,18 @@ class PresenceModel {
     this.lastTypingAt,
   });
 
-  factory PresenceModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+  /// Create from RTDB snapshot data
+  factory PresenceModel.fromRtdb(String id, Map<String, dynamic> data) {
     return PresenceModel(
-      userId: doc.id,
+      userId: id,
       status: _statusFromString(data['status'] as String? ?? 'offline'),
-      lastSeen: data['lastSeen'] is Timestamp
-          ? (data['lastSeen'] as Timestamp).toDate()
+      lastSeen: data['lastSeen'] is int
+          ? DateTime.fromMillisecondsSinceEpoch(data['lastSeen'] as int)
           : null,
       isTyping: data['isTyping'] as bool? ?? false,
       typingInChatId: data['typingInChatId'] as String?,
-      lastTypingAt: data['lastTypingAt'] is Timestamp
-          ? (data['lastTypingAt'] as Timestamp).toDate()
+      lastTypingAt: data['lastTypingAt'] is int
+          ? DateTime.fromMillisecondsSinceEpoch(data['lastTypingAt'] as int)
           : null,
     );
   }
@@ -45,13 +44,25 @@ class PresenceModel {
     );
   }
 
+  /// Convert to RTDB format (timestamps as milliseconds)
+  Map<String, dynamic> toRtdb() {
+    return {
+      'status': _statusToString(status),
+      'lastSeen': lastSeen?.millisecondsSinceEpoch,
+      'isTyping': isTyping,
+      'typingInChatId': typingInChatId,
+      'lastTypingAt': lastTypingAt?.millisecondsSinceEpoch,
+    };
+  }
+
+  /// Legacy JSON format (kept for compatibility)
   Map<String, dynamic> toJson() {
     return {
       'status': _statusToString(status),
-      'lastSeen': lastSeen != null ? Timestamp.fromDate(lastSeen!) : null,
+      'lastSeen': lastSeen?.millisecondsSinceEpoch,
       'isTyping': isTyping,
       'typingInChatId': typingInChatId,
-      'lastTypingAt': lastTypingAt != null ? Timestamp.fromDate(lastTypingAt!) : null,
+      'lastTypingAt': lastTypingAt?.millisecondsSinceEpoch,
     };
   }
 
@@ -74,6 +85,8 @@ class PresenceModel {
         return PresenceStatus.offline;
       case 'away':
         return PresenceStatus.away;
+      case 'typing':
+        return PresenceStatus.typing;
       default:
         return PresenceStatus.offline;
     }
@@ -81,5 +94,28 @@ class PresenceModel {
 
   static String _statusToString(PresenceStatus status) {
     return status.name;
+  }
+
+  PresenceModel copyWith({
+    String? userId,
+    PresenceStatus? status,
+    DateTime? lastSeen,
+    bool? isTyping,
+    String? typingInChatId,
+    DateTime? lastTypingAt,
+  }) {
+    return PresenceModel(
+      userId: userId ?? this.userId,
+      status: status ?? this.status,
+      lastSeen: lastSeen ?? this.lastSeen,
+      isTyping: isTyping ?? this.isTyping,
+      typingInChatId: typingInChatId ?? this.typingInChatId,
+      lastTypingAt: lastTypingAt ?? this.lastTypingAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return 'PresenceModel(userId: $userId, status: $status, lastSeen: $lastSeen, isTyping: $isTyping)';
   }
 }
