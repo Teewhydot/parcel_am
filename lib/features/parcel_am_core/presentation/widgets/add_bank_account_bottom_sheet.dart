@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
-import '../../../../core/theme/app_font_size.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_input.dart';
 import '../../../../core/widgets/app_spacing.dart';
@@ -13,6 +12,11 @@ import '../../domain/entities/bank_info_entity.dart';
 import '../bloc/bank_account/bank_account_bloc.dart';
 import '../bloc/bank_account/bank_account_data.dart';
 import '../bloc/bank_account/bank_account_event.dart';
+import 'bank_account/add_bank_header.dart';
+import 'bank_account/bank_account_notice.dart';
+import 'bank_account/banks_loading_indicator.dart';
+import 'bank_account/verified_account_display.dart';
+import 'bank_account/verify_account_button.dart';
 
 class AddBankAccountBottomSheet extends StatefulWidget {
   final String userId;
@@ -196,37 +200,7 @@ class _AddBankAccountBottomSheetState extends State<AddBankAccountBottomSheet> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Handle bar
-                Container(
-                  margin: const EdgeInsets.only(top: 12),
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.outlineVariant,
-                    borderRadius: AppRadius.xs,
-                  ),
-                ),
-
-                // Header
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      AppText.titleLarge(
-                        'Add Bank Account',
-                        fontWeight: FontWeight.w600,
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: _clearAndClose,
-                      ),
-                    ],
-                  ),
-                ),
-
-                const Divider(height: 1),
-
+                AddBankHeader(onClose: _clearAndClose),
                 // Content
                 Flexible(
                   child: SingleChildScrollView(
@@ -236,32 +210,7 @@ class _AddBankAccountBottomSheetState extends State<AddBankAccountBottomSheet> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Notice
-                          Container(
-                            width: double.infinity,
-                            padding: AppSpacing.paddingMD,
-                            decoration: BoxDecoration(
-                              color: AppColors.infoLight,
-                              borderRadius: AppRadius.sm,
-                              border: Border.all(color: AppColors.info.withOpacity(0.3)),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.info_outline,
-                                    color: AppColors.infoDark, size: 20),
-                                AppSpacing.horizontalSpacing(SpacingSize.sm),
-                                Expanded(
-                                  child: AppText(
-                                    'You can only add bank accounts registered in your name.',
-                                    variant: TextVariant.bodySmall,
-                                    fontSize: AppFontSize.md,
-                                    color: AppColors.infoDark,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
+                          const BankAccountNotice(),
                           AppSpacing.verticalSpacing(SpacingSize.lg),
 
                           // Bank Selection
@@ -272,32 +221,7 @@ class _AddBankAccountBottomSheetState extends State<AddBankAccountBottomSheet> {
                           AppSpacing.verticalSpacing(SpacingSize.sm),
 
                           if (bankList.isEmpty)
-                            Container(
-                              width: double.infinity,
-                              padding: AppSpacing.paddingMD,
-                              decoration: BoxDecoration(
-                                color: AppColors.surfaceVariant,
-                                borderRadius: AppRadius.sm,
-                                border: Border.all(color: AppColors.outline),
-                              ),
-                              child: Row(
-                                children: [
-                                  const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: AppColors.onSurfaceVariant,
-                                    ),
-                                  ),
-                                  AppSpacing.horizontalSpacing(SpacingSize.sm),
-                                  AppText.bodyMedium(
-                                    'Loading banks...',
-                                    color: AppColors.onSurfaceVariant,
-                                  ),
-                                ],
-                              ),
-                            )
+                            const BanksLoadingIndicator()
                           else
                             DropdownButtonFormField<BankInfoEntity>(
                               value: _selectedBank,
@@ -372,61 +296,18 @@ class _AddBankAccountBottomSheetState extends State<AddBankAccountBottomSheet> {
 
                           AppSpacing.verticalSpacing(SpacingSize.md),
 
-                          // Verify Button
-                          SizedBox(
-                            width: double.infinity,
-                            child: AppButton.outline(
-                              onPressed: _isVerified || isVerifying || bankList.isEmpty
-                                  ? null
-                                  : _verifyAccount,
-                              loading: isVerifying,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  if (_isVerified)
-                                    const Icon(Icons.check_circle,
-                                        color: AppColors.success, size: 20),
-                                  if (_isVerified)
-                                    AppSpacing.horizontalSpacing(SpacingSize.xs),
-                                  AppText.bodyMedium(_isVerified ? 'Verified' : 'Verify Account'),
-                                ],
-                              ),
-                            ),
+                          VerifyAccountButton(
+                            isVerified: _isVerified,
+                            isVerifying: isVerifying,
+                            isDisabled: bankList.isEmpty,
+                            onPressed: _verifyAccount,
                           ),
 
                           if (_isVerified) ...[
                             AppSpacing.verticalSpacing(SpacingSize.lg),
-
-                            // Account Name Display
-                            AppText.bodyMedium(
-                              'Account Name',
-                              fontWeight: FontWeight.w500,
+                            VerifiedAccountDisplay(
+                              accountName: _accountNameController.text,
                             ),
-                            AppSpacing.verticalSpacing(SpacingSize.sm),
-                            Container(
-                              width: double.infinity,
-                              padding: AppSpacing.paddingMD,
-                              decoration: BoxDecoration(
-                                color: AppColors.successLight,
-                                borderRadius: AppRadius.sm,
-                                border: Border.all(color: AppColors.success.withOpacity(0.3)),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.check_circle,
-                                      color: AppColors.successDark),
-                                  AppSpacing.horizontalSpacing(SpacingSize.sm),
-                                  Expanded(
-                                    child: AppText.bodyLarge(
-                                      _accountNameController.text,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.successDark,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-
                             AppSpacing.verticalSpacing(SpacingSize.xl),
 
                             // Save Button
@@ -435,7 +316,10 @@ class _AddBankAccountBottomSheetState extends State<AddBankAccountBottomSheet> {
                               child: AppButton.primary(
                                 onPressed: isSaving ? null : _saveAccount,
                                 loading: isSaving,
-                                child: AppText.bodyMedium('Save Bank Account', color: AppColors.white),
+                                child: AppText.bodyMedium(
+                                  'Save Bank Account',
+                                  color: AppColors.white,
+                                ),
                               ),
                             ),
                           ],

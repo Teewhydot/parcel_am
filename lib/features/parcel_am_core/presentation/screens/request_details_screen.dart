@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
 import 'package:parcel_am/core/widgets/app_button.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_font_size.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/bloc/base/base_state.dart';
@@ -17,6 +15,8 @@ import '../../../../core/helpers/user_extensions.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../injection_container.dart';
+import '../widgets/request_details/accept_confirmation_sheet.dart';
+import '../widgets/request_details/parcel_details_content.dart';
 
 class RequestDetailsScreen extends StatefulWidget {
   const RequestDetailsScreen({super.key, required this.requestId});
@@ -34,7 +34,6 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
   @override
   void initState() {
     super.initState();
-    // Use provided ParcelCubit instead of creating new one
     context.read<ParcelCubit>().loadParcel(widget.requestId);
   }
 
@@ -70,7 +69,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
       _isCancelling = true;
     });
 
-    final totalAmount = (parcel.price ?? 0.0) + 150.0; // price + service fee
+    final totalAmount = (parcel.price ?? 0.0) + 150.0;
     context.read<ParcelCubit>().cancelParcel(
       parcelId: parcel.id,
       userId: parcel.sender.userId,
@@ -83,7 +82,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (bottomSheetContext) => _AcceptConfirmationSheet(
+      builder: (bottomSheetContext) => AcceptConfirmationSheet(
         parcel: parcel,
         onConfirm: () {
           Navigator.of(bottomSheetContext).pop();
@@ -94,7 +93,6 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
   }
 
   Future<void> _acceptRequest(ParcelEntity parcel) async {
-    // Get user from AuthCubit
     final authState = context.read<AuthCubit>().state;
     if (authState is! DataState<AuthData> || authState.data?.user == null) {
       if (mounted) {
@@ -126,7 +124,6 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
       ),
       body: BlocConsumer<ParcelCubit, BaseState<ParcelData>>(
         listener: (context, state) {
-          // Handle accept result
           if (state is LoadedState<ParcelData> && _isAccepting) {
             setState(() {
               _isAccepting = false;
@@ -146,7 +143,6 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
             );
           }
 
-          // Handle cancel result
           if (state is LoadedState<ParcelData> && _isCancelling) {
             setState(() {
               _isCancelling = false;
@@ -167,12 +163,10 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
           }
         },
         builder: (context, state) {
-          // Show loading only on initial load
           if (state is LoadingState<ParcelData>) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          // Show error state
           if (state is ErrorState<ParcelData>) {
             return Center(
               child: Column(
@@ -208,16 +202,14 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
             );
           }
 
-          // Show loaded data
           if (state is LoadedState<ParcelData>) {
             final parcel = state.data?.currentParcel;
             if (parcel == null) {
               return Center(child: AppText.bodyMedium('Parcel not found'));
             }
-            return _buildParcelDetails(parcel);
+            return ParcelDetailsContent(parcel: parcel);
           }
 
-          // Fallback for any other state
           return const SizedBox.shrink();
         },
       ),
@@ -229,21 +221,19 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
             return const SizedBox.shrink();
           }
 
-          // Get current user to check if they are the sender
           final authState = context.read<AuthCubit>().state;
           final currentUserId = (authState is DataState<AuthData>)
               ? authState.data?.user?.uid
               : null;
           final isCreator = currentUserId == parcel.sender.userId;
 
-          // Creator sees Cancel button (if parcel can be cancelled)
           if (isCreator) {
             if (!parcel.status.canBeCancelled) {
               return const SizedBox.shrink();
             }
             return Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: AppSpacing.horizontalPaddingLG,
               child: AppButton.outline(
                 fullWidth: true,
                 loading: _isCancelling,
@@ -260,15 +250,13 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
             );
           }
 
-          // Non-creators see Accept button (only for created status)
-          // Hide button if user is the creator or if parcel is not in created status
           if (parcel.status != ParcelStatus.created || isCreator) {
             return const SizedBox.shrink();
           }
 
           return Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: AppSpacing.horizontalPaddingLG,
             child: AppButton.primary(
               fullWidth: true,
               loading: _isAccepting,
@@ -283,647 +271,6 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
         child: Container(),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-    );
-  }
-
-  Widget _buildParcelDetails(ParcelEntity parcel) {
-    final deliveryDateStr = parcel.route.estimatedDeliveryDate;
-    String deliveryText = 'Flexible';
-    bool isUrgent = false;
-
-    if (deliveryDateStr != null && deliveryDateStr.isNotEmpty) {
-      try {
-        final deliveryDate = DateTime.parse(deliveryDateStr);
-        final now = DateTime.now();
-        final difference = deliveryDate.difference(now);
-
-        isUrgent = difference.inHours < 48;
-
-        if (difference.inHours < 24) {
-          deliveryText = 'Today ${DateFormat('h:mm a').format(deliveryDate)}';
-        } else if (difference.inHours < 48) {
-          deliveryText = 'Tomorrow ${DateFormat('h:mm a').format(deliveryDate)}';
-        } else {
-          deliveryText = DateFormat('MMM d, h:mm a').format(deliveryDate);
-        }
-      } catch (e) {
-        deliveryText = 'Flexible';
-      }
-    }
-
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Urgent Banner
-          if (isUrgent)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              color: AppColors.error,
-              child: Row(
-                children: [
-                  const Icon(Icons.warning, color: AppColors.white),
-                  AppSpacing.horizontalSpacing(SpacingSize.sm),
-                  Expanded(
-                    child: AppText.bodyMedium(
-                      'Urgent delivery needed by $deliveryText',
-                      color: AppColors.white,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Package Info
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.1),
-                        borderRadius: AppRadius.lg,
-                      ),
-                      child: const Icon(
-                        Icons.inventory_2_outlined,
-                        color: AppColors.primary,
-                        size: 30,
-                      ),
-                    ),
-                    AppSpacing.horizontalSpacing(SpacingSize.lg),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          AppText(
-                            parcel.category ?? 'Package',
-                            variant: TextVariant.titleLarge,
-                            fontSize: AppFontSize.xxl,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          AppSpacing.verticalSpacing(SpacingSize.xs),
-                          AppText.headlineSmall(
-                            '₦${(parcel.price ?? 0.0).toStringAsFixed(0)}',
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
-                          ),
-                          AppSpacing.verticalSpacing(SpacingSize.xs),
-                          AppText.bodySmall(
-                            (parcel.escrowId != null && parcel.escrowId!.isNotEmpty)
-                                ? 'Payment via escrow'
-                                : 'Direct payment',
-                            color: AppColors.onSurfaceVariant,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-
-                AppSpacing.verticalSpacing(SpacingSize.xxl),
-
-                // Package Description
-                AppText.bodyLarge(
-                  parcel.description ?? 'No description provided',
-                  height: 1.5,
-                ),
-
-                AppSpacing.verticalSpacing(SpacingSize.xxl),
-
-                // Sender Info
-                if (parcel.sender.name.isNotEmpty) ...[
-                  AppText.bodyLarge(
-                    'Sender',
-                    fontWeight: FontWeight.bold,
-                  ),
-                  AppSpacing.verticalSpacing(SpacingSize.sm),
-                  Row(
-                    children: [
-                      const Icon(Icons.person, size: 20, color: AppColors.primary),
-                      AppSpacing.horizontalSpacing(SpacingSize.sm),
-                      AppText.bodyMedium(
-                        parcel.sender.name,
-                      ),
-                    ],
-                  ),
-                  if (parcel.sender.phoneNumber.isNotEmpty) ...[
-                    AppSpacing.verticalSpacing(SpacingSize.xs),
-                    Row(
-                      children: [
-                        const Icon(Icons.phone, size: 20, color: AppColors.primary),
-                        AppSpacing.horizontalSpacing(SpacingSize.sm),
-                        AppText.bodyMedium(
-                          parcel.sender.phoneNumber,
-                        ),
-                      ],
-                    ),
-                  ],
-                  AppSpacing.verticalSpacing(SpacingSize.xxl),
-                ],
-
-                // Route Info
-                Row(
-                  children: [
-                    Column(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: const BoxDecoration(
-                            color: AppColors.primary,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.circle, color: AppColors.white, size: 8),
-                        ),
-                        Container(
-                          width: 2,
-                          height: 40,
-                          color: AppColors.outline,
-                        ),
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: const BoxDecoration(
-                            color: AppColors.secondary,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.flag, color: AppColors.white, size: 16),
-                        ),
-                      ],
-                    ),
-                    AppSpacing.horizontalSpacing(SpacingSize.lg),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          AppText.bodySmall(
-                            'From',
-                            color: AppColors.onSurfaceVariant,
-                          ),
-                          AppText.bodyLarge(
-                            parcel.route.origin,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          AppSpacing.verticalSpacing(SpacingSize.xxl),
-                          AppText.bodySmall(
-                            'To',
-                            color: AppColors.onSurfaceVariant,
-                          ),
-                          AppText.bodyLarge(
-                            parcel.route.destination,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-
-                AppSpacing.verticalSpacing(SpacingSize.xxl),
-
-                // Package Details
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildDetailCard('Weight', '${parcel.weight ?? 0.0}kg'),
-                    ),
-                    AppSpacing.horizontalSpacing(SpacingSize.md),
-                    Expanded(
-                      child: _buildDetailCard(
-                        'Dimensions',
-                        parcel.dimensions ?? 'Not specified',
-                      ),
-                    ),
-                  ],
-                ),
-
-                AppSpacing.verticalSpacing(SpacingSize.lg),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildDetailCard(
-                        'Deliver by',
-                        deliveryText,
-                      ),
-                    ),
-                  ],
-                ),
-
-                AppSpacing.verticalSpacing(SpacingSize.xxl),
-
-                // Receiver Info
-                AppText.bodyLarge(
-                  'Receiver',
-                  fontWeight: FontWeight.bold,
-                ),
-                AppSpacing.verticalSpacing(SpacingSize.sm),
-                Row(
-                  children: [
-                    const Icon(Icons.person, size: 20, color: AppColors.secondary),
-                    AppSpacing.horizontalSpacing(SpacingSize.sm),
-                    AppText.bodyMedium(
-                      parcel.receiver.name,
-                    ),
-                  ],
-                ),
-                if (parcel.receiver.phoneNumber.isNotEmpty) ...[
-                  AppSpacing.verticalSpacing(SpacingSize.xs),
-                  Row(
-                    children: [
-                      const Icon(Icons.phone, size: 20, color: AppColors.secondary),
-                      AppSpacing.horizontalSpacing(SpacingSize.sm),
-                      AppText.bodyMedium(
-                        parcel.receiver.phoneNumber,
-                      ),
-                    ],
-                  ),
-                ],
-                if (parcel.receiver.address.isNotEmpty) ...[
-                  AppSpacing.verticalSpacing(SpacingSize.xs),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(Icons.location_on, size: 20, color: AppColors.secondary),
-                      AppSpacing.horizontalSpacing(SpacingSize.sm),
-                      Expanded(
-                        child: AppText.bodyMedium(
-                          parcel.receiver.address,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-
-                const SizedBox(height: 100), // Space for bottom button
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDetailCard(String label, String value) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceVariant,
-        borderRadius: AppRadius.md,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          AppText.bodySmall(
-            label,
-            color: AppColors.onSurfaceVariant,
-          ),
-          AppSpacing.verticalSpacing(SpacingSize.xs),
-          AppText.bodyMedium(
-            value,
-            fontWeight: FontWeight.w600,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AcceptConfirmationSheet extends StatelessWidget {
-  final ParcelEntity parcel;
-  final VoidCallback onConfirm;
-
-  const _AcceptConfirmationSheet({
-    required this.parcel,
-    required this.onConfirm,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final deliveryDateStr = parcel.route.estimatedDeliveryDate;
-    String deliveryText = 'Flexible';
-
-    if (deliveryDateStr != null && deliveryDateStr.isNotEmpty) {
-      try {
-        final deliveryDate = DateTime.parse(deliveryDateStr);
-        final now = DateTime.now();
-        final difference = deliveryDate.difference(now);
-
-        if (difference.inHours < 24) {
-          deliveryText = 'Today ${DateFormat('h:mm a').format(deliveryDate)}';
-        } else if (difference.inHours < 48) {
-          deliveryText = 'Tomorrow ${DateFormat('h:mm a').format(deliveryDate)}';
-        } else {
-          deliveryText = DateFormat('MMM d, h:mm a').format(deliveryDate);
-        }
-      } catch (e) {
-        deliveryText = 'Flexible';
-      }
-    }
-
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: AppRadius.topXxl,
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: AppSpacing.screenPadding,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Drag handle
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.outline,
-                    borderRadius: AppRadius.xs,
-                  ),
-                ),
-              ),
-              AppSpacing.verticalSpacing(SpacingSize.lg),
-
-              // Header
-              Row(
-                children: [
-                  Container(
-                    padding: AppSpacing.paddingMD,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
-                      borderRadius: AppRadius.md,
-                    ),
-                    child: const Icon(
-                      Icons.local_shipping,
-                      color: AppColors.primary,
-                      size: 28,
-                    ),
-                  ),
-                  AppSpacing.horizontalSpacing(SpacingSize.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        AppText.titleMedium(
-                          'Accept Delivery Request',
-                          fontWeight: FontWeight.bold,
-                        ),
-                        AppSpacing.verticalSpacing(SpacingSize.xs),
-                        AppText.bodySmall(
-                          'Review the details before accepting',
-                          color: AppColors.onSurfaceVariant,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              AppSpacing.verticalSpacing(SpacingSize.xl),
-
-              // Route summary
-              Container(
-                padding: AppSpacing.paddingLG,
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceVariant,
-                  borderRadius: AppRadius.md,
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: AppSpacing.paddingXS,
-                          decoration: const BoxDecoration(
-                            color: AppColors.primary,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.circle,
-                            color: AppColors.white,
-                            size: 6,
-                          ),
-                        ),
-                        AppSpacing.horizontalSpacing(SpacingSize.md),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              AppText.bodySmall(
-                                'Pickup',
-                                color: AppColors.onSurfaceVariant,
-                              ),
-                              AppText.bodyMedium(
-                                parcel.route.origin,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 11),
-                      child: Container(
-                        width: 2,
-                        height: 20,
-                        color: AppColors.outline,
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        Container(
-                          padding: AppSpacing.paddingXS,
-                          decoration: const BoxDecoration(
-                            color: AppColors.secondary,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.flag,
-                            color: AppColors.white,
-                            size: 12,
-                          ),
-                        ),
-                        AppSpacing.horizontalSpacing(SpacingSize.md),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              AppText.bodySmall(
-                                'Deliver to',
-                                color: AppColors.onSurfaceVariant,
-                              ),
-                              AppText.bodyMedium(
-                                parcel.route.destination,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              AppSpacing.verticalSpacing(SpacingSize.lg),
-
-              // Details row
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildInfoTile(
-                      icon: Icons.payments,
-                      label: 'Earnings',
-                      value: '₦${(parcel.price ?? 0.0).toStringAsFixed(0)}',
-                      valueColor: AppColors.success,
-                    ),
-                  ),
-                  AppSpacing.horizontalSpacing(SpacingSize.md),
-                  Expanded(
-                    child: _buildInfoTile(
-                      icon: Icons.schedule,
-                      label: 'Deliver by',
-                      value: deliveryText,
-                    ),
-                  ),
-                ],
-              ),
-              AppSpacing.verticalSpacing(SpacingSize.lg),
-
-              // Package info
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildInfoTile(
-                      icon: Icons.category,
-                      label: 'Category',
-                      value: parcel.category ?? 'General',
-                    ),
-                  ),
-                  AppSpacing.horizontalSpacing(SpacingSize.md),
-                  Expanded(
-                    child: _buildInfoTile(
-                      icon: Icons.scale,
-                      label: 'Weight',
-                      value: '${parcel.weight ?? 0.0}kg',
-                    ),
-                  ),
-                ],
-              ),
-              AppSpacing.verticalSpacing(SpacingSize.xl),
-
-              // Escrow notice
-              Container(
-                padding: AppSpacing.paddingMD,
-                decoration: BoxDecoration(
-                  color: AppColors.info.withValues(alpha: 0.1),
-                  borderRadius: AppRadius.md,
-                  border: Border.all(
-                    color: AppColors.info.withValues(alpha: 0.3),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.security,
-                      size: 20,
-                      color: AppColors.info,
-                    ),
-                    AppSpacing.horizontalSpacing(SpacingSize.sm),
-                    Expanded(
-                      child: AppText.bodySmall(
-                        'Payment is secured in escrow and will be released upon delivery confirmation.',
-                        color: AppColors.info,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              AppSpacing.verticalSpacing(SpacingSize.xl),
-
-              // Action buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: AppButton.outline(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: AppText.bodyMedium('Cancel'),
-                    ),
-                  ),
-                  AppSpacing.horizontalSpacing(SpacingSize.md),
-                  Expanded(
-                    flex: 2,
-                    child: AppButton.primary(
-                      onPressed: onConfirm,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.check_circle,
-                            color: AppColors.white,
-                            size: 20,
-                          ),
-                          AppSpacing.horizontalSpacing(SpacingSize.sm),
-                          AppText.bodyMedium(
-                            'Accept Request',
-                            color: AppColors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoTile({
-    required IconData icon,
-    required String label,
-    required String value,
-    Color? valueColor,
-  }) {
-    return Container(
-      padding: AppSpacing.paddingMD,
-      decoration: BoxDecoration(
-        color: AppColors.surfaceVariant,
-        borderRadius: AppRadius.sm,
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 20, color: AppColors.onSurfaceVariant),
-          AppSpacing.horizontalSpacing(SpacingSize.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AppText.bodySmall(
-                  label,
-                  color: AppColors.onSurfaceVariant,
-                ),
-                AppText.bodyMedium(
-                  value,
-                  fontWeight: FontWeight.w600,
-                  color: valueColor,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

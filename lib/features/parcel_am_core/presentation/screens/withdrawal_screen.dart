@@ -7,19 +7,20 @@ import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../injection_container.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_radius.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_input.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
-import '../../domain/entities/user_bank_account_entity.dart';
 import '../bloc/bank_account/bank_account_bloc.dart';
 import '../bloc/bank_account/bank_account_data.dart';
 import '../bloc/bank_account/bank_account_event.dart';
 import '../bloc/withdrawal/withdrawal_bloc.dart';
 import '../bloc/withdrawal/withdrawal_data.dart';
 import '../bloc/withdrawal/withdrawal_event.dart';
+import '../widgets/withdrawal/bank_account_selection_sheet.dart';
+import '../widgets/withdrawal/withdrawal_confirmation_dialog.dart';
+import '../widgets/withdrawal/no_bank_account_warning.dart';
 
 class WithdrawalScreen extends StatefulWidget {
   final String userId;
@@ -43,7 +44,6 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
   @override
   void initState() {
     super.initState();
-    // Load user bank accounts
     context.read<BankAccountBloc>().add(
           BankAccountLoadRequested(userId: widget.userId),
         );
@@ -55,125 +55,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
     super.dispose();
   }
 
-  void _showBankAccountSelection(List<UserBankAccountEntity> accounts) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AppText.titleMedium('Select Bank Account', fontWeight: FontWeight.w600),
-            AppSpacing.verticalSpacing(SpacingSize.md),
-            ...accounts.map((account) => _buildAccountOption(account)),
-            AppSpacing.verticalSpacing(SpacingSize.md),
-            AppButton.text(
-              onPressed: () {
-                sl<NavigationService>().goBack();
-                sl<NavigationService>().navigateTo(
-                  Routes.bankAccounts,
-                  arguments: {'userId': widget.userId},
-                );
-              },
-              child: AppText.bodyMedium('Manage Bank Accounts', color: AppColors.primary),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAccountOption(UserBankAccountEntity account) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: CircleAvatar(
-        backgroundColor: AppColors.primary.withOpacity(0.1),
-        child: Icon(Icons.account_balance, color: AppColors.primary),
-      ),
-      title: AppText.bodyMedium(
-        account.accountName,
-        fontWeight: FontWeight.w600,
-      ),
-      subtitle: AppText.bodySmall(
-        '${account.bankName} - ${account.maskedAccountNumber}',
-      ),
-      onTap: () {
-        context.read<WithdrawalBloc>().add(
-              WithdrawalBankAccountSelected(bankAccount: account),
-            );
-        Navigator.pop(context);
-      },
-    );
-  }
-
-  void _showConfirmationDialog(
-    double amount,
-    UserBankAccountEntity bankAccount,
-  ) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: AppText.titleMedium('Confirm Withdrawal', fontWeight: FontWeight.w600),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AppText.bodyLarge(
-              'Amount: ${_currencyFormat.format(amount)}',
-              fontWeight: FontWeight.w600,
-            ),
-            AppSpacing.verticalSpacing(SpacingSize.sm),
-            AppText.bodyMedium('Bank: ${bankAccount.bankName}'),
-            AppText.bodyMedium('Account: ${bankAccount.accountName}'),
-            AppText.bodyMedium('Number: ${bankAccount.maskedAccountNumber}'),
-            AppSpacing.verticalSpacing(SpacingSize.md),
-            Container(
-              padding: AppSpacing.paddingMD,
-              decoration: BoxDecoration(
-                color: AppColors.warningLight,
-                borderRadius: AppRadius.sm,
-                border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.info_outline, color: AppColors.warning, size: 20),
-                  AppSpacing.horizontalSpacing(SpacingSize.sm),
-                  Expanded(
-                    child: AppText.bodySmall(
-                      'Funds will be transferred to your account within 24 hours',
-                      color: AppColors.warningDark,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          AppButton.text(
-            onPressed: () => Navigator.pop(context),
-            child: AppText.bodyMedium('Cancel', color: AppColors.primary),
-          ),
-          AppButton.primary(
-            onPressed: () {
-              Navigator.pop(context);
-              _initiateWithdrawal(amount, bankAccount);
-            },
-            child: AppText.bodyMedium('Confirm', color: AppColors.white),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _initiateWithdrawal(double amount, UserBankAccountEntity bankAccount) {
+  void _initiateWithdrawal(double amount, bankAccount) {
     context.read<WithdrawalBloc>().add(
           WithdrawalInitiateRequested(
             userId: widget.userId,
@@ -196,7 +78,6 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
         listeners: [
           BlocListener<WithdrawalBloc, BaseState<WithdrawalData>>(
             listener: (context, state) {
-              // Navigate to status screen when withdrawal initiated
               if (state is LoadedState<WithdrawalData> &&
                   state.data?.withdrawalOrder != null) {
                 sl<NavigationService>().navigateAndReplace(
@@ -205,7 +86,6 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                 );
               }
 
-              // Show errors
               if (state is AsyncErrorState<WithdrawalData>) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -237,170 +117,40 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Available Balance Card
-                        Center(
-                          child: AppCard.elevated(
-                            color: AppColors.primary.withOpacity(0.1),
-                            child: Padding(
-                              padding: AppSpacing.paddingLG,
-                              child: Column(
-                                children: [
-                                  AppText.bodyMedium(
-                                    'Available Balance',
-                                    color: AppColors.onSurfaceVariant,
-                                  ),
-                                  AppSpacing.verticalSpacing(SpacingSize.sm),
-                                  AppText.headlineMedium(
-                                    _currencyFormat.format(widget.availableBalance),
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.primary,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
+                        _BalanceCard(
+                          balance: widget.availableBalance,
+                          currencyFormat: _currencyFormat,
                         ),
-
                         AppSpacing.verticalSpacing(SpacingSize.xl),
-
-                        // Amount Input
-                        AppText.titleMedium('Withdrawal Amount', fontWeight: FontWeight.w600),
-                        AppSpacing.verticalSpacing(SpacingSize.sm),
-                        AppInput(
+                        _AmountInput(
                           controller: _amountController,
-                          hintText: 'Enter amount',
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
-                          ],
                           errorText: withdrawalData.amountError,
-                          onChanged: (value) {
-                            context.read<WithdrawalBloc>().add(
-                                  WithdrawalAmountChanged(amount: value),
-                                );
-                          },
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter amount';
-                            }
-                            final amount = double.tryParse(value);
-                            if (amount == null) {
-                              return 'Invalid amount';
-                            }
-                            if (amount > widget.availableBalance) {
-                              return 'Insufficient balance';
-                            }
-                            return null;
-                          },
+                          availableBalance: widget.availableBalance,
                         ),
-
-                        AppSpacing.verticalSpacing(SpacingSize.sm),
-                        AppText.bodySmall(
-                          'Min: ₦100 • Max: ₦500,000',
-                          color: AppColors.textSecondary,
-                        ),
-
                         AppSpacing.verticalSpacing(SpacingSize.xl),
-
-                        // Bank Account Selection
-                        AppText.titleMedium('Bank Account', fontWeight: FontWeight.w600),
-                        AppSpacing.verticalSpacing(SpacingSize.sm),
-                        if (withdrawalData.selectedBankAccount != null)
-                          AppCard.elevated(
-                            padding: EdgeInsets.zero,
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor: AppColors.primary.withOpacity(0.1),
-                                child: Icon(Icons.account_balance, color: AppColors.primary),
-                              ),
-                              title: AppText.bodyMedium(
-                                withdrawalData.selectedBankAccount!.accountName,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              subtitle: AppText.bodySmall(
-                                '${withdrawalData.selectedBankAccount!.bankName} - ${withdrawalData.selectedBankAccount!.maskedAccountNumber}',
-                              ),
-                              trailing: IconButton(
-                                icon: const Icon(Icons.edit),
-                                onPressed: bankAccountData.userBankAccounts.isNotEmpty
-                                    ? () => _showBankAccountSelection(
-                                          bankAccountData.userBankAccounts,
-                                        )
-                                    : null,
-                              ),
-                            ),
-                          )
-                        else
-                          AppButton.outline(
-                            onPressed: bankAccountData.userBankAccounts.isNotEmpty
-                                ? () => _showBankAccountSelection(
-                                      bankAccountData.userBankAccounts,
-                                    )
-                                : null,
-                            fullWidth: true,
-                            leadingIcon: const Icon(Icons.account_balance),
-                            child: AppText.bodyMedium('Select Bank Account', color: AppColors.primary),
-                          ),
-
-                        if (bankAccountData.userBankAccounts.isEmpty) ...[
-                          AppSpacing.verticalSpacing(SpacingSize.sm),
-                          Container(
-                            padding: AppSpacing.paddingMD,
-                            decoration: BoxDecoration(
-                              color: AppColors.warningLight,
-                              borderRadius: AppRadius.sm,
-                              border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(Icons.info_outline, color: AppColors.warning),
-                                AppSpacing.horizontalSpacing(SpacingSize.sm),
-                                Expanded(
-                                  child: AppText.bodyMedium(
-                                    'Please add a bank account first',
-                                    color: AppColors.warningDark,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          AppSpacing.verticalSpacing(SpacingSize.md),
-                          SizedBox(
-                            width: double.infinity,
-                            child: AppButton.primary(
-                              onPressed: () {
-                                sl<NavigationService>().navigateTo(
-                                  Routes.bankAccounts,
-                                  arguments: {'userId': widget.userId},
-                                );
-                              },
-                              leadingIcon: Icon(Icons.add, color: AppColors.white),
-                              child: const AppText('Add Bank Account', color: AppColors.white),
-                            ),
-                          ),
-                        ],
-
+                        _BankAccountSection(
+                          withdrawalData: withdrawalData,
+                          bankAccountData: bankAccountData,
+                          userId: widget.userId,
+                        ),
                         AppSpacing.verticalSpacing(SpacingSize.xxl),
-
-                        // Withdraw Button
-                        SizedBox(
-                          width: double.infinity,
-                          child: AppButton.primary(
-                            onPressed: withdrawalData.canInitiateWithdrawal &&
-                                    !withdrawalData.isInitiating
-                                ? () {
-                                    if (_formKey.currentState!.validate()) {
-                                      final amount = double.parse(_amountController.text);
-                                      _showConfirmationDialog(
-                                        amount,
-                                        withdrawalData.selectedBankAccount!,
-                                      );
-                                    }
-                                  }
-                                : null,
-                            loading: withdrawalData.isInitiating,
-                            child: const AppText('Withdraw', color: AppColors.white),
-                          ),
+                        _WithdrawButton(
+                          canInitiate: withdrawalData.canInitiateWithdrawal,
+                          isInitiating: withdrawalData.isInitiating,
+                          onPressed: () {
+                            if (_formKey.currentState!.validate()) {
+                              final amount = double.parse(_amountController.text);
+                              WithdrawalConfirmationDialog.show(
+                                context,
+                                amount: amount,
+                                bankAccount: withdrawalData.selectedBankAccount!,
+                                onConfirm: () => _initiateWithdrawal(
+                                  amount,
+                                  withdrawalData.selectedBankAccount!,
+                                ),
+                              );
+                            }
+                          },
                         ),
                       ],
                     ),
@@ -410,6 +160,188 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+class _BalanceCard extends StatelessWidget {
+  const _BalanceCard({
+    required this.balance,
+    required this.currencyFormat,
+  });
+
+  final double balance;
+  final NumberFormat currencyFormat;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: AppCard.elevated(
+        color: AppColors.primary.withValues(alpha: 0.1),
+        child: Padding(
+          padding: AppSpacing.paddingLG,
+          child: Column(
+            children: [
+              AppText.bodyMedium(
+                'Available Balance',
+                color: AppColors.onSurfaceVariant,
+              ),
+              AppSpacing.verticalSpacing(SpacingSize.sm),
+              AppText.headlineMedium(
+                currencyFormat.format(balance),
+                fontWeight: FontWeight.bold,
+                color: AppColors.primary,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AmountInput extends StatelessWidget {
+  const _AmountInput({
+    required this.controller,
+    required this.errorText,
+    required this.availableBalance,
+  });
+
+  final TextEditingController controller;
+  final String? errorText;
+  final double availableBalance;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AppText.titleMedium('Withdrawal Amount', fontWeight: FontWeight.w600),
+        AppSpacing.verticalSpacing(SpacingSize.sm),
+        AppInput(
+          controller: controller,
+          hintText: 'Enter amount',
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+          ],
+          errorText: errorText,
+          onChanged: (value) {
+            context.read<WithdrawalBloc>().add(
+                  WithdrawalAmountChanged(amount: value),
+                );
+          },
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter amount';
+            }
+            final amount = double.tryParse(value);
+            if (amount == null) {
+              return 'Invalid amount';
+            }
+            if (amount > availableBalance) {
+              return 'Insufficient balance';
+            }
+            return null;
+          },
+        ),
+        AppSpacing.verticalSpacing(SpacingSize.sm),
+        AppText.bodySmall(
+          'Min: ₦100 • Max: ₦500,000',
+          color: AppColors.textSecondary,
+        ),
+      ],
+    );
+  }
+}
+
+class _BankAccountSection extends StatelessWidget {
+  const _BankAccountSection({
+    required this.withdrawalData,
+    required this.bankAccountData,
+    required this.userId,
+  });
+
+  final WithdrawalData withdrawalData;
+  final BankAccountData bankAccountData;
+  final String userId;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AppText.titleMedium('Bank Account', fontWeight: FontWeight.w600),
+        AppSpacing.verticalSpacing(SpacingSize.sm),
+        if (withdrawalData.selectedBankAccount != null)
+          AppCard.elevated(
+            padding: EdgeInsets.zero,
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                child: Icon(Icons.account_balance, color: AppColors.primary),
+              ),
+              title: AppText.bodyMedium(
+                withdrawalData.selectedBankAccount!.accountName,
+                fontWeight: FontWeight.w600,
+              ),
+              subtitle: AppText.bodySmall(
+                '${withdrawalData.selectedBankAccount!.bankName} - ${withdrawalData.selectedBankAccount!.maskedAccountNumber}',
+              ),
+              trailing: IconButton(
+                icon: const Icon(Icons.edit),
+                onPressed: bankAccountData.userBankAccounts.isNotEmpty
+                    ? () => BankAccountSelectionSheet.show(
+                          context,
+                          accounts: bankAccountData.userBankAccounts,
+                          userId: userId,
+                        )
+                    : null,
+              ),
+            ),
+          )
+        else
+          AppButton.outline(
+            onPressed: bankAccountData.userBankAccounts.isNotEmpty
+                ? () => BankAccountSelectionSheet.show(
+                      context,
+                      accounts: bankAccountData.userBankAccounts,
+                      userId: userId,
+                    )
+                : null,
+            fullWidth: true,
+            leadingIcon: const Icon(Icons.account_balance),
+            child: AppText.bodyMedium('Select Bank Account', color: AppColors.primary),
+          ),
+        if (bankAccountData.userBankAccounts.isEmpty) ...[
+          AppSpacing.verticalSpacing(SpacingSize.sm),
+          NoBankAccountWarning(userId: userId),
+        ],
+      ],
+    );
+  }
+}
+
+class _WithdrawButton extends StatelessWidget {
+  const _WithdrawButton({
+    required this.canInitiate,
+    required this.isInitiating,
+    required this.onPressed,
+  });
+
+  final bool canInitiate;
+  final bool isInitiating;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: AppButton.primary(
+        onPressed: canInitiate && !isInitiating ? onPressed : null,
+        loading: isInitiating,
+        child: const AppText('Withdraw', color: AppColors.white),
       ),
     );
   }

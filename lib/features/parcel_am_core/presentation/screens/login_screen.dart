@@ -6,21 +6,22 @@ import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
 import 'package:parcel_am/core/helpers/user_extensions.dart';
 import 'package:parcel_am/core/widgets/app_scaffold.dart';
 import 'package:parcel_am/features/passkey/presentation/bloc/passkey_bloc.dart';
-import 'package:parcel_am/features/passkey/presentation/bloc/passkey_data.dart';
 import 'package:parcel_am/features/passkey/presentation/bloc/passkey_event.dart';
 
 import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_radius.dart';
 import '../../../../core/widgets/app_button.dart';
-import '../../../../core/widgets/app_container.dart';
-import '../../../../core/widgets/app_input.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../injection_container.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_cubit.dart';
 import '../bloc/auth/auth_data.dart';
+import '../widgets/login/login_header.dart';
+import '../widgets/login/auth_tab_bar.dart';
+import '../widgets/login/sign_in_form.dart';
+import '../widgets/login/sign_up_form.dart';
+import '../widgets/login/password_reset_form.dart';
+import '../widgets/login/terms_text.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key, this.isSignUp = false});
@@ -40,13 +41,10 @@ class _LoginScreenState extends State<LoginScreen>
   late TabController _tabController;
   bool _showPasswordReset = false;
 
-  // Real-time validation states
   String? _emailError;
   String? _passwordError;
   bool _emailTouched = false;
   bool _passwordTouched = false;
-  final bool _displayNameTouched = false;
-  final bool _resetEmailTouched = false;
 
   @override
   void initState() {
@@ -57,13 +55,9 @@ class _LoginScreenState extends State<LoginScreen>
       _tabController.animateTo(0);
     }
 
-    // Add listeners for real-time validation
     _emailController.addListener(_validateEmail);
     _passwordController.addListener(_validatePassword);
-    _displayNameController.addListener(_validateDisplayName);
-    _resetEmailController.addListener(_validateResetEmail);
 
-    // Check passkey support
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<PasskeyBloc>().add(const PasskeyCheckSupport());
     });
@@ -97,27 +91,6 @@ class _LoginScreenState extends State<LoginScreen>
     });
   }
 
-  void _validateDisplayName() {
-    if (!_displayNameTouched) return;
-    setState(() {
-      final displayName = _displayNameController.text.trim();
-      if (displayName.isEmpty) {
-      } else {
-      }
-    });
-  }
-
-  void _validateResetEmail() {
-    if (!_resetEmailTouched) return;
-    setState(() {
-      final email = _resetEmailController.text.trim();
-      if (email.isEmpty) {
-      } else if (!_isValidEmail(email)) {
-      } else {
-      }
-    });
-  }
-
   @override
   void dispose() {
     _emailController.dispose();
@@ -128,7 +101,7 @@ class _LoginScreenState extends State<LoginScreen>
     super.dispose();
   }
 
-  void _login(BuildContext context) {
+  void _login() {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
@@ -202,6 +175,15 @@ class _LoginScreenState extends State<LoginScreen>
     });
   }
 
+  void _handleResetSuccess() {
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        _togglePasswordResetView();
+        _resetEmailController.clear();
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocManager<AuthCubit, BaseState<AuthData>>(
@@ -214,147 +196,52 @@ class _LoginScreenState extends State<LoginScreen>
         body: SafeArea(
           child: Column(
             children: [
-              Padding(
-                padding: AppSpacing.paddingLG,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    AppButton.text(
-                      onPressed: () {
-                        if (_showPasswordReset) {
-                          _togglePasswordResetView();
-                        } else {
-                          sl<NavigationService>().goBack();
-                        }
-                      },
-                      child: const Icon(Icons.arrow_back, size: 20),
-                    ),
-                    AppText.titleMedium(
-                      _showPasswordReset ? 'Reset Password' : 'Welcome Back',
-                      fontWeight: FontWeight.w600,
-                    ),
-                    AppSpacing.horizontalSpacing(SpacingSize.huge),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: AppSpacing.paddingLG,
-                child: AppContainer(
-                  height: 192,
-                  variant: ContainerVariant.filled,
-                  borderRadius: AppRadius.lg,
-                  child: AppContainer(
-                    decoration: BoxDecoration(
-                      borderRadius: AppRadius.lg,
-                      gradient: const LinearGradient(
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                        colors: [AppColors.primary, AppColors.secondary],
-                      ),
-                    ),
-                    child: Stack(
-                      children: [
-                        Positioned.fill(
-                          child: AppContainer(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(16),
-                              color: AppColors.black.withValues(alpha: 0.1),
-                            ),
-                          ),
-                        ),
-                        Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                _showPasswordReset
-                                    ? Icons.lock_reset
-                                    : Icons.email,
-                                size: 48,
-                                color: AppColors.white,
-                              ),
-                              AppSpacing.verticalSpacing(SpacingSize.sm),
-                              Padding(
-                                padding: AppSpacing.paddingMD,
-                                child: AppText.bodyMedium(
-                                  _showPasswordReset
-                                      ? 'Enter your email to receive a password reset link'
-                                      : 'Secure access with your email and password',
-                                  color: AppColors.white,
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+              _buildAppBar(),
+              LoginHeader(showPasswordReset: _showPasswordReset),
               Expanded(
                 child: Padding(
                   padding: AppSpacing.paddingLG,
                   child: _showPasswordReset
-                      ? _buildPasswordResetForm()
+                      ? PasswordResetForm(
+                          resetEmailController: _resetEmailController,
+                          onResetPassword: _resetPassword,
+                          onBackToSignIn: _togglePasswordResetView,
+                          onResetSuccess: _handleResetSuccess,
+                        )
                       : Column(
                           children: [
-                            AppContainer(
-                              decoration: BoxDecoration(
-                                color: AppColors.textSecondary.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: TabBar(
-                                controller: _tabController,
-                                automaticIndicatorColorAdjustment: true,
-                                indicatorSize: TabBarIndicatorSize.tab,
-                                indicator: BoxDecoration(
-                                  color: AppColors.primary,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                labelColor: AppColors.white,
-                                unselectedLabelColor: AppColors.black,
-                                dividerColor: AppColors.transparent,
-                                tabs: const [
-                                  Tab(text: 'Sign In'),
-                                  Tab(text: 'Sign Up'),
-                                ],
-                              ),
-                            ),
+                            AuthTabBar(tabController: _tabController),
                             AppSpacing.verticalSpacing(SpacingSize.xl),
                             Expanded(
                               child: TabBarView(
                                 controller: _tabController,
                                 children: [
-                                  _buildSignInForm(),
-                                  _buildSignUpForm()
+                                  SignInForm(
+                                    emailController: _emailController,
+                                    passwordController: _passwordController,
+                                    emailError: _emailError,
+                                    passwordError: _passwordError,
+                                    emailTouched: _emailTouched,
+                                    passwordTouched: _passwordTouched,
+                                    onEmailTouched: () =>
+                                        setState(() => _emailTouched = true),
+                                    onPasswordTouched: () =>
+                                        setState(() => _passwordTouched = true),
+                                    onForgotPassword: _togglePasswordResetView,
+                                    onLogin: _login,
+                                    onPasskeySuccess: _navigateToDashboard,
+                                  ),
+                                  SignUpForm(
+                                    displayNameController:
+                                        _displayNameController,
+                                    emailController: _emailController,
+                                    passwordController: _passwordController,
+                                    onRegister: _register,
+                                  ),
                                 ],
                               ),
                             ),
-                            Padding(
-                              padding: AppSpacing.paddingMD,
-                              child: RichText(
-                                textAlign: TextAlign.center,
-                                text: TextSpan(
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    color: AppColors.textSecondary,
-                                  ),
-                                  children: [
-                                    const TextSpan(
-                                      text: 'By continuing, you agree to our ',
-                                    ),
-                                    TextSpan(
-                                      text: 'Terms & Privacy Policy',
-                                      style: const TextStyle(
-                                        color: AppColors.primary,
-                                        decoration: TextDecoration.underline,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
+                            const TermsText(),
                           ],
                         ),
                 ),
@@ -366,236 +253,29 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  Widget _buildSignInForm() {
-    return BlocBuilder<AuthCubit, BaseState<AuthData>>(
-      builder: (context, state) {
-        return SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AppInput.email(
-                controller: _emailController,
-                label: 'Email',
-                hintText: 'your.email@example.com',
-                errorText: _emailError,
-                enabled: !state.isLoading,
-                onTap: () {
-                  if (!_emailTouched) {
-                    setState(() => _emailTouched = true);
-                  }
-                },
-              ),
-              AppSpacing.verticalSpacing(SpacingSize.md),
-              AppInput.password(
-                controller: _passwordController,
-                label: 'Password',
-                hintText: '••••••••',
-                errorText: _passwordError,
-                enabled: !state.isLoading,
-                onTap: () {
-                  if (!_passwordTouched) {
-                    setState(() => _passwordTouched = true);
-                  }
-                },
-              ),
-              AppSpacing.verticalSpacing(SpacingSize.sm),
-              Align(
-                alignment: Alignment.centerRight,
-                child: AppButton.text(
-                  onPressed: state.isLoading ? null : _togglePasswordResetView,
-                  size: ButtonSize.small,
-                  child: AppText.bodySmall(
-                    'Forgot Password?',
-                    color: AppColors.primary,
-                  ),
-                ),
-              ),
-              AppSpacing.verticalSpacing(SpacingSize.lg),
-              AppButton.primary(
-                onPressed: state.isLoading ? null : () => _login(context),
-                fullWidth: true,
-                loading: state.isLoading,
-                child: AppText.bodyLarge(
-                  'Sign In',
-                  color: AppColors.white,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              // Passkey Login Option
-              _buildPasskeyLoginButton(state),
-            ],
+  Widget _buildAppBar() {
+    return Padding(
+      padding: AppSpacing.paddingLG,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          AppButton.text(
+            onPressed: () {
+              if (_showPasswordReset) {
+                _togglePasswordResetView();
+              } else {
+                sl<NavigationService>().goBack();
+              }
+            },
+            child: const Icon(Icons.arrow_back, size: 20),
           ),
-        );
-      },
-    );
-  }
-
-  /// Build passkey login button if supported
-  Widget _buildPasskeyLoginButton(BaseState<AuthData> authState) {
-    return BlocConsumer<PasskeyBloc, BaseState<PasskeyData>>(
-      listener: (context, passkeyState) {
-        if (passkeyState.isSuccess) {
-          _navigateToDashboard();
-        } else if (passkeyState.isError) {
-          context.showErrorMessage(passkeyState.errorMessage ?? 'Passkey authentication failed');
-        }
-      },
-      builder: (context, passkeyState) {
-        final passkeyData = passkeyState.data ?? const PasskeyData();
-
-        // Only show if passkeys are supported
-        if (!passkeyData.isSupported) {
-          return const SizedBox.shrink();
-        }
-
-        final isLoading = authState.isLoading || passkeyState.isLoading;
-
-        return Column(
-          children: [
-            AppSpacing.verticalSpacing(SpacingSize.md),
-            Row(
-              children: [
-                const Expanded(child: Divider(color: AppColors.outline)),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: AppText.bodySmall('or', color: AppColors.textSecondary),
-                ),
-                const Expanded(child: Divider(color: AppColors.outline)),
-              ],
-            ),
-            AppSpacing.verticalSpacing(SpacingSize.md),
-            AppButton.outline(
-              onPressed: isLoading
-                  ? null
-                  : () {
-                      context.read<PasskeyBloc>().add(
-                            const PasskeySignInRequested(),
-                          );
-                    },
-              fullWidth: true,
-              loading: passkeyState.isLoading,
-              leadingIcon: const Icon(Icons.fingerprint, size: 24),
-              child: AppText.bodyLarge(
-                passkeyState.isLoading ? 'Authenticating...' : 'Sign in with Passkey',
-                color: AppColors.primary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildSignUpForm() {
-    return BlocBuilder<AuthCubit, BaseState<AuthData>>(
-      builder: (context, state) {
-        return SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AppInput(
-                controller: _displayNameController,
-                label: 'Display Name',
-                hintText: 'John Doe',
-                prefixIcon: const Icon(Icons.person_outline),
-                enabled: !state.isLoading,
-              ),
-              AppSpacing.verticalSpacing(SpacingSize.md),
-              AppInput.email(
-                controller: _emailController,
-                label: 'Email',
-                hintText: 'your.email@example.com',
-                enabled: !state.isLoading,
-              ),
-              AppSpacing.verticalSpacing(SpacingSize.md),
-              AppInput.password(
-                controller: _passwordController,
-                label: 'Password',
-                hintText: '••••••••',
-                enabled: !state.isLoading,
-              ),
-              AppSpacing.verticalSpacing(SpacingSize.sm),
-              AppText.bodySmall(
-                'Password must be at least 6 characters',
-                color: AppColors.textSecondary,
-              ),
-              AppSpacing.verticalSpacing(SpacingSize.xl),
-              AppButton.primary(
-                onPressed: state.isLoading ? null : _register,
-                fullWidth: true,
-                loading: state.isLoading,
-                child: AppText.bodyLarge(
-                  'Create Account',
-                  color: AppColors.white,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+          AppText.titleMedium(
+            _showPasswordReset ? 'Reset Password' : 'Welcome Back',
+            fontWeight: FontWeight.w600,
           ),
-        );
-      },
-    );
-  }
-
-  Widget _buildPasswordResetForm() {
-    return BlocConsumer<AuthCubit, BaseState<AuthData>>(
-      listener: (context, state) {
-        if (state is SuccessState) {
-          context.showSnackbar(
-            color: AppColors.primary,
-            message: 'Password reset email sent successfully',
-          );
-          Future.delayed(const Duration(seconds: 2), () {
-            if (mounted) {
-              _togglePasswordResetView();
-              _resetEmailController.clear();
-            }
-          });
-        }
-      },
-      builder: (context, state) {
-        return SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AppInput.email(
-                controller: _resetEmailController,
-                label: 'Email',
-                hintText: 'your.email@example.com',
-                enabled: !state.isLoading,
-              ),
-              AppSpacing.verticalSpacing(SpacingSize.md),
-              AppText.bodySmall(
-                'We\'ll send you a link to reset your password',
-                color: AppColors.textSecondary,
-              ),
-              AppSpacing.verticalSpacing(SpacingSize.xl),
-              AppButton.primary(
-                onPressed: state.isLoading ? null : _resetPassword,
-                fullWidth: true,
-                loading: state.isLoading,
-                child: AppText.bodyLarge(
-                  'Send Reset Link',
-                  color: AppColors.white,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              AppSpacing.verticalSpacing(SpacingSize.md),
-              Center(
-                child: AppButton.text(
-                  onPressed: state.isLoading ? null : _togglePasswordResetView,
-                  size: ButtonSize.small,
-                  child: AppText.bodySmall(
-                    'Back to Sign In',
-                    color: AppColors.primary,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+          AppSpacing.horizontalSpacing(SpacingSize.huge),
+        ],
+      ),
     );
   }
 }

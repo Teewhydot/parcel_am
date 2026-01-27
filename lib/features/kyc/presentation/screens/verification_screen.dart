@@ -7,11 +7,6 @@ import 'package:parcel_am/features/file_upload/domain/use_cases/file_upload_usec
 import '../../domain/entities/kyc_status.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_scaffold.dart';
-import '../../../../core/widgets/app_container.dart';
-import '../../../../core/widgets/app_text.dart';
-import '../../../../core/widgets/app_spacing.dart';
-import '../../../../core/widgets/app_button.dart';
-import '../../../../core/widgets/app_input.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../injection_container.dart';
 import '../widgets/verification_widgets.dart';
@@ -20,9 +15,13 @@ import '../../../parcel_am_core/presentation/bloc/auth/auth_data.dart';
 import '../bloc/kyc_bloc.dart';
 import '../bloc/kyc_event.dart';
 import '../bloc/kyc_data.dart';
-import '../../../parcel_am_core/data/constants/verification_constants.dart';
 import '../../domain/models/verification_model.dart';
 import '../../../../core/bloc/base/base_state.dart';
+import '../widgets/verification/personal_info_step.dart';
+import '../widgets/verification/identity_verification_step.dart';
+import '../widgets/verification/address_verification_step.dart';
+import '../widgets/verification/review_step.dart';
+import '../widgets/verification/verification_bottom_actions.dart';
 
 class VerificationScreen extends StatefulWidget {
   const VerificationScreen({super.key});
@@ -72,8 +71,8 @@ class _VerificationScreenState extends State<VerificationScreen> {
       showLoadingIndicator: false,
       showResultSuccessNotifications: false,
       showResultErrorNotifications: true,
-      listener: (context,state){
-        if(state is SuccessState<KycData>){
+      listener: (context, state) {
+        if (state is SuccessState<KycData>) {
           context.showSnackbar(message: state.successMessage);
           sl<NavigationService>().goBack();
         }
@@ -88,7 +87,13 @@ class _VerificationScreenState extends State<VerificationScreen> {
               steps: VerificationStep.steps,
             ),
             Expanded(child: _buildStepContent()),
-            _buildBottomActions(),
+            VerificationBottomActions(
+              currentStep: _currentStep,
+              totalSteps: VerificationStep.steps.length,
+              isSubmitting: _isSubmitting,
+              onBack: _goToPreviousStep,
+              onNext: _goToNextStep,
+            ),
           ],
         ),
       ),
@@ -96,398 +101,95 @@ class _VerificationScreenState extends State<VerificationScreen> {
   }
 
   Widget _buildStepContent() {
+    final fileUploadUseCase = FileUploadUseCase();
+
     switch (_currentStep) {
       case 0:
-        return _buildPersonalInfoStep();
+        return PersonalInfoStep(
+          firstNameController: _firstNameController,
+          lastNameController: _lastNameController,
+          phoneController: _phoneController,
+          dobController: _dobController,
+          ninController: _ninController,
+          bvnController: _bvnController,
+          selectedGender: _selectedGender,
+          onGenderChanged: (value) => setState(() => _selectedGender = value!),
+          onDateOfBirthTap: _selectDateOfBirth,
+        );
       case 1:
-        return _buildIdentityVerificationStep();
-      case 2:
-        return _buildAddressVerificationStep();
-      case 3:
-        return _buildReviewStep();
-      default:
-        return Container();
-    }
-  }
-
-  Widget _buildPersonalInfoStep() {
-    return SingleChildScrollView(
-      padding: AppSpacing.paddingXL,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          AppText.titleMedium('Tell us about yourself'),
-          AppSpacing.verticalSpacing(SpacingSize.lg),
-
-          Row(
-            children: [
-              Expanded(
-                child: AppInput(
-                  controller: _firstNameController,
-                  label: 'First Name *',
-                  hintText: 'John',
-                ),
-              ),
-              AppSpacing.horizontalSpacing(SpacingSize.md),
-              Expanded(
-                child: AppInput(
-                  controller: _lastNameController,
-                  label: 'Last Name *',
-                  hintText: 'Doe',
-                ),
-              ),
-            ],
-          ),
-          AppSpacing.verticalSpacing(SpacingSize.md),
-          AppInput(
-            controller: _phoneController,
-            label: 'Phone Number *',
-            hintText: '080 6878 7087',
-            keyboardType: TextInputType.phone,
-          ),
-
-          AppSpacing.verticalSpacing(SpacingSize.md),
-          AppInput(
-            controller: _dobController,
-            label: 'Date of Birth *',
-            hintText: 'Select date',
-            readOnly: true,
-            suffixIcon: const Icon(Icons.calendar_today),
-            onTap: _selectDateOfBirth,
-          ),
-
-          AppSpacing.verticalSpacing(SpacingSize.md),
-          DropdownButtonFormField<String>(
-            value: _selectedGender,
-            decoration: const InputDecoration(
-              labelText: 'Gender *',
-              border: OutlineInputBorder(),
-            ),
-            items: VerificationConstants.genderOptions.map((gender) {
-              return DropdownMenuItem(value: gender, child: AppText.bodyMedium(gender));
-            }).toList(),
-            onChanged: (value) => setState(() => _selectedGender = value!),
-          ),
-
-          AppSpacing.verticalSpacing(SpacingSize.lg),
-          AppText.titleMedium('Government IDs'),
-          AppSpacing.verticalSpacing(SpacingSize.md),
-
-          AppInput(
-            controller: _ninController,
-            label: 'NIN (National Identity Number)',
-            hintText: '12345678901',
-            keyboardType: TextInputType.number,
-            maxLength: 11,
-          ),
-
-          AppSpacing.verticalSpacing(SpacingSize.md),
-          AppInput(
-            controller: _bvnController,
-            label: 'BVN (Bank Verification Number)',
-            hintText: '12345678901',
-            keyboardType: TextInputType.number,
-            maxLength: 11,
-          ),
-
-          AppSpacing.verticalSpacing(SpacingSize.lg),
-          const InfoCard(
-            title: 'Privacy Notice',
-            content: VerificationConstants.privacyNotice,
-            color: AppColors.primary,
-            icon: Icons.info_outline,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildIdentityVerificationStep() {
-    final fileUploadUseCase = FileUploadUseCase();
-    return SingleChildScrollView(
-      padding: AppSpacing.paddingXL,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          AppText.titleMedium('Upload Identity Documents'),
-          AppSpacing.verticalSpacing(SpacingSize.md),
-          AppText.bodyMedium(
-            'Please upload clear, readable photos of your documents',
-            color: AppColors.onSurfaceVariant,
-          ),
-          AppSpacing.verticalSpacing(SpacingSize.lg),
-
-          DocumentUploadCard(
-            title: 'Government ID',
-            description:
-                'Upload your NIN slip, Driver\'s License, or International Passport',
-            documentKey: 'government_id',
-            isUploaded:  _uploadedDocumentUrls['government_id'] != null,
-            onUpload: (document) async {
-            final result =  await fileUploadUseCase.uploadFile(
+        return IdentityVerificationStep(
+          isGovernmentIdUploaded: _uploadedDocumentUrls['government_id'] != null,
+          isSelfieWithIdUploaded: _uploadedDocumentUrls['selfie_with_id'] != null,
+          onGovernmentIdUpload: (document) async {
+            final result = await fileUploadUseCase.uploadFile(
               userId: context.currentUserId!,
               file: document.file,
               folder: 'government_id',
             );
             result.fold(
-                  (failure) => context.showErrorMessage(failure.failureMessage),
-                    (document) => setState(() { _uploadedDocumentUrls['government_id'] = document.url; _uploadedDocuments['government_id'] = document;},)
+              (failure) => context.showErrorMessage(failure.failureMessage),
+              (doc) => setState(() {
+                _uploadedDocumentUrls['government_id'] = doc.url;
+                _uploadedDocuments['government_id'] = doc;
+              }),
             );
           },
-          ),
-
-          AppSpacing.verticalSpacing(SpacingSize.md),
-          DocumentUploadCard(
-            title: 'Selfie with ID',
-            description:
-                'Upload a photo holding your government ID next to your face',
-            documentKey: 'selfie_with_id',
-            isUploaded:  _uploadedDocumentUrls['selfie_with_id'] != null,
-            onUpload: (document) async {
-              final result =  await fileUploadUseCase.uploadFile(
-                userId: context.currentUserId!,
-                file: document.file,
-                folder: 'selfie_with_id',
-              );
-              result.fold(
-                    (failure) => context.showErrorMessage(failure.failureMessage),
-                    (document) => setState(() { _uploadedDocumentUrls['selfie_with_id'] = document.url; _uploadedDocuments['selfie_with_id'] = document;},
-                    ));
-            },
-            isCamera: false,
-          ),
-
-          AppSpacing.verticalSpacing(SpacingSize.lg),
-          const TipsCard(
-            title: 'Tips for better photos',
-            tips: VerificationConstants.photoTips,
-            color: AppColors.accent,
-            icon: Icons.lightbulb_outline,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAddressVerificationStep() {
-    final fileUploadUseCase = FileUploadUseCase();
-    return SingleChildScrollView(
-      padding: AppSpacing.paddingXL,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          AppText.titleMedium('Address Information'),
-          AppSpacing.verticalSpacing(SpacingSize.lg),
-
-          AppInput(
-            controller: _addressController,
-            label: 'Street Address *',
-            hintText: '123 Main Street, Victoria Island',
-            maxLines: 2,
-          ),
-
-          AppSpacing.verticalSpacing(SpacingSize.md),
-          AppInput(
-            controller: _cityController,
-            label: 'City *',
-            hintText: 'Lagos',
-          ),
-          AppSpacing.verticalSpacing(SpacingSize.md),
-          DropdownButtonFormField<String>(
-            value: _stateController.text.isNotEmpty
-                ? _stateController.text
-                : null,
-            decoration: const InputDecoration(
-              labelText: 'State *',
-              border: OutlineInputBorder(),
-            ),
-            items: VerificationConstants.nigerianStates.map((state) {
-              return DropdownMenuItem(value: state, child: AppText.bodyMedium(state));
-            }).toList(),
-            onChanged: (value) => _stateController.text = value!,
-          ),
-
-          AppSpacing.verticalSpacing(SpacingSize.md),
-          AppInput(
-            controller: _postalCodeController,
-            label: 'Postal Code *',
-            hintText: '100001',
-            keyboardType: TextInputType.number,
-            maxLength: 6,
-          ),
-
-          AppSpacing.verticalSpacing(SpacingSize.lg),
-          AppText.titleMedium('Address Verification Document'),
-          AppSpacing.verticalSpacing(SpacingSize.md),
-
-          DocumentUploadCard(
-            title: 'Proof of Address',
-            description:
-                'Upload utility bill, bank statement, or tenancy agreement (dated within last 3 months)',
-            documentKey: 'proof_of_address',
-            isUploaded:  _uploadedDocumentUrls['proof_of_address'] != null,
-            onUpload: (document) async {
-            final result =  await fileUploadUseCase.uploadFile(
-                userId: context.currentUserId!,
-                file: document.file,
-                folder: 'proof_of_address',
-              );
-            result.fold(
-                  (failure) => context.showErrorMessage(failure.failureMessage),
-                    (document) => setState(() { _uploadedDocumentUrls['proof_of_address'] = document.url; _uploadedDocuments['proof_of_address'] = document;},)
+          onSelfieWithIdUpload: (document) async {
+            final result = await fileUploadUseCase.uploadFile(
+              userId: context.currentUserId!,
+              file: document.file,
+              folder: 'selfie_with_id',
             );
-            },
-          ),
-
-          AppSpacing.verticalSpacing(SpacingSize.lg),
-          const TipsCard(
-            title: 'Accepted Documents',
-            tips: VerificationConstants.acceptedAddressDocuments,
-            color: AppColors.primary,
-            icon: Icons.description,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildReviewStep() {
-    return SingleChildScrollView(
-      padding: AppSpacing.paddingXL,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          AppText.titleMedium('Review Your Information'),
-          AppSpacing.verticalSpacing(SpacingSize.md),
-          AppText.bodyMedium(
-            'Please review all information before submitting',
-            color: AppColors.onSurfaceVariant,
-          ),
-          AppSpacing.verticalSpacing(SpacingSize.lg),
-
-          _buildPersonalInfoSummary(),
-          AppSpacing.verticalSpacing(SpacingSize.md),
-          _buildAddressSummary(),
-          AppSpacing.verticalSpacing(SpacingSize.md),
-          _buildDocumentsSummary(),
-          AppSpacing.verticalSpacing(SpacingSize.lg),
-
-          const InfoCard(
-            title: 'Verification Process',
-            content: VerificationConstants.verificationProcessInfo,
-            color: AppColors.primary,
-            icon: Icons.info_outline,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPersonalInfoSummary() {
-    return AppContainer(
-      variant: ContainerVariant.outlined,
-      padding: AppSpacing.paddingMD,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          AppText.titleMedium('Personal Information'),
-          AppSpacing.verticalSpacing(SpacingSize.md),
-          ReviewRow(
-            label: 'Full Name',
-            value: '${_firstNameController.text} ${_lastNameController.text}',
-          ),
-          ReviewRow(label: 'Date of Birth', value: _dobController.text),
-          ReviewRow(label: 'Gender', value: _selectedGender),
-          ReviewRow(
-            label: 'NIN',
-            value: _ninController.text.isNotEmpty
-                ? _ninController.text
-                : 'Not provided',
-          ),
-          ReviewRow(
-            label: 'BVN',
-            value: _bvnController.text.isNotEmpty
-                ? _bvnController.text
-                : 'Not provided',
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAddressSummary() {
-    return AppContainer(
-      variant: ContainerVariant.outlined,
-      padding: AppSpacing.paddingMD,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          AppText.titleMedium('Address Information'),
-          AppSpacing.verticalSpacing(SpacingSize.md),
-          ReviewRow(label: 'Address', value: _addressController.text),
-          ReviewRow(label: 'City', value: _cityController.text),
-          ReviewRow(label: 'State', value: _stateController.text),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDocumentsSummary() {
-    return AppContainer(
-      variant: ContainerVariant.outlined,
-      padding: AppSpacing.paddingMD,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          AppText.titleMedium('Uploaded Documents'),
-          AppSpacing.verticalSpacing(SpacingSize.md),
-          DocumentReviewRow(
-            title: 'Government ID',
-            isUploaded: _uploadedDocuments['government_id'] != null,
-          ),
-          DocumentReviewRow(
-            title: 'Selfie with ID',
-            isUploaded: _uploadedDocuments['selfie_with_id'] != null,
-          ),
-          DocumentReviewRow(
-            title: 'Proof of Address',
-            isUploaded: _uploadedDocuments['proof_of_address'] != null,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomActions() {
-    return AppContainer(
-      padding: AppSpacing.paddingXL,
-      variant: ContainerVariant.outlined,
-      child: Row(
-        children: [
-          if (_currentStep > 0)
-            Expanded(
-              child: AppButton.outline(
-                onPressed: _isSubmitting ? null : _goToPreviousStep,
-                child: AppText.labelMedium('Back'),
-              ),
-            ),
-          if (_currentStep > 0) AppSpacing.horizontalSpacing(SpacingSize.md),
-          Expanded(
-            flex: _currentStep > 0 ? 2 : 1,
-            child: AppButton.primary(
-              onPressed: _isSubmitting ? null : _goToNextStep,
-              loading: _isSubmitting,
-              child: AppText.labelMedium(
-                _currentStep == VerificationStep.steps.length - 1
-                    ? 'Submit'
-                    : 'Next',
-                color: AppColors.white,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+            result.fold(
+              (failure) => context.showErrorMessage(failure.failureMessage),
+              (doc) => setState(() {
+                _uploadedDocumentUrls['selfie_with_id'] = doc.url;
+                _uploadedDocuments['selfie_with_id'] = doc;
+              }),
+            );
+          },
+        );
+      case 2:
+        return AddressVerificationStep(
+          addressController: _addressController,
+          cityController: _cityController,
+          stateController: _stateController,
+          postalCodeController: _postalCodeController,
+          isProofOfAddressUploaded:
+              _uploadedDocumentUrls['proof_of_address'] != null,
+          onProofOfAddressUpload: (document) async {
+            final result = await fileUploadUseCase.uploadFile(
+              userId: context.currentUserId!,
+              file: document.file,
+              folder: 'proof_of_address',
+            );
+            result.fold(
+              (failure) => context.showErrorMessage(failure.failureMessage),
+              (doc) => setState(() {
+                _uploadedDocumentUrls['proof_of_address'] = doc.url;
+                _uploadedDocuments['proof_of_address'] = doc;
+              }),
+            );
+          },
+        );
+      case 3:
+        return ReviewStep(
+          firstName: _firstNameController.text,
+          lastName: _lastNameController.text,
+          dateOfBirth: _dobController.text,
+          gender: _selectedGender,
+          nin: _ninController.text,
+          bvn: _bvnController.text,
+          address: _addressController.text,
+          city: _cityController.text,
+          state: _stateController.text,
+          hasGovernmentId: _uploadedDocuments['government_id'] != null,
+          hasSelfieWithId: _uploadedDocuments['selfie_with_id'] != null,
+          hasProofOfAddress: _uploadedDocuments['proof_of_address'] != null,
+        );
+      default:
+        return Container();
+    }
   }
 
   Future<void> _selectDateOfBirth() async {
@@ -582,7 +284,6 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
   DateTime _parseDateOfBirth() {
     try {
-      // Parse date from DD/MM/YYYY format
       final parts = _dobController.text.split('/');
       if (parts.length == 3) {
         final day = int.parse(parts[0]);
@@ -605,28 +306,27 @@ class _VerificationScreenState extends State<VerificationScreen> {
       if (authState is DataState<AuthData> && authState.data?.user != null) {
         final user = authState.data!.user!;
 
-        // Submit KYC to Firebase through KycBloc
         context.read<KycBloc>().add(
-          KycFinalSubmitRequested(
-            userId: user.uid,
-            fullName:
-                '${_firstNameController.text} ${_lastNameController.text}',
-            dateOfBirth: _parseDateOfBirth(),
-            phoneNumber: _phoneController.text,
-            email: user.email,
-            address: _addressController.text,
-            city: _cityController.text,
-            country: 'Nigeria', // Default to Nigeria, can be made dynamic later
-            postalCode: _postalCodeController.text,
-            governmentIdNumber: _ninController.text.isNotEmpty
-                ? _ninController.text
-                : _bvnController.text,
-            idType: _ninController.text.isNotEmpty ? 'NIN' : 'BVN',
-            governmentIdUrl: _uploadedDocumentUrls['government_id'],
-            selfieWithIdUrl: _uploadedDocumentUrls['selfie_with_id'],
-            proofOfAddressUrl: _uploadedDocumentUrls['proof_of_address'],
-          ),
-        );
+              KycFinalSubmitRequested(
+                userId: user.uid,
+                fullName:
+                    '${_firstNameController.text} ${_lastNameController.text}',
+                dateOfBirth: _parseDateOfBirth(),
+                phoneNumber: _phoneController.text,
+                email: user.email,
+                address: _addressController.text,
+                city: _cityController.text,
+                country: 'Nigeria',
+                postalCode: _postalCodeController.text,
+                governmentIdNumber: _ninController.text.isNotEmpty
+                    ? _ninController.text
+                    : _bvnController.text,
+                idType: _ninController.text.isNotEmpty ? 'NIN' : 'BVN',
+                governmentIdUrl: _uploadedDocumentUrls['government_id'],
+                selfieWithIdUrl: _uploadedDocumentUrls['selfie_with_id'],
+                proofOfAddressUrl: _uploadedDocumentUrls['proof_of_address'],
+              ),
+            );
       }
     } catch (e) {
       if (mounted) {
@@ -642,5 +342,4 @@ class _VerificationScreenState extends State<VerificationScreen> {
       color: AppColors.error,
     );
   }
-
 }

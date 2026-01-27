@@ -1,19 +1,12 @@
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:dartz/dartz.dart' show Either;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:parcel_am/core/bloc/managers/bloc_manager.dart';
 import 'package:parcel_am/core/helpers/user_extensions.dart';
 import 'package:parcel_am/core/routes/routes.dart';
-import 'package:parcel_am/features/file_upload/services/file_upload_service.dart';
 import 'package:parcel_am/core/services/navigation_service/nav_config.dart';
-import 'package:parcel_am/features/parcel_am_core/domain/entities/user_entity.dart';
 import 'package:parcel_am/injection_container.dart';
-import '../../../../core/errors/failures.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_radius.dart';
 import '../../../../core/widgets/app_scaffold.dart';
-import '../../../../core/widgets/app_container.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_button.dart';
@@ -21,7 +14,9 @@ import '../../../../core/widgets/app_input.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_cubit.dart';
 import '../bloc/auth/auth_data.dart';
 import '../../../../core/bloc/base/base_state.dart';
-import '../../../../features/file_upload/domain/use_cases/file_upload_usecase.dart';
+import '../widgets/profile_edit/profile_image_picker.dart';
+import '../widgets/profile_edit/account_section.dart';
+import '../widgets/profile_edit/signout_confirmation_dialog.dart';
 
 class ProfileEditScreen extends StatefulWidget {
   const ProfileEditScreen({super.key});
@@ -62,12 +57,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     return BlocManager<AuthCubit, BaseState<AuthData>>(
       bloc: context.read<AuthCubit>(),
       listener: (context, state) {
-        // Only navigate on SuccessState, not LoadedState
         if (state is LoadedState<AuthData>) {
           sl<NavigationService>().goBack();
         }
-        //For Logout
-        if(state is SuccessState){
+        if (state is SuccessState) {
           sl<NavigationService>().navigateTo(Routes.login);
         }
       },
@@ -81,7 +74,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                _buildImagePicker(),
+                const ProfileImagePicker(),
                 AppSpacing.verticalSpacing(SpacingSize.lg),
                 AppInput(
                   key: const Key('displayNameField'),
@@ -126,43 +119,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                       flex: 2,
                       child: AppButton.primary(
                         key: const Key('saveButton'),
-                        onPressed: () {
-                          // Validate form before proceeding
-                          if (!_formKey.currentState!.validate()) {
-                            return;
-                          }
-
-                          // Safety check: ensure context is still mounted
-                          if (!mounted) {
-                            return;
-                          }
-
-                          try {
-                            final authBloc = context.read<AuthCubit>();
-
-                            // Safety check: ensure bloc is not closed
-                            if (authBloc.isClosed) {
-                              if (mounted) {
-                                context.showSnackbar(
-                                  message: 'Session expired. Please refresh the app.',
-                                  color: AppColors.error,
-                                );
-                              }
-                              return;
-                            }
-
-                            authBloc.updateUserProfile(
-                              _displayNameController.text,
-                            );
-                          } catch (e) {
-                            if (mounted) {
-                              context.showSnackbar(
-                                message: 'Error: ${e.toString()}',
-                                color: AppColors.error,
-                              );
-                            }
-                          }
-                        },
+                        onPressed: _handleSave,
                         child: AppText.labelMedium(
                           'Save Changes',
                           color: AppColors.white,
@@ -172,49 +129,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                   ],
                 ),
                 AppSpacing.verticalSpacing(SpacingSize.xxl),
-                AppContainer(
-                  padding: AppSpacing.paddingMD,
-                  variant: ContainerVariant.outlined,
-                  borderRadius: AppRadius.md,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const AppText(
-                        'Account',
-                        variant: TextVariant.titleSmall,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      AppSpacing.verticalSpacing(SpacingSize.sm),
-                      AppText.bodySmall(
-                        'Signout from your account',
-                        color: AppColors.onSurfaceVariant,
-                      ),
-                      AppSpacing.verticalSpacing(SpacingSize.md),
-                      SizedBox(
-                        width: double.infinity,
-                        child: AppButton.outline(
-                          key: const Key('signoutButton'),
-                          onPressed: _handleSignout,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.logout,
-                                size: 18,
-                                color: AppColors.error,
-                              ),
-                              AppSpacing.horizontalSpacing(SpacingSize.xs),
-                              AppText.labelMedium(
-                                'Sign Out',
-                                color: AppColors.error,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                AccountSection(onSignout: _handleSignout),
               ],
             ),
           ),
@@ -223,104 +138,44 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     );
   }
 
-  Widget _buildImagePicker() {
-    final fileUploadService = FileUploadService();
-    final fileUploadUseCase = FileUploadUseCase();
-    final userId = context.currentUserId;
+  void _handleSave() {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
-    return Column(
-      children: [
-        StreamBuilder<Either<Failure, UserEntity>>(
-          stream: userId != null
-              ? context.read<AuthCubit>().watchUserData(userId)
-              : const Stream.empty(),
-          builder: (context, asyncSnapshot) {
-            String? profileImageUrl;
+    if (!mounted) {
+      return;
+    }
 
-            if (asyncSnapshot.hasData) {
-              asyncSnapshot.data!.fold(
-                (failure) {
-                  // Handle failure if needed
-                },
-                (userModel) {
-                  profileImageUrl = userModel.profilePhotoUrl;
-                },
-              );
-            }
+    try {
+      final authBloc = context.read<AuthCubit>();
 
-            Widget imageWidget;
-            if (profileImageUrl != null && profileImageUrl!.isNotEmpty) {
-              imageWidget = CircleAvatar(
-                radius: 50,
-                backgroundImage: CachedNetworkImageProvider(profileImageUrl!),
-              );
-            } else if (asyncSnapshot.connectionState ==
-                ConnectionState.waiting) {
-              imageWidget = const CircularProgressIndicator.adaptive();
-            } else {
-              imageWidget = const CircleAvatar(
-                radius: 50,
-                child: Icon(Icons.person, size: 50),
-              );
-            }
+      if (authBloc.isClosed) {
+        if (mounted) {
+          context.showSnackbar(
+            message: 'Session expired. Please refresh the app.',
+            color: AppColors.error,
+          );
+        }
+        return;
+      }
 
-            return imageWidget;
-          },
-        ),
-        AppSpacing.verticalSpacing(SpacingSize.sm),
-        AppButton.text(
-          key: const Key('changePhotoButton'),
-          onPressed: () {
-            final result = fileUploadService.pickImageFromGallery(
-              allowMultiple: false,
-            );
-            result.then((file) async {
-              if (context.mounted) {
-                await fileUploadUseCase.uploadFile(
-                  userId: context.currentUserId!,
-                  file: file!,
-                  folder: 'profile_images',
-                );
-              }
-            });
-          },
-          child: AppText.bodySmall('Change Photo', color: AppColors.primary),
-        ),
-      ],
-    );
+      authBloc.updateUserProfile(_displayNameController.text);
+    } catch (e) {
+      if (mounted) {
+        context.showSnackbar(
+          message: 'Error: ${e.toString()}',
+          color: AppColors.error,
+        );
+      }
+    }
   }
 
   Future<void> _handleSignout() async {
-    final confirmed = await _showSignoutConfirmationDialog();
+    final confirmed = await SignoutConfirmationDialog.show(context);
 
     if (confirmed == true && mounted) {
       context.read<AuthCubit>().logout();
     }
-  }
-
-  Future<bool?> _showSignoutConfirmationDialog() {
-    return showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: AppText.titleMedium('Sign Out'),
-          content: AppText.bodyMedium(
-            'Are you sure you want to sign out of your account?',
-          ),
-          actions: [
-            AppButton.text(
-              key: const Key('cancelSignoutButton'),
-              onPressed: () => Navigator.of(context).pop(false),
-              child: AppText.labelMedium('Cancel', color: AppColors.onSurface),
-            ),
-            AppButton.primary(
-              key: const Key('confirmSignoutButton'),
-              onPressed: () => Navigator.of(context).pop(true),
-              child: AppText.labelMedium('Sign Out', color: AppColors.white),
-            ),
-          ],
-        );
-      },
-    );
   }
 }

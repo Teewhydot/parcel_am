@@ -1,31 +1,27 @@
-import 'package:dartz/dartz.dart' show Either;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../../../core/errors/failures.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../../../../core/bloc/managers/bloc_manager.dart';
 import '../../../notifications/services/notification_service.dart';
-import '../../../../core/widgets/app_text.dart';
-import '../../../../core/widgets/app_button.dart';
-import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../injection_container.dart' as di;
 import '../../domain/entities/message.dart';
 import '../../domain/entities/message_type.dart';
-import '../../domain/entities/chat.dart';
 import 'package:parcel_am/features/chat/presentation/bloc/chat_cubit.dart';
 import '../bloc/chat_message_data.dart';
-import '../widgets/message_bubble.dart';
 import '../widgets/message_input.dart';
-import '../widgets/typing_indicator.dart';
 import '../../../../core/helpers/user_extensions.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../injection_container.dart';
 import '../../services/typing_service.dart';
+import '../widgets/chat/chat_app_bar_content.dart';
+import '../widgets/chat/message_options_sheet.dart';
+import '../widgets/chat/notification_permission_dialog.dart';
+import '../widgets/chat/messages_list.dart';
 
 class ChatScreen extends StatefulWidget {
   final String chatId;
@@ -63,7 +59,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     _requestNotificationPermissionsOnFirstLaunch();
   }
 
-  /// Set viewing status in RTDB for notification suppression
   void _setupViewingStatus() {
     final userId = _currentUserId;
     if (userId != null && userId.isNotEmpty) {
@@ -88,7 +83,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     }
   }
 
-  /// Request notification permissions on first app launch
   Future<void> _requestNotificationPermissionsOnFirstLaunch() async {
     if (_hasRequestedPermissions) return;
 
@@ -98,22 +92,18 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           prefs.getBool('hasAskedForNotificationPermissions') ?? false;
 
       if (!hasAskedForPermissions) {
-        // Show explanation dialog before requesting permissions
         if (mounted) {
-          await _showPermissionExplanationDialog();
+          await NotificationPermissionDialog.show(context);
         }
 
-        // Request notification permissions
         final notificationService = di.sl<NotificationService>();
         await notificationService.requestPermissions();
 
-        // Mark as asked
         await prefs.setBool('hasAskedForNotificationPermissions', true);
       }
 
       _hasRequestedPermissions = true;
     } catch (e) {
-      // Silently fail - permissions are optional
       Logger.logError(
         'Error requesting notification permissions: $e',
         tag: 'ChatScreen',
@@ -121,52 +111,14 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     }
   }
 
-  /// Show explanation dialog before requesting permissions
-  Future<void> _showPermissionExplanationDialog() async {
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Row(
-            children: [
-              const Icon(Icons.notifications_active, color: AppColors.info),
-              AppSpacing.horizontalSpacing(SpacingSize.md),
-              AppText.titleMedium('Enable Notifications'),
-            ],
-          ),
-          content: AppText.bodyLarge(
-            'Stay connected with your conversations! Enable notifications to receive instant alerts when you receive new messages, even when the app is closed.',
-          ),
-          actions: <Widget>[
-            AppButton.text(
-              child: AppText.bodyMedium('Not Now'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            AppButton.primary(
-              child: AppText.bodyMedium('Enable', color: AppColors.white),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _scrollController.dispose();
     _updateLastSeen();
-    // Clear typing status when leaving chat
     final userId = _currentUserId;
     if (userId != null && userId.isNotEmpty) {
       _typingService.clearTypingStatus(widget.chatId, userId);
-      // Clear viewing status in RTDB so notifications can be shown again
       _typingService.clearViewingChat(userId);
     }
     super.dispose();
@@ -180,11 +132,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
       _updateLastSeen();
-      // Clear viewing status when app goes to background
       _typingService.clearViewingChat(userId);
     } else if (state == AppLifecycleState.resumed) {
       _updateLastSeen();
-      // Restore viewing status when app comes back to foreground
       _typingService.setViewingChat(widget.chatId, userId);
     }
   }
@@ -245,18 +195,17 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     }
 
     context.read<ChatCubit>().sendMediaMessage(
-      filePath: filePath,
-      chatId: widget.chatId,
-      senderId: _currentUserId!,
-      senderName: _currentUserName ?? 'You',
-      type: type,
-      replyToMessageId: replyToMessageId,
-    );
+          filePath: filePath,
+          chatId: widget.chatId,
+          senderId: _currentUserId!,
+          senderName: _currentUserName ?? 'You',
+          type: type,
+          replyToMessageId: replyToMessageId,
+        );
     _scrollToBottom();
   }
 
   void _handleTyping(bool isTyping) {
-    // Use Realtime Database for faster typing updates
     final userId = _currentUserId;
     if (userId != null && userId.isNotEmpty) {
       _typingService.setTypingStatus(widget.chatId, userId, isTyping);
@@ -288,36 +237,12 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
 
   void _handleMessageLongPress(Message message) {
     final chatCubit = context.read<ChatCubit>();
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (bottomSheetContext) => Container(
-        padding: AppSpacing.paddingXL,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.reply),
-              title: AppText.bodyLarge('Reply'),
-              onTap: () {
-                Navigator.pop(bottomSheetContext);
-                chatCubit.setReplyToMessage(message);
-              },
-            ),
-            if (message.senderId == _currentUserId)
-              ListTile(
-                leading: const Icon(Icons.delete, color: AppColors.error),
-                title: AppText.bodyLarge('Delete', color: AppColors.error),
-                onTap: () {
-                  Navigator.pop(bottomSheetContext);
-                  chatCubit.deleteMessage(message.id, chatId: widget.chatId);
-                },
-              ),
-          ],
-        ),
-      ),
+    MessageOptionsSheet.show(
+      context,
+      message: message,
+      currentUserId: _currentUserId,
+      onReply: () => chatCubit.setReplyToMessage(message),
+      onDelete: () => chatCubit.deleteMessage(message.id, chatId: widget.chatId),
     );
   }
 
@@ -328,28 +253,12 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       if (message.senderId != _currentUserId &&
           message.status != MessageStatus.read) {
         context.read<ChatCubit>().markMessageAsRead(
-          widget.chatId,
-          message.id,
-          _currentUserId!,
-        );
+              widget.chatId,
+              message.id,
+              _currentUserId!,
+            );
       }
     }
-  }
-
-  String _getOnlineStatusFromChat(Chat? chat) {
-    if (chat == null) return '';
-
-    // Typing is now handled by RTDB StreamBuilder, not here
-    final lastSeen = chat.lastSeen[widget.otherUserId];
-    if (lastSeen == null) return 'offline';
-
-    final now = DateTime.now();
-    final difference = now.difference(lastSeen);
-
-    if (difference.inMinutes < 5) return 'online';
-    if (difference.inHours < 1) return '${difference.inMinutes}m ago';
-    if (difference.inDays < 1) return '${difference.inHours}h ago';
-    return '${difference.inDays}d ago';
   }
 
   @override
@@ -362,70 +271,13 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
             width: 1,
           ),
         ),
-        title: Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: AppColors.surfaceVariant,
-              backgroundImage: widget.otherUserAvatar != null
-                  ? NetworkImage(widget.otherUserAvatar!)
-                  : null,
-              child: widget.otherUserAvatar == null
-                  ? AppText.bodyMedium(
-                      widget.otherUserName[0].toUpperCase(),
-                      color: AppColors.white,
-                    )
-                  : null,
-            ),
-            AppSpacing.horizontalSpacing(SpacingSize.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AppText.bodyLarge(widget.otherUserName),
-                  StreamBuilder<bool>(
-                    stream: _typingService.watchUserTyping(
-                      widget.chatId,
-                      widget.otherUserId,
-                      _currentUserId ?? '',
-                    ),
-                    builder: (context, typingSnapshot) {
-                      final isTyping = typingSnapshot.data ?? false;
-
-                      if (isTyping) {
-                        return AppText.bodySmall(
-                          'typing...',
-                          color: AppColors.success,
-                        );
-                      }
-
-                      return StreamBuilder<Either<Failure, Chat>>(
-                        stream: context.read<ChatCubit>().watchChat(
-                          widget.chatId,
-                        ),
-                        builder: (context, snapshot) {
-                          if (snapshot.hasData) {
-                            return snapshot.data!.fold(
-                              (failure) => const SizedBox.shrink(),
-                              (chat) {
-                                final status = _getOnlineStatusFromChat(chat);
-                                return AppText.bodySmall(
-                                  status,
-                                  color: status == 'online'
-                                      ? AppColors.success
-                                      : AppColors.textSecondary,
-                                );
-                              },
-                            );
-                          }
-                          return const SizedBox.shrink();
-                        },
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ],
+        title: ChatAppBarContent(
+          otherUserName: widget.otherUserName,
+          otherUserAvatar: widget.otherUserAvatar,
+          chatId: widget.chatId,
+          otherUserId: widget.otherUserId,
+          currentUserId: _currentUserId,
+          typingService: _typingService,
         ),
       ),
       body: BlocManager<ChatCubit, BaseState<ChatMessageData>>(
@@ -446,7 +298,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           return Column(
             children: [
               Expanded(
-                child: _MessagesList(
+                child: MessagesList(
                   chatId: widget.chatId,
                   otherUserId: widget.otherUserId,
                   currentUserId: _currentUserId,
@@ -475,174 +327,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         },
         child: const SizedBox.shrink(),
       ),
-    );
-  }
-}
-
-/// Separate widget for messages list to handle stream independently
-/// Uses StatefulWidget to cache streams and prevent infinite rebuild loops
-class _MessagesList extends StatefulWidget {
-  final String chatId;
-  final String otherUserId;
-  final String? currentUserId;
-  final List<Message> messages;
-  final ScrollController scrollController;
-  final void Function(Message) onMessageTap;
-  final void Function(Message) onMessageLongPress;
-  final void Function(Message) onReply;
-  final void Function(List<Message>) onMarkAsRead;
-
-  const _MessagesList({
-    required this.chatId,
-    required this.otherUserId,
-    required this.currentUserId,
-    required this.messages,
-    required this.scrollController,
-    required this.onMessageTap,
-    required this.onMessageLongPress,
-    required this.onReply,
-    required this.onMarkAsRead,
-  });
-
-  @override
-  State<_MessagesList> createState() => _MessagesListState();
-}
-
-class _MessagesListState extends State<_MessagesList> {
-  final TypingService _typingService = TypingService();
-  late Stream<Either<Failure, List<Message>>> _messagesStream;
-  late Stream<bool> _typingStream;
-
-  @override
-  void initState() {
-    super.initState();
-    _messagesStream = context.read<ChatCubit>().watchMessages(widget.chatId);
-    _typingStream = _typingService.watchUserTyping(
-      widget.chatId,
-      widget.otherUserId,
-      widget.currentUserId ?? '',
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<Either<Failure, List<Message>>>(
-      stream: _messagesStream,
-      builder: (context, messagesSnapshot) {
-        bool isLoading =
-            messagesSnapshot.connectionState == ConnectionState.waiting;
-        String? errorMessage;
-
-        if (messagesSnapshot.hasData) {
-          messagesSnapshot.data!.fold(
-            (failure) => errorMessage = failure.failureMessage,
-            (streamMessages) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (mounted) {
-                  context.read<ChatCubit>().updateMessages(streamMessages);
-                  widget.onMarkAsRead(streamMessages);
-                }
-              });
-            },
-          );
-        }
-
-        // Sort messages for reverse ListView (newest first)
-        final displayMessages = List<Message>.from(widget.messages)
-          ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
-
-        // Use cached typing stream
-        return StreamBuilder<bool>(
-          stream: _typingStream,
-          builder: (context, typingSnapshot) {
-            final showTypingIndicator = typingSnapshot.data ?? false;
-
-            // Show loading only if no messages at all
-            if (isLoading && displayMessages.isEmpty) {
-              return const Center(child: CircularProgressIndicator());
-            }
-
-            if (errorMessage != null && displayMessages.isEmpty) {
-              return Center(child: AppText.bodyMedium(errorMessage!));
-            }
-
-            if (displayMessages.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.chat_bubble_outline,
-                      size: 64,
-                      color: AppColors.disabled,
-                    ),
-                    AppSpacing.verticalSpacing(SpacingSize.lg),
-                    AppText.bodyLarge(
-                      'No messages yet',
-                      color: AppColors.textSecondary,
-                    ),
-                    AppSpacing.verticalSpacing(SpacingSize.sm),
-                    AppText.bodyMedium(
-                      'Start the conversation!',
-                      color: AppColors.textDisabled,
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            return ListView.builder(
-              controller: widget.scrollController,
-              reverse: true,
-              padding: AppSpacing.verticalPaddingSM,
-              itemCount: displayMessages.length + (showTypingIndicator ? 1 : 0),
-              itemBuilder: (context, index) {
-                if (showTypingIndicator && index == 0) {
-                  return const Align(
-                    alignment: Alignment.centerLeft,
-                    child: TypingIndicator(),
-                  );
-                }
-
-                final messageIndex = showTypingIndicator ? index - 1 : index;
-                final message = displayMessages[messageIndex];
-                final isMe = message.senderId == widget.currentUserId;
-                final screenWidth = MediaQuery.of(context).size.width;
-
-                return Dismissible(
-                  key: Key('swipe_${message.id}'),
-                  direction: isMe
-                      ? DismissDirection.endToStart
-                      : DismissDirection.startToEnd,
-                  movementDuration: const Duration(milliseconds: 200),
-                  dismissThresholds: const {
-                    DismissDirection.endToStart: 0.2,
-                    DismissDirection.startToEnd: 0.2,
-                  },
-                  confirmDismiss: (direction) async {
-                    widget.onReply(message);
-                    return false;
-                  },
-                  background: Container(
-                    constraints: BoxConstraints(maxWidth: screenWidth * 0.4),
-                    alignment: isMe
-                        ? Alignment.centerRight
-                        : Alignment.centerLeft,
-                    padding: AppSpacing.horizontalPaddingXL,
-                    child: Icon(Icons.reply, color: AppColors.info, size: 28),
-                  ),
-                  child: MessageBubble(
-                    message: message,
-                    isMe: isMe,
-                    onTap: () => widget.onMessageTap(message),
-                    onLongPress: () => widget.onMessageLongPress(message),
-                  ),
-                );
-              },
-            );
-          },
-        );
-      },
     );
   }
 }
