@@ -46,7 +46,7 @@ class MapTab extends StatelessWidget {
               if (trackingData != null)
                 LiveTrackingMap(
                   trackingData: trackingData,
-                  height: 250,
+                  height: 350,
                 )
               else if (state.isError)
                 MapError(message: state.errorMessage ?? 'Unable to load tracking')

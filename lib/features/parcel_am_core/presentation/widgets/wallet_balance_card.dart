@@ -46,7 +46,22 @@ class WalletBalanceCard extends StatelessWidget {
 
         return snapshot.data!.fold(
           (failure) => _buildErrorCard(context, failure.failureMessage, userId),
-          (wallet) => _buildBalanceCard(context, wallet, userId),
+          (wallet) {
+            // Sync fresh balance back to WalletCubit so cached state stays current
+            final cubit = context.read<WalletCubit>();
+            final cached = cubit.state.data;
+            if (cached != null &&
+                (cached.availableBalance != wallet.availableBalance ||
+                    cached.pendingBalance != wallet.heldBalance)) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                cubit.updateBalance(
+                  availableBalance: wallet.availableBalance,
+                  pendingBalance: wallet.heldBalance,
+                );
+              });
+            }
+            return _buildBalanceCard(context, wallet, userId);
+          },
         );
       },
     );

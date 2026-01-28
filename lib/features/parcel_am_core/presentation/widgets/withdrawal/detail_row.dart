@@ -52,7 +52,7 @@ class DetailRowWithCopy extends StatelessWidget {
       SnackBar(
         content: AppText.bodyMedium(
           '$label copied to clipboard',
-          color: Colors.white,
+          color: AppColors.white,
         ),
         duration: const Duration(seconds: 2),
       ),

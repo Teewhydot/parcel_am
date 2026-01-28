@@ -123,7 +123,7 @@ class _TransactionDetailsBottomSheetState
         borderRadius: AppRadius.topXl,
         boxShadow: [
           BoxShadow(
-            color: AppColors.black.withOpacity(0.05),
+            color: AppColors.black.withValues(alpha:0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -163,7 +163,7 @@ class _TransactionDetailsBottomSheetState
           Container(
             padding: AppSpacing.paddingSM,
             decoration: BoxDecoration(
-              color: _getStatusColor().withOpacity(0.1),
+              color: _getStatusColor().withValues(alpha:0.1),
               borderRadius: AppRadius.xl,
             ),
             child: AppText.bodyMedium(

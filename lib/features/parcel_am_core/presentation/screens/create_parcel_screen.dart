@@ -12,7 +12,6 @@ import 'package:parcel_am/features/kyc/domain/entities/kyc_status.dart';
 import '../../../../core/helpers/user_extensions.dart';
 import '../bloc/parcel/parcel_cubit.dart';
 import '../bloc/parcel/parcel_state.dart';
-import 'package:parcel_am/features/parcel_am_core/presentation/bloc/escrow/escrow_cubit.dart';
 import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_cubit.dart';
 import '../bloc/auth/auth_data.dart';
 import '../../domain/entities/parcel_entity.dart' hide RouteInformation;
@@ -21,7 +20,6 @@ import '../widgets/create_parcel/step_indicator.dart';
 import '../widgets/create_parcel/parcel_details_step.dart';
 import '../widgets/create_parcel/location_step.dart';
 import '../widgets/create_parcel/review_step.dart';
-import '../widgets/create_parcel/payment_step.dart';
 import '../widgets/create_parcel/navigation_buttons.dart';
 
 class CreateParcelScreen extends StatefulWidget {
@@ -35,7 +33,6 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
   final PageController _pageController = PageController();
   int _currentStep = 0;
   late ParcelCubit _parcelBloc;
-  late EscrowCubit _escrowBloc;
 
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -49,8 +46,6 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
 
   String _packageType = 'Documents';
   String _urgency = 'Standard';
-  ParcelEntity? _createdParcel;
-
   final List<String> _packageTypes = [
     'Documents',
     'Electronics',
@@ -70,7 +65,18 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
   void initState() {
     super.initState();
     _parcelBloc = ParcelCubit();
-    _escrowBloc = EscrowCubit();
+    _ensureWalletLoaded();
+  }
+
+  void _ensureWalletLoaded() {
+    final authState = context.read<AuthCubit>().state;
+    if (authState is DataState<AuthData> && authState.data?.user != null) {
+      final userId = authState.data!.user!.uid;
+      final walletCubit = context.read<WalletCubit>();
+      if (walletCubit.state.data == null) {
+        walletCubit.start(userId);
+      }
+    }
   }
 
   @override
@@ -86,12 +92,11 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
     _destPhoneController.dispose();
     _destAddressController.dispose();
     _parcelBloc.close();
-    _escrowBloc.close();
     super.dispose();
   }
 
   void _nextStep() {
-    if (_currentStep < 3) {
+    if (_currentStep < 2) {
       setState(() => _currentStep++);
       _pageController.animateToPage(
         _currentStep,
@@ -265,7 +270,6 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
                     deliveryName: _destNameController.text,
                     receiverPhone: _destPhoneController.text,
                   ),
-                  PaymentStep(createdParcel: _createdParcel),
                 ],
               ),
             ),

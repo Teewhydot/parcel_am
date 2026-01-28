@@ -190,7 +190,7 @@ class _MyPackagesTabState extends State<MyPackagesTab> {
                             child: SlideAnimation(
                               verticalOffset: 50.0,
                               child: FadeInAnimation(
-                                child: _buildPackageCard(parcel),
+                                child: _buildSenderParcelCard(parcel),
                               ),
                             ),
                           );
@@ -250,7 +250,7 @@ class _MyPackagesTabState extends State<MyPackagesTab> {
     );
   }
 
-  Widget _buildPackageCard(ParcelEntity parcel) {
+  Widget _buildSenderParcelCard(ParcelEntity parcel) {
     final statusColor = _getStatusColor(parcel.status);
     final price = '₦${(parcel.price ?? 0.0).toStringAsFixed(0)}';
 
@@ -273,8 +273,8 @@ class _MyPackagesTabState extends State<MyPackagesTab> {
                 width: 50,
                 height: 50,
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  color: statusColor.withValues(alpha:0.1),
+                  borderRadius: AppRadius.md,
                 ),
                 child: Icon(
                   _getStatusIcon(parcel.status),
@@ -307,7 +307,7 @@ class _MyPackagesTabState extends State<MyPackagesTab> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.1),
+                        color: statusColor.withValues(alpha:0.1),
                         borderRadius: AppRadius.xs,
                       ),
                       child: AppText.bodySmall(
@@ -357,6 +357,31 @@ class _MyPackagesTabState extends State<MyPackagesTab> {
               ],
             ),
           ],
+          // Show View on Map button for trackable parcels
+          if (parcel.status == ParcelStatus.pickedUp ||
+              parcel.status == ParcelStatus.inTransit ||
+              parcel.status == ParcelStatus.arrived) ...[
+            AppSpacing.verticalSpacing(SpacingSize.md),
+            SizedBox(
+              width: double.infinity,
+              child: AppButton.outline(
+                onPressed: () {
+                  sl<NavigationService>().navigateTo(
+                    Routes.tracking,
+                    arguments: {'packageId': parcel.id},
+                  );
+                },
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.map_outlined, size: 18, color: AppColors.primary),
+                    AppSpacing.horizontalSpacing(SpacingSize.xs),
+                    AppText.bodyMedium('View on Map', color: AppColors.primary),
+                  ],
+                ),
+              ),
+            ),
+          ],
           // Show Confirm Delivery button for parcels awaiting confirmation
           if (parcel.status == ParcelStatus.awaitingConfirmation) ...[
             AppSpacing.verticalSpacing(SpacingSize.md),
@@ -370,9 +395,9 @@ class _MyPackagesTabState extends State<MyPackagesTab> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.check_circle, size: 20, color: Colors.white),
+                    const Icon(Icons.check_circle, size: 20, color: AppColors.white),
                     AppSpacing.horizontalSpacing(SpacingSize.sm),
-                    AppText.labelMedium('Confirm Delivery', color: Colors.white),
+                    AppText.labelMedium('Confirm Delivery', color: AppColors.white),
                   ],
                 ),
               ),

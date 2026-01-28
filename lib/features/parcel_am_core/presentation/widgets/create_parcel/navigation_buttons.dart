@@ -33,12 +33,6 @@ class NavigationButtons extends StatelessWidget {
       builder: (context, state) {
         final isLoading = state is LoadingState<ParcelData> ||
             state is AsyncLoadingState<ParcelData>;
-        final isLastStep = currentStep == 3;
-
-        if (isLastStep) {
-          return const SizedBox.shrink();
-        }
-
         return Container(
           padding: AppSpacing.paddingLG,
           decoration: const BoxDecoration(
@@ -70,7 +64,7 @@ class NavigationButtons extends StatelessWidget {
                   loading: isLoading && currentStep == 2,
                   child: AppText.bodyMedium(
                     currentStep == 2 ? 'Create Parcel' : 'Next',
-                    color: Colors.white,
+                    color: AppColors.white,
                   ),
                 ),
               ),

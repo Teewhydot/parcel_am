@@ -36,7 +36,7 @@ class RouteFilterTabs extends StatelessWidget {
               ),
               child: AppText.bodyMedium(
                 routes[index],
-                color: isSelected ? Colors.white : AppColors.onSurface,
+                color: isSelected ? AppColors.white : AppColors.onSurface,
                 fontWeight: FontWeight.w500,
               ),
             ),

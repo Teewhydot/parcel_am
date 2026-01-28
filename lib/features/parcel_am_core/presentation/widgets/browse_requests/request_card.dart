@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_font_size.dart';
+import '../../../../../core/theme/app_radius.dart';
 import '../../../../../core/routes/routes.dart';
 import '../../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../../injection_container.dart';
@@ -45,7 +46,7 @@ class RequestCard extends StatelessWidget {
                 height: 50,
                 decoration: BoxDecoration(
                   color: AppColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: AppRadius.md,
                 ),
                 child: const Icon(
                   Icons.inventory_2_outlined,

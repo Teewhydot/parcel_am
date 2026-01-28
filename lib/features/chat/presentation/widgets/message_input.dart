@@ -36,15 +36,32 @@ class MessageInput extends StatefulWidget {
 
 class _MessageInputState extends State<MessageInput> {
   final TextEditingController _controller = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
   final ImagePicker _picker = ImagePicker();
   bool _isTyping = false;
   Timer? _typingStopDebounce;
 
   @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(_handleFocusChange);
+  }
+
+  @override
   void dispose() {
+    _focusNode.removeListener(_handleFocusChange);
+    _focusNode.dispose();
     _controller.dispose();
     _typingStopDebounce?.cancel();
     super.dispose();
+  }
+
+  void _handleFocusChange() {
+    if (!_focusNode.hasFocus && _isTyping) {
+      _typingStopDebounce?.cancel();
+      _isTyping = false;
+      widget.onTyping(false);
+    }
   }
 
   void _handleTextChanged(String text) {
@@ -185,7 +202,7 @@ class _MessageInputState extends State<MessageInput> {
             width: 60,
             height: 60,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 30),
@@ -294,6 +311,7 @@ class _MessageInputState extends State<MessageInput> {
                     ),
                     child: TextField(
                       controller: _controller,
+                      focusNode: _focusNode,
                       onChanged: _handleTextChanged,
                       decoration: InputDecoration(
                         hintText: 'Type a message...',

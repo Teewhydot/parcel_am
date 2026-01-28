@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/bloc/base/base_state.dart';
+import '../../../../core/bloc/managers/bloc_manager.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -17,6 +17,7 @@ import '../../domain/entities/withdrawal_order_entity.dart';
 import '../bloc/withdrawal/withdrawal_bloc.dart';
 import '../bloc/withdrawal/withdrawal_data.dart';
 import '../bloc/withdrawal/withdrawal_event.dart';
+import '../widgets/withdrawal/detail_row.dart';
 
 class WithdrawalStatusScreen extends StatefulWidget {
   final String withdrawalId;
@@ -95,16 +96,6 @@ class _WithdrawalStatusScreenState extends State<WithdrawalStatusScreen> {
     return _dateFormat.format(expectedTime);
   }
 
-  void _copyToClipboard(String text, String label) {
-    Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: AppText.bodyMedium('$label copied to clipboard', color: Colors.white),
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -113,7 +104,11 @@ class _WithdrawalStatusScreenState extends State<WithdrawalStatusScreen> {
         backgroundColor: AppColors.surface,
         elevation: 0,
       ),
-      body: BlocBuilder<WithdrawalBloc, BaseState<WithdrawalData>>(
+      body: BlocManager<WithdrawalBloc, BaseState<WithdrawalData>>(
+        bloc: context.read<WithdrawalBloc>(),
+        showLoadingIndicator: false,
+        showResultErrorNotifications: false,
+        child: const SizedBox.shrink(),
         builder: (context, state) {
           if (state.isLoading && !state.hasData) {
             return const Center(child: CircularProgressIndicator());
@@ -134,7 +129,7 @@ class _WithdrawalStatusScreenState extends State<WithdrawalStatusScreen> {
                             WithdrawalStatusWatchRequested(withdrawalId: widget.withdrawalId),
                           );
                     },
-                    child: AppText.bodyMedium('Retry', color: Colors.white),
+                    child: AppText.bodyMedium('Retry', color: AppColors.white),
                   ),
                 ],
               ),
@@ -221,11 +216,11 @@ class _WithdrawalStatusScreenState extends State<WithdrawalStatusScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildDetailRow('Bank Name', withdrawalOrder.bankAccount.bankName),
+                      DetailRow(label: 'Bank Name', value: withdrawalOrder.bankAccount.bankName),
                       AppSpacing.verticalSpacing(SpacingSize.sm),
-                      _buildDetailRow('Account Name', withdrawalOrder.bankAccount.accountName),
+                      DetailRow(label: 'Account Name', value: withdrawalOrder.bankAccount.accountName),
                       AppSpacing.verticalSpacing(SpacingSize.sm),
-                      _buildDetailRow('Account Number', withdrawalOrder.bankAccount.accountNumber),
+                      DetailRow(label: 'Account Number', value: withdrawalOrder.bankAccount.accountNumber),
                     ],
                   ),
                 ),
@@ -239,21 +234,20 @@ class _WithdrawalStatusScreenState extends State<WithdrawalStatusScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildDetailRowWithCopy(
-                        'Reference',
-                        withdrawalOrder.id,
-                        () => _copyToClipboard(withdrawalOrder.id, 'Reference'),
+                      DetailRowWithCopy(
+                        label: 'Reference',
+                        value: withdrawalOrder.id,
                       ),
                       AppSpacing.verticalSpacing(SpacingSize.sm),
-                      _buildDetailRow('Created', _dateFormat.format(withdrawalOrder.createdAt)),
+                      DetailRow(label: 'Created', value: _dateFormat.format(withdrawalOrder.createdAt)),
                       AppSpacing.verticalSpacing(SpacingSize.sm),
-                      _buildDetailRow(
-                        'Expected Arrival',
-                        _getExpectedArrivalTime(withdrawalOrder.status, withdrawalOrder.createdAt),
+                      DetailRow(
+                        label: 'Expected Arrival',
+                        value: _getExpectedArrivalTime(withdrawalOrder.status, withdrawalOrder.createdAt),
                       ),
                       if (withdrawalOrder.processedAt != null) ...[
                         AppSpacing.verticalSpacing(SpacingSize.sm),
-                        _buildDetailRow('Processed', _dateFormat.format(withdrawalOrder.processedAt!)),
+                        DetailRow(label: 'Processed', value: _dateFormat.format(withdrawalOrder.processedAt!)),
                       ],
                     ],
                   ),
@@ -302,7 +296,7 @@ class _WithdrawalStatusScreenState extends State<WithdrawalStatusScreen> {
                     padding: AppSpacing.paddingMD,
                     decoration: BoxDecoration(
                       color: AppColors.reversedLight,
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: AppRadius.sm,
                       border: Border.all(color: AppColors.reversed.withValues(alpha: 0.3)),
                     ),
                     child: Row(
@@ -358,59 +352,6 @@ class _WithdrawalStatusScreenState extends State<WithdrawalStatusScreen> {
           );
         },
       ),
-    );
-  }
-
-  Widget _buildDetailRow(String label, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        AppText.bodyMedium(
-          label,
-          color: AppColors.onSurfaceVariant,
-        ),
-        Flexible(
-          child: AppText.bodyMedium(
-            value,
-            textAlign: TextAlign.right,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDetailRowWithCopy(String label, String value, VoidCallback onCopy) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        AppText.bodyMedium(
-          label,
-          color: AppColors.onSurfaceVariant,
-        ),
-        Flexible(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Flexible(
-                child: AppText(
-                  value,
-                  textAlign: TextAlign.right,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.copy, size: 16),
-                onPressed: onCopy,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }

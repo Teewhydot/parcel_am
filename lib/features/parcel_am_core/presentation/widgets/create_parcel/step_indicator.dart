@@ -17,7 +17,7 @@ class StepIndicator extends StatelessWidget {
       padding: AppSpacing.paddingLG,
       color: AppColors.surface,
       child: AppStepper(
-        steps: const ['Details', 'Location', 'Review', 'Payment'],
+        steps: const ['Details', 'Location', 'Review'],
         currentStep: currentStep,
         completedColor: AppColors.primary,
         activeColor: AppColors.primary,

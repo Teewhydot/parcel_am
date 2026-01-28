@@ -36,7 +36,7 @@ class ChatListItem extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 28,
-              backgroundColor: AppColors.primary.withOpacity(0.1),
+              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
               backgroundImage: participantAvatar != null
                   ? NetworkImage(participantAvatar)
                   : null,

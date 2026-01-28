@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../core/theme/app_colors.dart';
+import '../../../../../core/theme/app_radius.dart';
 import '../../../../../core/widgets/app_button.dart';
 import '../../../../../core/widgets/app_card.dart';
 import '../../../../../core/widgets/app_spacing.dart';
@@ -88,7 +89,7 @@ class PaymentStep extends StatelessWidget {
                 fullWidth: true,
                 child: AppText.bodyMedium(
                   'Proceed to Payment',
-                  color: Colors.white,
+                  color: AppColors.white,
                 ),
               ),
               if (escrowState.data?.currentEscrow?.status ==
@@ -119,7 +120,7 @@ class _EscrowStatusCard extends StatelessWidget {
       padding: AppSpacing.paddingLG,
       decoration: BoxDecoration(
         color: AppColors.primary.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppRadius.md,
         border: Border.all(
           color: AppColors.primary.withValues(alpha: 0.2),
         ),

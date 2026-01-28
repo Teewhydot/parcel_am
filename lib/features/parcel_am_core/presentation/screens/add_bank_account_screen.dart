@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/bloc/base/base_state.dart';
+import '../../../../core/bloc/managers/bloc_manager.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../injection_container.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -112,7 +113,9 @@ class _AddBankAccountScreenState extends State<AddBankAccountScreen> {
         backgroundColor: AppColors.surface,
         elevation: 0,
       ),
-      body: BlocConsumer<BankAccountBloc, BaseState<BankAccountData>>(
+      body: BlocManager<BankAccountBloc, BaseState<BankAccountData>>(
+        bloc: context.read<BankAccountBloc>(),
+        showLoadingIndicator: false,
         listener: (context, state) {
           // Handle verification result
           if (state is LoadedState<BankAccountData> &&
@@ -280,7 +283,7 @@ class _AddBankAccountScreenState extends State<AddBankAccountScreen> {
                       padding: AppSpacing.paddingMD,
                       decoration: BoxDecoration(
                         color: AppColors.successLight,
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: AppRadius.sm,
                         border: Border.all(color: AppColors.success),
                       ),
                       child: Row(
@@ -319,7 +322,7 @@ class _AddBankAccountScreenState extends State<AddBankAccountScreen> {
                       padding: AppSpacing.paddingMD,
                       decoration: BoxDecoration(
                         color: AppColors.warningLight,
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: AppRadius.sm,
                         border: Border.all(color: AppColors.warning),
                       ),
                       child: Row(
@@ -340,7 +343,7 @@ class _AddBankAccountScreenState extends State<AddBankAccountScreen> {
                       padding: AppSpacing.paddingMD,
                       decoration: BoxDecoration(
                         color: AppColors.infoLight,
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: AppRadius.sm,
                         border: Border.all(color: AppColors.info),
                       ),
                       child: Row(
@@ -361,6 +364,7 @@ class _AddBankAccountScreenState extends State<AddBankAccountScreen> {
             ),
           );
         },
+        child: const SizedBox.shrink(),
       ),
     );
   }

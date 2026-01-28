@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import 'package:skeletonizer/skeletonizer.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_radius.dart';
 import '../../../../core/bloc/base/base_state.dart';
+import '../../../../core/bloc/managers/bloc_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
-import '../../../../core/widgets/app_text.dart';
-import '../../../../core/widgets/app_button.dart';
-import '../../../../core/widgets/app_spacing.dart';
 import '../../../../injection_container.dart';
 import '../../domain/entities/chat.dart';
 import '../bloc/chats_list_bloc.dart';
-import '../widgets/chat_list_tile.dart';
+import '../widgets/chats_list/chats_list_app_bar.dart';
+import '../widgets/chats_list/chats_loading_state.dart';
+import '../widgets/chats_list/chats_error_state.dart';
+import '../widgets/chats_list/chats_empty_state.dart';
+import '../widgets/chats_list/chats_list_view.dart';
 
 /// Screen displaying the list of user's chat conversations.
 class ChatsListScreen extends StatefulWidget {
@@ -68,248 +66,43 @@ class _ChatsListScreenState extends State<ChatsListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: _buildAppBar(),
-      body: BlocBuilder<ChatsListBloc, BaseState<List<Chat>>>(
+      appBar: const ChatsListAppBar(),
+      body: BlocManager<ChatsListBloc, BaseState<List<Chat>>>(
         bloc: _chatsListBloc,
+        showLoadingIndicator: false,
+        showResultErrorNotifications: false,
         builder: (context, state) {
           if (state is LoadingState<List<Chat>>) {
-            return _buildLoadingState();
+            return const ChatsLoadingState();
           }
 
           if (state is ErrorState<List<Chat>>) {
-            return _buildErrorState(state.errorMessage);
+            return ChatsErrorState(
+              errorMessage: state.errorMessage,
+              onRetry: () {
+                _chatsListBloc.add(LoadChats(widget.currentUserId));
+              },
+            );
           }
 
           if (state is LoadedState<List<Chat>>) {
             final chats = state.data ?? [];
             if (chats.isEmpty) {
-              return _buildEmptyState();
+              return const ChatsEmptyState();
             }
-            return _buildChatsList(chats);
+            return ChatsListView(
+              chats: chats,
+              currentUserId: widget.currentUserId,
+              onChatTap: _navigateToChat,
+              onRefresh: () async {
+                _chatsListBloc.add(LoadChats(widget.currentUserId));
+              },
+            );
           }
 
           return const SizedBox.shrink();
         },
-      ),
-    );
-  }
-
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      elevation: 0,
-      backgroundColor: AppColors.background,
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          AppText.titleLarge(
-            'Messages',
-            fontWeight: FontWeight.w700,
-          ),
-        ],
-      ),
-      actions: [
-        IconButton(
-          onPressed: () {
-            // Search functionality
-          },
-          icon: const Icon(
-            Icons.search_rounded,
-            color: AppColors.onSurface,
-          ),
-        ),
-        AppSpacing.horizontalSpacing(SpacingSize.xs),
-      ],
-    );
-  }
-
-  Widget _buildLoadingState() {
-    return Skeletonizer(
-      enabled: true,
-      child: ListView.builder(
-        padding: const EdgeInsets.only(top: 8),
-        itemCount: 8,
-        itemBuilder: (context, index) {
-          return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
-              children: [
-                const CircleAvatar(
-                  radius: 28,
-                  backgroundColor: AppColors.surface,
-                ),
-                AppSpacing.horizontalSpacing(SpacingSize.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Container(
-                            width: 120,
-                            height: 16,
-                            decoration: BoxDecoration(
-                              color: AppColors.surface,
-                              borderRadius: AppRadius.sm,
-                            ),
-                          ),
-                          Container(
-                            width: 40,
-                            height: 12,
-                            decoration: BoxDecoration(
-                              color: AppColors.surface,
-                              borderRadius: AppRadius.sm,
-                            ),
-                          ),
-                        ],
-                      ),
-                      AppSpacing.verticalSpacing(SpacingSize.sm),
-                      Container(
-                        width: double.infinity,
-                        height: 14,
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: AppRadius.sm,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildErrorState(String errorMessage) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: AppColors.error.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.error_outline_rounded,
-                size: 40,
-                color: AppColors.error,
-              ),
-            ),
-            AppSpacing.verticalSpacing(SpacingSize.xl),
-            AppText.titleMedium(
-              'Something went wrong',
-              fontWeight: FontWeight.w600,
-              textAlign: TextAlign.center,
-            ),
-            AppSpacing.verticalSpacing(SpacingSize.sm),
-            AppText.bodyMedium(
-              errorMessage,
-              color: AppColors.textSecondary,
-              textAlign: TextAlign.center,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
-            AppSpacing.verticalSpacing(SpacingSize.xl),
-            AppButton.primary(
-              onPressed: () {
-                _chatsListBloc.add(LoadChats(widget.currentUserId));
-              },
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.refresh_rounded, size: 20),
-                  AppSpacing.horizontalSpacing(SpacingSize.sm),
-                  AppText.bodyMedium('Try Again', color: AppColors.white),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    AppColors.primary.withValues(alpha: 0.1),
-                    AppColors.secondary.withValues(alpha: 0.1),
-                  ],
-                ),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.chat_bubble_outline_rounded,
-                size: 56,
-                color: AppColors.primary.withValues(alpha: 0.7),
-              ),
-            ),
-            AppSpacing.verticalSpacing(SpacingSize.xl),
-            AppText.titleLarge(
-              'No conversations yet',
-              fontWeight: FontWeight.w700,
-              textAlign: TextAlign.center,
-            ),
-            AppSpacing.verticalSpacing(SpacingSize.sm),
-            AppText.bodyMedium(
-              'Start chatting with someone by accepting or creating a delivery request',
-              color: AppColors.textSecondary,
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildChatsList(List<Chat> chats) {
-    return RefreshIndicator(
-      onRefresh: () async {
-        _chatsListBloc.add(LoadChats(widget.currentUserId));
-      },
-      color: AppColors.primary,
-      child: AnimationLimiter(
-        child: ListView.builder(
-          padding: const EdgeInsets.only(top: 8, bottom: 100),
-          itemCount: chats.length,
-          itemBuilder: (context, index) {
-            final chat = chats[index];
-            return AnimationConfiguration.staggeredList(
-              position: index,
-              duration: const Duration(milliseconds: 375),
-              child: SlideAnimation(
-                verticalOffset: 50.0,
-                child: FadeInAnimation(
-                  child: ChatListTile(
-                    chat: chat,
-                    currentUserId: widget.currentUserId,
-                    onTap: () => _navigateToChat(chat),
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
+        child: const SizedBox.shrink(),
       ),
     );
   }

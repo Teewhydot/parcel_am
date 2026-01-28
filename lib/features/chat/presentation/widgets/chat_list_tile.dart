@@ -5,6 +5,7 @@ import '../../../../core/theme/app_radius.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../domain/entities/chat.dart';
+import '../../services/typing_service.dart';
 
 /// A tile widget displaying a single chat conversation in the list.
 class ChatListTile extends StatelessWidget {
@@ -40,10 +41,6 @@ class ChatListTile extends StatelessWidget {
     return chat.unreadCount[currentUserId] ?? 0;
   }
 
-  bool get _isTyping {
-    return chat.isTyping[_otherParticipantId] ?? false;
-  }
-
   bool get _isOnline {
     final lastSeen = chat.lastSeen[_otherParticipantId];
     if (lastSeen == null) return false;
@@ -51,8 +48,8 @@ class ChatListTile extends StatelessWidget {
     return difference.inMinutes < 5;
   }
 
-  String get _lastMessagePreview {
-    if (_isTyping) return 'typing...';
+  String _lastMessagePreview(bool isTyping) {
+    if (isTyping) return 'typing...';
     if (chat.lastMessage == null) return 'No messages yet';
 
     final message = chat.lastMessage!;
@@ -74,7 +71,17 @@ class ChatListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasUnread = _unreadCount > 0;
 
-    return Container(
+    return StreamBuilder<bool>(
+      stream: TypingService().watchUserTyping(
+        chat.id,
+        _otherParticipantId,
+        currentUserId,
+      ),
+      initialData: false,
+      builder: (context, typingSnapshot) {
+        final isTyping = typingSnapshot.data ?? false;
+
+        return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
         color: hasUnread ? AppColors.primary.withValues(alpha: 0.05) : AppColors.surface,
@@ -103,7 +110,7 @@ class ChatListTile extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
               children: [
-                _buildAvatar(),
+                _buildAvatar(isTyping),
                 AppSpacing.horizontalSpacing(SpacingSize.md),
                 Expanded(
                   child: Column(
@@ -111,7 +118,7 @@ class ChatListTile extends StatelessWidget {
                     children: [
                       _buildHeader(hasUnread),
                       AppSpacing.verticalSpacing(SpacingSize.xs),
-                      _buildMessagePreview(hasUnread),
+                      _buildMessagePreview(hasUnread, isTyping),
                     ],
                   ),
                 ),
@@ -121,9 +128,11 @@ class ChatListTile extends StatelessWidget {
         ),
       ),
     );
+      },
+    );
   }
 
-  Widget _buildAvatar() {
+  Widget _buildAvatar(bool isTyping) {
     return Stack(
       children: [
         Container(
@@ -157,7 +166,7 @@ class ChatListTile extends StatelessWidget {
               : _buildAvatarPlaceholder(),
         ),
         // Show typing indicator or online status
-        if (_isTyping)
+        if (isTyping)
           Positioned(
             right: 0,
             bottom: 0,
@@ -229,20 +238,20 @@ class ChatListTile extends StatelessWidget {
     );
   }
 
-  Widget _buildMessagePreview(bool hasUnread) {
+  Widget _buildMessagePreview(bool hasUnread, bool isTyping) {
     return Row(
       children: [
         Expanded(
           child: AppText(
-            _lastMessagePreview,
+            _lastMessagePreview(isTyping),
             variant: TextVariant.bodyMedium,
-            color: _isTyping
+            color: isTyping
                 ? AppColors.primary
                 : hasUnread
                     ? AppColors.onSurface
                     : AppColors.textSecondary,
             fontWeight: hasUnread ? FontWeight.w500 : FontWeight.normal,
-            fontStyle: _isTyping ? FontStyle.italic : FontStyle.normal,
+            fontStyle: isTyping ? FontStyle.italic : FontStyle.normal,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),

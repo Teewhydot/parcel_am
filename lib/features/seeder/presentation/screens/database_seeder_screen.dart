@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_font_size.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_card.dart';
@@ -174,7 +175,7 @@ class _DatabaseSeederScreenState extends State<DatabaseSeederScreen> {
               color: AppColors.white,
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.black.withOpacity(0.1),
+                  color: AppColors.black.withValues(alpha:0.1),
                   blurRadius: 4,
                   offset: const Offset(0, -2),
                 ),
@@ -268,7 +269,7 @@ class _SeederCard extends StatelessWidget {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: AppColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: AppRadius.sm,
               ),
               child: Row(
                 children: [
@@ -311,9 +312,9 @@ class _SeederCard extends StatelessWidget {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: isSuccessResult ? AppColors.successLight : AppColors.errorLight,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: AppRadius.sm,
                   border: Border.all(
-                    color: isSuccessResult ? AppColors.success.withOpacity(0.3) : AppColors.error.withOpacity(0.3),
+                    color: isSuccessResult ? AppColors.success.withValues(alpha:0.3) : AppColors.error.withValues(alpha:0.3),
                   ),
                 ),
                 child: Row(
@@ -366,7 +367,7 @@ class _SeederCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: hasData ? AppColors.successLight : AppColors.warningLight,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppRadius.md,
       ),
       child: AppText.bodySmall(
         hasData ? 'Seeded' : 'Empty',

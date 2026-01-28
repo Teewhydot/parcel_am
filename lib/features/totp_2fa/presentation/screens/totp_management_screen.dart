@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/bloc/base/base_state.dart';
+import '../../../../core/bloc/managers/bloc_manager.dart';
 import '../../../../core/helpers/user_extensions.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
@@ -132,7 +133,9 @@ class _TotpManagementScreenState extends State<TotpManagementScreen> {
         elevation: 0,
         foregroundColor: AppColors.onBackground,
       ),
-      body: BlocConsumer<TotpCubit, BaseState<TotpData>>(
+      body: BlocManager<TotpCubit, BaseState<TotpData>>(
+        bloc: context.read<TotpCubit>(),
+        showLoadingIndicator: false,
         listener: (context, state) {
           if (state.isSuccess) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -211,6 +214,7 @@ class _TotpManagementScreenState extends State<TotpManagementScreen> {
             ),
           );
         },
+        child: const SizedBox.shrink(),
       ),
     );
   }

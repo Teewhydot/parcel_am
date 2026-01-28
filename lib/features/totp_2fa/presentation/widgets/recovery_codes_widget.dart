@@ -49,9 +49,9 @@ class RecoveryCodesWidget extends StatelessWidget {
         Container(
           padding: AppSpacing.paddingMD,
           decoration: BoxDecoration(
-            color: AppColors.error.withOpacity(0.1),
+            color: AppColors.error.withValues(alpha: 0.1),
             borderRadius: AppRadius.sm,
-            border: Border.all(color: AppColors.error.withOpacity(0.2)),
+            border: Border.all(color: AppColors.error.withValues(alpha: 0.2)),
           ),
           child: Row(
             children: [

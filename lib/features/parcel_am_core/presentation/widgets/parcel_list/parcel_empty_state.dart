@@ -39,8 +39,8 @@ class ParcelEmptyState extends StatelessWidget {
             onPressed: () {
               sl<NavigationService>().navigateTo(Routes.createParcel);
             },
-            leadingIcon: const Icon(Icons.add, color: Colors.white),
-            child: AppText.bodyMedium('Create Parcel', color: Colors.white),
+            leadingIcon: const Icon(Icons.add, color: AppColors.white),
+            child: AppText.bodyMedium('Create Parcel', color: AppColors.white),
           ),
         ],
       ),

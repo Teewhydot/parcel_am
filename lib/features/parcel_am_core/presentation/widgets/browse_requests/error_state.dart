@@ -43,7 +43,7 @@ class ErrorState extends StatelessWidget {
             AppSpacing.verticalSpacing(SpacingSize.xxl),
             AppButton.primary(
               onPressed: onRetry,
-              child: AppText.bodyMedium('Retry', color: Colors.white),
+              child: AppText.bodyMedium('Retry', color: AppColors.white),
             ),
           ],
         ],

@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/bloc/managers/bloc_manager.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/bloc/base/base_state.dart';
+import '../../../../core/helpers/user_extensions.dart';
 import '../../../../injection_container.dart';
 import '../bloc/parcel/parcel_cubit.dart';
 import '../bloc/parcel/parcel_state.dart';
-import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_cubit.dart';
-import '../bloc/auth/auth_data.dart';
 import '../widgets/parcel_list/parcel_card.dart';
 import '../widgets/parcel_list/parcel_empty_state.dart';
 import '../widgets/parcel_list/parcel_error_state.dart';
@@ -31,9 +31,8 @@ class _ParcelListScreenState extends State<ParcelListScreen> {
     super.initState();
     _parcelBloc = ParcelCubit();
 
-    final authState = context.read<AuthCubit>().state;
-    if (authState is DataState<AuthData> && authState.data?.user != null) {
-      _currentUserId = authState.data!.user!.uid;
+    _currentUserId = context.currentUserId;
+    if (_currentUserId != null) {
       _parcelBloc.loadUserParcels(_currentUserId!);
     }
   }
@@ -66,7 +65,8 @@ class _ParcelListScreenState extends State<ParcelListScreen> {
             ),
           ],
         ),
-        body: BlocBuilder<ParcelCubit, BaseState<ParcelData>>(
+        body: BlocManager<ParcelCubit, BaseState<ParcelData>>(
+          bloc: _parcelBloc,
           builder: (context, state) {
             if (state is LoadingState<ParcelData>) {
               return const Center(child: CircularProgressIndicator());
@@ -94,18 +94,19 @@ class _ParcelListScreenState extends State<ParcelListScreen> {
                 itemCount: parcels.length,
                 itemBuilder: (context, index) {
                   final parcel = parcels[index];
-                  return ParcelCard(parcel: parcel);
+                  return ParcelListCard(parcel: parcel);
                 },
               ),
             );
           },
+          child: const SizedBox.shrink(),
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () {
             sl<NavigationService>().navigateTo(Routes.createParcel);
           },
           backgroundColor: AppColors.primary,
-          child: const Icon(Icons.add, color: Colors.white),
+          child: const Icon(Icons.add, color: AppColors.white),
         ),
       ),
     );

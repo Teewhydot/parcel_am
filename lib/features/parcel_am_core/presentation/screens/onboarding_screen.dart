@@ -8,6 +8,7 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../injection_container.dart';
+import '../widgets/onboarding/onboarding_screen_model.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -244,18 +245,4 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-}
-
-class OnboardingScreenModel {
-  final IconData icon;
-  final String title;
-  final String description;
-  final Color color;
-
-  OnboardingScreenModel({
-    required this.icon,
-    required this.title,
-    required this.description,
-    required this.color,
-  });
 }

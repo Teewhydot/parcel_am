@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_font_size.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_button.dart';
@@ -55,7 +56,7 @@ class PasskeyLoginButton extends StatelessWidget {
                     },
               fullWidth: true,
               loading: state.isLoading,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: AppRadius.md,
               leadingIcon: const Icon(Icons.fingerprint, size: 24),
               child: AppText(
                 state.isLoading ? 'Authenticating...' : 'Sign in with Passkey',

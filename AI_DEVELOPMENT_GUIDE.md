@@ -200,7 +200,7 @@ Use `AppInput` for text fields (see `lib/core/widgets/app_input.dart`)
 
 **Service**: `NavigationService` (`lib/core/services/navigation_service/`)
 - Use `sl<NavigationService>()` for navigation
-- DO NOT use `Navigator.of(context)` for app navigation (use it for dialogs/modals only)
+- DO NOT use `Navigator.of(context)` directly — use `sl<NavigationService>().goBack()` for all navigation including dismissing dialogs and modals
 
 ## Modal Bottom Sheets
 
@@ -348,7 +348,7 @@ ListView(children: items.map((item) => ItemWidget(item)).toList())
 ❌ Hardcoded colors, spacing, or radius values
 ❌ Raw `Text()`, `ElevatedButton()`, `TextField()` widgets
 ❌ Widget functions instead of widget classes
-❌ Using `Navigator.push/pop` directly for app navigation (use `NavigationService`)
+❌ Using `Navigator.push/pop` directly for any navigation including dialogs/modals (use `NavigationService`)
 ❌ Not checking `mounted` after async operations
 ❌ Missing `const` on static widgets
 ❌ Not disposing controllers/subscriptions

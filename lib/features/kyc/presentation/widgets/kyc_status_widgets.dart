@@ -7,6 +7,7 @@ import '../../domain/entities/kyc_status.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
+import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/routes/routes.dart';
@@ -33,10 +34,10 @@ class KycStatusBadge extends StatelessWidget {
           ? const EdgeInsets.symmetric(horizontal: 8, vertical: 4)
           : const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: _getStatusColor(status).withOpacity(0.15),
+        color: _getStatusColor(status).withValues(alpha:0.15),
         borderRadius: compact ? AppRadius.md : AppRadius.lg,
         border: Border.all(
-          color: _getStatusColor(status).withOpacity(0.5),
+          color: _getStatusColor(status).withValues(alpha:0.5),
           width: 1,
         ),
       ),
@@ -162,6 +163,19 @@ class _KycStatusBannerState extends State<KycStatusBanner> {
           (userEntity) => userEntity,
         );
         final status = user?.kycStatus ?? KycStatus.notStarted;
+
+        // Sync fresh KYC status back to AuthCubit so cached state stays current
+        if (user != null) {
+          final authCubit = context.read<AuthCubit>();
+          final cachedStatus = authCubit.state is DataState<AuthData>
+              ? (authCubit.state as DataState<AuthData>).data?.user?.kycStatus
+              : null;
+          if (cachedStatus != null && cachedStatus != status) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              authCubit.updateKycStatus(status.name);
+            });
+          }
+        }
         
         if (!widget.showOnApproved && status == KycStatus.approved) {
           return const SizedBox.shrink();
@@ -175,7 +189,7 @@ class _KycStatusBannerState extends State<KycStatusBanner> {
             margin: widget.margin ?? AppSpacing.paddingMD,
             padding: AppSpacing.paddingMD,
             decoration: BoxDecoration(
-              color: _getStatusColor(status).withOpacity(0.1),
+              color: _getStatusColor(status).withValues(alpha:0.1),
               border: Border.all(color: _getStatusColor(status), width: 1),
               borderRadius: AppRadius.md,
             ),
@@ -312,7 +326,7 @@ class KycStatusCard extends StatelessWidget {
             borderRadius: AppRadius.lg,
             boxShadow: [
               BoxShadow(
-                color: AppColors.black.withOpacity(0.05),
+                color: AppColors.black.withValues(alpha:0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -326,7 +340,7 @@ class KycStatusCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: _getStatusColor(status).withOpacity(0.1),
+                      color: _getStatusColor(status).withValues(alpha:0.1),
                       borderRadius: AppRadius.md,
                     ),
                     child: Icon(
@@ -360,15 +374,9 @@ class KycStatusCard extends StatelessWidget {
                 AppSpacing.verticalSpacing(SpacingSize.md),
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton(
+                  child: AppButton.primary(
                     onPressed: () => sl<NavigationService>().navigateTo(Routes.verification),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _getStatusColor(status),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: AppRadius.sm,
-                      ),
-                    ),
+                    fullWidth: true,
                     child: AppText.bodyMedium(
                       _getActionButtonText(status),
                       color: AppColors.white,

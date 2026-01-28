@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/bloc/base/base_state.dart';
+import '../../../../core/bloc/managers/bloc_manager.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
@@ -50,82 +51,84 @@ class _BankAccountListScreenState extends State<BankAccountListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: AppText.titleLarge('Saved Bank Accounts'),
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              context.read<BankAccountBloc>().add(
-                    BankAccountRefreshRequested(userId: widget.userId),
-                  );
+    return BlocManager<BankAccountBloc, BaseState<BankAccountData>>(
+      bloc: context.read<BankAccountBloc>(),
+      showLoadingIndicator: false,
+      listener: (context, state) {
+        if (state is AsyncErrorState<BankAccountData>) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: AppText.bodyMedium(state.errorMessage, color: AppColors.white),
+              backgroundColor: AppColors.error,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+      },
+      builder: (context, state) {
+        final data = state.data ?? const BankAccountData();
+        final canAddMore = !data.hasReachedMaxAccounts;
+
+        return Scaffold(
+          appBar: AppBar(
+            title: AppText.titleLarge('Saved Bank Accounts'),
+            backgroundColor: AppColors.surface,
+            elevation: 0,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.refresh),
+                onPressed: () {
+                  context.read<BankAccountBloc>().add(
+                        BankAccountRefreshRequested(userId: widget.userId),
+                      );
+                },
+              ),
+            ],
+          ),
+          body: Builder(
+            builder: (context) {
+              if (state.isLoading && !state.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (state.isError && !state.hasData) {
+                return BankAccountErrorState(
+                  errorMessage: state.errorMessage ?? 'Failed to load bank accounts',
+                  onRetry: () {
+                    context.read<BankAccountBloc>().add(
+                          BankAccountLoadRequested(userId: widget.userId),
+                        );
+                  },
+                );
+              }
+
+              final accounts = data.userBankAccounts;
+
+              return RefreshIndicator(
+                onRefresh: () async {
+                  context.read<BankAccountBloc>().add(
+                        BankAccountRefreshRequested(userId: widget.userId),
+                      );
+                },
+                child: accounts.isEmpty
+                    ? const BankAccountEmptyState()
+                    : _BankAccountList(
+                        accounts: accounts,
+                        data: data,
+                        userId: widget.userId,
+                      ),
+              );
             },
           ),
-        ],
-      ),
-      body: BlocConsumer<BankAccountBloc, BaseState<BankAccountData>>(
-        listener: (context, state) {
-          if (state is AsyncErrorState<BankAccountData>) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: AppText.bodyMedium(state.errorMessage, color: AppColors.white),
-                backgroundColor: AppColors.error,
-                duration: const Duration(seconds: 4),
-              ),
-            );
-          }
-        },
-        builder: (context, state) {
-          if (state.isLoading && !state.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (state.isError && !state.hasData) {
-            return BankAccountErrorState(
-              errorMessage: state.errorMessage ?? 'Failed to load bank accounts',
-              onRetry: () {
-                context.read<BankAccountBloc>().add(
-                      BankAccountLoadRequested(userId: widget.userId),
-                    );
-              },
-            );
-          }
-
-          final data = state.data ?? const BankAccountData();
-          final accounts = data.userBankAccounts;
-
-          return RefreshIndicator(
-            onRefresh: () async {
-              context.read<BankAccountBloc>().add(
-                    BankAccountRefreshRequested(userId: widget.userId),
-                  );
-            },
-            child: accounts.isEmpty
-                ? const BankAccountEmptyState()
-                : _BankAccountList(
-                    accounts: accounts,
-                    data: data,
-                    userId: widget.userId,
-                  ),
-          );
-        },
-      ),
-      floatingActionButton: BlocBuilder<BankAccountBloc, BaseState<BankAccountData>>(
-        builder: (context, state) {
-          final data = state.data ?? const BankAccountData();
-          final canAddMore = !data.hasReachedMaxAccounts;
-
-          return FloatingActionButton.extended(
+          floatingActionButton: FloatingActionButton.extended(
             onPressed: canAddMore ? _showAddAccountModal : null,
             backgroundColor: canAddMore ? AppColors.primary : AppColors.textSecondary,
             icon: const Icon(Icons.add),
             label: AppText.bodyMedium('Add Account', color: AppColors.white),
-          );
-        },
-      ),
+          ),
+        );
+      },
+      child: const SizedBox.shrink(),
     );
   }
 }

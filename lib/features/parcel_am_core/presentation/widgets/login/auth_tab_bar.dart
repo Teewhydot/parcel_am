@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../core/theme/app_colors.dart';
+import '../../../../../core/theme/app_radius.dart';
 import '../../../../../core/widgets/app_container.dart';
 
 class AuthTabBar extends StatelessWidget {
@@ -15,7 +16,7 @@ class AuthTabBar extends StatelessWidget {
     return AppContainer(
       decoration: BoxDecoration(
         color: AppColors.textSecondary.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: AppRadius.sm,
       ),
       child: TabBar(
         controller: tabController,
@@ -23,7 +24,7 @@ class AuthTabBar extends StatelessWidget {
         indicatorSize: TabBarIndicatorSize.tab,
         indicator: BoxDecoration(
           color: AppColors.primary,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: AppRadius.sm,
         ),
         labelColor: AppColors.white,
         unselectedLabelColor: AppColors.black,

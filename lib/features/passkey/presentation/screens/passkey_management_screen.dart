@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/bloc/base/base_state.dart';
+import '../../../../core/bloc/managers/bloc_manager.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_font_size.dart';
-import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../bloc/passkey_bloc.dart';
 import '../bloc/passkey_data.dart';
 import '../bloc/passkey_event.dart';
-import '../widgets/passkey_list_item.dart';
+import '../widgets/passkey_management/add_passkey_button.dart';
+import '../widgets/passkey_management/passkey_info_card.dart';
+import '../widgets/passkey_management/passkey_not_supported_view.dart';
+import '../widgets/passkey_management/passkeys_list.dart';
 
 /// Screen for managing passkeys (add, view, remove)
 class PasskeyManagementScreen extends StatefulWidget {
@@ -40,7 +42,11 @@ class _PasskeyManagementScreenState extends State<PasskeyManagementScreen> {
         elevation: 0,
         foregroundColor: AppColors.onBackground,
       ),
-      body: BlocConsumer<PasskeyBloc, BaseState<PasskeyData>>(
+      body: BlocManager<PasskeyBloc, BaseState<PasskeyData>>(
+        bloc: context.read<PasskeyBloc>(),
+        showLoadingIndicator: false,
+        showResultErrorNotifications: false,
+        child: const SizedBox.shrink(),
         listener: (context, state) {
           if (state.isSuccess) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -62,7 +68,7 @@ class _PasskeyManagementScreenState extends State<PasskeyManagementScreen> {
           final passkeyData = state.data ?? const PasskeyData();
 
           if (!passkeyData.isSupported) {
-            return _buildNotSupportedView();
+            return const PasskeyNotSupportedView();
           }
 
           return RefreshIndicator(
@@ -71,212 +77,34 @@ class _PasskeyManagementScreenState extends State<PasskeyManagementScreen> {
             },
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(16),
+              padding: AppSpacing.paddingLG,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildInfoCard(),
+                  const PasskeyInfoCard(),
                   AppSpacing.verticalSpacing(SpacingSize.lg),
-                  _buildPasskeysList(passkeyData, state.isLoading),
+                  PasskeysList(
+                    passkeyData: passkeyData,
+                    isLoading: state.isLoading,
+                    onRemove: (passkey) {
+                      context.read<PasskeyBloc>().add(
+                            PasskeyRemoveRequested(credentialId: passkey.credentialId),
+                          );
+                    },
+                  ),
                   AppSpacing.verticalSpacing(SpacingSize.lg),
-                  _buildAddPasskeyButton(state.isLoading),
+                  AddPasskeyButton(
+                    isLoading: state.isLoading,
+                    onPressed: () {
+                      context.read<PasskeyBloc>().add(const PasskeyAppendRequested());
+                    },
+                  ),
                 ],
               ),
             ),
           );
         },
       ),
-    );
-  }
-
-  Widget _buildNotSupportedView() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: AppColors.warning.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.warning_amber_rounded,
-                color: AppColors.warning,
-                size: 40,
-              ),
-            ),
-            AppSpacing.verticalSpacing(SpacingSize.lg),
-            AppText(
-              'Passkeys Not Supported',
-              variant: TextVariant.titleLarge,
-              fontSize: AppFontSize.xxl,
-              fontWeight: FontWeight.bold,
-              color: AppColors.onBackground,
-            ),
-            AppSpacing.verticalSpacing(SpacingSize.md),
-            AppText.bodyMedium(
-              'Your device doesn\'t support passkey authentication. Please update your device or use password login.',
-              textAlign: TextAlign.center,
-              color: AppColors.onSurfaceVariant,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.info.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.info.withOpacity(0.2),
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            Icons.info_outline,
-            color: AppColors.info,
-            size: 24,
-          ),
-          AppSpacing.horizontalSpacing(SpacingSize.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AppText.bodyLarge(
-                  'What are Passkeys?',
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.onBackground,
-                ),
-                AppSpacing.verticalSpacing(SpacingSize.xs),
-                AppText(
-                  'Passkeys replace passwords with secure biometric authentication. '
-                  'Sign in with your fingerprint, face, or device screen lock.',
-                  variant: TextVariant.bodySmall,
-                  fontSize: AppFontSize.md,
-                  color: AppColors.onSurfaceVariant,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPasskeysList(PasskeyData passkeyData, bool isLoading) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            AppText(
-              'Your Passkeys',
-              variant: TextVariant.titleMedium,
-              fontSize: AppFontSize.xl,
-              fontWeight: FontWeight.bold,
-              color: AppColors.onBackground,
-            ),
-            if (isLoading)
-              const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                ),
-              ),
-          ],
-        ),
-        AppSpacing.verticalSpacing(SpacingSize.md),
-        if (passkeyData.passkeys.isEmpty && !isLoading)
-          _buildEmptyState()
-        else
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: passkeyData.passkeys.length,
-            itemBuilder: (context, index) {
-              final passkey = passkeyData.passkeys[index];
-              return PasskeyListItem(
-                passkey: passkey,
-                isLoading: isLoading,
-                onRemove: () {
-                  context.read<PasskeyBloc>().add(
-                        PasskeyRemoveRequested(credentialId: passkey.credentialId),
-                      );
-                },
-              );
-            },
-          ),
-      ],
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceVariant,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.outline,
-          style: BorderStyle.solid,
-        ),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.fingerprint,
-              color: AppColors.primary,
-              size: 32,
-            ),
-          ),
-          AppSpacing.verticalSpacing(SpacingSize.md),
-          AppText.bodyLarge(
-            'No Passkeys Yet',
-            fontWeight: FontWeight.w600,
-            color: AppColors.onBackground,
-          ),
-          AppSpacing.verticalSpacing(SpacingSize.sm),
-          AppText.bodyMedium(
-            'Add a passkey to enable quick sign-in with your biometrics',
-            textAlign: TextAlign.center,
-            color: AppColors.onSurfaceVariant,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAddPasskeyButton(bool isLoading) {
-    return AppButton.primary(
-      onPressed: isLoading
-          ? null
-          : () {
-              context.read<PasskeyBloc>().add(const PasskeyAppendRequested());
-            },
-      loading: isLoading,
-      fullWidth: true,
-      leadingIcon: const Icon(Icons.add, color: AppColors.white, size: 20),
-      child: AppText.bodyMedium('Add New Passkey', color: AppColors.white),
     );
   }
 }

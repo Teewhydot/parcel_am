@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_font_size.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_spacing.dart';
 import '../../../../core/widgets/app_text.dart';
@@ -57,13 +58,13 @@ class PasskeySetupCard extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                AppColors.primary.withOpacity(0.1),
-                AppColors.primaryLight.withOpacity(0.05),
+                AppColors.primary.withValues(alpha:0.1),
+                AppColors.primaryLight.withValues(alpha:0.05),
               ],
             ),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: AppRadius.lg,
             border: Border.all(
-              color: AppColors.primary.withOpacity(0.2),
+              color: AppColors.primary.withValues(alpha:0.2),
             ),
           ),
           child: Column(
@@ -75,8 +76,8 @@ class PasskeySetupCard extends StatelessWidget {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
+                      color: AppColors.primary.withValues(alpha:0.2),
+                      borderRadius: AppRadius.md,
                     ),
                     child: const Icon(
                       Icons.fingerprint,

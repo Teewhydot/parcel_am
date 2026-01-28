@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/widgets/app_text.dart';
 
 /// Reusable toggle tile for notification settings
@@ -30,8 +31,8 @@ class NotificationToggleTile extends StatelessWidget {
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: (value ? AppColors.primary : AppColors.onSurfaceVariant)
-                .withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
+                .withValues(alpha: 0.1),
+            borderRadius: AppRadius.sm,
           ),
           child: Icon(
             icon,

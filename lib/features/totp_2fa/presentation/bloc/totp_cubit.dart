@@ -119,6 +119,8 @@ class TotpCubit extends BaseCubit<BaseState<TotpData>> {
   /// Verify code for protected action (e.g., escrow release)
   /// Returns true if verification succeeded
   Future<bool> verifyForAction(String userId, String code) async {
+    final previousData = _currentData;
+
     emit(const LoadingState<TotpData>(message: 'Verifying...'));
 
     final result = await _totpUseCase.verify(userId, code);
@@ -130,7 +132,7 @@ class TotpCubit extends BaseCubit<BaseState<TotpData>> {
           errorCode: 'totp_verification_failed',
         ));
         emit(LoadedState<TotpData>(
-          data: _currentData.copyWith(
+          data: previousData.copyWith(
             verificationSuccess: false,
             errorMessage: failure.failureMessage,
           ),
@@ -143,7 +145,7 @@ class TotpCubit extends BaseCubit<BaseState<TotpData>> {
           successMessage: 'Verification successful!',
         ));
         emit(LoadedState<TotpData>(
-          data: _currentData.copyWith(
+          data: previousData.copyWith(
             verificationSuccess: true,
             errorMessage: null,
           ),
@@ -156,6 +158,8 @@ class TotpCubit extends BaseCubit<BaseState<TotpData>> {
 
   /// Verify with recovery code
   Future<bool> verifyWithRecoveryCode(String userId, String code) async {
+    final previousData = _currentData;
+
     emit(const LoadingState<TotpData>(message: 'Verifying recovery code...'));
 
     final result = await _totpUseCase.verifyWithRecoveryCode(userId, code);
@@ -167,7 +171,7 @@ class TotpCubit extends BaseCubit<BaseState<TotpData>> {
           errorCode: 'recovery_code_failed',
         ));
         emit(LoadedState<TotpData>(
-          data: _currentData.copyWith(
+          data: previousData.copyWith(
             verificationSuccess: false,
             errorMessage: failure.failureMessage,
           ),
@@ -180,7 +184,7 @@ class TotpCubit extends BaseCubit<BaseState<TotpData>> {
           successMessage: 'Recovery code accepted!',
         ));
         emit(LoadedState<TotpData>(
-          data: _currentData.copyWith(
+          data: previousData.copyWith(
             verificationSuccess: true,
             remainingRecoveryCodes:
                 verificationResult.remainingRecoveryCodes ?? 0,
@@ -220,6 +224,8 @@ class TotpCubit extends BaseCubit<BaseState<TotpData>> {
 
   /// Regenerate recovery codes
   Future<void> regenerateRecoveryCodes(String userId) async {
+    final previousData = _currentData;
+
     emit(const LoadingState<TotpData>(
       message: 'Generating new recovery codes...',
     ));
@@ -238,7 +244,7 @@ class TotpCubit extends BaseCubit<BaseState<TotpData>> {
           successMessage: 'New recovery codes generated!',
         ));
         emit(LoadedState<TotpData>(
-          data: _currentData.copyWith(
+          data: previousData.copyWith(
             setupResult: TotpSetupResult(
               secretForDisplay: '',
               secret: '',

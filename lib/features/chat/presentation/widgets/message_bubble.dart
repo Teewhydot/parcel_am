@@ -155,7 +155,7 @@ class MessageBubble extends StatelessWidget {
             ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: AppRadius.md,
             child: CachedNetworkImage(
               imageUrl: message.mediaUrl ?? '',
               width: 250,
@@ -223,7 +223,7 @@ class MessageBubble extends StatelessWidget {
         alignment: Alignment.center,
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: AppRadius.md,
             child: message.thumbnailUrl != null
                 ? CachedNetworkImage(
                     imageUrl: message.thumbnailUrl!,

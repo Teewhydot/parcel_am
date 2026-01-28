@@ -367,7 +367,7 @@ class _KycStatusChangeDialog extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: data.backgroundColor.withOpacity(0.1),
+              color: data.backgroundColor.withValues(alpha:0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -397,7 +397,7 @@ class _KycStatusChangeDialog extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.success.withOpacity(0.1),
+                color: AppColors.success.withValues(alpha:0.1),
                 borderRadius: AppRadius.sm,
               ),
               child: Row(

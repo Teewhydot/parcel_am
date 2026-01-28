@@ -93,11 +93,6 @@ class _DeliveryCardState extends State<DeliveryCard> {
                   ],
 
                   AppSpacing.verticalSpacing(SpacingSize.lg),
-                  // Show track/map button for in-transit parcels
-                  if (_isTrackable(widget.parcel.status)) ...[
-                    _buildTrackButton(context),
-                    AppSpacing.verticalSpacing(SpacingSize.sm),
-                  ],
                   _buildUpdateStatusButton(context),
                 ],
               ),
@@ -737,43 +732,6 @@ class _DeliveryCardState extends State<DeliveryCard> {
   String _generateChatId(String userId1, String userId2) {
     final sortedIds = [userId1, userId2]..sort();
     return '${sortedIds[0]}_${sortedIds[1]}';
-  }
-
-  /// Check if parcel status allows tracking
-  bool _isTrackable(ParcelStatus status) {
-    return switch (status) {
-      ParcelStatus.pickedUp => true,
-      ParcelStatus.inTransit => true,
-      ParcelStatus.arrived => true,
-      _ => false,
-    };
-  }
-
-  /// Build track/map button for viewing delivery on map
-  Widget _buildTrackButton(BuildContext context) {
-    return AppButton.outline(
-      onPressed: () {
-        sl<NavigationService>().navigateTo(
-          Routes.tracking,
-          arguments: {'packageId': widget.parcel.id},
-        );
-      },
-      fullWidth: true,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.map_outlined, size: 20, color: AppColors.primary),
-          AppSpacing.horizontalSpacing(SpacingSize.sm),
-          AppText(
-            'View on Map',
-            variant: TextVariant.bodyMedium,
-            fontSize: AppFontSize.lg,
-            fontWeight: FontWeight.w600,
-            color: AppColors.primary,
-          ),
-        ],
-      ),
-    );
   }
 
   Future<void> _handlePhoneCall(String phoneNumber) async {

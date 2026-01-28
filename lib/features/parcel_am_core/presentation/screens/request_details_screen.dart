@@ -8,8 +8,7 @@ import '../../../../core/widgets/app_text.dart';
 import '../../../../core/bloc/base/base_state.dart';
 import '../bloc/parcel/parcel_cubit.dart';
 import '../bloc/parcel/parcel_state.dart';
-import 'package:parcel_am/features/parcel_am_core/presentation/bloc/auth/auth_cubit.dart';
-import '../bloc/auth/auth_data.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../parcel_am_core/domain/entities/parcel_entity.dart';
 import '../../../../core/helpers/user_extensions.dart';
 import '../../../../core/widgets/app_spacing.dart';
@@ -42,21 +41,22 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.lg),
           title: AppText.titleMedium('Cancel Request'),
           content: AppText.bodyMedium(
             'Are you sure you want to cancel this request? The held amount will be returned to your available balance.',
           ),
           actions: [
             AppButton.text(
-              onPressed: () => Navigator.of(dialogContext).pop(),
+              onPressed: () => sl<NavigationService>().goBack(),
               child: AppText.labelMedium('No, Keep It'),
             ),
             AppButton.primary(
               onPressed: () {
-                Navigator.of(dialogContext).pop();
+                sl<NavigationService>().goBack();
                 _cancelParcel(parcel);
               },
-              child: AppText.labelMedium('Yes, Cancel', color: Colors.white),
+              child: AppText.labelMedium('Yes, Cancel', color: AppColors.white),
             ),
           ],
         );
@@ -81,11 +81,11 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppColors.transparent,
       builder: (bottomSheetContext) => AcceptConfirmationSheet(
         parcel: parcel,
         onConfirm: () {
-          Navigator.of(bottomSheetContext).pop();
+          sl<NavigationService>().goBack();
           _acceptRequest(parcel);
         },
       ),
@@ -93,8 +93,10 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
   }
 
   Future<void> _acceptRequest(ParcelEntity parcel) async {
-    final authState = context.read<AuthCubit>().state;
-    if (authState is! DataState<AuthData> || authState.data?.user == null) {
+    if (!mounted) return;
+
+    final userId = context.currentUserId;
+    if (userId == null) {
       if (mounted) {
         context.showSnackbar(
           message: 'You must be logged in to accept requests',
@@ -104,15 +106,14 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
       return;
     }
 
-    final currentUser = authState.data!.user!;
-
     setState(() {
       _isAccepting = true;
     });
 
+    if (!mounted) return;
     context.read<ParcelCubit>().assignTraveler(
       parcel.id,
-      currentUser.uid,
+      userId,
     );
   }
 
@@ -122,7 +123,8 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
       appBar: AppBar(
         title: AppText.titleLarge('Request Details'),
       ),
-      body: BlocConsumer<ParcelCubit, BaseState<ParcelData>>(
+      body: BlocManager<ParcelCubit, BaseState<ParcelData>>(
+        bloc: context.read<ParcelCubit>(),
         listener: (context, state) {
           if (state is LoadedState<ParcelData> && _isAccepting) {
             setState(() {
@@ -212,6 +214,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
 
           return const SizedBox.shrink();
         },
+        child: const SizedBox.shrink(),
       ),
       floatingActionButton: BlocManager<ParcelCubit, BaseState<ParcelData>>(
         bloc: context.read<ParcelCubit>(),
@@ -221,10 +224,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
             return const SizedBox.shrink();
           }
 
-          final authState = context.read<AuthCubit>().state;
-          final currentUserId = (authState is DataState<AuthData>)
-              ? authState.data?.user?.uid
-              : null;
+          final currentUserId = context.currentUserId;
           final isCreator = currentUserId == parcel.sender.userId;
 
           if (isCreator) {

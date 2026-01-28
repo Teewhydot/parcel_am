@@ -10,6 +10,7 @@ import '../bloc/notification_settings_bloc.dart';
 import '../bloc/notification_settings_event.dart';
 import '../bloc/notification_settings_state.dart';
 import '../widgets/notification_toggle_tile.dart';
+import '../widgets/notification_settings/notification_section_header.dart';
 
 class NotificationSettingsScreen extends StatefulWidget {
   final String userId;
@@ -36,14 +37,18 @@ class _NotificationSettingsScreenState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: AppText.titleLarge('Notification Settings'),
-        actions: [
-          BlocBuilder<NotificationSettingsBloc, BaseState<NotificationSettingsData>>(
-            builder: (context, state) {
-              final hasChanges = state.data?.hasChanges ?? false;
-              return TextButton(
+    return BlocManager<NotificationSettingsBloc, BaseState<NotificationSettingsData>>(
+      bloc: context.read<NotificationSettingsBloc>(),
+      showLoadingIndicator: false,
+      showResultErrorNotifications: true,
+      showResultSuccessNotifications: true,
+      builder: (context, state) {
+        final hasChanges = state.data?.hasChanges ?? false;
+        return Scaffold(
+          appBar: AppBar(
+            title: AppText.titleLarge('Notification Settings'),
+            actions: [
+              AppButton.text(
                 onPressed: hasChanges
                     ? () {
                         context
@@ -56,17 +61,10 @@ class _NotificationSettingsScreenState
                   color: hasChanges ? AppColors.primary : AppColors.textSecondary,
                   fontWeight: FontWeight.w600,
                 ),
-              );
-            },
+              ),
+            ],
           ),
-        ],
-      ),
-      body: BlocManager<NotificationSettingsBloc, BaseState<NotificationSettingsData>>(
-        bloc: context.read<NotificationSettingsBloc>(),
-        showLoadingIndicator: false,
-        showResultErrorNotifications: true,
-        showResultSuccessNotifications: true,
-        builder: (context, state) {
+          body: Builder(builder: (context) {
           if (state.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -102,7 +100,7 @@ class _NotificationSettingsScreenState
                 ListView(
                   children: [
                     // Messages Section
-                    _buildSectionHeader('Messages'),
+                    const NotificationSectionHeader(title: 'Messages'),
                     NotificationToggleTile(
                       title: 'Chat Messages',
                       subtitle: 'Notifications when you receive new messages',
@@ -121,7 +119,7 @@ class _NotificationSettingsScreenState
                     const Divider(height: 1),
 
                     // Parcels Section
-                    _buildSectionHeader('Parcels'),
+                    const NotificationSectionHeader(title: 'Parcels'),
                     NotificationToggleTile(
                       title: 'Parcel Updates',
                       subtitle: 'Updates on your parcel requests and deliveries',
@@ -156,7 +154,7 @@ class _NotificationSettingsScreenState
                     const Divider(height: 1),
 
                     // App Section
-                    _buildSectionHeader('App'),
+                    const NotificationSectionHeader(title: 'App'),
                     NotificationToggleTile(
                       title: 'System Announcements',
                       subtitle: 'Important updates and news from the app',
@@ -177,7 +175,7 @@ class _NotificationSettingsScreenState
                     // Reset to defaults
                     AppSpacing.verticalSpacing(SpacingSize.xl),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: AppSpacing.horizontalPaddingLG,
                       child: AppButton.outline(
                         onPressed: isLoading
                             ? null
@@ -196,7 +194,7 @@ class _NotificationSettingsScreenState
 
                     // Info text
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: AppSpacing.horizontalPaddingLG,
                       child: AppText.bodySmall(
                         'Note: You can always change these settings later. '
                         'Disabling notifications may cause you to miss important updates.',
@@ -209,7 +207,7 @@ class _NotificationSettingsScreenState
                 ),
                 if (isLoading)
                   Container(
-                    color: AppColors.surface.withOpacity(0.5),
+                    color: AppColors.surface.withValues(alpha: 0.5),
                     child: const Center(
                       child: CircularProgressIndicator(),
                     ),
@@ -219,20 +217,10 @@ class _NotificationSettingsScreenState
           }
 
           return const Center(child: CircularProgressIndicator());
-        },
-        child: Container(),
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-      child: AppText.bodySmall(
-        title.toUpperCase(),
-        color: AppColors.textSecondary,
-        fontWeight: FontWeight.w600,
-      ),
-    );
+        }),
+      );
+    },
+    child: const SizedBox.shrink(),
+  );
   }
 }

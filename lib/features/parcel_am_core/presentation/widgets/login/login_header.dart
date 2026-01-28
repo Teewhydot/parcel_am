@@ -35,7 +35,7 @@ class LoginHeader extends StatelessWidget {
               Positioned.fill(
                 child: AppContainer(
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: AppRadius.lg,
                     color: AppColors.black.withValues(alpha: 0.1),
                   ),
                 ),

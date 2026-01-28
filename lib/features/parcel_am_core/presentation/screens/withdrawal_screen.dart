@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/bloc/base/base_state.dart';
+import '../../../../core/bloc/managers/bloc_manager.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/services/navigation_service/nav_config.dart';
 import '../../../../injection_container.dart';
@@ -74,92 +75,92 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
         backgroundColor: AppColors.surface,
         elevation: 0,
       ),
-      body: MultiBlocListener(
-        listeners: [
-          BlocListener<WithdrawalBloc, BaseState<WithdrawalData>>(
-            listener: (context, state) {
-              if (state is LoadedState<WithdrawalData> &&
-                  state.data?.withdrawalOrder != null) {
-                sl<NavigationService>().navigateAndReplace(
-                  Routes.withdrawalStatus,
-                  arguments: {'withdrawalId': state.data?.withdrawalOrder?.id ?? ''},
-                );
-              }
-
-              if (state is AsyncErrorState<WithdrawalData>) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: AppText.bodyMedium(state.errorMessage, color: AppColors.white),
-                    backgroundColor: AppColors.error,
-                    duration: const Duration(seconds: 4),
-                  ),
-                );
-              }
-            },
-          ),
-        ],
-        child: BlocBuilder<WithdrawalBloc, BaseState<WithdrawalData>>(
-          builder: (context, withdrawalState) {
-            final withdrawalData = withdrawalState.data ?? const WithdrawalData();
-
-            return BlocBuilder<BankAccountBloc, BaseState<BankAccountData>>(
-              builder: (context, bankAccountState) {
-                final bankAccountData = bankAccountState.data ?? const BankAccountData();
-
-                if (bankAccountState.isLoading && !bankAccountState.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                return SingleChildScrollView(
-                  padding: AppSpacing.paddingLG,
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _BalanceCard(
-                          balance: widget.availableBalance,
-                          currencyFormat: _currencyFormat,
-                        ),
-                        AppSpacing.verticalSpacing(SpacingSize.xl),
-                        _AmountInput(
-                          controller: _amountController,
-                          errorText: withdrawalData.amountError,
-                          availableBalance: widget.availableBalance,
-                        ),
-                        AppSpacing.verticalSpacing(SpacingSize.xl),
-                        _BankAccountSection(
-                          withdrawalData: withdrawalData,
-                          bankAccountData: bankAccountData,
-                          userId: widget.userId,
-                        ),
-                        AppSpacing.verticalSpacing(SpacingSize.xxl),
-                        _WithdrawButton(
-                          canInitiate: withdrawalData.canInitiateWithdrawal,
-                          isInitiating: withdrawalData.isInitiating,
-                          onPressed: () {
-                            if (_formKey.currentState!.validate()) {
-                              final amount = double.parse(_amountController.text);
-                              WithdrawalConfirmationDialog.show(
-                                context,
-                                amount: amount,
-                                bankAccount: withdrawalData.selectedBankAccount!,
-                                onConfirm: () => _initiateWithdrawal(
-                                  amount,
-                                  withdrawalData.selectedBankAccount!,
-                                ),
-                              );
-                            }
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
+      body: BlocManager<WithdrawalBloc, BaseState<WithdrawalData>>(
+        bloc: context.read<WithdrawalBloc>(),
+        showLoadingIndicator: false,
+        listener: (context, state) {
+          if (state is LoadedState<WithdrawalData> &&
+              state.data?.withdrawalOrder != null) {
+            sl<NavigationService>().navigateAndReplace(
+              Routes.withdrawalStatus,
+              arguments: {'withdrawalId': state.data?.withdrawalOrder?.id ?? ''},
             );
-          },
-        ),
+          }
+
+          if (state is AsyncErrorState<WithdrawalData>) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: AppText.bodyMedium(state.errorMessage, color: AppColors.white),
+                backgroundColor: AppColors.error,
+                duration: const Duration(seconds: 4),
+              ),
+            );
+          }
+        },
+        builder: (context, withdrawalState) {
+          final withdrawalData = withdrawalState.data ?? const WithdrawalData();
+
+          return BlocManager<BankAccountBloc, BaseState<BankAccountData>>(
+            bloc: context.read<BankAccountBloc>(),
+            showLoadingIndicator: false,
+            builder: (context, bankAccountState) {
+              final bankAccountData = bankAccountState.data ?? const BankAccountData();
+
+              if (bankAccountState.isLoading && !bankAccountState.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              return SingleChildScrollView(
+                padding: AppSpacing.paddingLG,
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _BalanceCard(
+                        balance: widget.availableBalance,
+                        currencyFormat: _currencyFormat,
+                      ),
+                      AppSpacing.verticalSpacing(SpacingSize.xl),
+                      _AmountInput(
+                        controller: _amountController,
+                        errorText: withdrawalData.amountError,
+                        availableBalance: widget.availableBalance,
+                      ),
+                      AppSpacing.verticalSpacing(SpacingSize.xl),
+                      _BankAccountSection(
+                        withdrawalData: withdrawalData,
+                        bankAccountData: bankAccountData,
+                        userId: widget.userId,
+                      ),
+                      AppSpacing.verticalSpacing(SpacingSize.xxl),
+                      _WithdrawButton(
+                        canInitiate: withdrawalData.canInitiateWithdrawal,
+                        isInitiating: withdrawalData.isInitiating,
+                        onPressed: () {
+                          if (_formKey.currentState!.validate()) {
+                            final amount = double.parse(_amountController.text);
+                            WithdrawalConfirmationDialog.show(
+                              context,
+                              amount: amount,
+                              bankAccount: withdrawalData.selectedBankAccount!,
+                              onConfirm: () => _initiateWithdrawal(
+                                amount,
+                                withdrawalData.selectedBankAccount!,
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+            child: const SizedBox.shrink(),
+          );
+        },
+        child: const SizedBox.shrink(),
       ),
     );
   }

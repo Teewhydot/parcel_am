@@ -14,10 +14,10 @@ import '../../../domain/entities/parcel_entity.dart';
 import '../../bloc/parcel/parcel_cubit.dart';
 import '../delivery_confirmation_card.dart';
 
-class ParcelCard extends StatelessWidget {
+class ParcelListCard extends StatelessWidget {
   final ParcelEntity parcel;
 
-  const ParcelCard({super.key, required this.parcel});
+  const ParcelListCard({super.key, required this.parcel});
 
   @override
   Widget build(BuildContext context) {
@@ -72,7 +72,7 @@ class ParcelCard extends StatelessWidget {
                 Navigator.of(dialogContext).pop();
                 _cancelParcel(context);
               },
-              child: AppText.labelMedium('Yes, Cancel', color: Colors.white),
+              child: AppText.labelMedium('Yes, Cancel', color: AppColors.white),
             ),
           ],
         );
@@ -321,9 +321,9 @@ class _TrackButton extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.location_on, size: 18, color: Colors.white),
+            const Icon(Icons.location_on, size: 18, color: AppColors.white),
             AppSpacing.horizontalSpacing(SpacingSize.xs),
-            AppText.bodyMedium('Track Delivery', color: Colors.white),
+            AppText.bodyMedium('Track Delivery', color: AppColors.white),
           ],
         ),
       ),

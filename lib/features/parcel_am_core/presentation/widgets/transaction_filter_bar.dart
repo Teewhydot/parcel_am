@@ -77,12 +77,12 @@ class TransactionFilterBar extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: currentFilter.status != null
-              ? Theme.of(context).primaryColor.withOpacity(0.1)
+              ? AppColors.primary.withValues(alpha:0.1)
               : AppColors.surfaceVariant,
           borderRadius: AppRadius.xl,
           border: Border.all(
             color: currentFilter.status != null
-                ? Theme.of(context).primaryColor
+                ? AppColors.primary
                 : AppColors.transparent,
           ),
         ),
@@ -93,7 +93,7 @@ class TransactionFilterBar extends StatelessWidget {
               Icons.filter_list,
               size: 16,
               color: currentFilter.status != null
-                  ? Theme.of(context).primaryColor
+                  ? AppColors.primary
                   : AppColors.onSurfaceVariant,
             ),
             AppSpacing.horizontalSpacing(SpacingSize.xs),
@@ -105,7 +105,7 @@ class TransactionFilterBar extends StatelessWidget {
               fontSize: AppFontSize.md,
               fontWeight: FontWeight.w500,
               color: currentFilter.status != null
-                  ? Theme.of(context).primaryColor
+                  ? AppColors.primary
                   : AppColors.onSurfaceVariant,
             ),
           ],
@@ -137,12 +137,12 @@ class TransactionFilterBar extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: (currentFilter.startDate != null || currentFilter.endDate != null)
-              ? Theme.of(context).primaryColor.withOpacity(0.1)
+              ? AppColors.primary.withValues(alpha:0.1)
               : AppColors.surfaceVariant,
           borderRadius: AppRadius.xl,
           border: Border.all(
             color: (currentFilter.startDate != null || currentFilter.endDate != null)
-                ? Theme.of(context).primaryColor
+                ? AppColors.primary
                 : AppColors.transparent,
           ),
         ),
@@ -153,7 +153,7 @@ class TransactionFilterBar extends StatelessWidget {
               Icons.calendar_today,
               size: 16,
               color: (currentFilter.startDate != null || currentFilter.endDate != null)
-                  ? Theme.of(context).primaryColor
+                  ? AppColors.primary
                   : AppColors.onSurfaceVariant,
             ),
             AppSpacing.horizontalSpacing(SpacingSize.xs),
@@ -163,7 +163,7 @@ class TransactionFilterBar extends StatelessWidget {
               fontSize: AppFontSize.md,
               fontWeight: FontWeight.w500,
               color: (currentFilter.startDate != null || currentFilter.endDate != null)
-                  ? Theme.of(context).primaryColor
+                  ? AppColors.primary
                   : AppColors.onSurfaceVariant,
             ),
           ],
@@ -198,7 +198,7 @@ class TransactionFilterBar extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.errorLight,
           borderRadius: AppRadius.xl,
-          border: Border.all(color: AppColors.error.withOpacity(0.3)),
+          border: Border.all(color: AppColors.error.withValues(alpha:0.3)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -250,7 +250,7 @@ class TransactionFilterBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Theme.of(context).primaryColor.withOpacity(0.1),
+        color: AppColors.primary.withValues(alpha:0.1),
         borderRadius: AppRadius.md,
       ),
       child: Row(
@@ -258,7 +258,7 @@ class TransactionFilterBar extends StatelessWidget {
         children: [
           AppText.bodySmall(
             label,
-            color: Theme.of(context).primaryColor,
+            color: AppColors.primary,
           ),
           AppSpacing.horizontalSpacing(SpacingSize.xs),
           InkWell(
@@ -266,7 +266,7 @@ class TransactionFilterBar extends StatelessWidget {
             child: Icon(
               Icons.close,
               size: 14,
-              color: Theme.of(context).primaryColor,
+              color: AppColors.primary,
             ),
           ),
         ],

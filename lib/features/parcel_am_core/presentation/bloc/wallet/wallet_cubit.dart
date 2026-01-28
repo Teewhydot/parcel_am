@@ -98,6 +98,23 @@ class WalletCubit extends BaseCubit<BaseState<WalletData>> {
     );
   }
 
+  /// Update cached balance from a live stream (e.g. WalletBalanceCard StreamBuilder).
+  void updateBalance({
+    required double availableBalance,
+    required double pendingBalance,
+  }) {
+    final currentData = state.data;
+    if (currentData == null) return;
+
+    emit(LoadedState<WalletData>(
+      data: currentData.copyWith(
+        availableBalance: availableBalance,
+        pendingBalance: pendingBalance,
+      ),
+      lastUpdated: DateTime.now(),
+    ));
+  }
+
   void _emitWalletData(WalletEntity wallet) {
     emit(LoadedState<WalletData>(
       data: WalletData(
